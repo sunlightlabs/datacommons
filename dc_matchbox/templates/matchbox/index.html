@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>HTML 5 template</title>
+        <!--[if IE]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+        <style>
+            article, aside, dialog, figure, footer, header,
+            hgroup, menu, nav, section { display: block; }
+        </style>
+        <style>
+            .container { margin: 0 auto; text-align: left; width: 970px; }
+            body { margin: 0; padding: 0; text-align: center; }
+            header form { border-bottom: 1px solid #000; border-top: 1px solid #000; }
+            header p.welcome { float: right; }
+            #sidebar { float: right; width: 300px; }
+            #content { border-right: 1px solid #000; width: 650px; }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="container">
+                <p class="welcome">Welcome, <a href="#">Jeremy</a> | <a href="#">Logout</a></p>
+                <h1>Data Commons</h1>
+            </div>
+            <nav>
+                <ul class="container">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Committees</a></li>
+                    <li><a href="#">Organizations</a></li>
+                </ul>
+            </nav>
+            <form action="#" method="get">
+                <p class="container">
+                    <label for="search_query">Search Organizations</label>
+                    <input type="text" name="q" id="search_query">
+                </p>
+            </form>
+        </header>
+        
+        <div class="container">
+            <div id="sidebar">
+                asfsadf
+            </div>
+            <div id="content">
+                <h2>Bank of America</h2>
+                <form action="#" method="post" id="merge_form">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><a href="#">Select All</a></th>
+                                <th>Name</th>
+                                <th># of Transactions</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox" name="entities" value="1234"></td>
+                                <td>Bnk of Amurica</td>
+                                <td>10</td>
+                                <td><a href="#">3</a></td>
+                                <td><a href="#">Google</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+        </div>
+        
+        <footer>
+        </footer>
+    </body>
+</html>
