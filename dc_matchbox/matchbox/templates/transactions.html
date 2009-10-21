@@ -1,0 +1,18 @@
+
+{% if results %}
+    <p>Results:</b></p>
+    <table border="1" rules="cols">
+    {% for header in headers %}
+        <th> {{header}} </th>
+    {% endfor %}
+    {% for row in results %}
+        <tr>
+        {% for value in row %}
+            <td>{{value}}</td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    <p>No results for query.</p>
+{% endif %}
