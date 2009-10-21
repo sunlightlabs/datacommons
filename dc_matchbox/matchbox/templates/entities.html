@@ -1,0 +1,26 @@
+
+{% if action %}
+<form name="search_form" action="{{ action }}" method="post">
+{{ search_form.as_p }}
+<input type="submit" value="Submit"/>
+</form>
+{% endif %}
+
+
+{% if results %}
+    <p>Results:</b></p>
+    <table border="1" rules="cols">
+    {% for header in headers %}
+        <th> {{header}} </th>
+    {% endfor %}
+    {% for row in results %}
+        <tr>
+		<td><a href="transactions?entity_id={{row.0}}">{{row.1}}</a></td>
+		<td>{{row.2}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    <p>No results for query.</p>
+{% endif %}
+
