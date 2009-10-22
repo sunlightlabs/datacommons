@@ -65,6 +65,7 @@ def main():
         CSVSource(files, fieldnames=FILE_TYPES['pacs']),
         
         # transaction filters
+        FieldAdder('transaction_namespace', 'urn:fec:transaction'),
         FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: 'FEC:%s:%s' % (cycle, fecid), keep_fields=True),
         FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
         
@@ -78,12 +79,11 @@ def main():
         FieldAdder('recipient_type', 'politician'),
         
         # catcode
-        FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
-        FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
-        FieldMerger({'category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),        
+        #FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
+        #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
+        FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),        
         
         # add static fields
-        FieldAdder('jurisdiction', 'F'),
         FieldAdder('is_amendment', False),
         FieldAdder('election_type', 'G'),
         

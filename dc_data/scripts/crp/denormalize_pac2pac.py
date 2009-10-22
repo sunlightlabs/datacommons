@@ -65,8 +65,12 @@ def main():
         CSVSource(files, fieldnames=FILE_TYPES['pac_other']),
         
         # transaction filters
+        FieldAdder('transaction_namespace', 'urn:fec:transaction'),
         FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: 'FEC:%s:%s' % (cycle, fecid), keep_fields=True),
         FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
+        
+        # filing reference ID
+        FieldRenamer({'filing_id': 'microfilm'}),
         
         # date stamp
         FieldModifier('datestamp', parse_date_iso),
@@ -78,9 +82,14 @@ def main():
         #         FieldAdder('recipient_type', 'politician'),
         
         # catcode
-        FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
-        FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
-        FieldMerger({'category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),        
+        #FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
+        #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
+        FieldRenamer({'contributor_name': 'donor_cmte'}),
+        FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
+        
+        FieldRenamer({'contributor_city': 'city',
+                      'conitrbutor_zipcode': 'zipcode'}),
+        FieldModifier('contributor_state', lambda s: s.upper() if s else None),
         
         # add static fields
         FieldAdder('jurisdiction', 'F'),

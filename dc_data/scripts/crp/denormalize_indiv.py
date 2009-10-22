@@ -24,6 +24,17 @@ class RecipCodeFilter(Filter):
                 record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
         return record
 
+class OrganizationFilter(Filter):
+    def process_record(self, record):
+        orgname = record.get('org_name', '').strip()
+        if not orgname:
+            orgname = record.get('emp_ef', '').strip()
+            if not orgname and '/' in record['fec_occ_emp']:
+                (emp, occ) = record['fec_occ_emp'].split('/', 1)
+                orgname = emp.strip()
+        record['organization_name'] = orgname or None
+        return record
+
 def main():
 
     from optparse import OptionParser
@@ -98,16 +109,21 @@ def main():
         CSVSource(files, fieldnames=FILE_TYPES['indivs']),
         
         # transaction filters
-        FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: 'FEC:%s:%s' % (cycle, fecid), keep_fields=True),
+        FieldAdder('transaction_namespace', 'urn:fec:transaction'),
+        FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
         FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower(), keep_fields=True),
+        
+        # filing reference ID
+        FieldRenamer({'filing_id': 'microfilm'}),
         
         # date stamp
         FieldModifier('datestamp', parse_date_iso),
         
         # rename contributor, organization, and parent_organization fields
-        FieldRenamer({'contributor': 'contrib',
-                      'organization': 'org_name',
-                      'parent_organization': 'ult_org',}),
+        FieldRenamer({'contributor_name': 'contrib',
+                      'parent_organization_name': 'ult_org',}),
+                      
+        OrganizationFilter(),
         
         # create URNs
         FieldMerger({'contributor_urn': ('contrib_id',)}, contributor_urn, keep_fields=True),
@@ -122,20 +138,21 @@ def main():
                             # seat result
         
         # address and gender fields
-        FieldRenamer({'address': 'street'}),
-        FieldModifier('state', lambda s: s.upper() if s else None),
-        FieldModifier('gender', lambda s: s.upper() if s else None),
+        FieldRenamer({'contributor_address': 'street',
+                      'contributor_city': 'city',
+                      'conitrbutor_zipcode': 'zipcode'}),
+        FieldModifier('contributor_state', lambda s: s.upper() if s else None),
+        FieldModifier('contributor_gender', lambda s: s.upper() if s else None),
         
         # employer/occupation filter
         FECOccupationFilter(),
         
         # catcode
-        FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
-        FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
-        FieldMerger({'category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
+        #FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
+        #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
+        FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
         
         # add static fields
-        FieldAdder('jurisdiction', 'F'),
         FieldAdder('contributor_type', 'individual'),
         FieldAdder('is_amendment', False),
         FieldAdder('election_type', 'G'),
@@ -145,7 +162,7 @@ def main():
         
         #DebugEmitter(),
         CountEmitter(every=100),
-        emitter,
+        #emitter,
         
     )        
 
