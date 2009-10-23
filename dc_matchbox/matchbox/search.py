@@ -1,4 +1,5 @@
-
+from models import Entity, entity_sql_names
+from sql_utils import augment
 
 def entity_search(connection, query):
     """
@@ -7,12 +8,12 @@ def entity_search(connection, query):
     Returns an iterator over triples (id, name, count).
     """
     
-    stmt = "select e.id, e.name, count(*) \
-            from entities e inner join individual_contributions c \
-            on e.id = c.employer_entity_id \
-            where e.name like '%(query)s%%' \
-            group by e.id order by count(*) desc;" % \
-            {'query': query}
+    stmt = "select e.%(entity_id)s, e.%(entity)s, count(*) \
+        from %(entity)s e inner join individual_contributions c \
+        on e.%(entity_id)s = c.employer_entity_id \
+        where e.%(entity_name)s like '%(query)s%%' \
+        group by e.%(entity_id)s order by count(*) desc;" % \
+        augment(entity_sql_names, query=query)
     return _execute_stmt(connection, stmt)
 
 

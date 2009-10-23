@@ -1,5 +1,7 @@
 """
-Scripts needed to turn raw data from CRP and NIMSP into a SQL database useable by Data Commons applications.
+Scripts needed to turn raw data from CRP and NIMSP into a SQL database usable by Data Commons applications.
+(Note: these scripts generate transactional data in CRP format. Just for use in the prototype.
+The denormalize scripts generate the real Contribution tables.)
 
 Very rough instructions:
 1. run crp_csv2sql.py to turn CRP individual_contributions data into SQL insert statements.

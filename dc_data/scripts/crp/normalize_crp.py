@@ -8,10 +8,10 @@ Creates: SQL inserts file containing 'normalizations' table, with 'original' and
 
 import MySQLdb
 from normalizer import basic_normalizer
-import normalize_database
+from scripts.normalize_database import normalize
 
 
 connection = MySQLdb.connect(host='localhost', user='root', db='playground')
 columns = [('individual_contributions', ['Orgname','Emp_EF'])]
 
-normalize_database.normalize(connection, columns, basic_normalizer)
+normalize(connection, columns, basic_normalizer)
