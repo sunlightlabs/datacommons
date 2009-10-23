@@ -1,4 +1,4 @@
-from models import Entity, entity_sql_names
+from models import sql_names
 from sql_utils import augment
 
 def entity_search(connection, query):
@@ -13,7 +13,7 @@ def entity_search(connection, query):
         on e.%(entity_id)s = c.employer_entity_id \
         where e.%(entity_name)s like '%(query)s%%' \
         group by e.%(entity_id)s order by count(*) desc;" % \
-        augment(entity_sql_names, query=query)
+        augment(sql_names, query=query)
     return _execute_stmt(connection, stmt)
 
 
