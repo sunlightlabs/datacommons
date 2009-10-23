@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 from saucebrush.filters import Filter, UnicodeFilter
 #from datacommons.sources.crp import CatCodeLookup
+import csv
 import datetime
 import logging
+import os
 
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
               'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn',
@@ -15,6 +17,18 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
               'committee_name', 'committee_urn', 'committee_entity',
               'committee_party', 'election_type', 'district', 'seat', 'seat_status',
               'seat_result',]
+
+def load_catcodes(dataroot):
+    catcodes = { }
+    fields = ('catcode','catname','catorder','industry','sector','sector_long')
+    path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'CRP_Categories.txt')
+    reader = csv.DictReader(open(path), fieldnames=fields, delimiter='\t')
+    for _ in xrange(8):
+        reader.next()
+    for record in reader:
+        catcodes[record.pop('catcode').upper()] = record
+    return catcodes
+        
 
 def parse_date_iso(datestamp):
     pd = parse_date(datestamp)
@@ -67,26 +81,3 @@ class FECOccupationFilter(Filter):
             #record['contributor_employer'] = emp
 
         return record
-
-class RealCodeFilter(Filter):
-
-    def __init__(self, fieldname='real_code'):
-        self._cache = CatCodeLookup('data/sqlite/crp/catcodes.db')
-        self._fieldname = fieldname
-
-    def process_record(self, record):
-
-        if record[self._fieldname]:
-
-            val = record[self._fieldname].upper()
-
-            catcode = self._cache.get(val, None)
-
-            if catcode:
-
-                #record['industry'] = catcode['catcode'][0]
-                #record['sector'] = catcode['catcode'][:2]
-                record['category'] = catcode['catcode']
-                record['category_order'] = catcode['catorder']
-
-            return record

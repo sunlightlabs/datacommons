@@ -9,7 +9,7 @@ import logging
 import os
 import saucebrush
 
-from denormalize import FIELDNAMES, parse_date_iso, SpecFilter, FECOccupationFilter
+from denormalize import FIELDNAMES, load_catcodes, parse_date_iso, SpecFilter, FECOccupationFilter
 
 ### Filters
 
@@ -68,6 +68,8 @@ def main():
     tmppath = os.path.join(dataroot, 'tmp')
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
+
+    catcodes = load_catcodes(dataroot)
     
     emitter = CSVEmitter(open(os.path.join(tmppath, 'denorm_indivs.csv'), 'w'), fieldnames=FIELDNAMES)
 
@@ -151,6 +153,7 @@ def main():
         #FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
         #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
         FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
+        FieldMerger({'contributor_category_order': ('real_code',)}, lambda s: catcodes[s.upper()]['catorder'].upper(), keep_fields=True),
         
         # add static fields
         FieldAdder('contributor_type', 'individual'),
@@ -160,7 +163,7 @@ def main():
         # filter through spec
         SpecFilter(spec),
         
-        #DebugEmitter(),
+        DebugEmitter(),
         CountEmitter(every=100),
         #emitter,
         

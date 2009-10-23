@@ -9,7 +9,7 @@ import logging
 import os
 import saucebrush
 
-from denormalize import FIELDNAMES, parse_date_iso, SpecFilter, FECOccupationFilter
+from denormalize import FIELDNAMES, load_catcodes, parse_date_iso, SpecFilter, FECOccupationFilter
 
 #####
 
@@ -46,6 +46,8 @@ def main():
     tmppath = os.path.join(dataroot, 'tmp')
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
+
+    catcodes = load_catcodes(dataroot)
     
     emitter = CSVEmitter(open(os.path.join(tmppath, 'denorm_pac2pac.csv'), 'w'), fieldnames=FIELDNAMES)
 
@@ -86,6 +88,7 @@ def main():
         #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
         FieldRenamer({'contributor_name': 'donor_cmte'}),
         FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
+        FieldMerger({'contributor_category_order': ('real_code',)}, lambda s: catcodes[s.upper()]['catorder'].upper(), keep_fields=True),
         
         FieldRenamer({'contributor_city': 'city',
                       'conitrbutor_zipcode': 'zipcode'}),
