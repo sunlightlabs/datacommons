@@ -84,8 +84,6 @@ def main():
         #         FieldAdder('recipient_type', 'politician'),
         
         # catcode
-        #FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
-        #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
         FieldRenamer({'contributor_name': 'donor_cmte'}),
         FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
         FieldMerger({'contributor_category_order': ('real_code',)}, lambda s: catcodes[s.upper()]['catorder'].upper(), keep_fields=True),

@@ -1,5 +1,5 @@
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
-from dcdata.utils.dryrub import CountEmitter
+from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
 from saucebrush.filters import Filter, FieldAdder, FieldCopier, FieldMerger, FieldModifier, FieldRemover, FieldRenamer
 from saucebrush.emitters import Emitter, CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
@@ -9,7 +9,7 @@ import logging
 import os
 import saucebrush
 
-from denormalize import FIELDNAMES, load_catcodes, parse_date_iso, SpecFilter, FECOccupationFilter
+from denormalize import *
 
 ### Filters
 
@@ -34,6 +34,61 @@ class OrganizationFilter(Filter):
                 orgname = emp.strip()
         record['organization_name'] = orgname or None
         return record
+
+class CommitteeFilter(Filter):
+    def __init__(self, committees):
+        super(CommitteeFilter, self).__init__()
+        self._committees = committees
+    def process_record(self, record):
+        cmte_id = record['cmte_id'].upper()
+        committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
+        if committee:
+            record['committee_name'] = committee['pac_short']
+            record['committee_party'] = committee['party']
+        return record
+        
+
+class RecipientFilter(Filter):
+    def __init__(self, candidates, committees):
+        super(RecipientFilter, self).__init__()
+        self._candidates = candidates
+        self._committees = committees
+    def process_record(self, record):
+        recip_id = record['recip_id'].upper()
+        if recip_id.startswith('N'):
+            recipient = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
+            self.load_candidate(recipient, record)
+        else:
+            recipient = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
+            self.load_committee(recipient, record)
+        return record
+    def load_candidate(self, candidate, record):
+        if candidate:
+            record['recipient_name'] = candidate['first_last_p']
+            record['recipient_party'] = candidate['party']
+            record['recipient_type'] = 'politician'
+            record['seat_status'] = candidate['crp_ico']
+            seat = candidate['dist_id_run_for'].upper()
+            if len(seat) == 4:
+                if seat == 'PRES':
+                    record['seat'] = 'federal:president'
+                else:
+                    if seat[2] == 'S':
+                        record['seat'] = 'federal:senate'
+                    else:
+                        record['seat'] = 'federal:house'
+                        record['district'] = "%s-%s" % (seat[:2], seat[2:])
+    def load_committee(self, committee, record):
+        if committee:
+            record['recipient_name'] = committee['pac_short']
+            record['recipient_party'] = committee['party']
+            record['recipient_type'] = 'committee'
+            cmte_id = record['cmte_id'].upper()
+            recip_id = committee['recip_id'].upper()
+            if cmte_id == record['recip_id'].upper() and cmte_id != recip_id:
+                print "!!!!  loading committee recipient"
+                candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
+                self.load_candidate(candidate, record)
 
 def main():
 
@@ -69,7 +124,14 @@ def main():
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
 
+    print "Loading catcodes..."
     catcodes = load_catcodes(dataroot)
+    
+    print "Loading candidates..."
+    candidates = load_candidates(dataroot)
+    
+    print "Loading committees..."
+    committees = load_committees(dataroot)
     
     emitter = CSVEmitter(open(os.path.join(tmppath, 'denorm_indivs.csv'), 'w'), fieldnames=FIELDNAMES)
 
@@ -91,24 +153,17 @@ def main():
     
     def committee_urn(s):
         return 'urn:crp:committee:%s' % s.strip().upper() if s else None
-        
-    # recipient type
-    
-    def recipient_type(s):
-        if s:
-            if s.startswith('N'):
-                return 'politician'
-            elif s.startswith('C'):
-                return 'committee'
     
     #
     # main recipe
     #
     
-    saucebrush.run_recipe(
+    recipe = saucebrush.run_recipe(
         
         # load source
         CSVSource(files, fieldnames=FILE_TYPES['indivs']),
+        
+        FieldCountValidator(len(FILE_TYPES['indivs'])),
         
         # transaction filters
         FieldAdder('transaction_namespace', 'urn:fec:transaction'),
@@ -125,15 +180,14 @@ def main():
         FieldRenamer({'contributor_name': 'contrib',
                       'parent_organization_name': 'ult_org',}),
                       
+        RecipientFilter(candidates, committees),
+        CommitteeFilter(committees),
         OrganizationFilter(),
         
         # create URNs
         FieldMerger({'contributor_urn': ('contrib_id',)}, contributor_urn, keep_fields=True),
         FieldMerger({'recipient_urn': ('recip_id',)}, recipient_urn, keep_fields=True),
         FieldMerger({'committee_urn': ('cmte_id',)}, committee_urn, keep_fields=True),
-        
-        # recipient type
-        FieldMerger({'recipient_type': ('recip_id',)}, recipient_type, keep_fields=True),
         
         # recip code filter
         RecipCodeFilter(),  # recipient party
@@ -150,10 +204,7 @@ def main():
         FECOccupationFilter(),
         
         # catcode
-        #FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
-        #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
-        FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
-        FieldMerger({'contributor_category_order': ('real_code',)}, lambda s: catcodes[s.upper()]['catorder'].upper(), keep_fields=True),
+        CatCodeFilter('contributor', catcodes),
         
         # add static fields
         FieldAdder('contributor_type', 'individual'),
@@ -164,10 +215,12 @@ def main():
         SpecFilter(spec),
         
         #DebugEmitter(),
-        CountEmitter(every=100),
+        CountEmitter(every=1000),
         emitter,
         
-    )        
+    )
+    
+    print recipe.rejected
 
 if __name__ == "__main__":
 

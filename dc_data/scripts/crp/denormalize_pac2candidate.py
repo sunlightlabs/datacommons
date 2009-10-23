@@ -9,9 +9,46 @@ import logging
 import os
 import saucebrush
 
-from denormalize import FIELDNAMES, load_catcodes, parse_date_iso, SpecFilter, FECOccupationFilter
+from denormalize import *
 
 #####
+
+class RecipientFilter(Filter):
+    def __init__(self, candidates):
+        super(RecipientFilter, self).__init__()
+        self._candidates = candidates
+    def process_record(self, record):
+        cid = record['cid'].upper()
+        candidate = self._candidates.get('%s:%s' % (record['cycle'], cid), None)
+        if candidate:
+            record['recipient_name'] = candidate['first_last_p']
+            record['recipient_party'] = candidate['party']
+            record['recipient_type'] = 'politician'
+            record['seat_status'] = candidate['crp_ico']
+            seat = candidate['dist_id_run_for'].upper()
+            if len(seat) == 4:
+                if seat == 'PRES':
+                    record['seat'] = 'federal:president'
+                else:
+                    if seat[2] == 'S':
+                        record['seat'] = 'federal:senate'
+                    else:
+                        record['seat'] = 'federal:house'
+                        record['district'] = "%s-%s" % (seat[:2], seat[2:])
+        return record
+
+class ContributorFilter(Filter):
+    def __init__(self, committees):
+        super(ContributorFilter, self).__init__()
+        self._committees = committees
+    def process_record(self, record):
+        pac_id = record['pac_id'].upper()
+        committee = self._committees.get('%s:%s' % (record['cycle'], pac_id), None)
+        if committee:
+            record['recipient_name'] = committee['pac_short']
+            record['recipient_party'] = committee['party']
+            record['recipient_type'] = 'committee'
+        return record
 
 def main():
 
@@ -47,7 +84,14 @@ def main():
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
 
+    print "Loading catcodes..."
     catcodes = load_catcodes(dataroot)
+
+    print "Loading candidates..."
+    candidates = load_candidates(dataroot)
+
+    print "Loading committees..."
+    committees = load_committees(dataroot)
     
     emitter = CSVEmitter(open(os.path.join(tmppath, 'denorm_pac2cand.csv'), 'w'), fieldnames=FIELDNAMES)
 
@@ -75,16 +119,16 @@ def main():
         FieldModifier('datestamp', parse_date_iso),
         
         # contributor and recipient fields
+        ContributorFilter(committees),
         FieldMerger({'contributor_urn': ('pac_id',)}, committee_urn),
         FieldAdder('contributor_type', 'committee'),
+        
+        RecipientFilter(candidates),
         FieldMerger({'recipient_urn': ('cid',)}, candidate_urn),
         FieldAdder('recipient_type', 'politician'),
         
         # catcode
-        #FieldMerger({'industry': ('real_code',)}, lambda s: s[0].upper() if s else None, keep_fields=True),
-        #FieldMerger({'sector': ('real_code',)}, lambda s: s[:2].upper() if s else None, keep_fields=True),
-        FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
-        FieldMerger({'contributor_category_order': ('real_code',)}, lambda s: catcodes[s.upper()]['catorder'].upper(), keep_fields=True),
+        CatCodeFilter('contributor', catcodes),
         
         # add static fields
         FieldAdder('is_amendment', False),

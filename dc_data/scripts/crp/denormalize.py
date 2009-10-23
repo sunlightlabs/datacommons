@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from saucebrush.filters import Filter, UnicodeFilter
-#from datacommons.sources.crp import CatCodeLookup
+from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 import csv
 import datetime
 import logging
@@ -28,7 +28,38 @@ def load_catcodes(dataroot):
     for record in reader:
         catcodes[record.pop('catcode').upper()] = record
     return catcodes
-        
+
+def load_candidates(dataroot):
+    candidates = { }
+    fields = FILE_TYPES['cands']
+    for cycle in CYCLES:
+        path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cands%s.csv' % cycle)
+        reader = csv.DictReader(open(path), fieldnames=fields)
+        for record in reader:
+            key = "%s:%s" % (record.pop('cycle'), record.pop('cid').upper())
+            del record['fec_cand_id']
+            del record['dist_id_curr']
+            del record['curr_cand']
+            del record['cycle_cand']
+            del record['no_pacs']
+            candidates[key] = record
+    return candidates
+
+def load_committees(dataroot):
+    committees = { }
+    fields = FILE_TYPES['cmtes']
+    for cycle in CYCLES:
+        path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cmtes%s.csv' % cycle)
+        reader = csv.DictReader(open(path), fieldnames=fields)
+        for record in reader:
+            key = "%s:%s" % (record.pop('cycle'), record.pop('cmte_id').upper())
+            del record['fec_cand_id']
+            del record['source']
+            del record['sensitive']
+            del record['is_foreign']
+            del record['active']
+            committees[key] = record
+    return committees
 
 def parse_date_iso(datestamp):
     pd = parse_date(datestamp)
@@ -80,4 +111,17 @@ class FECOccupationFilter(Filter):
             #record['contributor_occupation'] = occ
             #record['contributor_employer'] = emp
 
+        return record
+
+class CatCodeFilter(Filter):
+    def __init__(self, prefix, catcodes, field='real_code'):
+        self._prefix = prefix
+        self._catcodes = catcodes
+        self._field = field
+    def process_record(self, record):
+        catcode = record.get(self._field, '').upper()
+        if len(catcode) == 5:
+            record['%s_category' % self._prefix] = catcode
+            if catcode in self._catcodes:
+                record['%s_category_order' % self._prefix] = self._catcodes[catcode]['catorder'].upper()
         return record
