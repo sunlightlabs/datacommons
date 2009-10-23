@@ -163,9 +163,9 @@ def main():
         # filter through spec
         SpecFilter(spec),
         
-        DebugEmitter(),
+        #DebugEmitter(),
         CountEmitter(every=100),
-        #emitter,
+        emitter,
         
     )        
 
