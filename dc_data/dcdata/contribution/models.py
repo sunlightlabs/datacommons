@@ -2,6 +2,7 @@ from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from dcdata.models import DataCommonsModel
 from matchbox.models import EntityRef
+from sql_utils import django2sql_names
 
 SEATS = (
     ('federal:senate', 'US Senate'),
@@ -154,3 +155,6 @@ class Contribution(DataCommonsModel):
         # save if all checks passed
         super(Contribution, self).save()
     
+
+
+sql_names = django2sql_names(Contribution)
