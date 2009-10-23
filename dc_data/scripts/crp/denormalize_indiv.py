@@ -24,19 +24,6 @@ class RecipCodeFilter(Filter):
                 record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
         return record
 
-class CatCodeFilter(Filter):
-    def __init__(self, prefix, catcodes, field='real_code'):
-        self._prefix = prefix
-        self._catcodes = catcodes
-        self._field = field
-    def process_record(self, record):
-        catcode = record.get(self._field, '').upper()
-        if len(catcode) == 5:
-            record['%s_category' % self._prefix] = catcode
-            if catcode in self._catcodes:
-                record['%s_category_order' % self._prefix] = self._catcodes[catcode]['catorder'].upper()
-        return record
-
 class OrganizationFilter(Filter):
     def process_record(self, record):
         orgname = record.get('org_name', '').strip()
