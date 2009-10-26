@@ -1,10 +1,19 @@
+from django.conf.urls.defaults import *
 
-from django.conf.urls.defaults import patterns
+urlpatterns = patterns('matchbox.views',
+    url(r'^transactions', 'transactions_page'),
+    url(r'^entities', 'entities_page'),
+)
 
-from views import transactions_page, entities_page
+urlpatterns += patterns('django.contrib.auth.views',
+    url(r'^auth/login/$', 'login', name="login"),
+    url(r'^auth/logout/$', 'logout_then_login', name="logout"),
+)
 
-
-urlpatterns = patterns('',
-    (r'^transactions', transactions_page),
-    (r'^entities', entities_page)
+urlpatterns += patterns('matchbox.views',
+    url(r'^merge/$', 'merge', name='matchbox_merge'),
+    url(r'^search/google/$', 'google_search', name='matchbox_google_search'),
+    url(r'^search/$', 'search', name='matchbox_search'),
+    url(r'^queue/(?P<queue_id>\d+)/$', 'queue', name='matchbox_queue'),
+    url(r'^$', 'dashboard', name='matchbox_dashboard'),
 )
