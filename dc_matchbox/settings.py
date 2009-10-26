@@ -77,6 +77,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'dc_matchbox.matchbox',
-    'dc_data.dcdata.contribution',
-    'dc_data.dcdata',
+    'dcdata.contribution',
+    'dcdata',
 )

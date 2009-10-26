@@ -1,5 +1,12 @@
-from models import sql_names
-from sql_utils import augment
+
+
+from sql_utils import dict_union, is_disjoint, augment
+from dcdata.contribution.models import sql_names as contribution_names
+from matchbox.models import sql_names as matchbox_names
+assert is_disjoint(contribution_names, matchbox_names)
+sql_names = dict_union(contribution_names, matchbox_names)    
+
+from normalizer import basic_normalizer
 
 def entity_search(connection, query):
     """
@@ -8,12 +15,12 @@ def entity_search(connection, query):
     Returns an iterator over triples (id, name, count).
     """
     
-    stmt = "select e.%(entity_id)s, e.%(entity)s, count(*) \
-        from %(entity)s e inner join individual_contributions c \
-        on e.%(entity_id)s = c.employer_entity_id \
-        where e.%(entity_name)s like '%(query)s%%' \
+    stmt = "select e.%(entity_id)s, e.%(entity_name)s, count(*) \
+        from %(entity)s e inner join %(contribution)s c inner join %(normalization)s n\
+        on e.%(entity_id)s = c.%(contribution_organization_entity)s and e.%(entity_name)s = n.%(normalization_original)s \
+        where n.%(normalization_normalized)s like '%(query)s%%' \
         group by e.%(entity_id)s order by count(*) desc;" % \
-        augment(sql_names, query=query)
+        augment(sql_names, query=basic_normalizer(query))
     return _execute_stmt(connection, stmt)
 
 

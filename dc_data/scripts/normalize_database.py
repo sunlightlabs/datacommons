@@ -7,7 +7,7 @@ from dcdata.contribution.models import sql_names
 
 def normalize(connection, source_columns, normalizer):
     """
-    Output SQL statements to populate a normalization table from the given columns.
+    Populate the normalizations table using normalizer on source_columns.
     
     Arguments:
         connection -- a DB API connection
@@ -31,6 +31,7 @@ def normalize(connection, source_columns, normalizer):
 
     cursor = connection.cursor()
     source_names = set()
+    
     # to do: when loading the resulting SQL into the DB we're getting lots of duplicate warnings.
     # this is probably because the source_name set is case sensitive, whereas the DB is case insensitive.
     # should probably lowercase every string before adding to source_names. 
