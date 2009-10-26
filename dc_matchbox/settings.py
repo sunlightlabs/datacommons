@@ -1,4 +1,6 @@
 # Django settings for dc_matchbox project.
+import os
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -35,17 +37,17 @@ USE_I18N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ''
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = '/media/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+ADMIN_MEDIA_PREFIX = '/media/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '=4je*bp#n8jncl-^3ah7vgt@3w+$5x65_l3bzr#u-33@tq*085'
@@ -66,9 +68,7 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'dc_matchbox.urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
+    os.path.join(PROJECT_ROOT, 'templates'),
 )
 
 INSTALLED_APPS = (
@@ -76,7 +76,26 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'mediasync',
     'dc_matchbox.matchbox',
     'dcdata.contribution',
     'dcdata',
 )
+
+LOGIN_URL = '/auth/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_URL = '/auth/logout/'
+
+MEDIASYNC_DOCTYPE = 'html5'
+
+ENTITY_TYPES = (
+    'committee',
+    'organization',
+    'politician',
+)
+
+try:
+    from local_settings import *
+except ImportError, exp:
+    pass
+

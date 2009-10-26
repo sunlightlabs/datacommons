@@ -1,0 +1,87 @@
+article, aside, dialog, figure, footer, header, hgroup, menu, nav, section { display: block; }
+
+.clear { clear: both; }
+.container { margin: 0 auto; text-align: left; width: 970px; }
+
+body {
+    color: #191818;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 82.5%;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+header { background-color: #F2F1F0; margin-bottom: 1.5em; }
+header #search_form_container {
+    background-color: #FBF9F9;
+    border-bottom: 2px solid #CBCCCB;
+    border-top: 1px solid #CBCCCB;
+    clear: both;
+    height: 20px;
+    padding: 10px 0;
+}
+header h1 { float: left; }
+header h1 a { color: #000; text-decoration: none; }
+header p.welcome { float: right; }
+header form label { font-size: 0.8em; font-weight: bold; margin-right: 1em; text-transform: uppercase; }
+header nav ul { list-style: none; margin: 0; padding: 0; }
+header nav ul li { background-color: #E4E4E3; float: left; }
+header nav ul li a {
+    color: #191818;
+    display: block;
+    font-weight: bold;
+    padding: 5px 20px;
+    text-decoration: none;
+}
+body#home header nav ul li.nav_home { background-color: #8A8B8A; }
+body#home header nav ul li.nav_home a { color: #fff; }
+body#committees header nav ul li.nav_committees { background-color: #8A8B8A; }
+body#committees header nav ul li.nav_committees a { color: #fff; }
+body#organizations header nav ul li.nav_organizations { background-color: #8A8B8A; }
+body#organizations header nav ul li.nav_organizations a { color: #fff; }
+
+#main { margin-bottom: 22em; }
+#content { float: left; border-right: 1px solid #000; width: 750px; margin-right: 15px; }
+#sidebar { float: left; width: 200px; }
+
+#content table { border-collapse: collapse; }
+
+#content table#entities_table th.selectall { width: 30px; }
+#content table#entities_table th.name { width: 470px; }
+#content table#entities_table th.transactioncount { width: 100px; }
+#content table#entities_table th.notes { width: 50px; }
+#content table#entities_table th.actions { width: 60px; }
+
+#content table#entities_table tr.even { background-color: #F2F1F0; }
+#content table#entities_table tr.odd { background-color: #FFFFFF; }
+#content table#entities_table th { font-size: 0.8em; }
+#content table#entities_table th, #content table td { padding: 5px 2px; }
+#content table#entities_table td.entity_select { text-align: center; }
+#content table#entities_table td p.aliases { color: #777776; font-size: 0.8em; }
+
+#content table.transactions { border: 1px solid #CBCCCB; width: 100%; }
+#content table.transactions th { background-color: #CBCCCB; padding: 5px 3px; }
+#content table.transactions td { padding: 5px 3px; }
+#content table.transactions tr td { border: 1px solid #CBCCCB; }
+
+footer {
+    background-color: #F2F1F0;
+    border-top: 2px solid #CBCCCB;
+    bottom: 0px;
+    color: #8A8B8A;
+    font-size: 0.9em;
+    height: 80px;
+    line-height: 1.4em;
+    padding-top: 20px;
+    position: fixed;
+    width: 100%;
+}
+
+footer #footer_save {
+    border-right: 1px solid #CBCCCB;
+    float: left;
+    margin-right: 20px;
+    padding: 5px 10px;
+    width: 140px;
+}
+footer #footer_save p { margin: 0; padding: 0; }

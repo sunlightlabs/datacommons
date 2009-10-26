@@ -1,6 +1,7 @@
 
 from django.db import connection
 
+
 from sql_utils import dict_union, is_disjoint, augment
 from dcdata.contribution.models import sql_names as contribution_names
 from matchbox.models import sql_names as matchbox_names, Normalization
@@ -34,8 +35,7 @@ def search_transactions_by_entity(entity_id):
     
     Note: once transactions have donor and recipient entities in addition to employer entities
     this function will have to be adapted.
-    """
-    
+    """    
     stmt = "select %(contribution_contributor_name)s, %(contribution_organization_name)s, %(contribution_recipient_name)s, %(contribution_amount)s, %(contribution_datestamp)s \
             from %(contribution)s \
             where %(contribution_organization_entity)s = %%s \

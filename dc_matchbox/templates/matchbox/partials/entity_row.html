@@ -1,0 +1,18 @@
+<tr>
+    <td class="entity_select">
+        <input type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
+    </td>
+    <td>
+        <label for="entities_{{ entity.id }}">{{ entity.name }}</label>
+        {% if entity.aliases %}
+            <ul>
+                {% for alias in entity.aliases %}
+                <li><a href="{% url matchbox_google_search %}?q=%22{{ alias.name }}%22">{{ alias.name }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </td>
+    <td>0</td>
+    <td><a href="#" class="notes">0</a></td>
+    <td><a href="{% url matchbox_google_search %}?q=%22{{ entity.name }}%22" class="google">Google</a></td>
+</tr>

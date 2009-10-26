@@ -1,0 +1,73 @@
+{% extends "matchbox/base.html" %}
+
+{% block scripts %}
+    <script>
+        $().ready(function() {
+            Matchbox.MergeManager.loadQuery('bank of america');
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <h2>Bank of America</h2>
+    <form action="{% url matchbox_merge %}" method="post" id="merge_form">
+        <table id="entities_table">
+            <tr>
+                <th class="selectall"><a href="#" id="selector">All</a></th>
+                <th class="name">Name</th>
+                <th class="transactioncount"># of Transactions</th>
+                <th class="notes">Notes</th>
+                <th class="actions">Actions</th>
+            </tr>
+            <!--
+            <tr class="even">
+                <td class="entity_select"><input type="checkbox" name="entities" value="1234" id="entities_1234"></td>
+                <td><label for="entities_1234">Bnk of Amurica</label></td>
+                <td>10</td>
+                <td><a href="#">3</a></td>
+                <td><a href="#">Google</a></td>
+            </tr>
+            <tr class="odd">
+                <td class="entity_select"><input type="checkbox" name="entities" value="9876" id="entities_9876"></td>
+                <td>
+                    <label for="entities_9876">American Bank</label>
+                    <span class="aliases">The Bank of Americans, Bank o' America</span>
+                </td>
+                <td>6</td>
+                <td><a href="#" class="notes">0</a></td>
+                <td><a href="#" class="google">Google</a></td>
+            </tr>
+            -->
+        </table>
+    </form>
+{% endblock %}
+
+{% block sidebar %}
+    <h3>Compare Additional Entities</h3>
+    <p>Have other entities you want to compare or possibly merge? Search below!</p>
+    <form action="#" method="get" id="more_results_form">
+        <input type="text" name="q" id="more_results_query">
+        <input type="submit" value="Search">
+    </form>
+{% endblock %}
+
+
+
+{% block footer %}
+    <div id="footer_save">
+        <p>See something you'd like to view later?</p>
+        <input type="button" value="Save Search">
+    </div>
+    <div id="footer_merge">
+        <form>
+            <label for="merge_type">Type</label>
+            <input type="text" name="type" id="merge_name" value="{{ entity_type }}">
+            <label for="merge_name">Name</label>
+            <input type="text" name="name" id="merge_name">
+            <p>
+                <button id="merge_button">Merge</button>
+                <!-- <button id="merge_button_continue">Merge &amp; Continue</button> -->
+            </p>
+        </form>
+    </div>
+{% endblock %}
