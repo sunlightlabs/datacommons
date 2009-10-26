@@ -19,8 +19,6 @@ sql_names = dict_union(contribution_names, matchbox_names)
 from build_entities import populate_entities
     
 if __name__ == '__main__':
-
-    
     connection = MySQLdb.connect(host=DATABASE_HOST, user=DATABASE_USER, db=DATABASE_NAME)
     populate_entities(connection, 
                       sql_names['contribution'], 
