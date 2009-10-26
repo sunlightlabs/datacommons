@@ -24,7 +24,7 @@ def entity_search(connection, query):
     return _execute_stmt(connection, stmt)
 
 
-transaction_result_columns = ['Contrib', 'State', 'Orgname', 'Emp_EF', 'FecOccEmp', 'Date', 'Amount']
+transaction_result_columns = ['Contributor Name', 'Recipient Name', 'Amount', 'Date']
 
 def transaction_search(connection, entity_id, result_columns=transaction_result_columns):
     """
@@ -34,11 +34,11 @@ def transaction_search(connection, entity_id, result_columns=transaction_result_
     this function will have to be adapted.
     """
     
-    stmt = "select %(result_columns)s \
-            from individual_contributions \
-            where employer_entity_id = %(entity_id)s \
-            order by amount desc" % \
-            {'result_columns': ",".join(result_columns), 'entity_id': int(entity_id)}
+    stmt = "select %(contribution_contributor_name)s, %(contribution_recipient_name)s, %(contribution_amount)s, %(contribution_datestamp)s \
+            from %(contribution)s \
+            where %(contribution_organization_entity)s = %(entity_id)s \
+            order by %(contribution_amount)s desc" % \
+            augment(sql_names, entity_id= int(entity_id))
     return _execute_stmt(connection, stmt)
 
 
