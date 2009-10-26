@@ -1,3 +1,5 @@
+
+
 from django.db import models
 from datetime import datetime
 
@@ -27,9 +29,7 @@ class EntityRef(models.ForeignKey):
             entityref_cache.register(cls, name)
 
 
-
 entity_types = (('organization', 'organization'),('individual','individual'),('PAC','PAC'),('candidate', 'candidate'),('other','other'))
-
 
 class Entity(models.Model):
     name = models.CharField(max_length=255)
@@ -40,13 +40,13 @@ class Entity(models.Model):
     
     
 class EntityAlias(models.Model):
-    entity = models.ForeignKey(Entity)
+    entity = EntityRef(related_name='aliases', primary_key=True)
     alias = models.CharField(max_length=255)
 
 
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
-    entity = models.ForeignKey(Entity)
+    entity = EntityRef(related_name='attributes', primary_key=True)
     namespace = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
     
