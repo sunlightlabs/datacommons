@@ -78,8 +78,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'mediasync',
     'dc_matchbox.matchbox',
-    #'dc_data.dcdata.contribution',
-    #'dc_data.dcdata',
+    'dcdata.contribution',
+    'dcdata',
 )
 
 LOGIN_URL = '/auth/login/'

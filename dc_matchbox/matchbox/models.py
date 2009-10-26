@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 
 from sql_utils import django2sql_names, is_disjoint, dict_union
 
@@ -27,16 +28,15 @@ class EntityRef(models.ForeignKey):
 
 
 
-entity_types = (('organization', 'organization'),)
+entity_types = (('organization', 'organization'),('individual','individual'),('PAC','PAC'),('candidate', 'candidate'),('other','other'))
 
 
 class Entity(models.Model):
-    id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=255, choices=entity_types)
-    timestamp = models.DateTimeField()
-    reviewer = models.CharField(max_length=255)
-    notes = models.TextField()
+    type = models.CharField(max_length=255, choices=entity_types, default=entity_types[0][0])
+    timestamp = models.DateTimeField(default=datetime.now)
+    reviewer = models.CharField(max_length=255, default="")
+    notes = models.TextField(default="")
     
     
 class EntityAlias(models.Model):
