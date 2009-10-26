@@ -1,7 +1,7 @@
 from models import sql_names
 from sql_utils import augment
 
-def entity_search(connection, query):
+def entity_search(query):
     """
     Search for all entities with a normalized name prefixed by the normalized query string.
     
@@ -14,12 +14,12 @@ def entity_search(connection, query):
         where e.%(entity_name)s like '%(query)s%%' \
         group by e.%(entity_id)s order by count(*) desc;" % \
         augment(sql_names, query=query)
-    return _execute_stmt(connection, stmt)
+    return _execute_stmt(stmt)
 
 
 transaction_result_columns = ['Contrib', 'State', 'Orgname', 'Emp_EF', 'FecOccEmp', 'Date', 'Amount']
 
-def transaction_search(connection, entity_id, result_columns=transaction_result_columns):
+def transaction_search(entity_id, result_columns=transaction_result_columns):
     """
     Search for all transactions that belong to a particular entity.
     
@@ -32,10 +32,11 @@ def transaction_search(connection, entity_id, result_columns=transaction_result_
             where employer_entity_id = %(entity_id)s \
             order by amount desc" % \
             {'result_columns': ",".join(result_columns), 'entity_id': int(entity_id)}
-    return _execute_stmt(connection, stmt)
+    return _execute_stmt(stmt)
 
 
-def _execute_stmt(connection, stmt):
+def _execute_stmt(stmt):
+    from django.db import connection
     cursor = connection.cursor()
     cursor.execute(stmt)
     return cursor

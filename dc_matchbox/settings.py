@@ -1,4 +1,6 @@
 # Django settings for dc_matchbox project.
+import os
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -35,7 +37,7 @@ USE_I18N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ''
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -66,9 +68,7 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'dc_matchbox.urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
+    os.path.join(PROJECT_ROOT, 'templates'),
 )
 
 INSTALLED_APPS = (
@@ -77,6 +77,12 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'dc_matchbox.matchbox',
-    'dc_data.dcdata.contribution',
-    'dc_data.dcdata',
+    #'dc_data.dcdata.contribution',
+    #'dc_data.dcdata',
 )
+
+try:
+    from local_settings import *
+except ImportError, exp:
+    pass
+
