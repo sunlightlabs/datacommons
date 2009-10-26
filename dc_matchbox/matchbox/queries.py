@@ -20,10 +20,10 @@ def search_entities_by_name(query):
     stmt = "select e.%(entity_id)s, e.%(entity_name)s, count(*) \
         from %(entity)s e inner join %(contribution)s c inner join %(normalization)s n\
         on e.%(entity_id)s = c.%(contribution_organization_entity)s and e.%(entity_name)s = n.%(normalization_original)s \
-        where n.%(normalization_normalized)s like '%(query)s%%%%' \
+        where n.%(normalization_normalized)s like %%s \
         group by e.%(entity_id)s order by count(*) desc;" % \
-        augment(sql_names, query=basic_normalizer(query))
-    return _execute_stmt(stmt)
+        sql_names
+    return _execute_stmt(stmt, basic_normalizer(query) + '%')
 
 
 transaction_result_columns = ['Contributor Name', 'Reported Organization', 'Recipient Name', 'Amount', 'Date']
@@ -38,10 +38,10 @@ def search_transactions_by_entity(entity_id):
     
     stmt = "select %(contribution_contributor_name)s, %(contribution_organization_name)s, %(contribution_recipient_name)s, %(contribution_amount)s, %(contribution_datestamp)s \
             from %(contribution)s \
-            where %(contribution_organization_entity)s = %(entity_id)s \
+            where %(contribution_organization_entity)s = %%s \
             order by %(contribution_amount)s desc" % \
-            augment(sql_names, entity_id= int(entity_id))
-    return _execute_stmt(stmt)
+            sql_names
+    return _execute_stmt(stmt, int(entity_id))
 
 
 def merge_entities(entity_ids, new_entity):
@@ -68,10 +68,10 @@ def merge_entities(entity_ids, new_entity):
     new_entity.save()
 
     stmt = "update %(contribution)s \
-            set %(contribution_organization_entity)s = %(new_id)s \
+            set %(contribution_organization_entity)s = %%s \
             where %(contribution_organization_entity)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = old_ids_sql_string, new_id = new_entity.id)
-    _execute_stmt(stmt)
+            augment(sql_names, old_ids = old_ids_sql_string)
+    _execute_stmt(stmt, new_entity.id)
     
     stmt = "delete from %(entity)s where %(entity_id)s in (%(old_ids)s)" % \
             augment(sql_names, old_ids = old_ids_sql_string)
@@ -80,7 +80,7 @@ def merge_entities(entity_ids, new_entity):
     return new_entity.id
 
 
-def _execute_stmt(stmt):
+def _execute_stmt(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt)
+    cursor.execute(stmt, args)
     return cursor
