@@ -53,7 +53,6 @@ def merge_entities(entity_ids, new_entity):
     entities to point to new entity, and deletes the old entities.
     
     Arguments:
-    connection -- a DB connection
     entity_ids -- a list of entity IDs, as strings
     new_entity -- an Entity. Can be a Entity that is already in DB or a newly created entity.
     """
