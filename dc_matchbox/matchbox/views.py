@@ -13,18 +13,20 @@ def dashboard(request):
 
 @login_required
 def search(request):
-    import uuid
-    results = [
-        {
-            'id': uuid.uuid4().hex,
-            'type': request.GET.get('type', '') or 'organization',
-            'name': 'Bank of Americans',
-            'count': 0,
-            'notes': 0,
-        }
-    ]
+    if 'query' in request.GET:
+        results = [{
+                    'id': id,
+                    'type': 'organization',
+                    'name': name,
+                    'count': count,
+                    'notes': 0
+                    } for (id, name, count) in search_entities_by_name(request.GET['query'])]
+        
+    else:
+        results = []
+        
     for result in results:
-        result['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': result})
+            result['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': result})
     content = json.dumps(results)
     return HttpResponse(content, mimetype='application/javascript')
 
@@ -67,7 +69,7 @@ from queries import search_entities_by_name, search_transactions_by_entity, tran
 def transactions_page(request):
     template = loader.get_template('transactions.html')
                                            
-    if request.GET['entity_id']:                                       
+    if 'entity_id' in request.GET:                                       
         results = search_transactions_by_entity(request.GET['entity_id'])
         context = Context()
         context['results'] = results
