@@ -3,7 +3,7 @@
 from django.db import models
 from datetime import datetime
 
-from sql_utils import django2sql_names, is_disjoint, dict_union
+from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
 
 
 class EntityRefCache(dict):

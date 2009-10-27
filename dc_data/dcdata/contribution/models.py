@@ -2,7 +2,7 @@ from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from dcdata.models import DataCommonsModel
 from matchbox.models import EntityRef
-from sql_utils import django2sql_names
+from dcdata.utils.sql import django2sql_names
 
 SEATS = (
     ('federal:senate', 'US Senate'),

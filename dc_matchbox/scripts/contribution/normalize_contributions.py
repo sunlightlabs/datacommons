@@ -4,13 +4,12 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 """
 Create the string normalization tables for a database.
-Relies on: Orgname and Emp_EF fields in individual_contributions table.
-Creates: SQL inserts file containing 'normalizations' table, with 'original' and 'normalization' columns.
+Relies on: contribution_organization_name column in contribution_contribution table.
 """
 
 import MySQLdb
-from normalizer import basic_normalizer
-from scripts.normalize_database import normalize
+from strings.normalizer import basic_normalizer
+from scripts.support.normalize_database import normalize
 from settings import DATABASE_NAME, DATABASE_USER, DATABASE_HOST
 
 

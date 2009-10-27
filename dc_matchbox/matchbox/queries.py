@@ -2,13 +2,13 @@
 from django.db import connection
 
 
-from sql_utils import dict_union, is_disjoint, augment
+from dcdata.utils.sql import dict_union, is_disjoint, augment
 from dcdata.contribution.models import sql_names as contribution_names
 from matchbox.models import sql_names as matchbox_names, Normalization
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
 
-from normalizer import basic_normalizer
+from strings.normalizer import basic_normalizer
 
 
 def search_entities_by_name(query):

@@ -77,7 +77,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'mediasync',
-    'dc_matchbox.matchbox',
+    'matchbox',
     'dcdata.contribution',
     'dcdata',
 )

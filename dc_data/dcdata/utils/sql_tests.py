@@ -6,7 +6,7 @@ import settings
 from django.db import models
 import unittest
 
-from sql_utils import django2sql_names, augment, is_disjoint, dict_union
+from sql import django2sql_names, augment, is_disjoint, dict_union
 
 class CourseModel(models.Model):
     number = models.IntegerField()
@@ -24,7 +24,7 @@ class Test(unittest.TestCase):
 
     def test_basic_model(self):
         course_names = django2sql_names(CourseModel)
-        self.assertEqual('matchbox_coursemodel', course_names['coursemodel'])
+        self.assertEqual('utils_coursemodel', course_names['coursemodel'])
         self.assertEqual('number', course_names['coursemodel_number'])
         self.assertEqual('title', course_names['coursemodel_title'])
         

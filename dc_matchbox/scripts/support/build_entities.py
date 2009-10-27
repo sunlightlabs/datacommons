@@ -5,8 +5,8 @@ from datetime import datetime
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from matchbox.models import Entity, entity_types, sql_names
-from sql_utils import augment
+from matchbox.models import entity_types, sql_names
+from dcdata.utils.sql import augment
 
 
 def quote(value):
