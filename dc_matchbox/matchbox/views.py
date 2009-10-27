@@ -14,17 +14,13 @@ def dashboard(request):
 
 @login_required
 def search(request):
-    if 'q' in request.GET:
-        results = [{
-                    'id': id,
-                    'type': 'organization',
-                    'name': name,
-                    'count': count,
-                    'notes': 0
-                    } for (id, name, count) in search_entities_by_name(request.GET['q'])]
-        
-    else:
-        results = []
+    results = [{
+                'id': id,
+                'type': 'organization',
+                'name': name,
+                'count': count,
+                'notes': 0
+                } for (id, name, count) in search_entities_by_name(request.GET.get('q',''))]
         
     for result in results:
             result['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': result})
@@ -44,7 +40,6 @@ def merge(request):
         return HttpResponseRedirect('/')
         
     else:
-    
         data = { 'q': request.GET.get('q','') }
     
         type_ = request.GET.get('type', '')
