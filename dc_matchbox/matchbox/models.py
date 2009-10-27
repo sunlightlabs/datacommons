@@ -40,13 +40,13 @@ class Entity(models.Model):
     
     
 class EntityAlias(models.Model):
-    entity = EntityRef(related_name='aliases', primary_key=True)
+    entity = EntityRef(related_name='aliases')
     alias = models.CharField(max_length=255)
 
 
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
-    entity = EntityRef(related_name='attributes', primary_key=True)
+    entity = EntityRef(related_name='attributes')
     namespace = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
     
