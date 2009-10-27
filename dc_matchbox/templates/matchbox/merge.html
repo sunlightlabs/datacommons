@@ -3,7 +3,7 @@
 {% block scripts %}
     <script>
         $().ready(function() {
-            Matchbox.MergeManager.loadQuery('bank of america');
+            Matchbox.MergeManager.loadQuery('{{q}}');
         });
     </script>
 {% endblock %}
@@ -11,6 +11,8 @@
 {% block content %}
     <h2>Bank of America</h2>
     <form action="{% url matchbox_merge %}" method="post" id="merge_form">
+    	<input type="hidden" name="name" id="name">
+    	<input type="hidden" name="type" id="type">
         <table id="entities_table">
             <tr>
                 <th class="selectall"><a href="#" id="selector">All</a></th>
@@ -59,9 +61,9 @@
         <input type="button" value="Save Search">
     </div>
     <div id="footer_merge">
-        <form>
+    	<form>
             <label for="merge_type">Type</label>
-            <input type="text" name="type" id="merge_name" value="{{ entity_type }}">
+            <input type="text" name="type" id="merge_type" value="{{ entity_type }}">
             <label for="merge_name">Name</label>
             <input type="text" name="name" id="merge_name">
             <p>

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
+from matchbox.models import Entity
 import json
 
 ENTITY_TYPES = getattr(settings, 'ENTITY_TYPES', ())
@@ -13,14 +14,14 @@ def dashboard(request):
 
 @login_required
 def search(request):
-    if 'query' in request.GET:
+    if 'q' in request.GET:
         results = [{
                     'id': id,
                     'type': 'organization',
                     'name': name,
                     'count': count,
                     'notes': 0
-                    } for (id, name, count) in search_entities_by_name(request.GET['query'])]
+                    } for (id, name, count) in search_entities_by_name(request.GET['q'])]
         
     else:
         results = []
@@ -37,13 +38,14 @@ def queue(request, queue_id):
 @login_required
 def merge(request):
     
-    if request.method == 'POST':
-    
-        pass
+    if request.method == 'POST':        
+        e = Entity(name=request.POST['name'], type=request.POST['type'])
+        merge_entities([int(s) for s in request.POST.getlist('entities')], e)
+        return HttpResponseRedirect('/')
         
     else:
     
-        data = { }
+        data = { 'q': request.GET.get('q','') }
     
         type_ = request.GET.get('type', '')
         if type_ in ENTITY_TYPES:
@@ -64,7 +66,7 @@ def google_search(request):
 from django.template import Context, loader
 from django import forms
 
-from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns
+from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns, merge_entities
 
 def transactions_page(request):
     template = loader.get_template('transactions.html')

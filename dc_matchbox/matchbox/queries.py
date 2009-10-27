@@ -18,14 +18,16 @@ def search_entities_by_name(query):
     Returns an iterator over triples (id, name, count).
     """
     
-    stmt = "select e.%(entity_id)s, e.%(entity_name)s, count(*) \
-        from %(entity)s e inner join %(contribution)s c inner join %(normalization)s n\
-        on e.%(entity_id)s = c.%(contribution_organization_entity)s and e.%(entity_name)s = n.%(normalization_original)s \
-        where n.%(normalization_normalized)s like %%s \
-        group by e.%(entity_id)s order by count(*) desc;" % \
-        sql_names
-    return _execute_stmt(stmt, basic_normalizer(query) + '%')
-
+    if query.strip():
+        stmt = "select e.%(entity_id)s, e.%(entity_name)s, count(*) \
+            from %(entity)s e inner join %(contribution)s c inner join %(normalization)s n\
+            on e.%(entity_id)s = c.%(contribution_organization_entity)s and e.%(entity_name)s = n.%(normalization_original)s \
+            where n.%(normalization_normalized)s like %%s \
+            group by e.%(entity_id)s order by count(*) desc;" % \
+            sql_names
+        return _execute_stmt(stmt, basic_normalizer(query) + '%')
+    else:
+        return []
 
 transaction_result_columns = ['Contributor Name', 'Reported Organization', 'Recipient Name', 'Amount', 'Date']
 

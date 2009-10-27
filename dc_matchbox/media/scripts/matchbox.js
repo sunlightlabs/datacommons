@@ -87,18 +87,9 @@ $().ready(function() {
     
     // attache merge button action
     $('#merge_button').click(function() {
-        //$('#merge_form').trigger('submit');
-        var entities = Matchbox.MergeManager.selectedEntities();
-        entities.sort(function(a, b) {
-            if (a === b) {
-                return 0;
-            } else {
-                return (a.name > b.name) ? 1 : -1;
-            }
-        });
-        entities.forEach(function(entity) {
-            alert(entity.name);
-        });
+    	$('#name').val( $('#merge_name').val() );
+    	$('#type').val( $('#merge_type').val() );
+        $('#merge_form').trigger('submit');
         return false;
     });
     

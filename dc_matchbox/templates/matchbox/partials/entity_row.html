@@ -12,7 +12,7 @@
             </ul>
         {% endif %}
     </td>
-    <td>0</td>
+    <td>{{ entity.count }}</td>
     <td><a href="#" class="notes">0</a></td>
     <td><a href="{% url matchbox_google_search %}?q=%22{{ entity.name }}%22" class="google">Google</a></td>
 </tr>
