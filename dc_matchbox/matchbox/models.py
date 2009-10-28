@@ -1,10 +1,7 @@
-
-
+from django.conf import settings
 from django.db import models
-from datetime import datetime
-
 from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
-
+import datetime
 
 class EntityRefCache(dict):
     def register(self, model, field):
@@ -29,26 +26,35 @@ class EntityRef(models.ForeignKey):
             entityref_cache.register(cls, name)
 
 
-entity_types = (('organization', 'organization'),('individual','individual'),('PAC','PAC'),('candidate', 'candidate'),('other','other'))
+entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
 
 class Entity(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, default=entity_types[0][0])
-    timestamp = models.DateTimeField(default=datetime.now)
+    timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
-    notes = models.TextField(default="")
+    notes = models.TextField(default="", blank=True)
+    
+    def __unicode__(self):
+        return self.name
     
     
 class EntityAlias(models.Model):
-    entity = EntityRef(related_name='aliases', primary_key=True)
+    entity = EntityRef(related_name='aliases')
     alias = models.CharField(max_length=255)
+    
+    def __unicode__(self):
+        return self.alias
 
 
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
-    entity = EntityRef(related_name='attributes', primary_key=True)
+    entity = EntityRef(related_name='attributes')
     namespace = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
+    
+    def __unicode__(self):
+        return u"%s:%s" % (self.namespace, self.value)
     
     
 class Normalization(models.Model):
