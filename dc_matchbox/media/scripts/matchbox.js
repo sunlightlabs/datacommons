@@ -24,7 +24,7 @@ var Matchbox = {
         },
         
         loadQuery: function(query) {
-            $.getJSON('/search/?q=' + query, Matchbox.MergeManager.loadEntities);
+            $.getJSON('/search/?q=' + encodeURIComponent(query), Matchbox.MergeManager.loadEntities);
         },
         
         loadQueue: function(queueId) {
