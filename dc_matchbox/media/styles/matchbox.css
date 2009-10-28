@@ -41,7 +41,7 @@ body#organizations header nav ul li.nav_organizations { background-color: #8A8B8
 body#organizations header nav ul li.nav_organizations a { color: #fff; }
 
 #main { margin-bottom: 22em; }
-#content { float: left; border-right: 1px solid #000; width: 750px; margin-right: 15px; }
+#content { float: left; border-right: 1px solid #000; width: 750px; margin: 0 15px 200px 0; }
 #sidebar { float: left; width: 200px; }
 
 #content table { border-collapse: collapse; }
