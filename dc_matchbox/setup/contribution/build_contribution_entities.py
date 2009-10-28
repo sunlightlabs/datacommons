@@ -19,4 +19,7 @@ from setup.support.build_entities import populate_entities
 if __name__ == '__main__':
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_organization_name'], 
-                      sql_names['contribution_organization_entity'])
+                      sql_names['contribution_organization_entity'],
+                      [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
+                       'where do I get this value?',
+                       [])
