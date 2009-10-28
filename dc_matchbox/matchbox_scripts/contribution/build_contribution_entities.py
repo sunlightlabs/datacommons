@@ -14,7 +14,7 @@ from matchbox.models import sql_names as matchbox_names
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
     
-from setup.support.build_entities import populate_entities
+from matchbox_scripts.support.build_entities import populate_entities
     
 if __name__ == '__main__':
     populate_entities(sql_names['contribution'], 

@@ -28,7 +28,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     
     def retrieve_names():
         loop_cursor = connection.cursor()
-        stmt = "select distinct `%s` from `%s` limit 100" % (entity_name_column, transaction_table)
+        stmt = "select distinct `%s` from `%s`" % (entity_name_column, transaction_table)
         loop_cursor.execute(stmt)
         return loop_cursor
     
