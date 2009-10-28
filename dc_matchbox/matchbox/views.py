@@ -23,15 +23,6 @@ def search(request):
                 'notes': 0
                 } for (id, name, count) in search_entities_by_name(request.GET.get('q',''))]
     
-    results = [{
-        'id': 1,
-        'type': 'organization',
-        'name': '200 OK, LLC',
-        'count': 0,
-        'notes': 0,
-        'aliases': [{'alias': '200OK'}, {'alias': 'two hundred okay'}],
-    }]
-    
     for result in results:
             result['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': result})
     content = json.dumps(results)
