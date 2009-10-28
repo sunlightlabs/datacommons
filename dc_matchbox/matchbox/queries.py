@@ -20,8 +20,10 @@ def search_entities_by_name(query):
     
     if query.strip():
         stmt = "select e.%(entity_id)s, e.%(entity_name)s, count(*) \
-            from %(entity)s e inner join %(contribution)s c inner join %(normalization)s n\
-            on e.%(entity_id)s = c.%(contribution_organization_entity)s and e.%(entity_name)s = n.%(normalization_original)s \
+            from %(contribution)s c inner join %(entity)s e inner join %(entityalias)s a inner join %(normalization)s n\
+            on c.%(contribution_organization_entity)s = e.%(entity_id)s  \
+                and e.%(entity_id)s = a.%(entityalias_entity)s \
+                and a.%(entityalias_alias)s = n.%(normalization_original)s \
             where n.%(normalization_normalized)s like %%s \
             group by e.%(entity_id)s order by count(*) desc;" % \
             sql_names
