@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from matchbox.models import Entity
+from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns, merge_entities
 import json
 
 ENTITY_TYPES = getattr(settings, 'ENTITY_TYPES', ())
@@ -40,7 +41,9 @@ def merge(request):
         return HttpResponseRedirect('/')
         
     else:
-        data = { 'q': request.GET.get('q','') }
+        
+        queries = request.GET.getlist('q')
+        data = { 'queries': queries }
     
         type_ = request.GET.get('type', '')
         if type_ in ENTITY_TYPES:
@@ -60,8 +63,6 @@ def google_search(request):
 
 from django.template import Context, loader
 from django import forms
-
-from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns, merge_entities
 
 def transactions_page(request):
     template = loader.get_template('transactions.html')

@@ -3,7 +3,9 @@
 {% block scripts %}
     <script>
         $().ready(function() {
-            Matchbox.MergeManager.loadQuery('{{q}}');
+            {% for q in queries %}
+                Matchbox.MergeManager.loadQuery('{{ q }}');
+            {% endfor %}
         });
     </script>
 {% endblock %}
