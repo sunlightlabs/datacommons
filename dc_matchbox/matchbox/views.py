@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from matchbox.models import Entity
 from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns, merge_entities
 import json
+import urllib
 
 ENTITY_TYPES = getattr(settings, 'ENTITY_TYPES', ())
 
@@ -36,9 +38,20 @@ def queue(request, queue_id):
 def merge(request):
     
     if request.method == 'POST':        
-        e = Entity(name=request.POST['name'], type=request.POST['type'])
-        merge_entities([int(s) for s in request.POST.getlist('entities')], e)
-        return HttpResponseRedirect('/')
+        
+        entity_ids = request.POST.getlist('entities')
+        if len(entity_ids) > 1:
+            e = Entity(name=request.POST['new_name'], type=request.POST['new_type'])
+            merge_entities([int(s) for s in entity_ids], e)
+        
+        params = []
+        params.extend([('q', q) for q in request.POST.getlist('query')])
+        params.extend([('queue', q) for q in request.POST.getlist('queue')])
+        if 'type' in request.POST:
+            params.append(('type', request.POST['type']))
+        qs = urllib.urlencode(params)
+        
+        return HttpResponseRedirect("%s?%s" % (reverse('matchbox_merge'), qs))
         
     else:
         

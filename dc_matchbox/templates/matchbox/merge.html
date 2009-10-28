@@ -3,6 +3,7 @@
 {% block scripts %}
     <script>
         $().ready(function() {
+            {% if entity_type %}Matchbox.MergeManager.typeFilter = '{{ entity_type }}';{% endif %}
             {% for q in queries %}
                 Matchbox.MergeManager.loadQuery('{{ q }}');
             {% endfor %}
@@ -12,8 +13,8 @@
 
 {% block content %}
     <form action="{% url matchbox_merge %}" method="post" id="merge_form">
-    	<input type="hidden" name="name" id="name">
-    	<input type="hidden" name="type" id="type">
+    	<input type="hidden" name="new_name" id="name">
+    	<input type="hidden" name="new_type" id="type">
         <table id="entities_table">
             <tr>
                 <th class="selectall"><a href="#" id="selector">All</a></th>

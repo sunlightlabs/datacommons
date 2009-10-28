@@ -16,6 +16,9 @@ var Matchbox = {
     MergeManager: {
         
         entities: { },
+        loadedQueries: [],
+        loadedQueues: [],
+        typeFilter: null,
         
         loadEntities: function(entities) {
             for (var i = 0; i < entities.length; i++) {
@@ -25,10 +28,13 @@ var Matchbox = {
         
         loadQuery: function(query) {
             $.getJSON('/search/?q=' + encodeURIComponent(query), Matchbox.MergeManager.loadEntities);
+            Matchbox.MergeManager.loadedQueries.push(query)
         },
         
         loadQueue: function(queueId) {
             $.getJSON('/queue/' + queueId + '/', Matchbox.MergeManager.loadEntities);
+            Matchbox.MergeManager.loadedQueues.push(queueId)
+            //$('<input type="hidden" name="queue" value="' + queueId + '">').appendTo('#merge_form')
         },
         
         register: function(entitySpec) {
@@ -74,6 +80,18 @@ $().ready(function() {
         }
     });
     
+    // more results search form
+    $('#more_results_form').submit(function() {
+        var query = $('#more_results_query').val().trim();
+        if (query == '') {
+            alert('please enter a search term');
+        } else {
+            Matchbox.MergeManager.loadQuery(query);
+            $('#more_results_query').val('');
+        }
+        return false;
+    });
+    
     // attach select all/none control
     $('#selector').click(function() {
         var checked = $(this).text() == 'All';
@@ -87,19 +105,21 @@ $().ready(function() {
     
     // attache merge button action
     $('#merge_button').click(function() {
-    	$('#name').val( $('#merge_name').val() );
-    	$('#type').val( $('#merge_type').val() );
-        $('#merge_form').trigger('submit');
-        return false;
-    });
-    
-    $('#more_results_form').submit(function() {
-        var query = $('#more_results_query').val().trim();
-        if (query == '') {
-            alert('please enter a search term');
-        } else {
-            Matchbox.MergeManager.loadQuery(query);
+        if (Matchbox.MergeManager.typeFilter) {
+            $('#merge_form').append(
+                $('<input type="hidden" name="type" value="' + Matchbox.MergeManager.typeFilter + '">'));
         }
+        for (var i = 0; i < Matchbox.MergeManager.loadedQueries.length; i++) {
+            var query = Matchbox.MergeManager.loadedQueries[i];
+            $('#merge_form').append($('<input type="hidden" name="query" value="' + query + '">'))
+        }
+        for (var i = 0; i < Matchbox.MergeManager.loadedQueues.length; i++) {
+            var queueId = Matchbox.MergeManager.loadedQueues[i];
+            $('#merge_form').append($('<input type="hidden" name="queue" value="' + queueId + '">'))
+        }
+    	$('#new_name').val( $('#merge_name').val() );
+    	$('#new_type').val( $('#merge_type').val() );
+        $('#merge_form').trigger('submit');
         return false;
     });
         
