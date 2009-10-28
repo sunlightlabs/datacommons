@@ -46,16 +46,16 @@ body#organizations header nav ul li.nav_organizations a { color: #fff; }
 
 #content table { border-collapse: collapse; }
 
-#content table#entities_table th.selectall { width: 30px; }
-#content table#entities_table th.name { width: 470px; }
+#content table#entities_table th.selectall { width: 40px; }
+#content table#entities_table th.name { width: 510px; }
 #content table#entities_table th.transactioncount { width: 100px; }
-#content table#entities_table th.notes { width: 50px; }
 #content table#entities_table th.actions { width: 60px; }
 
 #content table#entities_table tr.even { background-color: #F2F1F0; }
 #content table#entities_table tr.odd { background-color: #FFFFFF; }
 #content table#entities_table th { font-size: 0.8em; }
 #content table#entities_table th, #content table td { padding: 5px 2px; }
+#content table#entities_table td { vertical-align: top; }
 #content table#entities_table td.entity_select { text-align: center; }
 #content table#entities_table td p.aliases { color: #777776; font-size: 0.8em; }
 

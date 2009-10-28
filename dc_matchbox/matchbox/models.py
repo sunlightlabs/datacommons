@@ -1,10 +1,12 @@
-
-
+from django.conf import settings
 from django.db import models
-from datetime import datetime
-
 from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
+from strings.normalizer import basic_normalizer
+import datetime
 
+#
+# entity reference field
+#
 
 class EntityRefCache(dict):
     def register(self, model, field):
@@ -28,20 +30,45 @@ class EntityRef(models.ForeignKey):
         if not self._ignore:
             entityref_cache.register(cls, name)
 
+#
+# models
+#
 
-entity_types = (('organization', 'organization'),('individual','individual'),('PAC','PAC'),('candidate', 'candidate'),('other','other'))
+entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
 
 class Entity(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, default=entity_types[0][0])
-    timestamp = models.DateTimeField(default=datetime.now)
+    timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
-    notes = models.TextField(default="")
+    notes = models.TextField(default="", blank=True)
+    
+    class Meta:
+        ordering = ('name',)
+    
+    def __unicode__(self):
+        return self.name
+    
+    def save(self):
+        super(Entity, self).save()
+        try:
+            Normalization.objects.get(original=self.name)
+        except Normalization.DoesNotExist:
+            Normalization(
+                original=self.name,
+                normalized=basic_normalizer(self.name)
+            ).save()
     
     
 class EntityAlias(models.Model):
     entity = EntityRef(related_name='aliases')
     alias = models.CharField(max_length=255)
+    
+    class Meta:
+        ordering = ('alias',)
+    
+    def __unicode__(self):
+        return self.alias
 
 
 # should this be called 'external ID' or attribute?
@@ -50,11 +77,22 @@ class EntityAttribute(models.Model):
     namespace = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
     
+    class Meta:
+        ordering = ('namespace',)
+    
+    def __unicode__(self):
+        return u"%s:%s" % (self.namespace, self.value)
+    
     
 class Normalization(models.Model):
     original = models.CharField(max_length=255, primary_key=True)
     normalized = models.CharField(max_length=255)
     
+    class Meta:
+        ordering = ('original',)
+    
+    def __unicode__(self):
+        return self.original
     
 
 _entity_names = django2sql_names(Entity)
