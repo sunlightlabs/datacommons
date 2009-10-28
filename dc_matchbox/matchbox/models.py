@@ -49,8 +49,8 @@ class Entity(models.Model):
     def __unicode__(self):
         return self.name
     
-    def save(self):
-        super(Entity, self).save()
+    def save(self, **kwargs):
+        super(Entity, self).save(**kwargs)
         try:
             Normalization.objects.get(original=self.name)
         except Normalization.DoesNotExist:
