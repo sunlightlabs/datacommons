@@ -1,7 +1,12 @@
 from django.conf import settings
 from django.db import models
 from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
+from strings.normalizer import basic_normalizer
 import datetime
+
+#
+# entity reference field
+#
 
 class EntityRefCache(dict):
     def register(self, model, field):
@@ -25,6 +30,9 @@ class EntityRef(models.ForeignKey):
         if not self._ignore:
             entityref_cache.register(cls, name)
 
+#
+# models
+#
 
 entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
 
@@ -37,6 +45,16 @@ class Entity(models.Model):
     
     def __unicode__(self):
         return self.name
+    
+    def save(self):
+        super(Entity, self).save()
+        try:
+            Normalization.objects.get(original=self.name)
+        except Normalization.DoesNotExist:
+            Normalization(
+                original=self.name,
+                normalized=basic_normalizer(self.name)
+            ).save()
     
     
 class EntityAlias(models.Model):
@@ -61,6 +79,8 @@ class Normalization(models.Model):
     original = models.CharField(max_length=255, primary_key=True)
     normalized = models.CharField(max_length=255)
     
+    def __unicode__(self):
+        return self.original
     
 
 _entity_names = django2sql_names(Entity)
