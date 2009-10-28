@@ -56,6 +56,7 @@ body#organizations header nav ul li.nav_organizations a { color: #fff; }
 #content table#entities_table tr.odd { background-color: #FFFFFF; }
 #content table#entities_table th { font-size: 0.8em; }
 #content table#entities_table th, #content table td { padding: 5px 2px; }
+#content table#entities_table td { vertical-align: top; }
 #content table#entities_table td.entity_select { text-align: center; }
 #content table#entities_table td p.aliases { color: #777776; font-size: 0.8em; }
 
