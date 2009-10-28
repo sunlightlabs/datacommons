@@ -64,19 +64,36 @@ def merge_entities(entity_ids, new_entity):
     for entity_id in entity_ids:
         assert isinstance(entity_id, int)
     
+    new_entity.save()
+    assert(new_entity.id not in entity_ids)
+
     old_ids_sql_string = ",".join(map(str, entity_ids))
 
     norm = Normalization(original = new_entity.name, normalized = basic_normalizer(new_entity.name))
     norm.save()
-    
-    new_entity.save()
 
+    # update contribution foreign keys
     stmt = "update %(contribution)s \
             set %(contribution_organization_entity)s = %%s \
             where %(contribution_organization_entity)s in (%(old_ids)s)" % \
             augment(sql_names, old_ids = old_ids_sql_string)
     _execute_stmt(stmt, new_entity.id)
     
+    # update EntityAlias foreign keys
+    stmt = "update %(entityalias)s \
+            set %(entityalias_entity)s = %%s \
+            where %(entityalias_entity)s in (%(old_ids)s)" % \
+            augment(sql_names, old_ids = old_ids_sql_string)
+    _execute_stmt(stmt, new_entity.id)
+
+    # update EntityAttribute foreign keys
+    stmt = "update %(entityattribute)s \
+            set %(entityattribute_entity)s = %%s \
+            where %(entityattribute_entity)s in (%(old_ids)s)" % \
+            augment(sql_names, old_ids = old_ids_sql_string)
+    _execute_stmt(stmt, new_entity.id)
+
+    # remove old Entities
     stmt = "delete from %(entity)s where %(entity_id)s in (%(old_ids)s)" % \
             augment(sql_names, old_ids = old_ids_sql_string)
     _execute_stmt(stmt)        
