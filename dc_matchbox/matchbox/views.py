@@ -22,7 +22,16 @@ def search(request):
                 'count': count,
                 'notes': 0
                 } for (id, name, count) in search_entities_by_name(request.GET.get('q',''))]
-        
+    
+    results = [{
+        'id': 1,
+        'type': 'organization',
+        'name': '200 OK, LLC',
+        'count': 0,
+        'notes': 0,
+        'aliases': [{'alias': '200OK'}, {'alias': 'two hundred okay'}],
+    }]
+    
     for result in results:
             result['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': result})
     content = json.dumps(results)
@@ -58,6 +67,10 @@ def google_search(request):
         query = '"%s"' % query
     return HttpResponseRedirect('http://google.com/search?q=%s' % query)
 
+@login_required
+def entity_detail(request, entity_id):
+    entity = Entity.objects.get(pk=entity_id)
+    return render_to_response('matchbox/entity_detail.html', {'entity': entity})
 
 """ Ethan's stuff """
 

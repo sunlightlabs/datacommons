@@ -7,12 +7,15 @@
         {% if entity.aliases %}
             <ul>
                 {% for alias in entity.aliases %}
-                <li><a href="{% url matchbox_google_search %}?q=%22{{ alias.name }}%22">{{ alias.name }}</a></li>
+                <li><a href="{% url matchbox_google_search %}?q={{ alias.alias|urlencode }}">{{ alias.alias }}</a></li>
                 {% endfor %}
             </ul>
         {% endif %}
     </td>
     <td>{{ entity.count }}</td>
-    <td><a href="#" class="notes">0</a></td>
-    <td><a href="{% url matchbox_google_search %}?q=%22{{ entity.name }}%22" class="google">Google</a></td>
+    <td class="actions">
+        <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google">G</a>
+        <a href="{% url matchbox_entity_detail entity.id %}" class="detail">D</a>
+        <a href="{% url matchbox_entity_detail entity.id %}" class="notes">N(0)</a>
+    </td>
 </tr>

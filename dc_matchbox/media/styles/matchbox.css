@@ -46,10 +46,9 @@ body#organizations header nav ul li.nav_organizations a { color: #fff; }
 
 #content table { border-collapse: collapse; }
 
-#content table#entities_table th.selectall { width: 30px; }
-#content table#entities_table th.name { width: 470px; }
+#content table#entities_table th.selectall { width: 40px; }
+#content table#entities_table th.name { width: 510px; }
 #content table#entities_table th.transactioncount { width: 100px; }
-#content table#entities_table th.notes { width: 50px; }
 #content table#entities_table th.actions { width: 60px; }
 
 #content table#entities_table tr.even { background-color: #F2F1F0; }

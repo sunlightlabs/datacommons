@@ -1,0 +1,42 @@
+{% extends "matchbox/base.html" %}
+
+{% block content %}
+
+    <h2>{{ entity.name }}</h2>
+    
+    {% if entity.aliases %}
+        <ul id="aliases">
+            {% for alias in entity.aliases.all %}
+                <li>{{ alias }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+    <h3></h3>
+    {% if entity.attributes %}
+        <dl>
+            {% for attr in entity.attributes.all %}
+                <dt>{{ attr.namespace }}</dt>
+                <dd>{{ attr.value }}</dd>
+            {% endfor %}
+        </dl>
+    {% else %}
+        <p>No attributes</p>
+    {% endif %}
+    
+{% endblock %}
+
+{% block sidebar %}
+
+    <h3>Notes</h3>
+    <a href="#">Add a note</a>
+    
+    {% if entity.notes %}
+        <ul>
+            {% for note in entity.notes %}
+                <li>{{ note }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+{% endblock %}
