@@ -43,6 +43,9 @@ class Entity(models.Model):
     reviewer = models.CharField(max_length=255, default="")
     notes = models.TextField(default="", blank=True)
     
+    class Meta:
+        ordering = ('name',)
+    
     def __unicode__(self):
         return self.name
     
@@ -61,6 +64,9 @@ class EntityAlias(models.Model):
     entity = EntityRef(related_name='aliases')
     alias = models.CharField(max_length=255)
     
+    class Meta:
+        ordering = ('alias',)
+    
     def __unicode__(self):
         return self.alias
 
@@ -71,6 +77,9 @@ class EntityAttribute(models.Model):
     namespace = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
     
+    class Meta:
+        ordering = ('namespace',)
+    
     def __unicode__(self):
         return u"%s:%s" % (self.namespace, self.value)
     
@@ -78,6 +87,9 @@ class EntityAttribute(models.Model):
 class Normalization(models.Model):
     original = models.CharField(max_length=255, primary_key=True)
     normalized = models.CharField(max_length=255)
+    
+    class Meta:
+        ordering = ('original',)
     
     def __unicode__(self):
         return self.original
