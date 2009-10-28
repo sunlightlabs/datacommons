@@ -5,6 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from matchbox.models import Entity
+from matchbox.utils import decode_htmlentities
 from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns, merge_entities
 import json
 import urllib
@@ -23,7 +24,7 @@ def search(request):
                 'name': name,
                 'count': count,
                 'notes': 0
-                } for (id, name, count) in search_entities_by_name(request.GET.get('q',''))]
+                } for (id, name, count) in search_entities_by_name(decode_htmlentities(request.GET.get('q','')))]
     
     for result in results:
             result['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': result})
