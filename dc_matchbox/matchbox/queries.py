@@ -1,6 +1,6 @@
 
 from django.db import connection
-
+import re
 
 from dcdata.utils.sql import dict_union, is_disjoint, augment
 from dcdata.contribution.models import sql_names as contribution_names
@@ -20,14 +20,18 @@ def search_entities_by_name(query):
     
     if query.strip():
         stmt = "select e.%(entity_id)s, e.%(entity_name)s, count(*) \
-            from %(contribution)s c inner join %(entity)s e inner join %(entityalias)s a inner join %(normalization)s n\
-            on c.%(contribution_organization_entity)s = e.%(entity_id)s  \
-                and e.%(entity_id)s = a.%(entityalias_entity)s \
-                and a.%(entityalias_alias)s = n.%(normalization_original)s \
-            where n.%(normalization_normalized)s like %%s \
-            group by e.%(entity_id)s order by count(*) desc;" % \
-            sql_names
-        return _execute_stmt(stmt, basic_normalizer(query) + '%')
+                from %(contribution)s c inner join %(entity)s e inner join %(entityalias)s a \
+                inner join \
+                    (select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s \
+                     union distinct \
+                    select distinct %(normalization_original)s from %(normalization)s where match(%(normalization_original)s) against(%%s in boolean mode)) n \
+                on c.%(contribution_organization_entity)s = e.%(entity_id)s \
+                    and e.%(entity_id)s = a.%(entityalias_entity)s \
+                    and a.%(entityalias_alias)s = n.%(normalization_original)s \
+                group by e.%(entity_id)s order by count(*) desc;" % \
+                sql_names
+                 
+        return _execute_stmt(stmt, basic_normalizer(query) + '%', _prepend_pluses(query))
     else:
         return []
 
@@ -105,3 +109,8 @@ def _execute_stmt(stmt, *args):
     cursor = connection.cursor()
     cursor.execute(stmt, args)
     return cursor
+
+NON_WHITESPACE_EXP = re.compile("\S+", re.U)
+def _prepend_pluses(query):
+    terms = NON_WHITESPACE_EXP.findall(query)
+    return " ".join(["+" + term for term in terms])
