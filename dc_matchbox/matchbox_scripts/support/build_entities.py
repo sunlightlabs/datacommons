@@ -1,10 +1,12 @@
 
-USE_RAW = True
+USE_RAW = False
 
 
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
+# to do: even in raw mode, should get DB name and other parameters from Djanog settings file.
+# otherwise this script is broken when run in unit tests.
 if USE_RAW:
     import MySQLdb
     connection = MySQLdb.Connect(host='localhost', db='datacommons', user='root')
@@ -19,7 +21,7 @@ def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
-def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns, attribute_namespace, attribute_columns,
+def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_namespace='', attribute_columns=[],
                       type=entity_types[0][0], reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
