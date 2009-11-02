@@ -8,11 +8,10 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from dcdata.contribution.models import Contribution, sql_names
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
-from queries import _prepend_pluses
 from matchbox_scripts.support.build_entities import populate_entities
 from matchbox_scripts.support.normalize_database import normalize
 from strings.normalizer import basic_normalizer
-from matchbox.queries import search_entities_by_name
+from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses
 
 
 
@@ -53,8 +52,8 @@ class TestQueries(unittest.TestCase):
                           [sql_names['contribution_organization_name']])
         
         orphan = Entity(name=u'Avacado')
-        orphan.aliases.create(alias=u'Avacado')
         orphan.save()
+        orphan.aliases.create(alias=u'Avacado')
         
         normalize([('entityalias', ['entityalias_alias'])], basic_normalizer)
         
@@ -86,6 +85,23 @@ class TestQueries(unittest.TestCase):
         for ((expected_name, expected_count), (id, name, count)) in zip(expected, rows):
             self.assertEqual(expected_name, name)
             self.assertEqual(expected_count, count)
+            
+    def test_merge_entities(self):
+        new_id = merge_entities((Entity.objects.get(name="Apple").id, Entity.objects.get(name="Apricot").id), Entity(name=u"Applicot"))
+        
+        self.assertEqual(2, Entity.objects.count())
+        applicot = Entity.objects.get(name="Applicot")
+        self.assertEqual(new_id, applicot.id)
+        
+        self.assertEqual(u'applicot', Normalization.objects.get(original="Applicot").normalized)
+        
+        self.assertEqual(3, applicot.organization_transactions.count())
+        
+        self.assertEqual(3, applicot.aliases.count())
+        self.assertEqual(1, applicot.aliases.filter(alias='Apple').count())
+        self.assertEqual(1, applicot.aliases.filter(alias='Apricot').count())
+        self.assertEqual(1, applicot.aliases.filter(alias='Applicot').count())
+        
     
     
 class TestUtils(unittest.TestCase):
