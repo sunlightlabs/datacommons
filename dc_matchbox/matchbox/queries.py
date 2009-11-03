@@ -19,15 +19,17 @@ def search_entities_by_name(query):
     """
     
     if query.strip():
-        stmt = "select e.%(entity_id)s, e.%(entity_name)s, count(c.%(contribution_organization_entity)s) \
+        stmt = "select matches.%(entity_id)s, matches.%(entity_name)s, count(c.%(contribution_organization_entity)s) \
                 from \
-                    (select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s \
-                     union distinct \
-                    select distinct %(normalization_original)s from %(normalization)s where match(%(normalization_original)s) against(%%s in boolean mode)) n \
-                inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
-                inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s \
-                left join %(contribution)s c on c.%(contribution_organization_entity)s = e.%(entity_id)s \
-                group by e.%(entity_id)s order by count(c.%(contribution_organization_entity)s) desc;" % \
+                (select distinct e.id, e.name \
+                    from \
+                        (select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s \
+                         union distinct \
+                        select distinct %(normalization_original)s from %(normalization)s where match(%(normalization_original)s) against(%%s in boolean mode)) n \
+                    inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
+                    inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s) matches \
+                left join %(contribution)s c on c.%(contribution_organization_entity)s = matches.%(entity_id)s \
+                group by matches.%(entity_id)s order by count(c.%(contribution_organization_entity)s) desc;" % \
                 sql_names
                  
         return _execute_stmt(stmt, basic_normalizer(query) + '%', _prepend_pluses(query))
