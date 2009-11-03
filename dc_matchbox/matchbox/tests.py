@@ -78,11 +78,23 @@ class TestQueries(unittest.TestCase):
         
 
     def test_search_entities_by_name(self):
-        rows = search_entities_by_name(u'a')
+        result = search_entities_by_name(u'a')
         
         expected = [['Apple', 2], ['Apricot', 1], ['Avacado', 0]]
         
-        for ((expected_name, expected_count), (id, name, count)) in zip(expected, rows):
+        for ((expected_name, expected_count), (id, name, count)) in zip(expected, result):
+            self.assertEqual(expected_name, name)
+            self.assertEqual(expected_count, count)
+    
+    def test_search_entities_by_name_multiple_aliases(self):
+        apple = Entity.objects.get(name="Apple")
+        apple.aliases.create(alias="Appetite")
+        Normalization.objects.create(original="Appetite", normalized="appetite")
+        
+        result = search_entities_by_name(u'app')
+        expected = [['Apple', 2]]
+
+        for ((expected_name, expected_count), (id, name, count)) in zip(expected, result):
             self.assertEqual(expected_name, name)
             self.assertEqual(expected_count, count)
             
@@ -138,7 +150,6 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, applicot.attributes.filter(namespace='color', value='yellow').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='texture', value='crisp').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='texture', value='soft').count())
-        
         
         
     
