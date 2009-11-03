@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Sum
 from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
 from strings.normalizer import basic_normalizer
 import datetime
@@ -36,12 +37,24 @@ class EntityRef(models.ForeignKey):
 
 entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
 
+class EntityManager(models.Manager):
+    def merge(self, name, type_, entity_ids):
+        #count = Entity.objects.filter(pk__in=entity_ids).aggregate(Sum('count'))
+        #entity = Entity(name=name, type=type_, count=count)
+        new_entity = Entity(name=name, type=type_)
+        for entity_id in entity_ids:
+            old_entity = Entity.objects.get(pk=entity_id)
+            for model, fields in entityref_cache.iteritems():
+                for field in fields:
+                    model.objects.filter(**{field: old_entity}).update(**{field: new_entity})
+
 class Entity(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, default=entity_types[0][0])
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
     notes = models.TextField(default="", blank=True)
+    #count = models.IntegerField(default=0)
     
     class Meta:
         ordering = ('name',)
@@ -49,8 +62,8 @@ class Entity(models.Model):
     def __unicode__(self):
         return self.name
     
-    def save(self):
-        super(Entity, self).save()
+    def save(self, **kwargs):
+        super(Entity, self).save(**kwargs)
         try:
             Normalization.objects.get(original=self.name)
         except Normalization.DoesNotExist:

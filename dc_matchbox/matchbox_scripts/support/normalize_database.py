@@ -1,16 +1,17 @@
 
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+from django.db import connection
 
 import sys
 
-from matchbox.models import Normalization
-from dcdata.contribution.models import sql_names
+from matchbox.models import Normalization, sql_names
 
-def normalize(connection, source_columns, normalizer):
+def normalize(source_columns, normalizer):
     """
     Populate the normalizations table using normalizer on source_columns.
     
     Arguments:
-        connection -- a DB API connection
         source_columns -- a dictionary from table names to lists of column names
         normalizer -- a string mapping function
     """
