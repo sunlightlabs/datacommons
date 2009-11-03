@@ -1,0 +1,30 @@
+<table>
+	<tr>
+		<th>Cycle</th>
+		<th>Datestamp</th>
+		<th>Amount</th>
+		<th>Contributor</th>
+		<th>Address</th>
+		<th>City</th>
+		<th>State</th>
+		<th>Recipient</th>
+		<th>Committee</th>
+		<th>Organization</th>
+		<th>Parent Organization</th>
+	</tr>
+	{% for contrib in contributions %}
+		<tr>
+			<td>{{ contrib.cycle }}</td>
+			<td>{{ contrib.datestamp }}</td>
+			<td>{{ contrib.amount }}</td>
+			<td>{{ contrib.contributor_name }}</td>
+			<td>{{ contrib.contributor_address }}</td>
+			<td>{{ contrib.contributor_city }}</td>
+			<td>{{ contrib.contributor_state }}</td>
+			<td>{{ contrib.recipient_name }}</td>
+			<td>{{ contrib.committee_name }}</td>
+			<td>{{ contrib.organization_name }}</td>
+			<td>{{ contrib.parent_organization_name }}</td>
+		</tr>
+	{% endfor %}
+</table>

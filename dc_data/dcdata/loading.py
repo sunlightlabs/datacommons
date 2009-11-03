@@ -9,6 +9,10 @@ import datetime
 # saucebrush loading filters
 #
 
+class BooleanFilter(FieldFilter):
+    def process_field(self, item):
+        return item == 'True'
+
 class EntityFilter(FieldFilter):
     def process_field(self, item):
         if item and isinstance(item, basestring):
@@ -19,10 +23,6 @@ class ISODateFilter(FieldFilter):
         if item:
             (y, m, d) = item.split('-')
             return datetime.date(int(y), int(m), int(d))
-
-class BooleanFilter(FieldFilter):
-    def process_field(self, item):
-        return item == 'True'
 
 class FloatFilter(FieldFilter):
     def __init__(self, field, on_error=None):
@@ -68,15 +68,19 @@ class Loader(object):
     
     def __init__(self, source, description, imported_by):
         
+        # populate a fieldname/field mapping of model fields
         self.fields = { }
         for field in self.model._meta.fields:
             self.fields[field.name] = field
-            
+        
+        # create a record template with field names from model
+        # remove any fields that are typical ID fields
         self._new_record = dict([(f, None) for f in self.fields.iterkeys()])
         for key in self.ID_FIELDS:
             if key in self._new_record:
                 del self._new_record[key]
         
+        # create a new Import instance and save reference
         self.import_session = Import(
             source=source,
             description=description,
@@ -85,42 +89,72 @@ class Loader(object):
         self.import_session.save()
     
     def new_record(self):
-        return self._new_record.copy()
+        """ Get an empty copy of record format.
+        """
+        return self._new_record.copy() # return record template
         
     def load_records(self, records):
+        """ Load a list of records.
+        """
         for record in records:
             self.load_record(record)
     
     def load_record(self, record):
+        """ Load a dict record into a model and save
+            to the database.
+        """
         
+        # a model is required for loading
         if not self.model:
             raise ValueError, "model is required"
         
-        obj = self._get_instance(record)
+        # get a new or existing instance of model
+        obj = self.get_instance(record)
         
-        for name, value in record.iteritems():
-            
-            if name in self.ID_FIELDS:
-                raise ValueError, "not allowed to set ids during loading"
-                
-            field_handler = self.field_handlers.get(name, None)
-            
-            if field_handler:
-                handler_value = field_handler(record, name, value, obj)
-                if handler_value:
-                    setattr(obj, name, handler_value)                    
-            else:            
-                field = self.fields.get(name, None)
-                if field:
-                    classname = field.__class__.__name__
-                    if classname != 'ForeignKey':
-                        setattr(obj, name, value)
+        if obj.pk:
+            # object already exists, resolve issue of "conflicting" data
+            self.resolve(record, obj)
+        else:
+            # object is new, copy over all fields
+            self.copy_fields(record, obj)
     
+        # assign Import reference and save
         obj.import_reference = self.import_session
         obj.save()
     
-    def _get_instance(self, record):
-        raise NotImplementedError, "please inherit this class and override the _get_key method"
+    def copy_fields(self, record, obj):    
+        """ Copy fields from a record to an instance of a model.
+        """
+        
+        # iterate over record key/values
+        for name, value in record.iteritems():
+        
+            # raise an error if ID is being set
+            if name in self.ID_FIELDS:
+                raise ValueError, "not allowed to set ids during loading"
+            
+            # see if a handler exists for the field
+            field_handler = self.field_handlers.get(name, None)
+        
+            if field_handler:
+                # call field handler and set on instance
+                handler_value = field_handler(record, name, value, obj)
+                if handler_value:
+                    setattr(obj, name, handler_value)                    
+            else:
+                # no handler so just set the value on the object if the field exists
+                field = self.fields.get(name, None)
+                if field:
+                    #classname = field.__class__.__name__
+                    #if classname != 'ForeignKey':
+                    setattr(obj, name, value)
+    
+    def get_instance(self, record):
+        raise NotImplementedError, "please inherit this class and override the get_instance method"
+    
+    def resolve(self, record, obj):
+        # copy fields, override if you want specific update actions
+        self.copy_fields(record, obj)
 
 
 #

@@ -3,10 +3,38 @@ from django.core.exceptions import ImproperlyConfigured
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, FloatFilter, IntFilter, ISODateFilter, EntityFilter
 from saucebrush.emitters import DebugEmitter
-from saucebrush.filters import FieldRemover, FieldAdder
+from saucebrush.filters import FieldRemover, FieldAdder, Filter
 from saucebrush.sources import CSVSource
 import saucebrush
 import os
+
+#
+# entity filters
+#
+
+class ContributorFilter(Filter):
+    def process_record(self, record):
+        return record
+
+class OrganizationFilter(Filter):
+    def process_record(self, record):
+        return record
+
+class ParentOrganizationFilter(Filter):
+    def process_record(self, record):
+        return record
+
+class RecipientFilter(Filter):
+    def process_record(self, record):
+        return record
+
+class CommitteeFilter(Filter):    
+    def process_record(self, record):
+        return record
+    
+#
+# model loader
+#
 
 class ContributionLoader(Loader):
     
@@ -15,13 +43,18 @@ class ContributionLoader(Loader):
     def __init__(self, *args, **kwargs):
         super(ContributionLoader, self).__init__(*args, **kwargs)
         
-    def _get_instance(self, record):
+    def get_instance(self, record):
         key = record['transaction_id']
         namespace = record['transaction_namespace']
         try:
             return Contribution.objects.get(transaction_namespace=namespace, transaction_id=key)
         except Contribution.DoesNotExist:
             return Contribution(transaction_namespace=namespace, transaction_id=key)
+    
+    def resolve(self, record, obj):
+        """ how should an existing record be updated? 
+        """
+        self.copy_fields(record, obj)
         
 
 class Command(BaseCommand):
@@ -53,13 +86,11 @@ class Command(BaseCommand):
             BooleanFilter('is_amendment'),
             FloatFilter('amount'),
             
-            # do resolving of entity fields here
-            
-            EntityFilter('contributor_entity'),
-            EntityFilter('organization_entity'),
-            EntityFilter('parent_organization_entity'),
-            EntityFilter('recipient_entity'),
-            EntityFilter('committee_entity'),
+            ContributorFilter(),
+            OrganizationFilter(),
+            ParentOrganizationFilter(),
+            RecipientFilter(),
+            CommitteeFilter(),
             
             DebugEmitter(),
             #LoaderEmitter(loader),
