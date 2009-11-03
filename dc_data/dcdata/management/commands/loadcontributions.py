@@ -86,18 +86,11 @@ class Command(BaseCommand):
             BooleanFilter('is_amendment'),
             FloatFilter('amount'),
             
-            # do resolving of entity fields here
             ContributorFilter(),
             OrganizationFilter(),
             ParentOrganizationFilter(),
             RecipientFilter(),
             CommitteeFilter(),
-            
-            EntityFilter('contributor_entity'),
-            EntityFilter('organization_entity'),
-            EntityFilter('parent_organization_entity'),
-            EntityFilter('recipient_entity'),
-            EntityFilter('committee_entity'),
             
             DebugEmitter(),
             #LoaderEmitter(loader),
