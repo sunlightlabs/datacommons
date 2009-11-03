@@ -4,7 +4,7 @@ import re
 
 from dcdata.utils.sql import dict_union, is_disjoint, augment
 from dcdata.contribution.models import sql_names as contribution_names
-from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute
+from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
 
@@ -70,8 +70,7 @@ def merge_entities(entity_ids, new_entity):
     new_entity.save()
     assert(new_entity.id not in entity_ids)
 
-    old_ids_sql_string = ",".join(map(str, entity_ids))
-
+    # make sure normalization exists for the new name
     norm = Normalization(original = new_entity.name, normalized = basic_normalizer(new_entity.name))
     norm.save()
 
@@ -79,16 +78,15 @@ def merge_entities(entity_ids, new_entity):
     stmt = "update %(contribution)s \
             set %(contribution_organization_entity)s = %%s \
             where %(contribution_organization_entity)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = old_ids_sql_string)
+            augment(sql_names, old_ids = ",".join(map(str, entity_ids)))
     _execute_stmt(stmt, new_entity.id)
     
+    # update alias and attribute tables
     _merge_aliases(entity_ids, new_entity)
     _merge_attributes(entity_ids, new_entity)
 
-    # remove old Entities
-    stmt = "delete from %(entity)s where %(entity_id)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = old_ids_sql_string)
-    _execute_stmt(stmt)        
+    # remove the old entity objects
+    Entity.objects.filter(id__in=entity_ids).delete()
             
     return new_entity.id
 
