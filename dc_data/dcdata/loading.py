@@ -9,6 +9,10 @@ import datetime
 # saucebrush loading filters
 #
 
+class BooleanFilter(FieldFilter):
+    def process_field(self, item):
+        return item == 'True'
+
 class EntityFilter(FieldFilter):
     def process_field(self, item):
         if item and isinstance(item, basestring):
@@ -19,10 +23,6 @@ class ISODateFilter(FieldFilter):
         if item:
             (y, m, d) = item.split('-')
             return datetime.date(int(y), int(m), int(d))
-
-class BooleanFilter(FieldFilter):
-    def process_field(self, item):
-        return item == 'True'
 
 class FloatFilter(FieldFilter):
     def __init__(self, field, on_error=None):
@@ -96,15 +96,25 @@ class Loader(object):
         if not self.model:
             raise ValueError, "model is required"
         
-        obj = self._get_instance(record)
+        obj = self.get_instance(record)
+        
+        if obj.pk:
+            self.resolve(record, obj)
+        else:
+            self.copy_fields(record, obj)
+    
+        obj.import_reference = self.import_session
+        obj.save()
+    
+    def copy_fields(self, record, obj):    
         
         for name, value in record.iteritems():
-            
+        
             if name in self.ID_FIELDS:
                 raise ValueError, "not allowed to set ids during loading"
-                
-            field_handler = self.field_handlers.get(name, None)
             
+            field_handler = self.field_handlers.get(name, None)
+        
             if field_handler:
                 handler_value = field_handler(record, name, value, obj)
                 if handler_value:
@@ -112,15 +122,15 @@ class Loader(object):
             else:            
                 field = self.fields.get(name, None)
                 if field:
-                    classname = field.__class__.__name__
-                    if classname != 'ForeignKey':
-                        setattr(obj, name, value)
+                    #classname = field.__class__.__name__
+                    #if classname != 'ForeignKey':
+                    setattr(obj, name, value)
     
-        obj.import_reference = self.import_session
-        obj.save()
+    def get_instance(self, record):
+        raise NotImplementedError, "please inherit this class and override the get_instance method"
     
-    def _get_instance(self, record):
-        raise NotImplementedError, "please inherit this class and override the _get_key method"
+    def resolve(self, record, obj):
+        self.copy_fields(record, obj)
 
 
 #
