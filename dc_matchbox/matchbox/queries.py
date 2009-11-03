@@ -4,7 +4,7 @@ import re
 
 from dcdata.utils.sql import dict_union, is_disjoint, augment
 from dcdata.contribution.models import sql_names as contribution_names
-from matchbox.models import sql_names as matchbox_names, Normalization
+from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
 
@@ -64,12 +64,13 @@ def merge_entities(entity_ids, new_entity):
     new_entity -- an Entity. Can be a Entity that is already in DB or a newly created entity.
     """
     
+    # a bit of type checking, since these will go into raw SQL
+    entity_ids = map(long, entity_ids)
+    
     new_entity.save()
     assert(new_entity.id not in entity_ids)
 
-    new_entity.aliases.create(alias=new_entity.name)
-
-    old_ids_sql_string = ",".join(map(str, map(long, entity_ids)))
+    old_ids_sql_string = ",".join(map(str, entity_ids))
 
     norm = Normalization(original = new_entity.name, normalized = basic_normalizer(new_entity.name))
     norm.save()
@@ -81,20 +82,8 @@ def merge_entities(entity_ids, new_entity):
             augment(sql_names, old_ids = old_ids_sql_string)
     _execute_stmt(stmt, new_entity.id)
     
-    # update EntityAlias foreign keys
-    stmt = "update %(entityalias)s \
-            set %(entityalias_entity)s = %%s \
-            where %(entityalias_entity)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = old_ids_sql_string)
-    _execute_stmt(stmt, new_entity.id)
-
-    # update EntityAttribute foreign keys
-    stmt = "update %(entityattribute)s \
-            set %(entityattribute_entity)s = %%s \
-            where %(entityattribute_entity)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = old_ids_sql_string)
-    _execute_stmt(stmt, new_entity.id)
-
+    _merge_aliases(entity_ids, new_entity)
+    _merge_attributes(entity_ids, new_entity)
 
     # remove old Entities
     stmt = "delete from %(entity)s where %(entity_id)s in (%(old_ids)s)" % \
@@ -102,6 +91,29 @@ def merge_entities(entity_ids, new_entity):
     _execute_stmt(stmt)        
             
     return new_entity.id
+
+
+def _merge_aliases(old_ids, new_entity):
+    entity_ids = old_ids + [new_entity.id]
+    existing_aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity__in=entity_ids)]
+    existing_aliases.append(new_entity.name)
+    
+    EntityAlias.objects.filter(entity__in=entity_ids).delete()
+    
+    for alias in set(existing_aliases):
+        new_entity.aliases.create(alias=alias)
+    
+    
+def _merge_attributes(old_ids, new_entity):    
+    entity_ids = old_ids + [new_entity.id]
+    existing_attributes = [(attr.namespace, attr.value) for attr in EntityAttribute.objects.filter(entity__in=entity_ids)]
+    
+    EntityAttribute.objects.filter(entity__in=entity_ids).delete()
+    
+    for (namespace, value) in set(existing_attributes):
+        new_entity.attributes.create(namespace=namespace, value=value)
+    
+    
 
 
 def _execute_stmt(stmt, *args):
