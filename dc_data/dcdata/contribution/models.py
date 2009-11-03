@@ -140,7 +140,7 @@ class Contribution(DataCommonsModel):
     def __unicode__(self):
         return u"%s gave %i to %s" % (self.contributor or 'unknown', self.amount, self.recipient or 'unknown')
 
-    def save(self):
+    def save(self, **kwargs):
         
         # check transaction type
         if self.datestamp.year < 2004 and self.transaction_type == '10levin':
@@ -153,7 +153,7 @@ class Contribution(DataCommonsModel):
             raise ValueError, "Joint employer/occupations should be saved in the contributor_occupation field"
         
         # save if all checks passed
-        super(Contribution, self).save()
+        super(Contribution, self).save(**kwargs)
     
 
 
