@@ -102,7 +102,23 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, applicot.aliases.filter(alias='Apricot').count())
         self.assertEqual(1, applicot.aliases.filter(alias='Applicot').count())
         
-    
+    def test_merge_entities_alias_duplication(self):
+        apple = Entity.objects.get(name="Apple")
+        apple.aliases.create(alias="Delicious")
+        
+        apricot = Entity.objects.get(name="Apricot")
+        apricot.aliases.create(alias="Delicious")
+        
+        merge_entities((apple.id, apricot.id), Entity(name=u'Applicot'))
+        
+        applicot = Entity.objects.get(name="Applicot")
+
+        self.assertEqual(4, applicot.aliases.count())
+        self.assertEqual(1, applicot.aliases.filter(alias='Apple').count())
+        self.assertEqual(1, applicot.aliases.filter(alias='Apricot').count())
+        self.assertEqual(1, applicot.aliases.filter(alias='Applicot').count())
+        self.assertEqual(1, applicot.aliases.filter(alias='Delicious').count())
+        
     
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):
