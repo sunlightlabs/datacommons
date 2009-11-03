@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
-from matchbox.models import Entity
+from matchbox.models import Entity, entityref_cache
 from matchbox.utils import decode_htmlentities
 from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns, merge_entities
 import json
@@ -75,7 +75,14 @@ def google_search(request):
 @login_required
 def entity_detail(request, entity_id):
     entity = Entity.objects.get(pk=entity_id)
-    return render_to_response('matchbox/entity_detail.html', {'entity': entity})
+    transactions = { }
+    for model in entityref_cache.iterkeys():
+        transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:20]
+    data = {
+        'entity': entity,
+        'transactions': transactions
+    }
+    return render_to_response('matchbox/entity_detail.html', data)
 
 """ Ethan's stuff """
 

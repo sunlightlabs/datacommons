@@ -1,4 +1,5 @@
 {% extends "matchbox/base.html" %}
+{% load contribution_tags %}
 
 {% block content %}
 
@@ -12,16 +13,20 @@
         </ul>
     {% endif %}
     
-    <h3></h3>
     {% if entity.attributes %}
+    	<h3>Attributes</h3>
         <dl>
             {% for attr in entity.attributes.all %}
                 <dt>{{ attr.namespace }}</dt>
                 <dd>{{ attr.value }}</dd>
             {% endfor %}
         </dl>
-    {% else %}
-        <p>No attributes</p>
+    {% endif %}
+
+	{% if transactions.Contribution %}
+    	<h3>Contributions</h3>
+		<p>20 preview transactions are shown ordered by dollar amount</p>
+        {% contribution_table transactions.Contribution %}
     {% endif %}
     
 {% endblock %}
