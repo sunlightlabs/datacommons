@@ -74,8 +74,8 @@ class Entity(models.Model):
     
     
 class EntityAlias(models.Model):
-    entity = EntityRef(related_name='aliases')
-    alias = models.CharField(max_length=255)
+    entity = EntityRef(related_name='aliases', null=False)
+    alias = models.CharField(max_length=255, null=False)
     
     class Meta:
         ordering = ('alias',)
@@ -86,9 +86,9 @@ class EntityAlias(models.Model):
 
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
-    entity = EntityRef(related_name='attributes')
-    namespace = models.CharField(max_length=255)
-    value = models.CharField(max_length=255)
+    entity = EntityRef(related_name='attributes', null=False)
+    namespace = models.CharField(max_length=255, null=False)
+    value = models.CharField(max_length=255, null=False)
     
     class Meta:
         ordering = ('namespace',)

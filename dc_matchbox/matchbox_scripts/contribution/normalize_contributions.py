@@ -10,4 +10,9 @@ from matchbox_scripts.support.normalize_database import normalize
 
 columns = [('entityalias', ['entityalias_alias'])]
 
-normalize(columns, basic_normalizer)
+def run():
+    normalize(columns, basic_normalizer)
+    
+
+if __name__ == "main":
+    run()

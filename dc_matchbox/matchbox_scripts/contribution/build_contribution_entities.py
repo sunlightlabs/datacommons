@@ -15,11 +15,15 @@ assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
     
 from matchbox_scripts.support.build_entities import populate_entities
+
+def run():
+    populate_entities(sql_names['contribution'], 
+                  sql_names['contribution_organization_name'], 
+                  sql_names['contribution_organization_entity'],
+                  [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
+                   'where do I get this value?',
+                   [])
+    
     
 if __name__ == '__main__':
-    populate_entities(sql_names['contribution'], 
-                      sql_names['contribution_organization_name'], 
-                      sql_names['contribution_organization_entity'],
-                      [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                       'where do I get this value?',
-                       [])
+    run()
