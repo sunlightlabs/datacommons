@@ -119,6 +119,28 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, applicot.aliases.filter(alias='Applicot').count())
         self.assertEqual(1, applicot.aliases.filter(alias='Delicious').count())
         
+    def test_merge_entities_attribute_duplication(self):
+        apple = Entity.objects.get(name="Apple")
+        apple.attributes.create(namespace='color', value='red')
+        apple.attributes.create(namespace='color', value='yellow')
+        apple.attributes.create(namespace='texture', value='crisp')
+        
+        apricot = Entity.objects.get(name="Apricot")
+        apricot.attributes.create(namespace='color', value='yellow')
+        apricot.attributes.create(namespace='texture', value='soft')
+        
+        merge_entities((apple.id, apricot.id), Entity(name=u'Applicot'))
+        
+        applicot = Entity.objects.get(name="Applicot")
+        
+        self.assertEqual(4, applicot.attributes.count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='color', value='red').count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='color', value='yellow').count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='texture', value='crisp').count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='texture', value='soft').count())
+        
+        
+        
     
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):
