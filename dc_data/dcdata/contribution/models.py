@@ -15,12 +15,12 @@ SEATS = (
 
 CONTRIBUTOR_TYPES = (
     ('I','Individual'),
-    ('P','PAC'),
+    ('C','Committee'),
 )
 
 RECIPIENT_TYPES = (
-    ('C','Candidate'),
-    ('P','PAC'),
+    ('P','Candidate'),
+    ('C','Committee'),
 )
 
 ELECTION_TYPES = (
@@ -49,9 +49,12 @@ TRANSACTION_TYPES = (
 )
 
 PARTIES = (
-    ('DEM','Democratic'),
-    ('IND','Generic Independent'),
-    ('REP','Republican'),
+    ('3','Other'),
+    ('D','Democratic'),
+    ('I','Generic Independent'),
+    ('L','Libertarian'),
+    ('R','Republican'),
+    ('U','Unkown'),
 )
 
 SEAT_STATUSES = (
@@ -138,7 +141,7 @@ class Contribution(DataCommonsModel):
         ordering = ('cycle','contributor_name','amount','recipient_name')
     
     def __unicode__(self):
-        return u"%s gave %i to %s" % (self.contributor or 'unknown', self.amount, self.recipient or 'unknown')
+        return u"%s gave %i to %s" % (self.contributor_name or 'unknown', self.amount, self.recipient_name or 'unknown')
 
     def save(self, **kwargs):
         
