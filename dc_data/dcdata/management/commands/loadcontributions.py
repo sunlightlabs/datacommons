@@ -13,23 +13,32 @@ import os
 #
 
 class ContributorFilter(Filter):
+    type_mapping = {'individual': 'I', 'committee': 'C'}
     def process_record(self, record):
+        record['contributor_type'] = self.type_mapping.get(record['contributor_type'], None)
+        record['contributor_entity'] = None
         return record
 
 class OrganizationFilter(Filter):
     def process_record(self, record):
+        record['organization_entity'] = None
         return record
 
 class ParentOrganizationFilter(Filter):
     def process_record(self, record):
+        record['parent_organization_entity'] = None
         return record
 
 class RecipientFilter(Filter):
+    type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
+        record['recipient_type'] = self.type_mapping.get(record['recipient_type'], None)
+        record['recipient_entity'] = None
         return record
 
 class CommitteeFilter(Filter):    
     def process_record(self, record):
+        record['committee_entity'] = None
         return record
     
 #
@@ -92,6 +101,7 @@ class Command(BaseCommand):
             RecipientFilter(),
             CommitteeFilter(),
             
-            DebugEmitter(),
-            #LoaderEmitter(loader),
+            #DebugEmitter(),
+            LoaderEmitter(loader),
+            
         )
