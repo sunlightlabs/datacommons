@@ -1,4 +1,4 @@
-<table>
+<table class="contributions">
 	<tr>
 		<th>Cycle</th>
 		<th>Datestamp</th>
@@ -13,18 +13,50 @@
 		<th>Parent Organization</th>
 	</tr>
 	{% for contrib in contributions %}
-		<tr>
-			<td>{{ contrib.cycle }}</td>
-			<td>{{ contrib.datestamp }}</td>
-			<td>{{ contrib.amount }}</td>
-			<td>{{ contrib.contributor_name }}</td>
-			<td>{{ contrib.contributor_address }}</td>
-			<td>{{ contrib.contributor_city }}</td>
-			<td>{{ contrib.contributor_state }}</td>
-			<td>{{ contrib.recipient_name }}</td>
-			<td>{{ contrib.committee_name }}</td>
-			<td>{{ contrib.organization_name }}</td>
-			<td>{{ contrib.parent_organization_name }}</td>
-		</tr>
-	{% endfor %}
+    	<tr class="{% cycle "even" "odd" %}">
+    		<td>{{ contrib.cycle }}</td>
+    		<td>{{ contrib.datestamp|date:"M d, Y" }}</td>
+    		<td>${{ contrib.amount }}</td>
+    		<td>{{ contrib.contributor_name }}</td>
+    		<td>{{ contrib.contributor_address }}</td>
+    		<td>{{ contrib.contributor_city }}</td>
+    		<td>{{ contrib.contributor_state }}</td>
+    		<td>
+    		    {% if contrib.recipient_entity %}
+    		        <a href="{% url matchbox_entity contrib.recipient_entity.pk %}">
+    		            {{ contrib.recipient_name }}
+    		        </a>
+    		    {% else %}
+    		        {{ contrib.recipient_name }}
+    		    {% endif %}
+    		</td>
+    		<td>
+    		    {% if contrib.committee_entity %}
+        		    <a href="{% url matchbox_entity contrib.committee_entity.pk %}">
+        		        {{ contrib.committee_name }}
+        		    </a>
+    		    {% else %}
+    		        {{ contrib.committee_name }}
+    		    {% endif %}
+    		</td>
+    		<td>
+    		    {% if contrib.organization_entity %}
+        		    <a href="{% url matchbox_entity contrib.organization_entity.pk %}">
+        		        {{ contrib.organization_name }}
+        		    </a>
+    		    {% else %}
+    		        {{ contrib.organization_name }}
+    		    {% endif %}
+    		</td>
+    		<td>
+    		    {% if contrib.parent_organization_entity %}
+        		    <a href="{% url matchbox_entity contrib.parent_organization_entity.pk %}">
+        		        {{ contrib.parent_organization_name }}
+        		    </a>
+    		    {% else %}
+    		        {{ contrib.parent_organization_name }}
+    		    {% endif %}
+    		</td>
+    	</tr>
+    {% endfor %}
 </table>
