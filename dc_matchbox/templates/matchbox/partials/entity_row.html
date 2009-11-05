@@ -15,7 +15,7 @@
     <td>{{ entity.count }}</td>
     <td class="actions">
         <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google">G</a>
-        <a href="{% url matchbox_entity_detail entity.id %}" class="detail">D</a>
-        <a href="{% url matchbox_entity_detail entity.id %}" class="notes">N(0)</a>
+        <a href="{% url matchbox_entity entity.id %}" class="detail">D</a>
+        <a href="{% url matchbox_entity entity.id %}" class="notes">N(0)</a>
     </td>
 </tr>

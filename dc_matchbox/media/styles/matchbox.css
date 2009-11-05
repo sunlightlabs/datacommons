@@ -41,8 +41,8 @@ body#organizations header nav ul li.nav_organizations { background-color: #8A8B8
 body#organizations header nav ul li.nav_organizations a { color: #fff; }
 
 #main { margin-bottom: 22em; }
-#content { float: left; border-right: 1px solid #000; width: 750px; margin: 0 15px 200px 0; }
-#sidebar { float: left; width: 200px; }
+#content { float: left; width: 750px; margin: 0 5px 200px 0; }
+#sidebar { border-left: 1px solid #000; float: left; padding: 0 0 0 10px; width: 200px; }
 
 #content table { border-collapse: collapse; }
 
@@ -63,6 +63,31 @@ body#organizations header nav ul li.nav_organizations a { color: #fff; }
 #content table.transactions th { background-color: #CBCCCB; padding: 5px 3px; }
 #content table.transactions td { padding: 5px 3px; }
 #content table.transactions tr td { border: 1px solid #CBCCCB; }
+
+div.transaction_preview {
+    border: 1px solid #ddd;
+    height: 200px;
+    overflow: auto;
+    width: 700px;
+}
+
+#content ul#aliases { font-size: 90%; list-style: none; margin: 0; padding: 0; }
+#content ul#aliases li { float: left; padding: 0 0.5em 0 0; }
+#content ul#aliases li a {
+    background-color: #FBF9F9;
+    border: 1px solid #CBCCCB;
+    color: #999;
+    display: block;
+    padding: 2px 10px;
+    text-align: center;
+    text-decoration: none;
+}
+#content ul#aliases li a:hover { border: 1px solid #999; color: #333; }
+
+#content table.contributions { border-collapse: collapse; width: 1200px; }
+#content table.contributions tr.odd { background-color: #FBF9F9; }
+#content table.contributions tr th { background-color: #F2F1F0; border: 1px solid #CBCCCB; padding: 3px; }
+#content table.contributions tr td { border: 1px solid #CBCCCB; padding: 3px 15px 3px 5px; }
 
 footer {
     background-color: #F2F1F0;
