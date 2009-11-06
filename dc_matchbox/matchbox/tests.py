@@ -2,8 +2,6 @@
 
 from datetime import datetime
 import unittest
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from dcdata.contribution.models import Contribution, sql_names
 from dcdata.models import Import
