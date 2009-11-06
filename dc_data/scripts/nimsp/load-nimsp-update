@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#########################################################################
+# load-nimsp-update
+#
+# Load a NIMSP update release into mysql. 
+#########################################################################
+
+set -e
+
+program=$(basename $0)
+USERNAME=datacommons
+DBNAME=nimsp
+
+# find the latest update as default
+if [ $(uname) = 'Darwin' ]; then
+    src=$(find /home/$USER/projects/datacommons/var/nimsp -depth 1 -type d -name '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]' | sort -r | head -n 1)
+else
+    src=$(find /home/datacommons/var/nimsp -type d -name '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]' | sort -r | head -n 1)
+fi
+
+
+function usage {
+    cat <<EOF
+Usage: $program [OPTION]...
+
+Options:
+  -d DBNAME     Database (default $DBNAME)
+  -s DIRECTORY  Data directory to load from (default $src)
+  -p PASSWORD   Database password
+  -U USERNAME   Database user name (default $USERNAME)
+
+Help:
+  --help        Print this help, then exit
+EOF
+    exit $1;
+}
+
+if [ -n "$1" ] && [ -n "$(echo $1 | grep -E '^--h(e(lp?)?)?$')" ]; then
+    usage 0;
+fi
+
+while getopts ":d:hs:p:U:" opt; do
+    case $opt in
+	d) DBNAME=$OPTARG;;
+	h) usage 0;;
+	p) PASSWD=$OPTARG;;
+	s) src=$OPTARG;;
+	U) USERNAME=$OPTARG;;
+	*) usage 1;;
+    esac
+done
+
+date=$(basename $src)
+update=$src/Update-${date}.sql 
+
+if [ ! -d $src ]; then
+    echo "No such directory $src" >&2
+    exit 1
+fi
+if [ ! -f $update ]; then
+    echo "No such file $update" >&2
+    exit 1
+fi
+
+if [ -z "$PASSWD" ]; then
+    echo -n 'password: ' >&2
+    read PASSWD
+fi
+
+echo Loading $update
+mysql -u $USERNAME --password=$PASSWD $DBNAME < $update
+
+for t in BallotMeasures BallotSupport Candidates CatCodes Committees Contributions Contributors ExpenditurePayee ExpenditureTarget ExpenditureTransaction LobbyistClient Lobbyist OfficeCodes OfficeSeats PartyLookup RecipientReportsBundle Recipients States StateYearReports; do
+    txt=$src/$t.txt
+    if [ -f $txt ]; then
+	echo Loading $txt
+	mysql -u $USERNAME --password=$PASSWD -e "LOAD DATA LOCAL INFILE '$txt' REPLACE INTO TABLE $t IGNORE 1 LINES;" $DBNAME
+    fi
+done
+
+    

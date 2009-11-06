@@ -88,6 +88,7 @@ class Command(BaseCommand):
             CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1),
             
             FieldRemover('id'),
+            FieldRemover('import_reference'),
             FieldAdder('import_reference', loader.import_session),
             
             IntFilter('cycle'),
