@@ -87,7 +87,7 @@ class Contribution(DataCommonsModel):
     
     # amount and datestamp
     amount = models.IntegerField(default=0)
-    datestamp = models.DateField()
+    datestamp = models.DateField(null=True)
     
     # contributor fields
     contributor_name = models.CharField(max_length=255, blank=True, null=True)
@@ -144,16 +144,22 @@ class Contribution(DataCommonsModel):
         return u"%s gave %i to %s" % (self.contributor_name or 'unknown', self.amount, self.recipient_name or 'unknown')
 
     def save(self, **kwargs):
+
+        if self.transaction_namespace == 'urn:nimsp:transaction':
+            pass
+        elif self.transaction_namespace == 'urn:fec:transaction':        
+            # check transaction type
+            if self.datestamp.year < 2004 and self.transaction_type == '10levin':
+                raise ValueError, "Levin funds may only occur on or after 2004"
+            elif self.transaction_type == '10soft':
+                raise ValueError, "Soft funds may only occur before 2004"
         
-        # check transaction type
-        if self.datestamp.year < 2004 and self.transaction_type == '10levin':
-            raise ValueError, "Levin funds may only occur on or after 2004"
-        elif self.transaction_type == '10soft':
-            raise ValueError, "Soft funds may only occur before 2004"
-        
-        # check employer/occupation rules
-        if self.contributor_employer and not self.contributor_occupation:
-            raise ValueError, "Joint employer/occupations should be saved in the contributor_occupation field"
+            # check employer/occupation rules
+            if self.contributor_employer and not self.contributor_occupation:
+                raise ValueError, "Joint employer/occupations should be saved in the contributor_occupation field"
+        else: 
+            raise ValueError, "Unhandled transaction_namespace (%s)" % (self.transaction_namespace or 'None')
+
         
         # save if all checks passed
         super(Contribution, self).save(**kwargs)
