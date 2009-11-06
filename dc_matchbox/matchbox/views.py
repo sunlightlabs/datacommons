@@ -79,7 +79,6 @@ def entity_detail(request, entity_id):
     for model in entityref_cache.iterkeys():
         if hasattr(model.objects, 'with_entity'):
             transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:20]
-    print transactions
     data = {
         'entity': entity,
         'transactions': transactions

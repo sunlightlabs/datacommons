@@ -4,8 +4,11 @@
 {% block content %}
 
     <h2>{{ entity.name }}</h2>
+    <p class="entity_type">{{ entity.type }}</p>
+    <div class="clear"></div>
     
     {% if entity.aliases %}
+        <h4 class="aliases_header">Aliases:</h4>
         <ul id="aliases">
             {% for alias in entity.aliases.all %}
                 <li><a href="http://google.com/search?q={{ alias|urlencode }}">{{ alias }}</a></li>
@@ -18,8 +21,9 @@
     {% if entity.attributes %}
     	{% regroup entity.attributes.all by namespace as namespace_list %}
     	{% for namespace in namespace_list %}
+    	    <div class="attributes">
             {% ifequal namespace.grouper "urn:crp:candidate" %}
-                <h4>CRP Candidate IDs</h4>
+                <h4>CRP Candidate:</h4>
                 <ul>
                     {% for attr in namespace.list %}
                         <li><a href="http://www.opensecrets.org/politicians/summary.php?cid={{ attr.value }}">{{ attr.value }}</a></li>
@@ -27,7 +31,7 @@
                 </ul>
             {% else %}
                 {% ifequal namespace.grouper "urn:crp:committee" %}
-                    <h4>CRP PAC</h4>
+                    <h4>CRP PAC:</h4>
                     <ul>
                         {% for attr in namespace.list %}
                             <li><a href="http://www.opensecrets.org/pacs/lookup2.php?strID={{ attr.value }}">{{ attr.value }}</a></li>
@@ -35,14 +39,14 @@
                     </ul>
                 {% else %}
                     {% ifequal namespace.grouper "urn:crp:organization" %}
-                        <h4>CRP Organization</h4>
+                        <h4>CRP Organization:</h4>
                         <ul>
                             {% for attr in namespace.list %}
                                 <li><a href="http://www.opensecrets.org/indivs/index.php?employ={{ attr.value }}">{{ attr.value }}</a></li>
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <h4>Other Attributes</h4>
+                        <h4>Other Attributes:</h4>
                         <ul>
                             {% for attr in namespace.list %}
                                 <li>{{ attr.value }}</li>
@@ -51,6 +55,7 @@
                     {% endifequal %}
                 {% endifequal %}
             {% endifequal %}
+            </div>
         {% endfor %}
     {% endif %}
 
