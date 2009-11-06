@@ -1,0 +1,88 @@
+#!/bin/bash
+
+#########################################################################
+# load-nimsp
+#
+# Load the initial NIMSP data release into mysql. 
+#########################################################################
+
+set -e
+
+program=$(basename $0)
+date=2009-04-06
+recreate=0
+src=/home/datacommons/var/nimsp/$date
+if [ $(uname) = 'Darwin' ]; then
+   src=/home/$USER/projects/datacommons/var/nimsp/$date
+fi
+
+USERNAME=datacommons
+DBNAME=nimsp
+
+function usage {
+    cat <<EOF
+Usage: $program [OPTION]...
+
+Options:
+  -d DBNAME     Database (default $DBNAME)
+  -s DIRECTORY  Data directory to load from (default $src)
+  -p PASSWORD   Database password
+  -r            Drop and recreate database
+  -U USERNAME   Database user name (default $USERNAME)
+
+Help:
+  --help        Print this help, then exit
+EOF
+    exit $1;
+}
+
+if [ -n "$1" ] && [ -n "$(echo $1 | grep -E '^--h(e(lp?)?)?$')" ]; then
+    usage 0;
+fi
+while getopts ":d:hs:p:rU:" opt; do
+    case $opt in
+	d) DBNAME=$OPTARG;;
+	h) usage 0;;
+	p) PASSWD=$OPTARG;;
+	r) recreate=1;;
+	s) src=$OPTARG;;
+	U) USERNAME=$OPTARG;;
+	*) usage 1;;
+    esac
+done
+if [ ! -d $src ]; then
+    echo No such directory $src >&2
+    exit 1
+fi
+if [ -z "$PASSWD" ]; then
+    echo -n 'password: ' >&2
+    read PASSWD
+fi
+
+if [ $recreate -eq 1 ]; then
+    mysqladmin -u $USERNAME --password=$PASSWD drop $DBNAME
+    mysqladmin -u $USERNAME --password=$PASSWD create $DBNAME
+    mysql -u $USERNAME --password=$PASSWD < $src/NIMSP_Data.sql
+else
+    echo Clearing Contributions
+    mysql -u $USERNAME --password=$PASSWD -e "TRUNCATE TABLE Contributions;" $DBNAME
+fi
+
+for t in BallotMeasures BallotSupport Candidates CatCodes Committees Contributors ExpenditurePayee ExpenditureTarget ExpenditureTransaction LobbyistClient Lobbyist OfficeCodes OfficeSeats PartyLookup RecipientReportsBundle Recipients States StateYearReports; do
+    echo Loading $t
+    txt=$src/$t.txt
+    if [ ! -f $txt ]; then
+	gunzip $txt.gz
+	dos2unix $txt
+    fi
+    if [ $recreate -eq 0 ]; then
+	mysql -u $USERNAME --password=$PASSWD -e "TRUNCATE TABLE $t;" $DBNAME
+    fi
+    mysql -u $USERNAME --password=$PASSWD -e "LOAD DATA LOCAL INFILE '$txt' INTO TABLE $t IGNORE 1 LINES;" $DBNAME
+done
+
+echo Loading Contributions
+mysql -u $USERNAME --password=$PASSWD $DBNAME < $src/Contributions.sql
+
+
+    
