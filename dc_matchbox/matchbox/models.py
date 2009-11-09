@@ -50,7 +50,7 @@ class EntityManager(models.Manager):
 
 class Entity(models.Model):
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=255, choices=entity_types, default=entity_types[0][0])
+    type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
     notes = models.TextField(default="", blank=True)
