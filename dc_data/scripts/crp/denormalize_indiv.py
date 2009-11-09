@@ -27,38 +27,38 @@ class RecipCodeFilter(Filter):
 # this list was built by searching for the most frequent organization names in the unfiltered
 # contribution data. I went through all organization names with at least 200 entries and entered
 # all of the names that weren't organziations. -epg
-disallowed_orgnames = set(['Retired', 'Homemaker', 'Attorney', '[24I Contribution]', 'Self-employed', 'Physician',
-                          'SELF', 'Information Requested', 'Self Employed', '[24T Contribution]', 'Consultant',
-                          'Investor', '[Candidate Contribution]', 'N/A', 'Farmer', 'Real Estate', 'None',
-                          'Writer', 'Dentist', 'INFO REQUESTED', 'Business Owner', 'Accountant', 'Artist',
-                          'Rancher', 'Student', 'Realtor', 'Investments', 'Real Estate Developer', 'Unemployed',
-                          'REQUESTED', 'Owner', 'Developer', 'Businessman', 'Contractor', 'President', 'Engineer',
-                          'N', 'Psychologist', 'Real Estate Broker', 'Executive', 'Private Investor', 'Architect',
-                          'Sales', 'Real Estate Investor', 'SELFEMPLOYED', 'Philanthropist', 'not employed', 
-                          'Author', 'Builder', 'Insurance Agent', 'Volunteer', 'Construction', 'Insurance',
-                          'Entrepreneur', 'Lobbyist', 'CEO', 'n.a', 'Actor', 'Photographer', 'Musician',
-                          'Interior Designer', 'Restaurant Owner', 'Teacher', 'Designer', 'Surgeon', 'Social Worker',
-                          'Veterinarian', 'Psychiatrist', 'Chiropractor', 'Auto Dealer', 'Small Business Owner',
-                          'Optometrist', 'Producer', 'Business', '.Information Requested', 'Financial Advisor',
-                          'Pharmacist', 'Psychotherapist', 'Manager', 'Management Consultant', 'General Contractor',
-                          'Finance', 'Orthodontist', 'Actress', 'N.A.', 'Restauranteur', 'Property Management',
-                          'Home Builder', 'Oil & Gas', 'Real Estate Investments', 'Geologist', 'Professor', 
-                          'Farming', 'Real Estate Agent', 'NA', 'Financial Planner', 'Community Volunteer', 
-                          'Property Manager', 'Political Consultant', 'Public Relations', 'Business Consultant',
-                          'Publisher', 'Insurance Broker', 'Educator', 'Nurse', 'Orthopedic Surgeon', 'Editor',
-                          'Marketing', 'Dairy Farmer', 'Investment Advisor', 'Freelance Writer', 'Investment Banker',
-                          'Trader', 'Computer Consultant', 'Banker', 'Oral Surgeon', 'Business Executive', 'unknown',
-                          'Civic Volunteer', 'Filmmaker', 'Economist'])
+disallowed_orgnames = set(['retired', 'homemaker', 'attorney', '[24i contribution]', 'self-employed', 
+                          'physician', 'self', 'information requested', 'self employed', '[24t contribution]', 
+                          'consultant', 'investor', '[candidate contribution]', 'n/a', 'farmer', 'real estate', 
+                          'none', 'writer', 'dentist', 'info requested', 'business owner', 'accountant', 
+                          'artist', 'rancher', 'student', 'realtor', 'investments', 'real estate developer', 
+                          'unemployed', 'requested', 'owner', 'developer', 'businessman', 'contractor', 
+                          'president', 'engineer', 'n', 'psychologist', 'real estate broker', 'executive', 
+                          'private investor', 'architect', 'sales', 'real estate investor', 'selfemployed', 
+                          'philanthropist', 'not employed', 'author', 'builder', 'insurance agent', 'volunteer', 
+                          'construction', 'insurance', 'entrepreneur', 'lobbyist', 'ceo', 'n.a', 'actor', 
+                          'photographer', 'musician', 'interior designer', 'restaurant owner', 'teacher', 
+                          'designer', 'surgeon', 'social worker', 'veterinarian', 'psychiatrist', 'chiropractor', 
+                          'auto dealer', 'small business owner', 'optometrist', 'producer', 'business', 
+                          '.information requested', 'financial advisor', 'pharmacist', 'psychotherapist', 
+                          'manager', 'management consultant', 'general contractor', 'finance', 'orthodontist', 
+                          'actress', 'n.a.', 'restauranteur', 'property management', 'home builder', 'oil & gas', 
+                          'real estate investments', 'geologist', 'professor', 'farming', 'real estate agent', 
+                          'na', 'financial planner', 'community volunteer', 'property manager', 'political consultant', 
+                          'public relations', 'business consultant', 'publisher', 'insurance broker', 'educator', 
+                          'nurse', 'orthopedic surgeon', 'editor', 'marketing', 'dairy farmer', 'investment advisor', 
+                          'freelance writer', 'investment banker', 'trader', 'computer consultant', 'banker', 
+                          'oral surgeon', 'business executive', 'unknown', 'civic volunteer', 'filmmaker', 'economist'])
 
 class OrganizationFilter(Filter):
     def process_record(self, record):
         orgname = record.get('org_name', '').strip()
-        if not orgname or orgname in disallowed_orgnames:
+        if not orgname or orgname.lower() in disallowed_orgnames:
             orgname = record.get('emp_ef', '').strip()
-            if (not orgname or orgname in disallowed_orgnames) and '/' in record.get('fec_occ_emp',''):
+            if (not orgname or orgname.lower() in disallowed_orgnames) and '/' in record.get('fec_occ_emp',''):
                 (emp, occ) = record.get('fec_occ_emp','').split('/', 1)
                 orgname = emp.strip()
-        record['organization_name'] = orgname if orgname and orgname not in disallowed_orgnames else None
+        record['organization_name'] = orgname if orgname and orgname.lower() not in disallowed_orgnames else None
         return record
 
 class CommitteeFilter(Filter):
