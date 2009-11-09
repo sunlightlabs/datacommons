@@ -19,9 +19,9 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 #import settings
 from django.core.management import execute_from_command_line
 
-#from django.db import connection
-from MySQLdb import connect
-connection = connect(host="localhost", user="root", db="playground")
+from django.db import connection
+#from MySQLdb import connect
+#connection = connect(host="localhost", user="root", db="playground")
 
 from matchbox.models import sql_names
 from matchbox_scripts.contribution.build_contribution_entities import run as build_entities
@@ -29,10 +29,10 @@ from matchbox_scripts.contribution.normalize_contributions import run as build_n
 
 
 def drop_model(model_name):
-    #try:
+    try:
         cursor.execute("drop table %s" % sql_names[model_name])
-    #except:
-    #    pass
+    except:
+        pass
     
 
 def build_matchbox():
