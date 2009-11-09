@@ -108,6 +108,7 @@ class Contribution(DataCommonsModel):
     
     # organization
     organization_name = models.CharField(max_length=255, blank=True, null=True)
+    organization_urn = models.CharField(max_length=128, blank=True, null=True)
     organization_entity = EntityRef('organization_transactions')
     
     # parent organization
@@ -146,6 +147,8 @@ class Contribution(DataCommonsModel):
     def save(self, **kwargs):
 
         if self.transaction_namespace == 'urn:nimsp:transaction':
+            pass
+        elif self.transaction_namespace == 'urn:unittest:transaction':
             pass
         elif self.transaction_namespace == 'urn:fec:transaction':        
             # check transaction type

@@ -21,7 +21,7 @@ def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
-def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_namespace='', attribute_columns=[],
+def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_columns=[],
                       type=entity_types[0][0], reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
@@ -66,7 +66,9 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
                 attributes.add(attribute)
         for attribute in attributes:
             if attribute.strip():
-                e.attributes.add(EntityAttribute(namespace=attribute_namespace, value=attribute))
+                last_colon = attribute.rfind(":")
+                if (last_colon >= 0):
+                    e.attributes.add(EntityAttribute(namespace=attribute[0:last_colon], value=attribute[last_colon + 1:]))
         
         return e.id
 

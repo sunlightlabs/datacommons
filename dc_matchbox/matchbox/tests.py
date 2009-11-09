@@ -17,8 +17,10 @@ class TestQueries(unittest.TestCase):
 
     def save_contribution(self, org_name):
         c = Contribution(organization_name=org_name, 
+                     organization_urn='urn:unittest:organization:' + org_name,
                      datestamp=datetime.now(),
                      cycle='09', 
+                     transaction_namespace='urn:unittest:transaction',
                      import_reference=self.import_)
         c.save()
         
@@ -47,7 +49,8 @@ class TestQueries(unittest.TestCase):
         populate_entities(sql_names['contribution'], 
                           sql_names['contribution_organization_name'], 
                           sql_names['contribution_organization_entity'], 
-                          [sql_names['contribution_organization_name']])
+                          [sql_names['contribution_organization_name']],
+                          [sql_names['contribution_organization_urn']])
         
         orphan = Entity(name=u'Avacado')
         orphan.save()
@@ -64,12 +67,18 @@ class TestQueries(unittest.TestCase):
         
         apple_alias = EntityAlias.objects.get(alias="Apple")
         self.assertEqual(apple.id, apple_alias.entity.id)
+        
+        self.assertEqual(1, apple.attributes.count())
+        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
 
         apricot = Entity.objects.get(name="apricot")
         self.assertEqual(1, apricot.organization_transactions.count())
         
         apricot_alias = EntityAlias.objects.get(alias="apricot")
         self.assertEqual(apricot.id, apricot_alias.entity.id)
+        
+        self.assertEqual(1, apricot.attributes.count())
+        self.assertEqual(1, apricot.attributes.filter(namespace='urn:unittest:organization', value='Apricot').count())
         
         avacado = Entity.objects.get(name='avacado')
         self.assertEqual(0, avacado.organization_transactions.count())
@@ -131,11 +140,13 @@ class TestQueries(unittest.TestCase):
         
     def test_merge_entities_attribute_duplication(self):
         apple = Entity.objects.get(name="Apple")
+        apple.attributes.all().delete()
         apple.attributes.create(namespace='color', value='red')
         apple.attributes.create(namespace='color', value='yellow')
         apple.attributes.create(namespace='texture', value='crisp')
         
         apricot = Entity.objects.get(name="Apricot")
+        apricot.attributes.all().delete()
         apricot.attributes.create(namespace='color', value='yellow')
         apricot.attributes.create(namespace='texture', value='soft')
         
