@@ -21,8 +21,7 @@ def run():
                   sql_names['contribution_organization_name'], 
                   sql_names['contribution_organization_entity'],
                   [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                   'where do I get this value?',
-                   [])
+                  [sql_names['contribution_organization_urn']])
     
     
 if __name__ == '__main__':
