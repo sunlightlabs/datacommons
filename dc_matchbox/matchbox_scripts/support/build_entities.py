@@ -22,7 +22,7 @@ def quote(value):
 
 
 def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_columns=[],
-                      type=entity_types[0][0], reviewer=__name__, timestamp = datetime.now()):
+                      type_=None, reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
     
@@ -41,7 +41,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         return loop_cursor
     
     def create_entity(name):
-        e = Entity(name=name, type=type, reviewer=reviewer, timestamp=timestamp)
+        e = Entity(name=name, type=type_, reviewer=reviewer, timestamp=timestamp)
         e.save()
         
         # create aliases
@@ -77,7 +77,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
                 (`%(entity_name)s`, `%(entity_type)s`, `%(entity_reviewer)s`, `%(entity_timestamp)s`, `%(entity_notes)s`) \
                 values (%%s, %%s, %%s, %%s, %%s)" % \
                 sql_names
-        cursor.execute(stmt, [name, type, reviewer, timestamp, ''])
+        cursor.execute(stmt, [name, type_, reviewer, timestamp, ''])
         entity_id = connection.insert_id()
         
         # create aliases
