@@ -1,6 +1,6 @@
-<table class="contributions">
+<table class="transactions contributions">
 	<tr>
-		<th>Cycle</th>
+		<th>Type</th>
 		<th>Datestamp</th>
 		<th>Amount</th>
 		<th>Contributor</th>
@@ -14,7 +14,8 @@
 	</tr>
 	{% for contrib in contributions %}
     	<tr class="{% cycle "even" "odd" %}">
-    		<td>{{ contrib.cycle }}</td>
+    		<td>{% ifequal contrib.transaction_namespace "urn:fec:transaction" %}Federal{% else %}State{% endifequal %}
+    		</td>
     		<td>{{ contrib.datestamp|date:"M d, Y" }}</td>
     		<td>${{ contrib.amount }}</td>
     		<td>{{ contrib.contributor_name }}</td>

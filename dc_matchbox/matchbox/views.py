@@ -78,12 +78,25 @@ def entity_detail(request, entity_id):
     transactions = { }
     for model in entityref_cache.iterkeys():
         if hasattr(model.objects, 'with_entity'):
-            transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:20]
+            transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
     data = {
         'entity': entity,
         'transactions': transactions
     }
     return render_to_response('matchbox/entity_detail.html', data)
+
+@login_required
+def entity_transactions(request, entity_id):
+    entity = Entity.objects.get(pk=entity_id)
+    transactions = { }
+    for model in entityref_cache.iterkeys():
+        if hasattr(model.objects, 'with_entity'):
+            transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
+    data = {
+        'entity': entity,
+        'transactions': transactions
+    }
+    return render_to_response('matchbox/partials/entity_transactions.html', data)
 
 """ Ethan's stuff """
 

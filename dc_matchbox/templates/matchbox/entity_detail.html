@@ -60,11 +60,13 @@
     {% endif %}
 
 	{% if transactions.Contribution %}
+	<div id="transactions">
     	<h3>Contributions</h3>
 		<p>20 preview transactions are shown ordered by dollar amount</p>
-		<div class="transaction_preview">
+		<div class="transactions_container">
             {% contribution_table transactions.Contribution %}
         </div>
+    </div>
     {% endif %}
     
 {% endblock %}
