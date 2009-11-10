@@ -24,15 +24,41 @@ class RecipCodeFilter(Filter):
                 record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
         return record
 
+# this list was built by searching for the most frequent organization names in the unfiltered
+# contribution data. I went through all organization names with at least 200 entries and entered
+# all of the names that weren't organziations. -epg
+disallowed_orgnames = set(['retired', 'homemaker', 'attorney', '[24i contribution]', 'self-employed', 
+                          'physician', 'self', 'information requested', 'self employed', '[24t contribution]', 
+                          'consultant', 'investor', '[candidate contribution]', 'n/a', 'farmer', 'real estate', 
+                          'none', 'writer', 'dentist', 'info requested', 'business owner', 'accountant', 
+                          'artist', 'rancher', 'student', 'realtor', 'investments', 'real estate developer', 
+                          'unemployed', 'requested', 'owner', 'developer', 'businessman', 'contractor', 
+                          'president', 'engineer', 'n', 'psychologist', 'real estate broker', 'executive', 
+                          'private investor', 'architect', 'sales', 'real estate investor', 'selfemployed', 
+                          'philanthropist', 'not employed', 'author', 'builder', 'insurance agent', 'volunteer', 
+                          'construction', 'insurance', 'entrepreneur', 'lobbyist', 'ceo', 'n.a', 'actor', 
+                          'photographer', 'musician', 'interior designer', 'restaurant owner', 'teacher', 
+                          'designer', 'surgeon', 'social worker', 'veterinarian', 'psychiatrist', 'chiropractor', 
+                          'auto dealer', 'small business owner', 'optometrist', 'producer', 'business', 
+                          '.information requested', 'financial advisor', 'pharmacist', 'psychotherapist', 
+                          'manager', 'management consultant', 'general contractor', 'finance', 'orthodontist', 
+                          'actress', 'n.a.', 'restauranteur', 'property management', 'home builder', 'oil & gas', 
+                          'real estate investments', 'geologist', 'professor', 'farming', 'real estate agent', 
+                          'na', 'financial planner', 'community volunteer', 'property manager', 'political consultant', 
+                          'public relations', 'business consultant', 'publisher', 'insurance broker', 'educator', 
+                          'nurse', 'orthopedic surgeon', 'editor', 'marketing', 'dairy farmer', 'investment advisor', 
+                          'freelance writer', 'investment banker', 'trader', 'computer consultant', 'banker', 
+                          'oral surgeon', 'business executive', 'unknown', 'civic volunteer', 'filmmaker', 'economist'])
+
 class OrganizationFilter(Filter):
     def process_record(self, record):
         orgname = record.get('org_name', '').strip()
-        if not orgname:
+        if not orgname or orgname.lower() in disallowed_orgnames:
             orgname = record.get('emp_ef', '').strip()
-            if not orgname and '/' in record['fec_occ_emp']:
-                (emp, occ) = record['fec_occ_emp'].split('/', 1)
+            if (not orgname or orgname.lower() in disallowed_orgnames) and '/' in record.get('fec_occ_emp',''):
+                (emp, occ) = record.get('fec_occ_emp','').split('/', 1)
                 orgname = emp.strip()
-        record['organization_name'] = orgname or None
+        record['organization_name'] = orgname if orgname and orgname.lower() not in disallowed_orgnames else None
         return record
 
 class CommitteeFilter(Filter):
