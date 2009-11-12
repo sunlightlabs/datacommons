@@ -21,7 +21,15 @@ var Matchbox = {
         typeFilter: null,
         
         StatusBar: {
+            
+            queue: [],
             shouldHide: false,
+            
+            Message: function(message) {
+                this.message = message;
+                this.shouldHide = false;
+            },
+            
             show: function(message) {
                 $('#statusbar p').text(message).parent().show("slide", { direction: "up" }, 500);
                 var interval = window.setInterval(function () {
@@ -32,9 +40,11 @@ var Matchbox = {
                     }
                 }, 800);
             },
+            
             hide: function() {
                 Matchbox.MergeManager.StatusBar.shouldHide = true;
             }
+            
         },
         
         loadEntities: function(entities) {
@@ -47,6 +57,7 @@ var Matchbox = {
         loadQuery: function(query) {
             Matchbox.MergeManager.StatusBar.show("Loading query '" + query + "'");
             $.getJSON('/search/?q=' + encodeURIComponent(query), Matchbox.MergeManager.loadEntities);
+            $('#search_terms').append($('<li>' + query + '</li>'));
             Matchbox.MergeManager.loadedQueries.push(query)
         },
         

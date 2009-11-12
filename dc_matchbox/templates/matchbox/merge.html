@@ -15,23 +15,16 @@
     <form action="{% url matchbox_merge %}" method="post" id="merge_form">
     	<input type="hidden" name="new_name" id="new_name">
     	<input type="hidden" name="new_type" id="new_type">
-    	{% comment %}
-        <table id="entities_table">
-            <tr>
-                <th class="selectall"><a href="#" id="selector">All</a></th>
-                <th class="name">Name</th>
-                <th class="transactioncount"># of Transactions</th>
-                <th class="actions">Actions</th>
-            </tr>
-        </table>
-        {% endcomment %}
         <ul id="entities">
         </ul>
     </form>
 {% endblock %}
 
 {% block sidebar %}
-    <h3>Compare Additional Entities</h3>
+    <h3>Search Terms</h3>
+    <ul id="search_terms">
+    </ul>
+    <h3>Additional Entities</h3>
     <p>Have other entities you want to compare or possibly merge? Search below!</p>
     <form action="#" method="get" id="more_results_form">
         <input type="text" name="q" id="more_results_query">
@@ -48,9 +41,8 @@
     </div>
     <div id="footer_merge">
     	<form>
-            <label for="merge_type">Type</label>
-            <input type="text" name="type" id="merge_type" value="{{ entity_type }}">
-            <label for="merge_name">Name</label>
+            <input type="hidden" name="type" id="merge_type" value="{{ entity_type }}">
+            <label for="merge_name">Merged Name</label>
             <input type="text" name="name" id="merge_name">
             <p>
                 <button id="merge_button">Merge</button>

@@ -18,30 +18,24 @@
         <header>
             <div class="container">
                 <h1><a href="{% url matchbox_dashboard %}">Data Commons</a></h1>
-                <p class="welcome">Welcome, Jeremy | <a href="{% url logout %}">Logout</a></p>
+                {% if user.is_authenticated %}
+                    <p class="welcome">Welcome, {{ user.username }} | <a href="{% url logout %}">Logout</a></p>
+                {% endif %}
                 <div class="clear"></div>
             </div>
-            <!--
-            <nav>
-                <ul class="container">
-                    <li class="nav_home"><a href="#">Home</a></li>
-                    <li class="nav_committees"><a href="#">Committees</a></li>
-                    <li class="nav_organizations"><a href="#">Organizations</a></li>
-                </ul>
-            </nav>
-            -->
             <div id="search_form_container">
                 <form action="{% url matchbox_merge %}" method="get" id="search_form">
                     <p class="container">
-                        <label for="search_query">New Search</label>
-                        <input type="text" name="q" id="query">
-                        <select name="type">
-                            <option value="">of any type</option>
-                            <option value="organization">only organizations</option>
-                            <option value="committee">only committees</option>
-                            <option value="politician">only politicians</option>
-                        </select>
-                        <input type="submit" value="Go!">
+                        {% if user.is_authenticated %}
+                            <label for="search_query">New Search</label>
+                            <input type="text" name="q" id="query">
+                            <select name="type">
+                                <option value="organization"{% ifequal entity_type "organization" %} selected="selected"{% endifequal %}>organizations</option>
+                                <option value="committee"{% ifequal entity_type "committee" %} selected="selected"{% endifequal %}>committees</option>
+                                <option value="politician"{% ifequal entity_type "politician" %} selected="selected"{% endifequal %}>politicians</option>
+                            </select>
+                            <input type="submit" value="Go!">
+                        {% endif %}
                     </p>
                 </form>
             </div>
@@ -49,7 +43,7 @@
         
         <div id="main" class="container">
             <div id="statusbar">
-                <p>Loading stuff</p>
+                <p></p>
             </div>
             <div id="content">
                 {% block content %}{% endblock %}

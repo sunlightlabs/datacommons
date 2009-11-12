@@ -1,23 +1,20 @@
-<html>
+{% extends "matchbox/base.html" %}
 
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
-{% endif %}
+{% block content %}
 
-<form method="post" action="{% url django.contrib.auth.views.login %}">
-<table>
-<tr>
-    <td>{{ form.username.label_tag }}</td>
-    <td>{{ form.username }}</td>
-</tr>
-<tr>
-    <td>{{ form.password.label_tag }}</td>
-    <td>{{ form.password }}</td>
-</tr>
-</table>
+    {% if form.errors %}
+    <p>Your username and password didn't match. Please try again.</p>
+    {% endif %}
 
-<input type="submit" value="login" />
-<input type="hidden" name="next" value="{{ next }}" />
-</form>
-
-</html>
+    <form method="post" action="{% url django.contrib.auth.views.login %}">
+        <ul>
+            <li>{{ form.username.label_tag }}{{ form.username }}</li>
+            <li>{{ form.password.label_tag }}{{ form.password }}</li>
+            <li>
+                <input type="submit" value="login" />
+                <input type="hidden" name="next" value="{{ next }}" />
+            </li>
+        </ul>
+    </form>
+    
+{% endblock %}

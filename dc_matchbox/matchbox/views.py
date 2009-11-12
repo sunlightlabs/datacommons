@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.template.loader import render_to_string
 from matchbox.models import Entity, entityref_cache
 from matchbox.utils import decode_htmlentities
@@ -14,7 +15,13 @@ ENTITY_TYPES = getattr(settings, 'ENTITY_TYPES', ())
 
 @login_required
 def dashboard(request):
-    return render_to_response('matchbox/dashboard.html')
+    """ Display user dashboard
+        - queue items
+        - saved searches
+        - recent commits
+    """
+    return render_to_response('matchbox/dashboard.html', context_instance=RequestContext(request))
+
 
 @login_required
 def search(request):
@@ -31,9 +38,11 @@ def search(request):
     content = json.dumps(results)
     return HttpResponse(content, mimetype='application/javascript')
 
+
 @login_required
 def queue(request, queue_id):
     pass
+
 
 @login_required
 def merge(request):
@@ -63,42 +72,63 @@ def merge(request):
         if type_ in ENTITY_TYPES:
             data['entity_type'] = type_
         
-        return render_to_response('matchbox/merge.html', data)
+        return render_to_response('matchbox/merge.html',
+                                  data,
+                                  context_instance=RequestContext(request))
+
 
 @login_required
 def google_search(request):
+    """ Send search to Google.
+        Log the search in the future.
+    """
     query = request.GET.get('q', '')
-    if not query.startswith('"'):
-        query = '"%s"' % query
     return HttpResponseRedirect('http://google.com/search?q=%s' % query)
+
 
 @login_required
 def entity_detail(request, entity_id):
+    """ Display entity detail page.
+    """
     entity = Entity.objects.get(pk=entity_id)
     transactions = { }
     for model in entityref_cache.iterkeys():
         if hasattr(model.objects, 'with_entity'):
             transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
-    data = {
-        'entity': entity,
-        'transactions': transactions
-    }
-    return render_to_response('matchbox/entity_detail.html', data)
+    return render_to_response('matchbox/entity_detail.html', {
+                                  'entity': entity,
+                                  'transactions': transactions
+                              }, context_instance=RequestContext(request))
+
 
 @login_required
 def entity_transactions(request, entity_id):
+    """ Return transactions partial for an entity.
+    """
     entity = Entity.objects.get(pk=entity_id)
     transactions = { }
     for model in entityref_cache.iterkeys():
         if hasattr(model.objects, 'with_entity'):
             transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
-    data = {
-        'entity': entity,
-        'transactions': transactions
-    }
-    return render_to_response('matchbox/partials/entity_transactions.html', data)
+    return render_to_response('matchbox/partials/entity_transactions.html', {
+                                  'entity': entity,
+                                  'transactions': transactions
+                              }, context_instance=RequestContext(request))
 
-""" Ethan's stuff """
+
+
+
+
+
+
+
+
+
+
+
+#
+# Ethan's stuff
+#
 
 from django.template import Context, loader
 from django import forms
