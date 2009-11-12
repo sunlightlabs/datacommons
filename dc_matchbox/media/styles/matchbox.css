@@ -5,7 +5,7 @@ article, aside, dialog, figure, footer, header, hgroup, menu, nav, section { dis
 
 body {
     color: #191818;
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: Tahoma, Helvetica, Arial, sans-serif;
     font-size: 82.5%;
     margin: 0;
     padding: 0;
@@ -33,6 +33,9 @@ header nav ul li a {
     padding: 5px 20px;
     text-decoration: none;
 }
+
+table { border-collapse: collapse; }
+
 body#home header nav ul li.nav_home { background-color: #8A8B8A; }
 body#home header nav ul li.nav_home a { color: #fff; }
 body#committees header nav ul li.nav_committees { background-color: #8A8B8A; }
@@ -40,35 +43,44 @@ body#committees header nav ul li.nav_committees a { color: #fff; }
 body#organizations header nav ul li.nav_organizations { background-color: #8A8B8A; }
 body#organizations header nav ul li.nav_organizations a { color: #fff; }
 
-#main { margin-bottom: 22em; }
-#content { float: left; width: 750px; margin: 0 5px 200px 0; }
-#sidebar { border-left: 1px solid #000; float: left; padding: 0 0 0 10px; width: 200px; }
+body div#statusbar {
+    background-color: #CBCCCB;
+    border: 1px solid #CBCCCB;
+    color: #FFFFFF;
+    display: none;
+    font-size: 110%;
+    font-weight: bold;
+    padding: 10px 10px 15px 10px;
+    position: fixed;
+    top: 110px;
+    width: 970px;
+    -moz-border-radius: 0 0 10px 10px;
+    -webkit-border-radius: 0 0 10px 10px;
+}
+body div#statusbar p { margin: 0; padding: 0; }
 
-#content table { border-collapse: collapse; }
+#main { font-size: 93%; margin-bottom: 22em; }
+#content { float: left; width: 750px; margin: 0 0 200px 0; }
+#sidebar { border-left: 1px solid #000; float: left; padding: 0 0 100px 20px; width: 180px; }
 
-#content table#entities_table th.selectall { width: 40px; }
-#content table#entities_table th.name { width: 510px; }
-#content table#entities_table th.transactioncount { width: 100px; }
-#content table#entities_table th.actions { width: 60px; }
+#content ul#entities { list-style: none; margin: 0; padding: 0; width: 740px; }
+#content ul#entities li { clear: both; padding: 5px; }
+#content ul#entities li:hover { background-color: #F2F1F0; }
+#content ul#entities li.odd { background-color: #F2F1F0; }
+#content ul#entities li p.actions { float: right; margin: 0; padding: 0; }
+#content ul#entities li a.transactions_control { display: inline-block; }
+#content ul#entities li div.transactions_container {
+    background-color: #FFFFFF;
+    clear: both;
+    display: none;
+    height: 100px;
+    margin: 10px 0 10px 25px;
+}
 
-#content table#entities_table tr.even { background-color: #F2F1F0; }
-#content table#entities_table tr.odd { background-color: #FFFFFF; }
-#content table#entities_table th { font-size: 0.8em; }
-#content table#entities_table th, #content table td { padding: 5px 2px; }
-#content table#entities_table td { vertical-align: top; }
-#content table#entities_table td.entity_select { text-align: center; }
-#content table#entities_table td p.aliases { color: #777776; font-size: 0.8em; }
-
-#content table.transactions { border: 1px solid #CBCCCB; width: 100%; }
-#content table.transactions th { background-color: #CBCCCB; padding: 5px 3px; }
-#content table.transactions td { padding: 5px 3px; }
-#content table.transactions tr td { border: 1px solid #CBCCCB; }
-
-div.transaction_preview {
-    border: 1px solid #ddd;
+#content div.transactions_container {
+    border: 1px solid #CBCCCB;
     height: 200px;
     overflow: auto;
-    width: 700px;
 }
 
 #content h2 { display: inline-block; }
@@ -84,12 +96,12 @@ div.transaction_preview {
 #content div.attributes { margin: 1em 0 0 0; }
 #content div.attributes h4 { display: inline; }
 #content div.attributes ul { display: inline; list-style: none; margin: 0; padding: 0; }
-#content div.attributes ul li { display: inline; margin: 0 2px; padding: 0; }
+#content div.attributes ul li { display: inline; margin: 0; padding: 0; }
 #content div.attributes ul li a {
     background-color: #FBF9F9;
     border-bottom: 1px solid #CBCCCB;
     color: #999;
-    padding: 2px 2px;
+    padding: 0;
     text-align: center;
     text-decoration: none;
 }
@@ -97,21 +109,31 @@ div.transaction_preview {
 
 #content h4.aliases_header { display: inline; }
 #content ul#aliases { display: inline; font-size: 90%; list-style: none; margin: 0; padding: 0; }
-#content ul#aliases li { display: inline; padding: 0 0.5em 0 0; }
+#content ul#aliases li { display: inline; margin: 0; padding: 0; }
 #content ul#aliases li a {
     background-color: #FBF9F9;
     border-bottom: 1px solid #CBCCCB;
     color: #999;
-    padding: 2px 2px;
+    display: inline-block;
+    margin: 2px;
+    padding: 2px;
     text-align: center;
     text-decoration: none;
 }
 #content ul#aliases li a:hover { border-bottom: 1px solid #000; color: #000; }
 
-#content table.contributions { border-collapse: collapse; width: 1200px; }
-#content table.contributions tr.odd { background-color: #FBF9F9; }
-#content table.contributions tr th { background-color: #F2F1F0; border: 1px solid #CBCCCB; padding: 3px; }
-#content table.contributions tr td { border: 1px solid #CBCCCB; padding: 3px 15px 3px 5px; }
+/*
+ * transactions table
+ */ 
+#content table.transactions {
+    border: 1px solid #CBCCCB;
+    border-collapse: collapse;
+    font-size: 80%;
+    width: 1300px;
+}
+#content table.transactions tr.odd { background-color: #FBF9F9; }
+#content table.transactions tr th { background-color: #F2F1F0; border: 1px solid #CBCCCB; padding: 2px 0 2px 3px; }
+#content table.transactions tr td { border: 1px solid #CBCCCB; padding: 2px 0 2px 3px; }
 
 footer {
     background-color: #F2F1F0;

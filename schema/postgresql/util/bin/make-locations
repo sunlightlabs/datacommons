@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+import re
+import sys
+
+import MySQLdb
+import psycopg2, psycopg2.extensions
+
+
+try:
+    nimsp_con = MySQLdb.connect(db='nimsp', user='datacommons', host='localhost', passwd='vitamind')
+    nimsp_cur1 = nimsp_con.cursor()
+    nimsp_cur2 = nimsp_con.cursor()
+except Exception, e:
+    print "Unable to connect to nimsp database: %s" % e
+    sys.exit(1)
+
+try:
+    util_con = psycopg2.connect("dbname='util' user='datacommons' host='localhost' password='vitamind'")
+    util_con.set_client_encoding('LATIN1')
+    util_cur1 = util_con.cursor()
+    util_cur2 = util_con.cursor()
+except:
+    print "Unable to connect to util database"
+    sys.exit(1)
+
+nimsp_cur1.execute("select StateCode from States order by StateCode")
+for record1 in nimsp_cur1.fetchall():
+    state = record1[0]
+    print state
+    cum_cnt = 0
+    seen = {}
+    util_cur1.execute("delete from locations where state = %s", [state])
+    nimsp_cur2.execute("select City,ZipCode,count(*) as cnt from Contributions where State = %s and substring(CatCode from 1 for 1) not in ('X','Y','Z') group by City,ZipCode order by cnt desc", [state])
+    for record2 in nimsp_cur2.fetchall():
+        (city,zip,cnt) = record2
+        if city is None or zip is None or city == '' or zip == '' \
+            or re.search("UNKNOWN|ILLEGIBLE|UNREADABLE|\d|\*|(?:^(?:AA*|CITY|XX*|YY*|ZZ*|%s)$)" % (state), city) or not re.match("^[A-Z]", city):
+            continue
+        city = re.sub("[^A-Z]+$","",city)
+        match = re.match("^(?P<zip5>[0-9]{5})", zip)
+	if match:
+            zip = match.group("zip5")
+            if zip in ('00000','99999'):
+                continue
+            cum_cnt += cnt
+            city = re.sub(" %s$" % state, "", city)
+            key = "%s::%s" % (city,zip)
+            if key in seen:
+                util_cur1.execute("update locations set freq = freq + %i.0 where city = '%s' and state = '%s' and zip = '%s'" % (cnt,city,state,zip))
+            else:
+                util_cur1.execute("insert into locations (freq,city,state,zip) values (%i.0,'%s','%s','%s');" % (cnt,city,state,zip))
+                seen[key] = True
+    cum_freq = 0.0
+    util_cur1.execute("select city,zip,freq from locations where state = '%s' order by freq desc,city" % (state))
+    for record2 in util_cur1.fetchall():
+        (city,zip,cnt) = (record2[0],record2[1],record2[2])
+        freq = cnt/cum_cnt
+        cum_freq += freq
+        print "%s %s: %i %f %f" % (city,zip,int(cnt),freq, cum_freq)
+        util_cur2.execute("update locations set freq = %f, cum_freq = %f where city = '%s' and state = '%s' and zip = '%s';" %  (freq,cum_freq,city,state,zip))
+    util_con.commit()
+
+#util_cur1.execute("cluster locations;")
+util_con.commit()
+
+
+    

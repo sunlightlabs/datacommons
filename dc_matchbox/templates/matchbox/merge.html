@@ -15,6 +15,7 @@
     <form action="{% url matchbox_merge %}" method="post" id="merge_form">
     	<input type="hidden" name="new_name" id="new_name">
     	<input type="hidden" name="new_type" id="new_type">
+    	{% comment %}
         <table id="entities_table">
             <tr>
                 <th class="selectall"><a href="#" id="selector">All</a></th>
@@ -23,6 +24,9 @@
                 <th class="actions">Actions</th>
             </tr>
         </table>
+        {% endcomment %}
+        <ul id="entities">
+        </ul>
     </form>
 {% endblock %}
 

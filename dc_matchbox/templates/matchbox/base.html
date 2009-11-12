@@ -7,8 +7,10 @@
         <!--[if IE]>
             <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
         <![endif]-->
+        {% css "ui-lightness/jquery-ui-1.7.2.custom.css" %}
         {% css "styles/matchbox.css" %}
         {% js "scripts/jquery-1.3.2.min.js" %}
+        {% js "scripts/jquery-ui-1.7.2.custom.min.js" %}
         {% js "scripts/matchbox.js" %}
         {% block scripts %}{% endblock %}
     </head>
@@ -46,6 +48,9 @@
         </header>
         
         <div id="main" class="container">
+            <div id="statusbar">
+                <p>Loading stuff</p>
+            </div>
             <div id="content">
                 {% block content %}{% endblock %}
             </div>

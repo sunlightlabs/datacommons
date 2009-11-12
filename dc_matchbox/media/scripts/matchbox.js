@@ -20,13 +20,32 @@ var Matchbox = {
         loadedQueues: [],
         typeFilter: null,
         
+        StatusBar: {
+            shouldHide: false,
+            show: function(message) {
+                $('#statusbar p').text(message).parent().show("slide", { direction: "up" }, 500);
+                var interval = window.setInterval(function () {
+                    if (Matchbox.MergeManager.StatusBar.shouldHide) {
+                        Matchbox.MergeManager.StatusBar.shouldHide = false;
+                        clearInterval(interval);
+                        $('#statusbar').hide("slide", { direction: "up" }, 1000);
+                    }
+                }, 800);
+            },
+            hide: function() {
+                Matchbox.MergeManager.StatusBar.shouldHide = true;
+            }
+        },
+        
         loadEntities: function(entities) {
             for (var i = 0; i < entities.length; i++) {
                 Matchbox.MergeManager.register(entities[i]);
             }
+            Matchbox.MergeManager.StatusBar.hide();
         },
         
         loadQuery: function(query) {
+            Matchbox.MergeManager.StatusBar.show("Loading query '" + query + "'");
             $.getJSON('/search/?q=' + encodeURIComponent(query), Matchbox.MergeManager.loadEntities);
             Matchbox.MergeManager.loadedQueries.push(query)
         },
@@ -47,7 +66,7 @@ var Matchbox = {
                 row.find('input[type=checkbox]').click(function() {
                     Matchbox.MergeManager.entities[$(this).val()].selected = this.checked;
                 });
-                $('#entities_table').append(row);
+                $('#entities').append(row);
             }
         },
         
@@ -121,6 +140,18 @@ $().ready(function() {
     	$('#new_type').val( $('#merge_type').val() );
         $('#merge_form').trigger('submit');
         return false;
+    });
+    
+    // transactions control
+    $('a.transactions_control').live('click', function() {
+        var me = $(this);
+        if (me.hasClass('ui-icon-triangle-1-s')) {
+            me.siblings('.transactions_container').hide();
+        } else {    
+            me.siblings('.transactions_container').show().load(this.href);
+        }
+        me.trigger('blur').toggleClass('ui-icon-triangle-1-e').toggleClass('ui-icon-triangle-1-s');
+        return false;    
     });
         
 });

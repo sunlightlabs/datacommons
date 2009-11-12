@@ -1,21 +1,19 @@
-<tr>
-    <td class="entity_select">
-        <input type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
-    </td>
-    <td>
-        <label for="entities_{{ entity.id }}">{{ entity.name }}</label>
-        {% if entity.aliases %}
-            <ul>
-                {% for alias in entity.aliases %}
-                <li><a href="{% url matchbox_google_search %}?q={{ alias.alias|urlencode }}">{{ alias.alias }}</a></li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    </td>
-    <td>{{ entity.count }}</td>
-    <td class="actions">
-        <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google">G</a>
-        <a href="{% url matchbox_entity entity.id %}" class="detail">D</a>
+<li>
+    <p class="actions">
+        <span>{{ entity.count }}</span>
+        <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google" target="_blank">G</a>
+        <a href="{% url matchbox_entity entity.id %}" class="detail" target="_blank">D</a>
         <a href="{% url matchbox_entity entity.id %}" class="notes">N(0)</a>
-    </td>
-</tr>
+    </p>
+    <input type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
+    <a class="transactions_control ui-icon ui-icon-triangle-1-e" href="{% url matchbox_entity_transactions entity.id %}">V</a>
+    <label for="entities_{{ entity.id }}">{{ entity.name }}</label>
+    {% if entity.aliases %}
+        <ul>
+            {% for alias in entity.aliases %}
+            <li><a href="{% url matchbox_google_search %}?q={{ alias.alias|urlencode }}">{{ alias.alias }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <div class="transactions_container"></div>
+</li>
