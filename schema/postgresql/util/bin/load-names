@@ -1,0 +1,118 @@
+#!/usr/bin/perl -w 
+
+use DBI;
+use File::Basename;
+use Getopt::Long;
+use strict;
+
+########################
+# initialize variables #
+########################
+my $program = basename($0);
+my $dbname = 'util';
+my $dbuser = 'datacommons';
+my $passwd = 'vitamind';
+
+############################
+# get command line options #
+############################
+sub usage($;$) {
+    my $of = $_[0] ? *STDERR : *STDOUT;
+    print $of "$_[1]\n" if $_[1];
+    print $of <<"END";
+Usage: $program [OPTION]...
+
+Options:
+  --db=NAME        Database name (default $dbname)
+  --user=NAME      Database user (default $dbuser)
+  --passwd=PASSWD  Database password
+
+Help:
+  --help           Print this help, then exit
+END
+	exit shift;
+}
+
+GetOptions(
+    'user=s' => \$dbuser,
+    'db=s' => \$dbname,
+    'passwd=s' => \$passwd,   
+    'help' => sub {usage(0)}
+) || usage(1);
+
+my $dsn = sprintf 'DBI:Pg:dbname=%s;host=localhost;user=%s;password=%s', $dbname,$dbuser,$passwd;
+my $dbh = DBI->connect($dsn) or die;
+
+my @tables = (
+    ['lastname' => 'dist.all.last'],
+    ['female_firstname' => 'dist.female.first'],
+    ['male_firstname' => 'dist.male.first']
+    );
+
+foreach my $ref (@tables) {
+    my ($table,$src) = ($ref->[0], 'load/' . $ref->[1]);
+    print "Loading $table\n";
+    my $sth_insert = $dbh->prepare("insert into $table (name,freq,cum_freq,id,norm_cum_freq) values (?,?,?,?,0.0);");
+    open IN, $src or die $!;
+    $dbh->do("truncate table $table;");
+    while (<IN>) {
+	if (m/^([A-Z]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)/) {
+	    $sth_insert->execute($1,$2/100.0,$3/100.0,$4);
+	}
+	else {
+	    die "Didn't grok $_";
+	}
+    }
+    close IN;
+}
+
+print "Loading firstname\n";
+$dbh->do('truncate table firstname;');
+my %firstnames;
+my $sth_insert = $dbh->prepare('insert into firstname (name,freq,cum_freq,norm_cum_freq) values (?,?,?,0.0);');
+my $sth_union = $dbh->prepare(<<END);
+select name,freq from female_firstname where freq > 0.0
+UNION
+select name,freq from male_firstname where freq > 0.0
+order by 2 desc,1;
+END
+$sth_union->execute;
+while (my ($name,$freq) = $sth_union->fetchrow_array) {
+    $firstnames{$name} += $freq;
+}
+my $cum_freq = 0.0;
+foreach my $name (sort {$firstnames{$b} <=> $firstnames{$a} || $a cmp $b} keys %firstnames) {
+    my $freq = $firstnames{$name}/2.0;
+    $cum_freq += $freq;
+    $sth_insert->execute($name,$freq,$cum_freq); 
+}
+
+foreach my $ref (@tables,'firstname') {
+    my $table = ref($ref) eq 'ARRAY' ? $ref->[0] : $ref;	
+    print "Munging $table\n";
+    print "  fudging equal cum_freq\n";
+    my $sth1 = $dbh->prepare("select cum_freq, count(*) as cnt from $table group by cum_freq having count(*) > 1 order by cnt desc;");
+    my $sth2 = $dbh->prepare("select id,name from $table where cum_freq = ? order by id;");
+    my $sth3 = $dbh->prepare("update $table set cum_freq = cum_freq + ? where id = ?;");
+    my ($max) = $dbh->selectrow_array("select max(cum_freq) from $table;");
+    $sth1->execute;
+    while (my ($cum_freq,$cnt) = $sth1->fetchrow_array) {
+	my ($higher) = $dbh->selectrow_array("select min(cum_freq) from $table where cum_freq > ?;",undef,$cum_freq);
+	$higher = $max + 0.00001 unless $higher;
+	my $fudge = sprintf '%0.10f', ($higher - $cum_freq)/$cnt;	
+	$sth2->execute($cum_freq);
+	my $i = 0;
+	while (my ($id,$name) = $sth2->fetchrow_array) {
+	    $sth3->execute($fudge*$i++,$id);
+	}    
+    }
+    print "  normalizing\n";   
+    $dbh->do("update $table set norm_cum_freq = cum_freq/$max;");
+    $dbh->do("cluster $table;");
+}
+
+END {
+    $dbh->disconnect if $dbh;
+}
+
+
