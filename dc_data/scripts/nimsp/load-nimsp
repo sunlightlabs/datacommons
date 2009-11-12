@@ -62,7 +62,7 @@ fi
 if [ $recreate -eq 1 ]; then
     mysqladmin -u $USERNAME --password=$PASSWD drop $DBNAME
     mysqladmin -u $USERNAME --password=$PASSWD create $DBNAME
-    mysql -u $USERNAME --password=$PASSWD < $src/NIMSP_Data.sql
+    mysql $DBNAME -u $USERNAME --password=$PASSWD < $src/NIMSP_Data.sql
 else
     echo Clearing Contributions
     mysql -u $USERNAME --password=$PASSWD -e "TRUNCATE TABLE Contributions;" $DBNAME
@@ -73,7 +73,7 @@ for t in BallotMeasures BallotSupport Candidates CatCodes Committees Contributor
     txt=$src/$t.txt
     if [ ! -f $txt ]; then
 	gunzip $txt.gz
-	dos2unix $txt
+#	dos2unix $txt
     fi
     if [ $recreate -eq 0 ]; then
 	mysql -u $USERNAME --password=$PASSWD -e "TRUNCATE TABLE $t;" $DBNAME
