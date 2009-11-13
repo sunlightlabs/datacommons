@@ -222,7 +222,9 @@ def main():
         # address and gender fields
         FieldRenamer({'contributor_address': 'street',
                       'contributor_city': 'city',
-                      'conitrbutor_zipcode': 'zipcode'}),
+                      'contributor_state': 'state',
+                      'conitrbutor_zipcode': 'zipcode',
+                      'contributor_gender': 'gender'}),
         FieldModifier('contributor_state', lambda s: s.upper() if s else None),
         FieldModifier('contributor_gender', lambda s: s.upper() if s else None),
         
