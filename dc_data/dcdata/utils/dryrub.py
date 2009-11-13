@@ -65,7 +65,8 @@ class CountEmitter(Emitter):
         import logging
         self._count += 1
         if self._count % self._every == 0:
-            logging.info('processed %i records' % self._count)
+            #logging.info('processed %i records' % self._count)
+            print 'processed %i records' % self._count
 
 
 class NullEmitter(Emitter):
