@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+
+import MySQLdb
+import psycopg2,psycopg2.extensions
+import random, re, sys
+
+N = 2500
+
+try:
+    nimsp_con = MySQLdb.connect(db='nimsp', user='datacommons', host='localhost', passwd='vitamind')
+    nimsp_cur = nimsp_con.cursor()
+except:
+    print "Unable to connect to nimsp database"
+    sys.exit(1)
+
+try:
+    util_con = psycopg2.connect("dbname='util' user='datacommons' host='localhost' password='vitamind'")
+    util_cur = util_con.cursor()
+except:
+    print "Unable to connect to util database"
+    sys.exit(1)
+
+try:
+    salt_con = psycopg2.connect("dbname='salts' user='datacommons' host='localhost' password='vitamind'")
+    salt_cur = salt_con.cursor()
+except:
+    print "Unable to connect to salts database"
+    sys.exit(1)
+
+def random_name():
+    global util_cur
+    util_cur.execute("select random_firstname(), random_lastname()")
+    (first,last) = util_cur.fetchone()
+    if first is None or last is None:
+        util_cur.execute("select random_firstname(), random_lastname()")
+        (first,last) = util_cur.fetchone()       
+    return (first,last)
+
+total = 0
+states = {}
+
+nimsp_cur.execute("select c.State, count(*) as cnt from Contributions c, States s where c.State = s.StateCode group by State;")
+for record in nimsp_cur.fetchall():
+    states[record[0]] = record[1]
+    total += record[1]
+
+N -= len(states.keys())
+
+for (state,cnt) in states.items():
+    n = int(round((2.0 + (N * cnt / total)),0)) # 2 salts per state, then distributed by need
+    print "%s: %d %d" % (state, cnt, n)
+
+    for i in range(n):
+        r = random.random()
+        util_cur.execute("select city,zip from locations where state = '%s' and cum_freq >= %f order by freq desc limit 1;" % (state,r))
+        try:
+            (city,zip) = util_cur.fetchone()
+            (first,last) = random_name()
+            contributor = last + ", " + first
+            print "%s  %s %s, %s" % (contributor,city,state,zip)
+            salt_cur.execute("insert into salts (contributor,newcontributor,first,last,occupation,employer,newemployer,address,newaddress,city,state,zipcode,catcode) values (%s,%s,%s,%s,'','','','','',%s,%s,%s,'');", (contributor,contributor,first,last,city,state,zip))
+        except Exception, e:
+            print e
+    util_con.commit()
+    nimsp_con.commit()
+    salt_con.commit()
+
+for o in (util_cur,util_con,nimsp_cur,nimsp_con,salt_cur,salt_con):
+    try:
+        o.close()
+    except:
+        pass

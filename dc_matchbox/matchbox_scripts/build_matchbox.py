@@ -19,9 +19,18 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 #import settings
 from django.core.management import execute_from_command_line
 
-from django.db import connection
-#from MySQLdb import connect
-#connection = connect(host="localhost", user="root", db="playground")
+
+"""
+As far as I can tell, there's a bug in MySQLdb or Django that sometimes
+causes the Django connection to throw an error:
+    _mysql_exceptions.InterfaceError: (0, '')
+Creating our own connection seems to solve the problem.
+"""
+#from django.db import connection
+
+from settings import DATABASE_HOST, DATABASE_USER, DATABASE_NAME
+from MySQLdb import connect
+connection = connect(host=DATABASE_HOST, user=DATABASE_USER, db=DATABASE_NAME)
 
 from matchbox.models import sql_names
 from matchbox_scripts.contribution.build_contribution_entities import run as build_entities
