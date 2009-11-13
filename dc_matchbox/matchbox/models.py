@@ -1,6 +1,7 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
 from strings.normalizer import basic_normalizer
 import datetime
@@ -106,6 +107,29 @@ class Normalization(models.Model):
     
     def __unicode__(self):
         return self.original
+
+#
+# merge candidate
+#
+
+class MergeCandidateManager(models.Model):
+    def available(self, user, limit=20):
+        ago15min = datetime.datetime.utcnow() - datetime.timedelta(0, 0, 0, 0, 15)
+        return MergeCandidate.objects.filter(Q(owner_timestamp__isnull=True) | Q(owner_timestamp__lte=ago15min) | Q(owner=user))[:limit]
+
+class MergeCandidate(models.Model):
+    name = models.CharField(max_length=255)
+    entity = models.ForeignKey(Entity, blank=True, null=True)
+    priority = models.IntField(default=0)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(User, blank=True, null=True)
+    owner_timestamp = models.DateTimeField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ('-priority','timestamp')
+    
+    def __unicode__(self):
+        return self.name
     
 
 _entity_names = django2sql_names(Entity)
