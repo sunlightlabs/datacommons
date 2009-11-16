@@ -81,7 +81,7 @@ def merge_entities(entity_ids, new_entity):
     stmt = "update %(contribution)s \
             set %(contribution_organization_entity)s = %%s \
             where %(contribution_organization_entity)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = ",".join(entity_ids))
+            augment(sql_names, old_ids = ",".join(map(lambda x: "'%s'" % x, entity_ids)))
     _execute_stmt(stmt, new_entity.id)
     
     # update alias and attribute tables

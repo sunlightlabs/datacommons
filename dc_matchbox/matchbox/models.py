@@ -1,3 +1,5 @@
+
+from uuid import uuid4
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
@@ -83,6 +85,9 @@ class Entity(models.Model):
         return self.name
     
     def save(self, **kwargs):
+        if not self.id:
+            self.id = uuid4().hex
+        
         super(Entity, self).save(**kwargs)
         try:
             Normalization.objects.get(original=self.name)
