@@ -32,6 +32,24 @@ class EntityRef(models.ForeignKey):
         if not self._ignore:
             entityref_cache.register(cls, name)
 
+# class EntityRef(models.CharField):
+#    
+#     def __init__(self, related_name, ignore=False, *args, **kwargs):
+#         kwargs['max_length'] = 32
+#         kwargs['blank'] = True
+#         kwargs['null'] = True
+#         super(EntityRef, self).__init__(*args, **kwargs)
+#         self._ignore = ignore
+#         self._label = related_name
+#        
+#     def contribute_to_class(self, cls, name):
+#         super(EntityRef, self).contribute_to_class(cls, name)
+#         if not self._ignore:
+#             entityref_cache.register(cls, name)
+#     
+#     def entity(self):
+#         pass
+
 #
 # models
 #
@@ -50,6 +68,7 @@ class EntityManager(models.Manager):
                     model.objects.filter(**{field: old_entity}).update(**{field: new_entity})
 
 class Entity(models.Model):
+    id = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
@@ -112,15 +131,18 @@ class Normalization(models.Model):
 # merge candidate
 #
 
-class MergeCandidateManager(models.Model):
-    def available(self, user, limit=20):
+class MergeCandidateManager(models.Manager):
+    def pending(self, user, limit=20):
         ago15min = datetime.datetime.utcnow() - datetime.timedelta(0, 0, 0, 0, 15)
         return MergeCandidate.objects.filter(Q(owner_timestamp__isnull=True) | Q(owner_timestamp__lte=ago15min) | Q(owner=user))[:limit]
 
 class MergeCandidate(models.Model):
+    
+    objects = MergeCandidateManager()
+    
     name = models.CharField(max_length=255)
     entity = models.ForeignKey(Entity, blank=True, null=True)
-    priority = models.IntField(default=0)
+    priority = models.IntegerField(default=0)
     timestamp = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, blank=True, null=True)
     owner_timestamp = models.DateTimeField(blank=True, null=True)
@@ -130,6 +152,15 @@ class MergeCandidate(models.Model):
     
     def __unicode__(self):
         return self.name
+    
+    def lock(self, user):
+        self.owner = user 
+        self.owner_timestamp = datetime.datetime.utcnow()
+        self.save()
+    
+    def is_locked(self):
+        ago15min = datetime.datetime.utcnow() - datetime.timedelta(0, 0, 0, 0, 15)
+        return self.owner is not None and self.owner_timestamp >= ago15min
     
 
 _entity_names = django2sql_names(Entity)
