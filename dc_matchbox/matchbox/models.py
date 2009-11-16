@@ -70,13 +70,12 @@ class EntityManager(models.Manager):
                     model.objects.filter(**{field: old_entity}).update(**{field: new_entity})
 
 class Entity(models.Model):
-    id = models.CharField(max_length=32, primary_key=True)
+    id = models.CharField(max_length=32, primary_key=True, default=lambda: uuid4().hex)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
     notes = models.TextField(default="", blank=True)
-    #count = models.IntegerField(default=0)
     
     class Meta:
         ordering = ('name',)
@@ -85,9 +84,6 @@ class Entity(models.Model):
         return self.name
     
     def save(self, **kwargs):
-        if not self.id:
-            self.id = uuid4().hex
-        
         super(Entity, self).save(**kwargs)
         try:
             Normalization.objects.get(original=self.name)
@@ -96,6 +92,7 @@ class Entity(models.Model):
                 original=self.name,
                 normalized=basic_normalizer(self.name)
             ).save()
+    
     
     
 class EntityAlias(models.Model):
