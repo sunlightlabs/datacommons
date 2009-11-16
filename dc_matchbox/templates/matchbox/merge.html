@@ -7,6 +7,9 @@
             {% for q in queries %}
                 Matchbox.MergeManager.loadQuery('{{ q }}');
             {% endfor %}
+            {% for q in queues %}
+                Matchbox.MergeManager.loadQueue({{ q }});
+            {% endfor %}
         });
     </script>
 {% endblock %}

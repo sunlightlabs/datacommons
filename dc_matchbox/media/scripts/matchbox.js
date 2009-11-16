@@ -1,16 +1,81 @@
 
+if (typeof Object.create !== 'function') {
+    Object.create = function(o) {
+        var F = function() {};
+        F.prototype = o;
+        return new F();
+    };
+}
+
 var Matchbox = {
-        
-    Entity: function(spec) {
+    
+    Entity: {
+        selected: false
+    },
+    
+    createEntity: function(spec) {
         if (spec) {
-            this.id = spec['id'];
-            this.type = spec['type'];
-            this.name = spec['name'];
-            this.count = spec['count'] ? spec['count'] : 0;
-            this.notes = spec['notes'] ? spec['notes'] : 0;
-            this.aliases = spec['aliases'] ? spec['aliases'] : [];
+            var e = Object.create(Matchbox.Entity);
+            e.id = spec.id;
+            e.type = spec.type;
+            e.name = spec.name;
+            e.count = spec.count || 0;
+            e.notes = spec.notes || 0;
+            e.aliases = spec.aliases || [];
+            return e;
         }
-        this.selected = false;
+    },    
+        
+    StatusBar: {
+        
+        queue: [],
+        currentMessage: null,
+        
+        Message: {
+            
+            text: '',
+            isHideable: false,
+            interval: null,
+            timeout: null,
+            
+            show: function() {
+                $('#statusbar p').text(this.text).parent().show("slide", { direction: "up" }, 500);
+                window.setTimeout(function(msg) {
+                    msg.isHideable = true;
+                }, 1500, this);
+            },
+            
+            hide: function() {
+                this.interval = window.setInterval(function(msg) {
+                    if (msg.isHideable) {
+                        window.clearInterval(msg.interval);
+                        window.clearTimeout(msg.timeout);
+                        $('#statusbar').hide("slide", { direction: "up" }, 500);
+                        window.setTimeout(Matchbox.StatusBar.nextMessage, 600);
+                    }
+                }, 100, this);
+            }
+            
+        },
+        
+        notify: function(text) {
+            var message = Object.create(Matchbox.StatusBar.Message);
+            message.text = text;
+            Matchbox.StatusBar.queue.push(message);
+            if (!Matchbox.StatusBar.currentMessage) {
+                Matchbox.StatusBar.nextMessage();
+            }
+            return message;
+        },
+        
+        nextMessage: function() {
+            var message = Matchbox.StatusBar.queue.shift();
+            this.currentMessage = message;
+            if (message) {
+                message.show();
+            }
+        }
+        
     },
     
     MergeManager: {
@@ -20,43 +85,18 @@ var Matchbox = {
         loadedQueues: [],
         typeFilter: null,
         
-        StatusBar: {
-            
-            queue: [],
-            shouldHide: false,
-            
-            Message: function(message) {
-                this.message = message;
-                this.shouldHide = false;
-            },
-            
-            show: function(message) {
-                $('#statusbar p').text(message).parent().show("slide", { direction: "up" }, 500);
-                var interval = window.setInterval(function () {
-                    if (Matchbox.MergeManager.StatusBar.shouldHide) {
-                        Matchbox.MergeManager.StatusBar.shouldHide = false;
-                        clearInterval(interval);
-                        $('#statusbar').hide("slide", { direction: "up" }, 1000);
-                    }
-                }, 800);
-            },
-            
-            hide: function() {
-                Matchbox.MergeManager.StatusBar.shouldHide = true;
-            }
-            
-        },
-        
         loadEntities: function(entities) {
             for (var i = 0; i < entities.length; i++) {
                 Matchbox.MergeManager.register(entities[i]);
             }
-            Matchbox.MergeManager.StatusBar.hide();
         },
         
         loadQuery: function(query) {
-            Matchbox.MergeManager.StatusBar.show("Loading query '" + query + "'");
-            $.getJSON('/search/?q=' + encodeURIComponent(query), Matchbox.MergeManager.loadEntities);
+            var message = Matchbox.StatusBar.notify("Loading query '" + query + "'");
+            $.getJSON('/search/?q=' + encodeURIComponent(query), function(results) {
+                Matchbox.MergeManager.loadEntities(results);
+                message.hide();
+            });
             $('#search_terms').append($('<li>' + query + '</li>'));
             Matchbox.MergeManager.loadedQueries.push(query)
         },
@@ -71,7 +111,7 @@ var Matchbox = {
             if (entitySpec['id'] in Matchbox.MergeManager.entities) {
                 // duplicate, ignore
             } else {
-                var entity = new Matchbox.Entity(entitySpec)
+                var entity = Matchbox.createEntity(entitySpec);
                 Matchbox.MergeManager.entities[entity['id']] = entity;
                 var row = $(entitySpec['html']);
                 row.find('input[type=checkbox]').click(function() {
@@ -101,6 +141,13 @@ var Matchbox = {
  */
 
 $().ready(function() {
+    
+    // $().bind('ajaxError', function(e, xhr, ajaxOptions, thrownError) {
+    //     Matchbox.StatusBar.notify(xhr.statusText);
+    //     if (Matchbox.StatusBar.currentMessage) {
+    //         Matchbox.StatusBar.currentMessage.hide();
+    //     }
+    // });
     
     // attach search form validation    
     $('#search_form').submit(function() {

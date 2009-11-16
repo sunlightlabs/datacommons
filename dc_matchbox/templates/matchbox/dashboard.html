@@ -2,4 +2,13 @@
 
 {% block content %}{% endblock %}
 
-{% block sidebar %}{% endblock %}
+{% block sidebar %}
+    <h3>Merge Queue</h3>
+    {% if merge_queue %}
+        <ul>
+            {% for item in merge_queue %}
+            <li><a href="{% url matchbox_merge %}?queue={{ item.pk }}">{{ item.name }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
