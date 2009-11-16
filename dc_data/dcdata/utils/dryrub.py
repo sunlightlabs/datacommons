@@ -36,20 +36,21 @@ class FieldKeeper(Filter):
 
 class EntityIDFilter(Filter):
     
-    def __init__(self, field, key_template='%s'):
-        self._field = field
-        self._key_template = key_template
+    def __init__(self, source_field, destination_field, modifier=None):
+        self._source_field = source_field
+        self._destination_field = destination_field
+        self._modifier = modifier
         
     def process_record(self, record):
         import hashlib, uuid
-        value = record[self._field]
+        value = (record[self._source_field] or '').strip()
         if value:
-            value = value.strip().decode('utf-8', 'ignore')
-            entity_id = hashlib.md5(self._key_template % value).hexdigest()
-            record['_id'] = entity_id
-            record['suid'] = str(uuid.UUID(entity_id).int >> 64)
+            value = value.decode('utf-8', 'ignore')
+            if self._modifier:
+                value = self._modifier(value)
+            entity_id = hashlib.md5(value).hexdigest()
+            record[self._destination_field] = entity_id
         return record
-        
 
 #
 # emitters
