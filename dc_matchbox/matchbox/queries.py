@@ -108,6 +108,7 @@ def _merge_aliases(old_ids, new_entity):
 def _merge_attributes(old_ids, new_entity):    
     entity_ids = old_ids + [new_entity.id]
     existing_attributes = [(attr.namespace, attr.value) for attr in EntityAttribute.objects.filter(entity__in=entity_ids)]
+    existing_attributes.append((EntityAttribute.ENTITY_ID_NAMESPACE, new_entity.id))
     
     EntityAttribute.objects.filter(entity__in=entity_ids).delete()
     

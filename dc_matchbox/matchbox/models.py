@@ -115,6 +115,8 @@ class EntityAttribute(models.Model):
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
     
+    ENTITY_ID_NAMESPACE = 'urn:matchbox:entity_id'
+    
     class Meta:
         ordering = ('namespace',)
     
