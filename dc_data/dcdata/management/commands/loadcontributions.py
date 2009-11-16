@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ImproperlyConfigured
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, FloatFilter, IntFilter, ISODateFilter, EntityFilter
+from dcdata.utils.dryrub import CountEmitter
 from saucebrush.emitters import DebugEmitter
 from saucebrush.filters import FieldRemover, FieldAdder, Filter
 from saucebrush.sources import CSVSource
@@ -16,29 +17,29 @@ class ContributorFilter(Filter):
     type_mapping = {'individual': 'I', 'committee': 'C'}
     def process_record(self, record):
         record['contributor_type'] = self.type_mapping.get(record['contributor_type'], None)
-        record['contributor_entity'] = None
+        #record['contributor_entity'] = None
         return record
 
 class OrganizationFilter(Filter):
     def process_record(self, record):
-        record['organization_entity'] = None
+        #record['organization_entity'] = None
         return record
 
 class ParentOrganizationFilter(Filter):
     def process_record(self, record):
-        record['parent_organization_entity'] = None
+        #record['parent_organization_entity'] = None
         return record
 
 class RecipientFilter(Filter):
     type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
         record['recipient_type'] = self.type_mapping.get(record['recipient_type'], None)
-        record['recipient_entity'] = None
+        #record['recipient_entity'] = None
         return record
 
 class CommitteeFilter(Filter):    
     def process_record(self, record):
-        record['committee_entity'] = None
+        #record['committee_entity'] = None
         return record
     
 #
@@ -55,10 +56,11 @@ class ContributionLoader(Loader):
     def get_instance(self, record):
         key = record['transaction_id']
         namespace = record['transaction_namespace']
-        try:
-            return Contribution.objects.get(transaction_namespace=namespace, transaction_id=key)
-        except Contribution.DoesNotExist:
-            return Contribution(transaction_namespace=namespace, transaction_id=key)
+        # try:
+        #             return Contribution.objects.get(transaction_namespace=namespace, transaction_id=key)
+        #         except Contribution.DoesNotExist:
+        #             return Contribution(transaction_namespace=namespace, transaction_id=key)
+        return Contribution(transaction_namespace=namespace, transaction_id=key)
     
     def resolve(self, record, obj):
         """ how should an existing record be updated? 
@@ -86,6 +88,7 @@ class Command(BaseCommand):
         saucebrush.run_recipe(
         
             CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1),
+            CountEmitter(every=1000),
             
             FieldRemover('id'),
             FieldRemover('import_reference'),

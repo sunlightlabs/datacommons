@@ -18,37 +18,37 @@ class EntityRefCache(dict):
        
 entityref_cache = EntityRefCache()
 
-class EntityRef(models.ForeignKey):
-   
-    def __init__(self, related_name, ignore=False, *args, **kwargs):
-        kwargs['related_name'] = related_name
-        kwargs['blank'] = True
-        kwargs['null'] = True
-        super(EntityRef, self).__init__(Entity, *args, **kwargs)
-        self._ignore = ignore
-       
-    def contribute_to_class(self, cls, name):
-        super(EntityRef, self).contribute_to_class(cls, name)
-        if not self._ignore:
-            entityref_cache.register(cls, name)
-
-# class EntityRef(models.CharField):
+# class EntityRef(models.ForeignKey):
 #    
 #     def __init__(self, related_name, ignore=False, *args, **kwargs):
-#         kwargs['max_length'] = 32
+#         kwargs['related_name'] = related_name
 #         kwargs['blank'] = True
 #         kwargs['null'] = True
-#         super(EntityRef, self).__init__(*args, **kwargs)
+#         super(EntityRef, self).__init__(Entity, *args, **kwargs)
 #         self._ignore = ignore
-#         self._label = related_name
 #        
 #     def contribute_to_class(self, cls, name):
 #         super(EntityRef, self).contribute_to_class(cls, name)
 #         if not self._ignore:
 #             entityref_cache.register(cls, name)
-#     
-#     def entity(self):
-#         pass
+
+class EntityRef(models.CharField):
+   
+    def __init__(self, related_name, ignore=False, *args, **kwargs):
+        kwargs['max_length'] = 32
+        kwargs['blank'] = True
+        kwargs['null'] = True
+        super(EntityRef, self).__init__(*args, **kwargs)
+        self._ignore = ignore
+        self._label = related_name
+       
+    def contribute_to_class(self, cls, name):
+        super(EntityRef, self).contribute_to_class(cls, name)
+        if not self._ignore:
+            entityref_cache.register(cls, name)
+    
+    def entity(self):
+        pass
 
 #
 # models
