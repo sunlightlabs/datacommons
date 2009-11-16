@@ -67,7 +67,8 @@ def merge_entities(entity_ids, new_entity):
     """
     
     # a bit of type checking, since these will go into raw SQL
-    entity_ids = map(long, entity_ids)
+    #entity_ids = map(long, entity_ids)
+    entity_ids = map(str, entity_ids)
     
     new_entity.save()
     assert(new_entity.id not in entity_ids)
@@ -80,7 +81,7 @@ def merge_entities(entity_ids, new_entity):
     stmt = "update %(contribution)s \
             set %(contribution_organization_entity)s = %%s \
             where %(contribution_organization_entity)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = ",".join(map(str, entity_ids)))
+            augment(sql_names, old_ids = ",".join(entity_ids))
     _execute_stmt(stmt, new_entity.id)
     
     # update alias and attribute tables

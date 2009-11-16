@@ -61,7 +61,7 @@ def merge(request):
         entity_ids = request.POST.getlist('entities')
         if len(entity_ids) > 1:
             e = Entity(name=request.POST['new_name'], type=request.POST['new_type'])
-            merge_entities([int(s) for s in entity_ids], e)
+            merge_entities(entity_ids, e)
         
         params = []
         params.extend([('q', q) for q in request.POST.getlist('query')])
