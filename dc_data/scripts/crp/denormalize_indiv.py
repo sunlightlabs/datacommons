@@ -1,5 +1,5 @@
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
-from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
+from dcdata.utils.dryrub import CountEmitter, FieldCountValidator, EntityIDFilter
 from saucebrush.filters import Filter, FieldAdder, FieldCopier, FieldMerger, FieldModifier, FieldRemover, FieldRenamer
 from saucebrush.emitters import Emitter, CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
@@ -169,16 +169,22 @@ def main():
     
     def recipient_urn(s):
         if s.startswith('N'):
-            return 'urn:crp:candidate:%s' % s.strip().upper()
+            return candidate_urn(s)
         elif s.startswith('C'):
-            return 'urn:crp:committee:%s' % s.strip().upper()
+            return committee_urn(s)
         return None
+    
+    def candidate_urn(s):    
+        return 'urn:crp:candidate:%s' % s.strip().upper() if s else None        
     
     def contributor_urn(s):
         return 'urn:crp:individual:%s' % s.strip().upper() if s else None
     
     def committee_urn(s):
         return 'urn:crp:committee:%s' % s.strip().upper() if s else None
+    
+    def org_urn(s):
+        return 'urn:crp:organization:%s' % s.strip() if s else None
     
     #
     # main recipe
@@ -214,6 +220,13 @@ def main():
         FieldMerger({'contributor_urn': ('contrib_id',)}, contributor_urn, keep_fields=True),
         FieldMerger({'recipient_urn': ('recip_id',)}, recipient_urn, keep_fields=True),
         FieldMerger({'committee_urn': ('cmte_id',)}, committee_urn, keep_fields=True),
+        
+        EntityIDFilter('contributor_urn', 'contributor_entity'),
+        EntityIDFilter('recipient_urn', 'recipient_entity'),
+        EntityIDFilter('committee_urn', 'committee_entity'),
+        
+        EntityIDFilter('organization_name', 'organization_entity', org_urn),
+        EntityIDFilter('parent_organization_name', 'parent_organization_entity', org_urn),
         
         # recip code filter
         RecipCodeFilter(),  # recipient party
