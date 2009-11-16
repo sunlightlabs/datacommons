@@ -69,6 +69,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
                 last_colon = attribute.rfind(":")
                 if (last_colon >= 0):
                     e.attributes.add(EntityAttribute(namespace=attribute[0:last_colon], value=attribute[last_colon + 1:]))
+        e.attributes.create(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=e.id)
         
         return e.id
 

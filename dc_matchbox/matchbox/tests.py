@@ -68,8 +68,10 @@ class TestQueries(unittest.TestCase):
         apple_alias = EntityAlias.objects.get(alias="Apple")
         self.assertEqual(apple.id, apple_alias.entity.id)
         
-        self.assertEqual(1, apple.attributes.count())
+        self.assertEqual(2, apple.attributes.count())
         self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
+        self.assertEqual(1, apple.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apple.id).count())
+
 
         apricot = Entity.objects.get(name="apricot")
         self.assertEqual(1, apricot.organization_transactions.count())
@@ -77,8 +79,10 @@ class TestQueries(unittest.TestCase):
         apricot_alias = EntityAlias.objects.get(alias="apricot")
         self.assertEqual(apricot.id, apricot_alias.entity.id)
         
-        self.assertEqual(1, apricot.attributes.count())
+        self.assertEqual(2, apricot.attributes.count())
         self.assertEqual(1, apricot.attributes.filter(namespace='urn:unittest:organization', value='Apricot').count())
+        self.assertEqual(1, apricot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apricot.id).count())
+
         
         avacado = Entity.objects.get(name='avacado')
         self.assertEqual(0, avacado.organization_transactions.count())
@@ -154,13 +158,27 @@ class TestQueries(unittest.TestCase):
         
         applicot = Entity.objects.get(name="Applicot")
         
-        self.assertEqual(4, applicot.attributes.count())
+        self.assertEqual(5, applicot.attributes.count())
         self.assertEqual(1, applicot.attributes.filter(namespace='color', value='red').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='color', value='yellow').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='texture', value='crisp').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='texture', value='soft').count())
         
+    def test_merge_entities_previous_ids(self):
+        apple_id = Entity.objects.get(name="Apple").id
+        apricot_id = Entity.objects.get(name="Apricot").id
         
+        merge_entities((apple_id, apricot_id), Entity(name=u'Applicot'))
+        applicot = Entity.objects.get(name="Applicot")
+
+        self.assertEqual(5, applicot.attributes.count())
+        self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apple_id).count())
+        self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apricot_id).count())
+        self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=applicot.id).count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apricot').count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
+
+
     
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):

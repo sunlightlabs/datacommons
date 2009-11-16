@@ -1,3 +1,5 @@
+
+from uuid import uuid4
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
@@ -68,7 +70,7 @@ class EntityManager(models.Manager):
                     model.objects.filter(**{field: old_entity}).update(**{field: new_entity})
 
 class Entity(models.Model):
-    id = models.CharField(max_length=32, primary_key=True)
+    id = models.CharField(max_length=32, primary_key=True, default=lambda: uuid4().hex)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
@@ -93,6 +95,7 @@ class Entity(models.Model):
             ).save()
     
     
+    
 class EntityAlias(models.Model):
     entity = EntityRef(related_name='aliases', null=False)
     alias = models.CharField(max_length=255, null=False)
@@ -109,6 +112,8 @@ class EntityAttribute(models.Model):
     entity = EntityRef(related_name='attributes', null=False)
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
+    
+    ENTITY_ID_NAMESPACE = 'urn:matchbox:entity_id'
     
     class Meta:
         ordering = ('namespace',)
