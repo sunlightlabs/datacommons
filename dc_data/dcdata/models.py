@@ -19,7 +19,7 @@ class DataCommonsModelManager(models.Manager):
         if not fields:
             fields = entityref_cache.get(self.model, None)
         if fields:
-            q = reduce(lambda x, y: x | y, (Q(**{field: entity}) for field in fields))
+            q = reduce(lambda x, y: x | y, (Q(**{field: entity.pk}) for field in fields))
             return self.model.objects.filter(q)
 
 class DataCommonsModel(models.Model):

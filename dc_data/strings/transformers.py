@@ -12,13 +12,13 @@ def compose(*transforms):
     For example, compose(a, b, c)(x) is equivalent to calling c(b(a(x))). 
     """
         
-    def rec_compose(input, functions):
+    def rec_compose(input_, functions):
         if functions:
             first = functions[0]
             rest = functions[1:]
-            return rec_compose(first(input),rest)
+            return rec_compose(first(input_),rest)
         else:
-            return input
+            return input_
     return lambda x: rec_compose(x,transforms)
 
 

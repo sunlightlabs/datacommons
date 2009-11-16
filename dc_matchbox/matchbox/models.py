@@ -74,7 +74,7 @@ class Entity(models.Model):
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
     notes = models.TextField(default="", blank=True)
-    #count = models.IntegerField(default=0)
+    count = models.IntegerField(default=0)
     
     class Meta:
         ordering = ('name',)

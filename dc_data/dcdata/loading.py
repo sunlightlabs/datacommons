@@ -130,8 +130,8 @@ class Loader(object):
         for name, value in record.iteritems():
         
             # raise an error if ID is being set
-            if name in self.ID_FIELDS:
-                raise ValueError, "not allowed to set ids during loading"
+            # if name in self.ID_FIELDS:
+            #     raise ValueError, "not allowed to set ids during loading"
             
             # see if a handler exists for the field
             field_handler = self.field_handlers.get(name, None)
