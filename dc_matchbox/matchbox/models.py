@@ -97,7 +97,7 @@ class Entity(models.Model):
     
     
 class EntityAlias(models.Model):
-    entity = EntityRef(related_name='aliases', null=False)
+    entity = models.ForeignKey(Entity, related_name='aliases', null=False)
     alias = models.CharField(max_length=255, null=False)
     
     class Meta:
@@ -109,7 +109,7 @@ class EntityAlias(models.Model):
 
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
-    entity = EntityRef(related_name='attributes', null=False)
+    entity = models.ForeignKey(Entity, related_name='attributes', null=False)
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
     

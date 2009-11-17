@@ -34,98 +34,55 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     
     cursor = connection.cursor()
     
-    def retrieve_names():
+    def retrieve_entity_ids():
         loop_cursor = connection.cursor()
-        stmt = "select distinct `%s` from `%s`" % (entity_name_column, transaction_table)
+        stmt = "select distinct `%s` from `%s`" % (entity_id_column, transaction_table)
         loop_cursor.execute(stmt)
         return loop_cursor
     
-    def create_entity(name):
-        e = Entity(name=name, type=type_, reviewer=reviewer, timestamp=timestamp)
+    def retrieve_names(id):
+        stmt = "select distinct `%s` from `%s` where `%s` = %%s" % (entity_name_column, transaction_table, entity_id_column)
+        cursor.execute(stmt, [id])
+        return [name.strip() for (name,) in cursor if name.strip()]
+    
+    def retrieve_attributes(id):
+        result = set()
+        for attribute_column in attribute_columns:
+            stmt = "select distinct `%s` from `%s` where `%s` = %%s" % (attribute_column, transaction_table, entity_id_column)
+            cursor.execute(stmt,[id])
+            for (attribute,) in cursor:
+                (namespace, value) = attribute_name_value_pair(attribute) or ('', '')
+                if namespace and value:
+                    result.add((namespace, value))
+        return result      
+    
+    def attribute_name_value_pair(attribute):
+        attribute = attribute.strip()
+        last_colon = attribute.rfind(":")
+        if (last_colon >= 0):
+            return (attribute[0:last_colon], attribute[last_colon + 1:])
+        else:
+            return None
+    
+    def create_entity(id):
+        aliases = retrieve_names(id) or ['Unknown']
+        
+        e = Entity(id=id, name=aliases[0], type=type_, reviewer=reviewer, timestamp=timestamp)
         e.save()
         
-        # create aliases
-        aliases = set()
-        for alias_column in alias_columns:
-            stmt = "select distinct `%s` from `%s` where `%s` = %%s" % \
-                    (alias_column, transaction_table, entity_name_column)
-            cursor.execute(stmt,[name])
-            for (alias,) in cursor:
-                aliases.add(alias)
         for alias in aliases:
-            if alias.strip():
-                e.aliases.add(EntityAlias(alias=alias))
+            e.aliases.add(EntityAlias(alias=alias))
             
-        # create attributes
-        attributes = set()
-        for attribute_column in attribute_columns:
-            stmt = "select distinct `%s` from `%s` where `%s` = %%s" % \
-                    (attribute_column, transaction_table, entity_name_column)
-            cursor.execute(stmt,[name])
-            for (attribute,) in cursor:
-                attributes.add(attribute)
-        for attribute in attributes:
-            if attribute.strip():
-                last_colon = attribute.rfind(":")
-                if (last_colon >= 0):
-                    e.attributes.add(EntityAttribute(namespace=attribute[0:last_colon], value=attribute[last_colon + 1:]))
         e.attributes.create(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=e.id)
+        for (namespace, value) in retrieve_attributes(id):
+            e.attributes.add(EntityAttribute(namespace=namespace, value=value))
         
         return e.id
 
-    def create_entity_raw(name):
-        stmt = "insert into `%(entity)s` \
-                (`%(entity_name)s`, `%(entity_type)s`, `%(entity_reviewer)s`, `%(entity_timestamp)s`, `%(entity_notes)s`) \
-                values (%%s, %%s, %%s, %%s, %%s)" % \
-                sql_names
-        cursor.execute(stmt, [name, type_, reviewer, timestamp, ''])
-        entity_id = connection.insert_id()
-        
-        # create aliases
-        aliases = set()
-        for alias_column in alias_columns:
-            stmt = "select distinct `%s` from `%s` where `%s` = %%s" % \
-                    (alias_column, transaction_table, entity_name_column)
-            cursor.execute(stmt,[name])
-            for (alias,) in cursor:
-                aliases.add(alias)
-        for alias in aliases:
-            if alias.strip():
-                stmt = "insert into `%(entityalias)s` \
-                        (`%(entityalias_entity)s`, `%(entityalias_alias)s`) \
-                        values (%%s, %%s)" % \
-                        sql_names
-                cursor.execute(stmt,[entity_id, alias])
-            
-        # create attributes
-        attributes = set()
-        for attribute_column in attribute_columns:
-            stmt = "select distinct `%s` from `%s` where `%s` = %%s" % \
-                    (attribute_column, transaction_table, entity_name_column)
-            cursor.execute(stmt,[name])
-            for (attribute,) in cursor:
-                attributes.add(attribute)
-        for attribute in attributes:
-            if attribute.strip():
-                stmt = "insert into `%(entityattribute)s` \
-                        (`%(entityattribute_entity)s`, `%(entityattribute_namespace)s`, `%(entityattribute_value)`) \
-                        values (%%s, %%s, %%s)" % \
-                        sql_names
-                cursor.execute(stmt,[entity_id, attribute_namespace, attribute])
-        
-        return entity_id
-
-
-    def update_transactions(name, id):
-        stmt = ("update `%s` set `%s`='%s' where `%s` = %%s") % \
-                (transaction_table, entity_id_column, id, entity_name_column)
-        cursor.execute(stmt, [name])
     
-    for (name,) in retrieve_names():
-        if name:
-            #print("creating entity '%s'" % name)
-            id = create_entity_raw(name) if USE_RAW else create_entity(name)
-            update_transactions(name, id)
+    for (id,) in retrieve_entity_ids():
+        if id:
+            create_exntity(id)
     
 
     
