@@ -40,22 +40,20 @@ def _search(query):
 #        results.append(e)
 #    content = json.dumps(results)
 #    return HttpResponse(content, mimetype='application/javascript')
-    try:
-        results = []
-        for (id_, name, count) in search_entities_by_name(query):
-            e = {
-                'id': id_,
-                'type': 'organization',
-                'name': name,
-                'count': count,
-                'notes': 0,
-            }
-            e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
-            results.append(e)
-        content = json.dumps(results)
-        return HttpResponse(content, mimetype='application/javascript')
-    except:
-        return HttpResponse('[]', mimetype='application/javascript')
+    results = []
+    for (id_, name, count) in search_entities_by_name(query):
+        e = {
+            'id': id_,
+            'type': 'organization',
+            'name': name,
+            'count': count,
+            'notes': 0,
+        }
+        e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
+        results.append(e)
+    content = json.dumps(results)
+    return HttpResponse(content, mimetype='application/javascript')
+
 
 
 @login_required

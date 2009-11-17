@@ -10,7 +10,7 @@
     <label for="entities_{{ entity.id }}">{{ entity.name }}</label>
     {% if entity.aliases %}
         <ul>
-            {% for alias in entity.aliases %}
+            {% for alias in entity.aliases.all %}
             <li><a href="{% url matchbox_google_search %}?q={{ alias.alias|urlencode }}">{{ alias.alias }}</a></li>
             {% endfor %}
         </ul>
