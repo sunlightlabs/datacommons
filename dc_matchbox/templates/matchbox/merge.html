@@ -3,7 +3,7 @@
 {% block scripts %}
     <script>
         $().ready(function() {
-            {% if entity_type %}Matchbox.MergeManager.typeFilter = '{{ entity_type }}';{% endif %}
+            {% if entity_type %}Matchbox.typeFilter = '{{ entity_type }}';{% endif %}
             {% for q in queries %}
                 Matchbox.MergeManager.loadQuery('{{ q }}');
             {% endfor %}
@@ -15,6 +15,8 @@
 {% endblock %}
 
 {% block content %}
+    <p>Select: <a href="#" id="selectAll">all</a> <a href="#" id="selectNone">none</a></p>
+    <p><a href="#" id="test">test</a></p>
     <form action="{% url matchbox_merge %}" method="post" id="merge_form">
     	<input type="hidden" name="new_name" id="new_name">
     	<input type="hidden" name="new_type" id="new_type">
@@ -24,15 +26,15 @@
 {% endblock %}
 
 {% block sidebar %}
-    <h3>Search Terms</h3>
-    <ul id="search_terms">
-    </ul>
     <h3>Additional Entities</h3>
     <p>Have other entities you want to compare or possibly merge? Search below!</p>
     <form action="#" method="get" id="more_results_form">
         <input type="text" name="q" id="more_results_query">
         <input type="submit" value="Search">
     </form>
+    <h3>Search Terms</h3>
+    <ul id="search_terms">
+    </ul>
 {% endblock %}
 
 
@@ -40,7 +42,7 @@
 {% block footer %}
     <div id="footer_save">
         <p>See something you'd like to view later?</p>
-        <input type="button" value="Save Search">
+        <input type="button" value="Coming soon" disabled="disabled">
     </div>
     <div id="footer_merge">
     	<form>

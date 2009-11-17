@@ -9,8 +9,68 @@ if (typeof Object.create !== 'function') {
 
 var Matchbox = {
     
+    typeFilter: null,
+    searchQueries: [],
+    queueId: null,
+    
+    entities: [],
+    
     Entity: {
-        selected: false
+        
+        id: null,
+        selected: false,
+        node: null,
+        
+        select: function() {
+            this.selected = true;
+            if (this.node) {
+                this.node.find('input.selector').each(function() {
+                    this.checked = true;
+                });
+            }
+        },
+        
+        deselect: function() {
+            this.selected = false;
+            if (this.node) {
+                this.node.find('input.selector').each(function() {
+                    this.checked = false;
+                });
+            }
+        },
+        
+        bind: function() {
+            var that = this;
+            this.node = $('#' + this.id);
+            this.node.find('input.selector').bind('click', function() {
+                if (this.checked) {
+                    that.select();
+                } else {
+                    that.deselect();
+                }
+            });
+        }
+        
+    },    
+        
+    toggleEntities: function(checked) {
+        for (var i = 0; i < Matchbox.entities.length; i++) {
+            if (checked) {
+                Matchbox.entities[i].select();
+            } else {
+                Matchbox.entities[i].deselect();
+            }
+        }
+    },
+    
+    selectedEntities: function() {
+        var entities = [];
+        for (var i = 0; i < Matchbox.entities.length; i++) {
+            if (Matchbox.entities[i].selected) {
+                entities.push(Matchbox.entities[i]);
+            }
+        }
+        return entities;
     },
     
     createEntity: function(spec) {
@@ -93,12 +153,13 @@ var Matchbox = {
         
         loadQuery: function(query) {
             var message = Matchbox.StatusBar.notify("Loading query '" + query + "'");
-            $.getJSON('/search/?q=' + encodeURIComponent(query), function(results) {
+            $.getJSON('/search/?type=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query), function(results) {
+                $('#search_terms').append($('<li>' + query + ' (' + results.length + ')</li>'));
                 Matchbox.MergeManager.loadEntities(results);
                 message.hide();
             });
-            $('#search_terms').append($('<li>' + query + '</li>'));
             Matchbox.MergeManager.loadedQueries.push(query)
+            Matchbox.searchQueries.push(query)
         },
         
         loadQueue: function(queueId) {
@@ -113,11 +174,13 @@ var Matchbox = {
             } else {
                 var entity = Matchbox.createEntity(entitySpec);
                 Matchbox.MergeManager.entities[entity['id']] = entity;
+                Matchbox.entities.push(entity);
                 var row = $(entitySpec['html']);
-                row.find('input[type=checkbox]').click(function() {
-                    Matchbox.MergeManager.entities[$(this).val()].selected = this.checked;
-                });
+                // row.find('input[type=checkbox]').click(function() {
+                //     Matchbox.MergeManager.entities[$(this).val()].selected = this.checked;
+                // });
                 $('#entities').append(row);
+                entity.bind();
             }
         },
         
@@ -141,6 +204,25 @@ var Matchbox = {
  */
 
 $().ready(function() {
+    
+    $('#test').bind('click', function() {
+        alert(Matchbox.typeFilter, {
+            minChars: 0,
+            scroll: true,
+            scrollHeight: 50,
+            width: 200
+        });
+        return false;
+    });
+    
+    $('#merge_name').bind('focus', function() {
+        var names = [];
+        var entities = Matchbox.selectedEntities();
+        for (var i = 0; i < entities.length; i++) {
+            names.push(entities[i].name);
+        }
+        $(this).autocomplete(names);
+    });
     
     // $().bind('ajaxError', function(e, xhr, ajaxOptions, thrownError) {
     //     Matchbox.StatusBar.notify(xhr.statusText);
@@ -169,14 +251,13 @@ $().ready(function() {
         return false;
     });
     
-    // attach select all/none control
-    $('#selector').click(function() {
-        var checked = $(this).text() == 'All';
-        $('#merge_form input[type=checkbox]').each(function() {
-            this.checked = checked;
-            Matchbox.MergeManager.entities[$(this).val()].selected = checked;
-        });
-        $(this).trigger('blur').text( $(this).text() == 'All' ? 'None' : 'All' );
+    // select all/none toggles
+    $('#selectAll').bind('click', function() {
+        Matchbox.toggleEntities(true);
+        return false;
+    });
+    $('#selectNone').bind('click', function() {
+        Matchbox.toggleEntities(false);
         return false;
     });
     
@@ -184,7 +265,7 @@ $().ready(function() {
     $('#merge_button').click(function() {
         if (Matchbox.MergeManager.typeFilter) {
             $('#merge_form').append(
-                $('<input type="hidden" name="type" value="' + Matchbox.MergeManager.typeFilter + '">'));
+                $('<input type="hidden" name="type" value="' + Matchbox.typeFilter + '">'));
         }
         for (var i = 0; i < Matchbox.MergeManager.loadedQueries.length; i++) {
             var query = Matchbox.MergeManager.loadedQueries[i];
@@ -204,12 +285,16 @@ $().ready(function() {
     $('a.transactions_control').live('click', function() {
         var me = $(this);
         if (me.hasClass('ui-icon-triangle-1-s')) {
-            me.siblings('.transactions_container').hide();
+            me.siblings('.details_container').hide();
         } else {    
-            me.siblings('.transactions_container').show().load(this.href);
+            me.siblings('.details_container').show().children('.transactions_container').load(this.href);
         }
         me.trigger('blur').toggleClass('ui-icon-triangle-1-e').toggleClass('ui-icon-triangle-1-s');
         return false;    
+    });
+    $('.details_expander a').live('click', function() {
+        $(this).trigger('blur').parent().siblings('.transactions_container').toggleClass('expanded');
+        return false;
     });
         
 });
