@@ -7,7 +7,9 @@ from psycopg2.extras import RealDictCursor
 
 from saucebrush.filters import Filter, YieldFilter
 
-from nimsp_hash import hash, pseudorandom_sample
+#from nimsp_hash import pseudorandom_sample
+
+import hashlib
 
 def ensure(value, min_value, max_value):
     if value < min_value:
@@ -18,21 +20,27 @@ def ensure(value, min_value, max_value):
 
 class DCIDFilter(Filter):
     """ Convert a nismp contribution id into our hashed transaction_id form """
+
+    SALT = "sunlight rocks"
+
+    def hash(self,id):
+        return hashlib.md5(str(id) + self.SALT).hexdigest()
+
     def process_record(self, record):
         if 'contributionid' in record and record['contributionid'] is not None:
-            record['transaction_id'] = 'nimsp:%d' % hash(int(record['contributionid']))
+            record['transaction_id'] = self.hash(record['contributionid'])
             del(record['contributionid'])
         return record
 
 class SaltFilter(YieldFilter):    
-    def __init__(self, rando):
+    def __init__(self, rando, pcon, mcon):
         super(SaltFilter, self).__init__()
-        self.pcon = psycopg2.connect("dbname='nimsp' user='datacommons' password='vitamind'")
-        self.pcon.set_client_encoding('UTF8')
-        self.pcur = self.pcon.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        self._pcon = pcon
+        self._mcon = mcon
+        self._pcon.set_client_encoding('UTF8')
+        self._pcur = self._pcon.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
-            self.mcon = MySQLdb.connect(host='localhost',  user='datacommons', db='nimsp', passwd='vitamind')
-            self.mcur = self.mcon.cursor()
+            self._mcur = self._mcon.cursor()
         except MySQLdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
             sys.exit (1)
@@ -44,8 +52,8 @@ class SaltFilter(YieldFilter):
         """
         stmt = """SELECT saltid AS contributionid, amount, date as datestamp, contributor as contributor_name, city as contributor_city, state as contributor_state, zipcode as contributor_zipcode, catcode as contributor_category FROM salts WHERE contributionid = %s"""
         if 'contributionid' in record:
-            self.pcur.execute(stmt, (record['contributionid'],))
-            rtn = self.pcur.fetchone()
+            self._pcur.execute(stmt, (record['contributionid'],))
+            rtn = self._pcur.fetchone()
             if rtn is not None:
                 rtn['amount'] = float(rtn['amount'])
                 if rtn['datestamp']:
@@ -57,17 +65,15 @@ class SaltFilter(YieldFilter):
             return None
         return None
 
-    def make_salt(self, record):
-        
+    def make_salt(self, record):        
         """
             Return a new salt entry, based on the passed record
         """
-        
-        
+                
         order_by = "state = '%s'" % record['contributor_state'] if record['contributor_state'] else "id"
         stmt = """SELECT id, contributor as contributor_name, city as contributor_city, state as contributor_state, zipcode as contributor_zipcode FROM salts WHERE contributionid IS NULL ORDER BY %s LIMIT 1""" % order_by
-        self.pcur.execute(stmt)
-        row = self.pcur.fetchone()
+        self._pcur.execute(stmt)
+        row = self._pcur.fetchone()
         if row:  
             salt = record.copy()    
             for f in ['contributor_name','contributor_city', 'contributor_state', 'contributor_zipcode']:
@@ -86,21 +92,20 @@ class SaltFilter(YieldFilter):
                 salt['datestamp'] = None
             stmt = """SELECT date(from_unixtime(AVG(unix_timestamp(date)))) AS datestamp FROM Contributions WHERE date IS NOT NULL AND RecipientReportsBundleID = (SELECT RecipientReportsBundleID FROM Contributions WHERE ContributionID = %s)""";
             try:
-                self.mcur.execute(stmt, (record['contributionid'],))
-                d = (self.mcur.fetchone())[0]
+                self._mcur.execute(stmt, (record['contributionid'],))
+                d = (self._mcur.fetchone())[0]
                 if d and d != '1969-12-31':
                     salt['datestamp'] = d
             except Exception, e:
                 print e
                 sys.exit()
-                pass
             
             #assign catcode
             salt['contributor_category'] = 'Y0000' #uncoded
 
             stmt = """UPDATE salts SET contributionid = %s, saltid = %s, amount = %s, catcode = %s WHERE id = %s"""
-            self.pcur.execute(stmt, (record['contributionid'], salt['contributionid'], salt['amount'], salt['contributor_category'], row['id']))
-            self.pcon.commit()
+            self._pcur.execute(stmt, (record['contributionid'], salt['contributionid'], salt['amount'], salt['contributor_category'], row['id']))
+            self._pcon.commit()
 
             salt['salted'] = True
             return salt
@@ -115,7 +120,8 @@ class SaltFilter(YieldFilter):
                 record['amount'] -= salt['amount']
                 record['salted'] = True
                 yield salt
-            elif pseudorandom_sample(record['contributionid'], 100):
+            elif random.randint(0, self._rando) == 0:
+            #elif pseudorandom_sample(record['contributionid'], self._rando):
                 salt = self.make_salt(record)
                 if salt is not None:
                     record['salted'] = True

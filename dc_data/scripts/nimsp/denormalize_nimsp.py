@@ -5,9 +5,10 @@ import inspect
 import logging
 import os
 import sys
-#from warnings import resetwarnings
 
+import ConfigParser
 import MySQLdb
+import psycopg2
 
 import saucebrush
 from saucebrush.emitters import CSVEmitter, DebugEmitter
@@ -16,7 +17,8 @@ from saucebrush.sources import CSVSource
 
 from dcdata.utils.dryrub import CountEmitter
 
-from salt import DCIDFilter, SaltFilter 
+from salt import DCIDFilter, SaltFilter
+#from dcdata.utils.logger import initialize_logger, CountEmitter, DebugEmitter
 
 
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn', 'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state', 'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 'organization_entity', 'parent_organization_name', 'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order', 'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type', 'district', 'seat', 'seat_status', 'seat_result']
@@ -225,11 +227,13 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option("-c", "--cycle", dest="cycle", metavar='YYYY',
                       help="cycle to process (default all)")
+    parser.add_option("--config", dest="config_file", metavar='CONFIG_FILE',
+                      help="db config file")
     parser.add_option("-d", "--dataroot", dest="dataroot",
                       help="path to data directory", metavar="PATH")
     parser.add_option("-n", "--number", dest="n", metavar='ROWS',
                       help="number of rows to process")
-    parser.add_option("-v", "--verbose", action='store_false', dest="verbose", default=False,
+    parser.add_option("-v", "--verbose", action='store_true', dest="verbose", 
                       help="noisy output")
 
     (options, args) = parser.parse_args()
@@ -237,7 +241,21 @@ def main():
     if not options.dataroot:
         parser.error("path to dataroot is required")
 
+    config_file = options.config_file
+    config = ConfigParser.ConfigParser()
+    for section in ('nimsp','salts'):
+        config.add_section(section)
+        for name,value in (('dbname',section), ('user','datacommons'), ('host','localhost'), ('passwd','vitamind')):
+            config.set(section,name,value)
+    if config_file is not None:
+        config.readfp(open(config_file))
+
+    #initialize_logger(verbose=options.verbose)
+
     dataroot = os.path.abspath(options.dataroot)
+    if not os.path.exists(dataroot):
+        print "No such directory %s" % dataroot
+        sys.exit(1)
     tmppath = os.path.join(dataroot, 'tmp')
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
@@ -253,7 +271,7 @@ def main():
     allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
     unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
     
-    con = MySQLdb.connect(db='nimsp', user='datacommons', host='localhost', passwd='vitamind')
+    con = MySQLdb.connect(db=config.get('nimsp','dbname'), user=config.get('nimsp','user'), host=config.get('nimsp','host'), passwd=config.get('nimsp','passwd'))
     cur = con.cursor(MySQLdb.cursors.DictCursor)
     
     #Contributions
@@ -309,6 +327,7 @@ select ContributionID as contributionid,Amount as amount,Date as datestamp,Contr
         #FieldAdder('jurisdiction','S'),
 
         FieldListFilter(FIELDNAMES + ['contributionid']),
+        #DebugEmitter(),
         CountEmitter(every=2000),
         unallocated_emitter,
         DCIDFilter(),
@@ -327,6 +346,18 @@ select ContributionID as contributionid,Amount as amount,Date as datestamp,Contr
     salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES)
     unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES)
 
+    try:
+        pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (config.get('salts','dbname'), config.get('salts','user'), config.get('salts','host'), config.get('salts','passwd')) )
+    except Exception, e:
+        print "Unable to connect to %s database: %s" % (config.get('salts','dbname'), e) 
+        sys.exit(1)
+    try:
+        mcon = MySQLdb.connect(db=config.get('nimsp','dbname'), user=config.get('nimsp','user'), host=config.get('nimsp','host'), passwd=config.get('nimsp','passwd'))
+    except Exception, e:
+        print "Unable to connect to %s database: %s" % (config.get('nimsp','dbname'), e) 
+
+    salt_filter = SaltFilter(100,pcon,mcon)
+
     saucebrush.run_recipe(
         CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1),
         
@@ -334,20 +365,19 @@ select ContributionID as contributionid,Amount as amount,Date as datestamp,Contr
         FloatFilter('amount'),
         
         FieldAdder('salted',False),
-        SaltFilter(rando=100),
+        salt_filter,
         DCIDFilter(),
 
+        #DebugEmitter(),
         CountEmitter(every=2000),
+
         unsalted_emitter,
         salted_emitter
         )
 
-    for f in [salted_csv,unsalted_csv,unallocated_csv]:
+    for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, mcon]:
         f.close()
 
 
 if __name__ == "__main__":
-
-    logging.basicConfig(level=logging.DEBUG)
-
     main()
