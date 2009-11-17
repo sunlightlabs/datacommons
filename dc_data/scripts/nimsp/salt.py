@@ -1,3 +1,4 @@
+import hashlib
 import random
 import sys
 
@@ -7,10 +8,6 @@ from psycopg2.extras import RealDictCursor
 
 from saucebrush.filters import Filter, YieldFilter
 
-#from nimsp_hash import pseudorandom_sample
-
-import hashlib
-
 def ensure(value, min_value, max_value):
     if value < min_value:
         return min_value
@@ -19,17 +16,17 @@ def ensure(value, min_value, max_value):
     return value
 
 class DCIDFilter(Filter):
-    """ Convert a nismp contribution id into our hashed transaction_id form """
+    """ Convert a nismp contribution id into our encoded transaction_id form """
+    def __init__(self, salt_key="tmp"):
+        super(DCIDFilter, self).__init__()
+        self._salt_key = salt_key
 
-    SALT = "sunlight rocks"
-
-    def hash(self,id):
-        return hashlib.md5(str(id) + self.SALT).hexdigest()
+    def encode(self,id):
+        return hashlib.md5(str(id) + self._salt_key).hexdigest()
 
     def process_record(self, record):
-        if 'contributionid' in record and record['contributionid'] is not None:
-            record['transaction_id'] = self.hash(record['contributionid'])
-            del(record['contributionid'])
+        record['transaction_id'] = self.encode(record['contributionid'])
+        del(record['contributionid'])
         return record
 
 class SaltFilter(YieldFilter):    
@@ -38,12 +35,16 @@ class SaltFilter(YieldFilter):
         self._pcon = pcon
         self._mcon = mcon
         self._pcon.set_client_encoding('UTF8')
-        self._pcur = self._pcon.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        try:
+            self._pcur = self._pcon.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        except Exception, e:
+            print "Error: %s" % (e)
+            sys.exit(1)
         try:
             self._mcur = self._mcon.cursor()
         except MySQLdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
-            sys.exit (1)
+            sys.exit(1)
         self._rando = rando
     
     def get_salt(self,record):
@@ -60,8 +61,7 @@ class SaltFilter(YieldFilter):
                     rtn['datestamp'] = str(rtn['datestamp'])
                     return rtn
         else:
-            error(record,"No contributionid making salt")
-            error(record,record)
+            print "No contributionid making salt: %s" % record
             return None
         return None
 
@@ -94,19 +94,18 @@ class SaltFilter(YieldFilter):
             try:
                 self._mcur.execute(stmt, (record['contributionid'],))
                 d = (self._mcur.fetchone())[0]
-                if d and d != '1969-12-31':
+                if d and (str(d) != '1969-12-31'):
                     salt['datestamp'] = d
             except Exception, e:
                 print e
-                sys.exit()
+                sys.exit(1)
             
             #assign catcode
             salt['contributor_category'] = 'Y0000' #uncoded
 
-            stmt = """UPDATE salts SET contributionid = %s, saltid = %s, amount = %s, catcode = %s WHERE id = %s"""
-            self._pcur.execute(stmt, (record['contributionid'], salt['contributionid'], salt['amount'], salt['contributor_category'], row['id']))
+            stmt = """UPDATE salts SET contributionid = %s, saltid = %s, amount = %s, date = %s, catcode = %s WHERE id = %s"""
+            self._pcur.execute(stmt, (record['contributionid'], salt['contributionid'], salt['amount'],  salt['datestamp'], salt['contributor_category'], row['id']))
             self._pcon.commit()
-
             salt['salted'] = True
             return salt
         else:
@@ -114,16 +113,17 @@ class SaltFilter(YieldFilter):
     
     def process_record(self, record):
         record['salted'] = False
-        if record['amount'] > 500.0:
-            salt = self.get_salt(record)
-            if salt is not None:
-                record['amount'] -= salt['amount']
-                record['salted'] = True
-                yield salt
-            elif random.randint(0, self._rando) == 0:
-            #elif pseudorandom_sample(record['contributionid'], self._rando):
+        salt = self.get_salt(record)
+        if salt is not None:
+            record['amount'] -= salt['amount']
+            record['salted'] = True
+            yield salt
+        elif record['amount'] > 500.0:
+            if random.randint(0, self._rando) == 0:
                 salt = self.make_salt(record)
                 if salt is not None:
                     record['salted'] = True
                     yield salt
+                else:
+                    print "Didn't make salt: %s" % record
         yield record
