@@ -28,7 +28,7 @@ def dashboard(request):
 
 def _search(query):    
     results = []
-    for res in Entity.objects.filter(name__icontains=query):
+    for res in Entity.objects.filter(name__icontains=query).order_by('-count'):
         e = {
             'id': res.id,
             'type': res.type,

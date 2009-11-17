@@ -1,11 +1,11 @@
-<li>
+<li id="{{ entity.id }}">
     <p class="actions">
         <span>{{ entity.count }}</span>
         <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google" target="_blank">G</a>
         <a href="{% url matchbox_entity entity.id %}" class="detail" target="_blank">D</a>
         <a href="{% url matchbox_entity entity.id %}" class="notes">N(0)</a>
     </p>
-    <input type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
+    <input class="selector" type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
     <a class="transactions_control ui-icon ui-icon-triangle-1-e" href="{% url matchbox_entity_transactions entity.id %}">V</a>
     <label for="entities_{{ entity.id }}">{{ entity.name }}</label>
     {% if entity.aliases %}
@@ -15,5 +15,10 @@
             {% endfor %}
         </ul>
     {% endif %}
-    <div class="transactions_container"></div>
+    <div class="details_container">
+        <div class="transactions_container"></div>
+        <div class="details_expander">
+            <a href="#">=</a>
+        </div>
+    </div>
 </li>

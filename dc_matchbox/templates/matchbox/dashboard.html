@@ -10,5 +10,7 @@
             <li><a href="{% url matchbox_merge %}?queue={{ item.pk }}">{{ item.name }}</li>
             {% endfor %}
         </ul>
+    {% else %}
+        <p>No merges are pending. You may go home, the data set is complete.</p>
     {% endif %}
 {% endblock %}

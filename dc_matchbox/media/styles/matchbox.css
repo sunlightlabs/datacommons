@@ -61,7 +61,9 @@ body div#statusbar p { margin: 0; padding: 0; }
 
 #main { font-size: 93%; margin-bottom: 22em; }
 #content { float: left; width: 750px; margin: 0 0 200px 0; }
-#sidebar { border-left: 1px solid #000; float: left; padding: 0 0 100px 20px; width: 180px; }
+#sidebar { border-left: 2px solid #CBCCCB; float: left; padding: 0 0 100px 20px; width: 180px; }
+
+#sidebar ul#search_terms { margin: 0; padding: 0 0 0 15px; }
 
 #content ul#entities { list-style: none; margin: 0; padding: 0; width: 740px; }
 #content ul#entities li { clear: both; padding: 5px; }
@@ -69,17 +71,25 @@ body div#statusbar p { margin: 0; padding: 0; }
 #content ul#entities li.odd { background-color: #F2F1F0; }
 #content ul#entities li p.actions { float: right; margin: 0; padding: 0; }
 #content ul#entities li a.transactions_control { display: inline-block; }
-#content ul#entities li div.transactions_container {
-    background-color: #FFFFFF;
+#content ul#entities li div.details_container {
     clear: both;
     display: none;
-    height: 100px;
-    margin: 10px 0 10px 25px;
+    margin-bottom: 5px;
 }
+#content ul#entities li div.transactions_container {
+    background-color: #FFFFFF;
+    height: 100px;
+    margin: 10px 0 2px 25px;
+}
+#content ul#entities li div.expanded { height: 400px; }
+#content ul#entities li div.details_expander { text-align: center; }
+#content ul#entities li div.details_expander a { color: #CBCCCB; font-weight: bold; text-decoration: none; }
 
+/* generic transactions container */
 #content div.transactions_container {
     border: 1px solid #CBCCCB;
     height: 200px;
+    margin-right: 10px;
     overflow: auto;
 }
 
@@ -156,3 +166,4 @@ footer #footer_save {
     width: 140px;
 }
 footer #footer_save p { margin: 0; padding: 0; }
+footer #merge_name { width: 300px; }
