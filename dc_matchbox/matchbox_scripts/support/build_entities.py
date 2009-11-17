@@ -82,7 +82,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     
     for (id,) in retrieve_entity_ids():
         if id:
-            create_exntity(id)
+            create_entity(id)
     
 
     
