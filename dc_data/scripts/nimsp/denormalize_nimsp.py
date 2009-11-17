@@ -118,6 +118,16 @@ class FieldListFilter(Filter):
                 record[key] = None
         return record
 
+class EmployerOccupationFilter(Filter):
+        
+    def process_record(self, record):
+        for f in ('contributor_occupation','contributor_employer'):
+            if record[f]:
+                if len(record[f]) > 64:
+                    record[f] = record[f][:63]
+
+        return record
+
 class RecipientFilter(Filter):
     incumbent_map = {
         'I': True,
@@ -134,12 +144,12 @@ class RecipientFilter(Filter):
 
 class SeatFilter(Filter):
     election_type_map = {
-        'CL': 'candidate', # Utah candidate culling process 
-        'L':  'general',
-        'LR': 'retention', # Judicial retention election (no opponents) 
-        'PL': 'primary',
-        'W':  'general',
-        'WR': 'retention'
+        'CL': 'C', # Utah candidate culling process 
+        'L':  'G', # General
+        'LR': 'R', # Judicial retention election (no opponents) 
+        'PL': 'P', # Primary
+        'W':  'G', # General
+        'WR': 'R'  # Judicial retention
         }
     #office_code_map = {
     #    'G': 'state:governor',
@@ -176,7 +186,7 @@ class ZipCleaner(Filter):
                     warn(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                     record['contributor_zipcode'] = None 
             else:
-                if record['contributor_zipcode'] not in ('-','N/A','N.A.','UNK','UNKNOWN'):
+                if record['contributor_zipcode'] not in ('-','N/A','N.A.','NONE','UNK','UNKNOWN'):
                     warn(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                 record['contributor_zipcode'] = None
         return record
@@ -276,7 +286,7 @@ def main():
     
     #Contributions
     stmt = """
-select ContributionID as contributionid,Amount as amount,Date as datestamp,Contributor as contributor,NewContributor as newcontributor,Occupation as occupation,Employer as employer,NewEmployer as newemployer,ParentCompany as parentcompany,ContributorOwner as contributorowner,PACName as pacname,Address as address,NewAddress as newaddress,City as contributor_city,State as contributor_state,ZipCode as contributor_zipcode,c.CatCode as contributor_category,NewContributorID as contributor_id,NewEmployerID as newemployerid,ParentCompanyID as parentcompanyid,ContributionsTimestamp as contributionstimestamp,c.RecipientReportsBundleID as recipientreportsbundleid,
+select ContributionID as contributionid,Amount as amount,Date as datestamp,Contributor as contributor,NewContributor as newcontributor,Occupation as contributor_occupation,Employer as employer,NewEmployer as newemployer,ParentCompany as parentcompany,ContributorOwner as contributorowner,PACName as pacname,Address as address,NewAddress as newaddress,City as contributor_city,State as contributor_state,ZipCode as contributor_zipcode,c.CatCode as contributor_category,NewContributorID as contributor_id,NewEmployerID as newemployerid,ParentCompanyID as parentcompanyid,ContributionsTimestamp as contributionstimestamp,c.RecipientReportsBundleID as recipientreportsbundleid,
    r.RecipientID as recipientid, r.CandidateID as candidate_id, r.CommitteeID as committee_id, r.RecipientName as recipient_name,
    syr.Yearcode as cycle,
    os.District as district,
@@ -306,7 +316,7 @@ select ContributionID as contributionid,Amount as amount,Date as datestamp,Contr
         FieldMerger({'contributor_employer': ('newemployer','employer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
         FieldMerger({'organization_name': ('newemployer','employer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
         
-        #OrganizationFilter(),
+        EmployerOccupationFilter(),
         RecipientFilter(),
         SeatFilter(),
         
