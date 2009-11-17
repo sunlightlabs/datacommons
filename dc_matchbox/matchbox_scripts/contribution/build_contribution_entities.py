@@ -21,7 +21,20 @@ def run():
                   sql_names['contribution_organization_name'], 
                   sql_names['contribution_organization_entity'],
                   [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                  [sql_names['contribution_organization_urn']])
+                  [sql_names['contribution_organization_urn']],
+                  'organization (to do)')
+    populate_entities(sql_names['contribution'],
+                      sql_names['contribution_recipient_name'],
+                      sql_names['contribution_recipient_entity'],
+                      [sql_names['contribution_recipient_name']],
+                      [sql_names['contribution_recipient_urn']],
+                      'recipient (to do)')
+    populate_entities(sql_names['contribution'],
+                      sql_names['contribution_committee_name'],
+                      sql_names['contribution_committee_entity'],
+                      [sql_names['contribution_committee_name']],
+                      [sql_names['contribution_committee_urn']],
+                      'committee (to do)')    
     
     
 if __name__ == '__main__':
