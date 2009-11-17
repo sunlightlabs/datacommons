@@ -27,36 +27,34 @@ def dashboard(request):
     return render_to_response('matchbox/dashboard.html', data, context_instance=RequestContext(request))
 
 def _search(query):    
+#    results = []
+#    for res in Entity.objects.filter(name__icontains=query):
+#        e = {
+#            'id': res.id,
+#            'type': res.type,
+#            'name': res.name,
+#            'count': res.count,
+#            'notes': 0,
+#        }
+#        e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': res})
+#        results.append(e)
+#    content = json.dumps(results)
+#    return HttpResponse(content, mimetype='application/javascript')
     results = []
-    for res in Entity.objects.filter(name__icontains=query).order_by('-count'):
+    for (id_, name, count) in search_entities_by_name(query):
         e = {
-            'id': res.id,
-            'type': res.type,
-            'name': res.name,
-            'count': res.count,
+            'id': id_,
+            'type': 'organization',
+            'name': name,
+            'count': count,
             'notes': 0,
         }
-        e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': res})
+        e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
         results.append(e)
     content = json.dumps(results)
     return HttpResponse(content, mimetype='application/javascript')
-    # try:
-    #     results = []
-    #     for (id_, name, count) in search_entities_by_name(query):
-    #         e = {
-    #             'id': id_,
-    #             'type': 'organization',
-    #             'name': name,
-    #             'count': count,
-    #             'notes': 0,
-    #         }
-    #         e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': result})
-    #         results.append(e)
-    #     content = json.dumps(results)
-    #     return HttpResponse(content, mimetype='application/javascript')
-    # except:
-    #     return HttpResponse('[]', mimetype='application/javascript')
-    
+
+
 
 @login_required
 def search(request):
