@@ -24,7 +24,7 @@ from salt import DCIDFilter, SaltFilter
 
 from settings import OTHER_DATABASES
 
-FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn', 'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state', 'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 'organization_entity', 'parent_organization_name', 'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order', 'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type', 'district', 'seat', 'seat_status', 'seat_result']
+FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn', 'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state', 'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 'organization_urn', 'organization_entity', 'parent_organization_name', 'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order', 'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type', 'district', 'seat', 'seat_status', 'seat_result']
 
 
 committee_words_re = re.compile('(?:\\b(?:' + '|'.join(['CMTE','COMMITTEE','FRIENDS','PAC','UNION']) + '))' )
@@ -109,7 +109,6 @@ class IntFilter(FieldFilter):
         except ValueError:
             return self._on_error
 
-
 class FieldListFilter(Filter):
     """ A filter to limit fields to those in a list, and add empty values for missing fields. """
     def __init__(self, keys):
@@ -142,9 +141,9 @@ class ContributorTypeFilter(Filter):
         if record['contributor_id'] and record['newemployerid'] and record['contributor_id'] == record['newemployerid']:
             committee += 1
         if individual > 0 and individual > committee:          
-            record['contributor_type'] = 'I'
+            record['contributor_type'] = 'individual'
         elif committee > 0 and committee > individual:
-            record['contributor_type'] = 'C'
+            record['contributor_type'] = 'committee'
         else:
             record['contributor_type'] = None
         return record
@@ -213,17 +212,17 @@ class SeatFilter(Filter):
 class UrnFilter(Filter):
 
     def process_record(self,record):
-        contributor_type_map = {'I':'I', 'C':'C', '': None, None: None}
+        contributor_type_map = {'individual':'individual', 'committee':'committee', '': 'contributor', None: 'contributor'}
 
         if record['candidate_id'] and record['committee_id']:
             warn('record has both candidate and committee ids. unhandled.', record)
             return record
         elif record['candidate_id']:
-            record['recipient_type'] = 'P'
+            record['recipient_type'] = 'politician'
             record['recipient_urn'] = 'urn:nimsp:candidate:%d' % record['candidate_id']
             record['recipient_entity'] = hashlib.md5(record['recipient_urn']).hexdigest()
         elif record['committee_id']:
-            record['recipient_type'] = 'C'
+            record['recipient_type'] = 'committee'
             record['recipient_urn'] = record['committee_urn'] = 'urn:nimsp:committee:%d' % record['committee_id']
             record['recipient_entity'] = record['committee_entity'] = hashlib.md5(record['committee_urn']).hexdigest()
         if record['contributor_id']:
@@ -452,7 +451,6 @@ select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp
 
         #DebugEmitter(),
         CountEmitter(every=2000),
-
         unsalted_emitter,
         salted_emitter
         )
