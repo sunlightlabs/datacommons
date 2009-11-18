@@ -1,10 +1,11 @@
 
+from django.db.models import Q
 from django.db import connection
 import re
 
 from dcdata.utils.sql import dict_union, is_disjoint, augment
-from dcdata.contribution.models import sql_names as contribution_names
-from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity
+from dcdata.contribution.models import Contribution, sql_names as contribution_names
+from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity, entityref_cache
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
 
@@ -67,10 +68,6 @@ def merge_entities(entity_ids, new_entity):
     new_entity -- an Entity. Can be a Entity that is already in DB or a newly created entity.
     """
     
-    # a bit of type checking, since these will go into raw SQL
-    #entity_ids = map(long, entity_ids)
-    entity_ids = map(str, entity_ids)
-    
     new_entity.save()
     assert(new_entity.id not in entity_ids)
 
@@ -78,12 +75,10 @@ def merge_entities(entity_ids, new_entity):
     norm = Normalization(original = new_entity.name, normalized = basic_normalizer(new_entity.name))
     norm.save()
 
-    # update contribution foreign keys
-    stmt = "update %(contribution)s \
-            set %(contribution_organization_entity)s = %%s \
-            where %(contribution_organization_entity)s in (%(old_ids)s)" % \
-            augment(sql_names, old_ids = ",".join(map(lambda x: "'%s'" % x, entity_ids)))
-    _execute_stmt(stmt, new_entity.id)
+    # update transactions
+    for entity_field in entityref_cache.get(Contribution, None):
+        query = reduce(lambda x, y: x | y, [Q(**{entity_field: old_id}) for old_id in entity_ids])
+        Contribution.objects.filter(query).update(**{entity_field: new_entity.id})
     
     # update alias and attribute tables
     _merge_aliases(entity_ids, new_entity)
@@ -96,7 +91,8 @@ def merge_entities(entity_ids, new_entity):
 
 
 def _merge_aliases(old_ids, new_entity):
-    entity_ids = old_ids + [new_entity.id]
+    entity_ids = list(old_ids)
+    entity_ids.append(new_entity) 
     existing_aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity__in=entity_ids)]
     existing_aliases.append(new_entity.name)
     
@@ -107,7 +103,8 @@ def _merge_aliases(old_ids, new_entity):
     
     
 def _merge_attributes(old_ids, new_entity):    
-    entity_ids = old_ids + [new_entity.id]
+    entity_ids = list(old_ids)
+    entity_ids.append(new_entity) 
     existing_attributes = [(attr.namespace, attr.value) for attr in EntityAttribute.objects.filter(entity__in=entity_ids)]
     existing_attributes.append((EntityAttribute.ENTITY_ID_NAMESPACE, new_entity.id))
     
