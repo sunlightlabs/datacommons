@@ -93,6 +93,48 @@ class TestQueries(unittest.TestCase):
         avacado = Entity.objects.get(name='avacado')
         self.assertEqual(0, Contribution.objects.with_entity(avacado, ['organization_entity']).count())
         
+    def test_populate_entities_cross_column_duplication(self):
+        Contribution.objects.create(recipient_name="Apple Sauce",
+                                    recipient_entity=self.apple_id,
+                                    recipient_urn="urn:unittest:recipient:" + "Apple Sauce",
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        
+        Contribution.objects.create(recipient_name="Apple",
+                                    recipient_entity=self.apple_id,
+                                    recipient_urn="urn:unittest:recipient:" + "Apple",
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        
+        populate_entities(sql_names['contribution'],
+                  sql_names['contribution_recipient_name'],
+                  sql_names['contribution_recipient_entity'],
+                  [sql_names['contribution_recipient_name']],
+                  [sql_names['contribution_recipient_urn']])
+        
+        self.assertEqual(3, Entity.objects.count())
+        
+        apple = Entity.objects.get(id=self.apple_id)
+        self.assertEqual(2, Contribution.objects.with_entity(apple, ['organization_entity']).count())
+        self.assertEqual(2, Contribution.objects.with_entity(apple, ['recipient_entity']).count())
+        self.assertEqual(4, Contribution.objects.with_entity(apple).count())
+        
+        self.assertEqual(3, apple.aliases.count())
+        self.assertEqual(1, apple.aliases.filter(alias='Apple').count())
+        self.assertEqual(1, apple.aliases.filter(alias='Apple Juice').count())
+        self.assertEqual(1, apple.aliases.filter(alias='Apple Sauce').count())
+        
+        self.assertEqual(5, apple.attributes.count())
+        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
+        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple Juice').count())
+        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:recipient', value='Apple Sauce').count())
+        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:recipient', value='Apple').count())
+        self.assertEqual(1, apple.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apple.id).count())
+        
 
     def test_search_entities_by_name(self):
         result = search_entities_by_name(u'a')
@@ -104,7 +146,7 @@ class TestQueries(unittest.TestCase):
             self.assertEqual(expected_count, count)
     
     def test_search_entities_by_name_multiple_aliases(self):
-        apple = Entity.objects.get(name="Apple")
+        apple = Entity.objects.get(id=self.apple_id)
         apple.aliases.create(alias="Appetite")
         Normalization.objects.create(original="Appetite", normalized="appetite")
         
