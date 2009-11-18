@@ -63,7 +63,6 @@ def build_matchbox():
     print("Indexing normalizations...")
     cursor.execute("create index normalization_normalized_index on %(normalization)s (%(normalization_normalized)s)" % sql_names)
     cursor.execute("create fulltext index normalization_original_fulltext on %(normalization)s (%(normalization_original)s)" % sql_names)
-    
 
 
 if __name__ == "__main__":
