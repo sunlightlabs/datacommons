@@ -113,12 +113,17 @@ var Matchbox = {
         Message: {
             
             text: '',
+            isError: false,
             isHideable: false,
             interval: null,
             timeout: null,
             
             show: function() {
-                $('#statusbar p').text(this.text).parent().show("slide", { direction: "up" }, 200);
+                $('#statusbar p').text(this.text);
+                $('#statusbar').show("slide", { direction: "up" }, 200);
+                if (this.isError) {
+                    $('#statusbar').addClass('error');
+                }
                 window.setTimeout(function(msg) {
                     msg.isHideable = true;
                 }, 1000, this);
@@ -129,7 +134,7 @@ var Matchbox = {
                     if (msg.isHideable) {
                         window.clearInterval(msg.interval);
                         window.clearTimeout(msg.timeout);
-                        $('#statusbar').hide("slide", { direction: "up" }, 200);
+                        $('#statusbar').removeClass('error').hide("slide", { direction: "up" }, 200);
                         window.setTimeout(Matchbox.StatusBar.nextMessage, 300);
                     }
                 }, 100, this);
@@ -137,20 +142,26 @@ var Matchbox = {
             
         },
         
-        notify: function(text) {
+        notify: function(text, isError) {
             var message = Object.create(Matchbox.StatusBar.Message);
             message.text = text;
+            message.isError = isError || false;
             Matchbox.StatusBar.queue.push(message);
-            if (!Matchbox.StatusBar.currentMessage) {
+            if (Matchbox.StatusBar.currentMessage === null) {
                 Matchbox.StatusBar.nextMessage();
             }
             return message;
         },
         
+        error: function(text) {
+            return this.notify(text, true);
+        },
+        
         nextMessage: function() {
+            Matchbox.StatusBar.currentMessage = null;
             var message = Matchbox.StatusBar.queue.shift();
-            this.currentMessage = message;
             if (message) {
+                Matchbox.StatusBar.currentMessage = message;
                 message.show();
             }
         }
@@ -171,11 +182,23 @@ var Matchbox = {
         },
         
         loadQuery: function(query) {
+            
             var message = Matchbox.StatusBar.notify("Loading query '" + query + "'");
-            $.getJSON('/search/?type_filter=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query), function(results) {
-                $('#search_terms').append($('<li>' + query + ' (' + results.length + ')</li>'));
-                Matchbox.MergeManager.loadEntities(results);
-                message.hide();
+            $.ajax({
+                type: 'GET',
+                url: '/search/?type_filter=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query),
+                dataType: 'json',
+                success: function(results) {
+                    $('#search_terms').append($('<li>' + query + ' (' + results.length + ')</li>'));
+                    Matchbox.MergeManager.loadEntities(results);
+                },
+                error: function(xhr, status, err) {
+                    message.hide();
+                    message = Matchbox.StatusBar.error('Error loading query: ' + query);
+                },
+                complete: function() {
+                    message.hide();
+                }
             });
             Matchbox.MergeManager.loadedQueries.push(query)
             Matchbox.searchQueries.push(query)
@@ -242,13 +265,6 @@ $().ready(function() {
         }
         $(this).autocomplete(names);
     });
-    
-    // $().bind('ajaxError', function(e, xhr, ajaxOptions, thrownError) {
-    //     Matchbox.StatusBar.notify(xhr.statusText);
-    //     if (Matchbox.StatusBar.currentMessage) {
-    //         Matchbox.StatusBar.currentMessage.hide();
-    //     }
-    // });
     
     // attach search form validation    
     $('#search_form').submit(function() {
