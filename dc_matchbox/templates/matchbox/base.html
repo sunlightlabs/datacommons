@@ -30,11 +30,11 @@
                     <p class="container">
                         {% if user.is_authenticated %}
                             <label for="search_query">New Search</label>
-                            <input type="text" name="q" id="query">
-                            <select name="type">
-                                <option value="organization"{% ifequal entity_type "organization" %} selected="selected"{% endifequal %}>organizations</option>
-                                <option value="committee"{% ifequal entity_type "committee" %} selected="selected"{% endifequal %}>committees</option>
-                                <option value="politician"{% ifequal entity_type "politician" %} selected="selected"{% endifequal %}>politicians</option>
+                            <input type="text" name="q" id="query" tabindex="1">
+                            <select name="type_filter" tabindex="2">
+                                <option value="organization"{% ifequal type_filter "organization" %} selected="selected"{% endifequal %}>organizations</option>
+                                <option value="committee"{% ifequal type_filter "committee" %} selected="selected"{% endifequal %}>committees</option>
+                                <option value="politician"{% ifequal type_filter "politician" %} selected="selected"{% endifequal %}>politicians</option>
                             </select>
                             <input type="submit" value="Go!">
                         {% endif %}

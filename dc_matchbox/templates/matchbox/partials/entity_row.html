@@ -8,6 +8,7 @@
     <input class="selector" type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
     <a class="transactions_control ui-icon ui-icon-triangle-1-e" href="{% url matchbox_entity_transactions entity.id %}">V</a>
     <label for="entities_{{ entity.id }}">{{ entity.name }}</label>
+    {% comment %}
     {% if entity.aliases %}
         <ul>
             {% for alias in entity.aliases.all %}
@@ -15,6 +16,7 @@
             {% endfor %}
         </ul>
     {% endif %}
+    {% endcomment %}
     <div class="details_container">
         <div class="transactions_container"></div>
         <div class="details_expander">

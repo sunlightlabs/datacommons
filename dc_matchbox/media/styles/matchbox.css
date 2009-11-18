@@ -11,6 +11,9 @@ body {
     padding: 0;
     text-align: center;
 }
+input[type=submit], input[type=button], button {
+    margin: 10px 0;
+}
 header { background-color: #F2F1F0; margin-bottom: 1.5em; }
 header #search_form_container {
     background-color: #FBF9F9;
@@ -33,6 +36,7 @@ header nav ul li a {
     padding: 5px 20px;
     text-decoration: none;
 }
+header input[type=submit] { margin: 0; }
 
 table { border-collapse: collapse; }
 
@@ -65,6 +69,8 @@ body div#statusbar p { margin: 0; padding: 0; }
 
 #sidebar ul#search_terms { margin: 0; padding: 0 0 0 15px; }
 
+#content h2 { margin: 0; }
+
 #content ul#entities { list-style: none; margin: 0; padding: 0; width: 740px; }
 #content ul#entities li { clear: both; padding: 5px; }
 #content ul#entities li:hover { background-color: #F2F1F0; }
@@ -83,7 +89,7 @@ body div#statusbar p { margin: 0; padding: 0; }
 }
 #content ul#entities li div.expanded { height: 400px; }
 #content ul#entities li div.details_expander { text-align: center; }
-#content ul#entities li div.details_expander a { color: #CBCCCB; font-weight: bold; text-decoration: none; }
+#content ul#entities li div.details_expander a { color: #CBCCCB; text-decoration: none; }
 
 /* generic transactions container */
 #content div.transactions_container {
@@ -162,7 +168,7 @@ footer #footer_save {
     border-right: 1px solid #CBCCCB;
     float: left;
     margin-right: 20px;
-    padding: 5px 10px;
+    padding: 0 10px;
     width: 140px;
 }
 footer #footer_save p { margin: 0; padding: 0; }
