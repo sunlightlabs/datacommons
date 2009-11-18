@@ -40,6 +40,7 @@ class EntityRef(models.CharField):
         kwargs['max_length'] = 32
         kwargs['blank'] = True
         kwargs['null'] = True
+        kwargs['db_index'] = True
         super(EntityRef, self).__init__(*args, **kwargs)
         self._ignore = ignore
         self._label = related_name
@@ -79,7 +80,7 @@ class Entity(models.Model):
     count = models.IntegerField(default=0)
     
     class Meta:
-        ordering = ('name',)
+        ordering = ('-count',)
     
     def __unicode__(self):
         return self.name
