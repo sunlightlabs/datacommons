@@ -68,7 +68,8 @@ class TestQueries(unittest.TestCase):
     def test_populate_entities(self):
         self.assertEqual(3, Entity.objects.count())
         
-        apple = Entity.objects.get(name="Apple")
+        apple = Entity.objects.get(pk=self.apple_id)
+        self.assertTrue(apple.name in ("Apple", "Apple Juice"))
         self.assertEqual(2, Contribution.objects.with_entity(apple, ['organization_entity']).count())
         
         apple_alias = EntityAlias.objects.get(alias="Apple")
@@ -256,8 +257,54 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apricot').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apple Juice').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
-
-
+#        
+    def test_merge_entities_and_with_entity(self):
+        self.assertEqual(2, Contribution.objects.with_entity(Entity.objects.get(pk=self.apple_id)).count())
+        self.assertEqual(1, Contribution.objects.with_entity(Entity.objects.get(pk=self.apricot_id)).count())
+        
+        apple_head = Contribution.objects.create(parent_organization_name="Apple Head",
+                                    parent_organization_entity=self.apple_id,
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        apple_catcher = Contribution.objects.create(recipient_name="Apple Catcher",
+                                    recipient_entity=self.apple_id,
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        apricot_council = Contribution.objects.create(committee_name="Apricot Council",
+                                    committee_entity=self.apricot_id,
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        apricot_picker = Contribution.objects.create(organization_name="Apricot Picker",
+                                    organization_entity=self.apricot_id,
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        
+        apple = Entity.objects.get(pk=self.apple_id)
+        
+        self.assertEqual(4, Contribution.objects.with_entity(apple).count())
+        self.assertEqual(2, Contribution.objects.with_entity(apple, ['organization_entity']).count())
+        self.assertEqual(1, Contribution.objects.with_entity(apple, ['parent_organization_entity']).count())
+        self.assertEqual(1, Contribution.objects.with_entity(apple, ['recipient_entity']).count())
+        self.assertEqual(0, Contribution.objects.with_entity(apple, ['committee_entity']).count())
+        
+        merge_entities([self.apple_id, self.apricot_id], Entity(name=u'Applicot'))
+        applicot = Entity.objects.get(name='Applicot')
+        
+        self.assertEqual(7, Contribution.objects.with_entity(applicot).count())
+        self.assertEqual(apple_head, Contribution.objects.with_entity(applicot, ['parent_organization_entity'])[0])
+        self.assertEqual(apple_catcher, Contribution.objects.with_entity(applicot, ['recipient_entity'])[0])
+        self.assertEqual(apricot_council, Contribution.objects.with_entity(applicot, ['committee_entity'])[0])
+        self.assertTrue(apricot_picker in Contribution.objects.with_entity(applicot, ['organization_entity']))
+        
+        
     
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):
