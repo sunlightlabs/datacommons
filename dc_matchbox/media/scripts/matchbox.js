@@ -42,12 +42,31 @@ var Matchbox = {
         bind: function() {
             var that = this;
             this.node = $('#' + this.id);
+            // checkbox
             this.node.find('input.selector').bind('click', function() {
                 if (this.checked) {
                     that.select();
                 } else {
                     that.deselect();
                 }
+            });
+            // details expander
+            this.node.find('a.transactions_control').bind('click', function() {
+                var me = $(this);
+                var container = that.node.find('.details_container');
+                if (me.hasClass('ui-icon-triangle-1-s')) {
+                    container.hide();
+                } else {    
+                    container.show().children('.transactions_container').load(this.href);
+                }
+                me.trigger('blur').toggleClass('ui-icon-triangle-1-e').toggleClass('ui-icon-triangle-1-s');
+                return false;    
+            });
+            // transaction expander
+            this.node.find('.details_expander a').bind('click', function() {
+                $(this).trigger('blur');
+                that.node.find('.transactions_container').toggleClass('expanded');
+                return false;
             });
         }
         
@@ -99,10 +118,10 @@ var Matchbox = {
             timeout: null,
             
             show: function() {
-                $('#statusbar p').text(this.text).parent().show("slide", { direction: "up" }, 500);
+                $('#statusbar p').text(this.text).parent().show("slide", { direction: "up" }, 200);
                 window.setTimeout(function(msg) {
                     msg.isHideable = true;
-                }, 1500, this);
+                }, 1000, this);
             },
             
             hide: function() {
@@ -110,8 +129,8 @@ var Matchbox = {
                     if (msg.isHideable) {
                         window.clearInterval(msg.interval);
                         window.clearTimeout(msg.timeout);
-                        $('#statusbar').hide("slide", { direction: "up" }, 500);
-                        window.setTimeout(Matchbox.StatusBar.nextMessage, 600);
+                        $('#statusbar').hide("slide", { direction: "up" }, 200);
+                        window.setTimeout(Matchbox.StatusBar.nextMessage, 300);
                     }
                 }, 100, this);
             }
@@ -153,7 +172,7 @@ var Matchbox = {
         
         loadQuery: function(query) {
             var message = Matchbox.StatusBar.notify("Loading query '" + query + "'");
-            $.getJSON('/search/?type=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query), function(results) {
+            $.getJSON('/search/?type_filter=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query), function(results) {
                 $('#search_terms').append($('<li>' + query + ' (' + results.length + ')</li>'));
                 Matchbox.MergeManager.loadEntities(results);
                 message.hide();
@@ -265,7 +284,7 @@ $().ready(function() {
     $('#merge_button').click(function() {
         if (Matchbox.MergeManager.typeFilter) {
             $('#merge_form').append(
-                $('<input type="hidden" name="type" value="' + Matchbox.typeFilter + '">'));
+                $('<input type="hidden" name="type_filter" value="' + Matchbox.typeFilter + '">'));
         }
         for (var i = 0; i < Matchbox.MergeManager.loadedQueries.length; i++) {
             var query = Matchbox.MergeManager.loadedQueries[i];
@@ -276,24 +295,8 @@ $().ready(function() {
             $('#merge_form').append($('<input type="hidden" name="queue" value="' + queueId + '">'))
         }
     	$('#new_name').val( $('#merge_name').val() );
-    	$('#new_type').val( $('#merge_type').val() );
+    	$('#new_type').val( $('#type_filter').val() );
         $('#merge_form').trigger('submit');
-        return false;
-    });
-    
-    // transactions control
-    $('a.transactions_control').live('click', function() {
-        var me = $(this);
-        if (me.hasClass('ui-icon-triangle-1-s')) {
-            me.siblings('.details_container').hide();
-        } else {    
-            me.siblings('.details_container').show().children('.transactions_container').load(this.href);
-        }
-        me.trigger('blur').toggleClass('ui-icon-triangle-1-e').toggleClass('ui-icon-triangle-1-s');
-        return false;    
-    });
-    $('.details_expander a').live('click', function() {
-        $(this).trigger('blur').parent().siblings('.transactions_container').toggleClass('expanded');
         return false;
     });
         

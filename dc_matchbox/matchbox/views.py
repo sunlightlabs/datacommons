@@ -26,20 +26,20 @@ def dashboard(request):
     }
     return render_to_response('matchbox/dashboard.html', data, context_instance=RequestContext(request))
 
-def _search(query):    
-#    results = []
-#    for res in Entity.objects.filter(name__icontains=query):
-#        e = {
-#            'id': res.id,
-#            'type': res.type,
-#            'name': res.name,
-#            'count': res.count,
-#            'notes': 0,
-#        }
-#        e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': res})
-#        results.append(e)
-#    content = json.dumps(results)
-#    return HttpResponse(content, mimetype='application/javascript')
+def _search(query, type_filter):    
+    # results = []
+    # for res in Entity.objects.filter(name__icontains=query, type=type_filter):
+    #    e = {
+    #        'id': res.id,
+    #        'type': res.type,
+    #        'name': res.name,
+    #        'count': res.count,
+    #        'notes': 0,
+    #    }
+    #    e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': res})
+    #    results.append(e)
+    # content = json.dumps(results)
+    # return HttpResponse(content, mimetype='application/javascript')
     results = []
     for (id_, name, count) in search_entities_by_name(query):
         e = {
@@ -58,7 +58,10 @@ def _search(query):
 
 @login_required
 def search(request):
-    return _search(decode_htmlentities(request.GET.get('q','')))
+    return _search(
+        decode_htmlentities(request.GET.get('q','')),
+        request.GET.get('type_filter', ''),
+    )
 
 
 @login_required
@@ -75,7 +78,7 @@ def merge(request):
         
         entity_ids = request.POST.getlist('entities')
         if len(entity_ids) > 1:
-            e = Entity(name=request.POST['new_name'], type=request.POST['new_type'])
+            e = Entity(name=request.POST['new_name'], type=request.POST['type_filter'])
             merge_entities(entity_ids, e)
         
         params = []
@@ -86,7 +89,7 @@ def merge(request):
             params.append(('queue', q))
             
         if 'type' in request.POST:
-            params.append(('type', request.POST['type']))
+            params.append(('type_filter', request.POST['type']))
         qs = urllib.urlencode(params)
         
         return HttpResponseRedirect("%s?%s" % (reverse('matchbox_merge'), qs))
@@ -97,9 +100,9 @@ def merge(request):
         queues = request.GET.getlist('queue')
         data = { 'queries': queries, 'queues': queues }
     
-        type_ = request.GET.get('type', '')
+        type_ = request.GET.get('type_filter', '')
         if type_ in ENTITY_TYPES:
-            data['entity_type'] = type_
+            data['type_filter'] = type_
         
         return render_to_response('matchbox/merge.html',
                                   data,
