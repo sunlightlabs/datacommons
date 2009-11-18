@@ -41,7 +41,7 @@ def _search(query, type_filter):
     # content = json.dumps(results)
     # return HttpResponse(content, mimetype='application/javascript')
     results = []
-    for (id_, name, count) in search_entities_by_name(query):
+    for (id_, name, count) in search_entities_by_name(query, type_filter):
         e = {
             'id': id_,
             'type': 'organization',

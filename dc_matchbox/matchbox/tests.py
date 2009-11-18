@@ -168,7 +168,7 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, Entity.objects.filter(type='politician', name='Apple Smith').count())
 
     def test_search_entities_by_name(self):
-        result = search_entities_by_name(u'a')
+        result = search_entities_by_name(u'a', 'organization')
         
         expected = [['Apple', 2], ['Apricot', 1], ['Avacado', 0]]
         
@@ -181,7 +181,7 @@ class TestQueries(unittest.TestCase):
         apple.aliases.create(alias="Appetite")
         Normalization.objects.create(original="Appetite", normalized="appetite")
         
-        result = search_entities_by_name(u'app')
+        result = search_entities_by_name(u'app', 'organization')
         expected = [['Apple', 2]]
 
         for ((expected_name, expected_count), (id, name, count)) in zip(expected, result):

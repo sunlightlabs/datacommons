@@ -11,7 +11,7 @@ sql_names = dict_union(contribution_names, matchbox_names)
 from strings.normalizer import basic_normalizer
 
 
-def search_entities_by_name(query):
+def search_entities_by_name(query, type_filter):
     """
     Search for all entities with a normalized name prefixed by the normalized query string.
     
@@ -27,12 +27,13 @@ def search_entities_by_name(query):
                          union distinct \
                         select distinct %(normalization_original)s from %(normalization)s where match(%(normalization_original)s) against(%%s in boolean mode)) n \
                     inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
-                    inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s) matches \
+                    inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s \
+                    where e.%(entity_type)s = %%s) matches \
                 left join %(contribution)s c on c.%(contribution_organization_entity)s = matches.%(entity_id)s \
                 group by matches.%(entity_id)s order by count(c.%(contribution_organization_entity)s) desc;" % \
                 sql_names
                  
-        return _execute_stmt(stmt, basic_normalizer(query) + '%', _prepend_pluses(query))
+        return _execute_stmt(stmt, basic_normalizer(query) + '%', _prepend_pluses(query), type_filter)
     else:
         return []
 
