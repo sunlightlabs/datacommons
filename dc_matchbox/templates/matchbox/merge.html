@@ -15,8 +15,8 @@
 {% endblock %}
 
 {% block content %}
-    <p>Select: <a href="#" id="selectAll">all</a> <a href="#" id="selectNone">none</a> <a href="#" id="test">test</a></p>
     <h2>{{ type_filter|capfirst }}s</h2>
+    <p>Select: <a href="#" id="selectAll">all</a> <a href="#" id="selectNone">none</a> <a href="#" id="test">test</a></p>
     <form action="{% url matchbox_merge %}" method="post" id="merge_form">
     	<input type="hidden" name="new_name" id="new_name">
     	<input type="hidden" name="new_type" id="new_type">
