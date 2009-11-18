@@ -7,6 +7,7 @@ import unittest
 from dcdata.contribution.models import Contribution, sql_names
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
+from matchbox_scripts.contribution.build_contribution_entities import get_a_recipient_type
 from matchbox_scripts.support.build_entities import populate_entities
 from matchbox_scripts.support.normalize_database import normalize
 from strings.normalizer import basic_normalizer
@@ -135,6 +136,36 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:recipient', value='Apple').count())
         self.assertEqual(1, apple.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apple.id).count())
         
+        
+    def test_populate_entities_recipient_type(self):
+        Contribution.objects.create(recipient_name="Apple Council",
+                                    recipient_entity=uuid4().hex,
+                                    recipient_type='C',
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        
+        Contribution.objects.create(recipient_name="Apple Smith",
+                                    recipient_entity=uuid4().hex,
+                                    recipient_type='P',
+                                    datestamp=datetime.now(),
+                                    cycle='09', 
+                                    transaction_namespace='urn:unittest:transaction',
+                                    import_reference=self.import_)
+        
+        populate_entities(sql_names['contribution'],
+                          sql_names['contribution_recipient_name'],
+                          sql_names['contribution_recipient_entity'],
+                          [sql_names['contribution_recipient_name']],
+                          [sql_names['contribution_recipient_urn']],
+                          get_a_recipient_type)
+        
+        self.assertEqual(1, Entity.objects.filter(type='committee').count())
+        self.assertEqual(1, Entity.objects.filter(type='committee', name='Apple Council').count())
+        
+        self.assertEqual(1, Entity.objects.filter(type='politician').count())
+        self.assertEqual(1, Entity.objects.filter(type='politician', name='Apple Smith').count())
 
     def test_search_entities_by_name(self):
         result = search_entities_by_name(u'a')

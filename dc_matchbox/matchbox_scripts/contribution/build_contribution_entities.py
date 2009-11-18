@@ -8,34 +8,39 @@ import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 
-from dcdata.utils.sql import dict_union, is_disjoint
-from dcdata.contribution.models import sql_names as contribution_names
-from matchbox.models import sql_names as matchbox_names
-assert is_disjoint(contribution_names, matchbox_names)
-sql_names = dict_union(contribution_names, matchbox_names)    
-    
+from dcdata.contribution.models import sql_names, Contribution
 from matchbox_scripts.support.build_entities import populate_entities
+
+
+def get_a_recipient_type(id):
+    t = Contribution.objects.filter(recipient_entity=id)[0]
+    if t.recipient_type == 'C':
+        return 'committee'
+    elif t.recipient_type == 'P':
+        return 'politician'
 
 def run():
     populate_entities(sql_names['contribution'], 
-                  sql_names['contribution_organization_name'], 
-                  sql_names['contribution_organization_entity'],
-                  [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                  [sql_names['contribution_organization_urn']],
-                  'organization (to do)')
+                      sql_names['contribution_organization_name'], 
+                      sql_names['contribution_organization_entity'],
+                      [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
+                      [sql_names['contribution_organization_urn']],
+                      (lambda id: 'organization'))
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_recipient_name'],
                       sql_names['contribution_recipient_entity'],
                       [sql_names['contribution_recipient_name']],
                       [sql_names['contribution_recipient_urn']],
-                      'recipient (to do)')
+                      get_a_recipient_type)
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_committee_name'],
                       sql_names['contribution_committee_entity'],
                       [sql_names['contribution_committee_name']],
                       [sql_names['contribution_committee_urn']],
-                      'committee (to do)')    
+                      (lambda id: 'committee'))
     
     
 if __name__ == '__main__':
     run()
+    
+    

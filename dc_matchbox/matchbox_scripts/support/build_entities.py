@@ -14,7 +14,7 @@ def quote(value):
 
 
 def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_columns=[],
-                      type_=None, reviewer=__name__, timestamp = datetime.now()):
+                      type_func=(lambda id: None), reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
     
@@ -32,21 +32,33 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         loop_cursor.execute(stmt)
         return loop_cursor
     
-    def transactional_names(id):
-        stmt = "select distinct `%s` from `%s` where `%s` = %%s" % (entity_name_column, transaction_table, entity_id_column)
-        cursor.execute(stmt, [id])
-        return set([name.strip() for (name,) in cursor if name.strip()])
+    def transactional_aliases(id):
+        result = set()
+        for alias_column in alias_columns:
+            stmt = "select distinct `%s` from `%s` where `%s` = %%s and length(`%s`) > 0" % (alias_column, transaction_table, entity_id_column, alias_column)
+            cursor.execute(stmt,[id])
+            for (alias,) in cursor:
+                result.add(alias)
+        return result   
     
     def transactional_attributes(id):
         result = set()
         for attribute_column in attribute_columns:
-            stmt = "select distinct `%s` from `%s` where `%s` = %%s" % (attribute_column, transaction_table, entity_id_column)
+            stmt = "select distinct `%s` from `%s` where `%s` = %%s and length(`%s`) > 0" % (attribute_column, transaction_table, entity_id_column, attribute_column)
             cursor.execute(stmt,[id])
             for (attribute,) in cursor:
                 (namespace, value) = attribute_name_value_pair(attribute) or ('', '')
                 if namespace and value:
                     result.add((namespace, value))
         return result      
+
+    def get_a_name(id):
+        stmt = "select distinct `%s` from `%s` where `%s` = %%s and length(`%s`) > 0 limit 1" % (entity_name_column, transaction_table, entity_id_column, entity_name_column)
+        cursor.execute(stmt, [id])
+        if cursor:
+            return cursor.__iter__().next()[0]
+        else:
+            return 'Unknown'
     
     def attribute_name_value_pair(attribute):
         attribute = attribute.strip()
@@ -55,9 +67,9 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             return (attribute[0:last_colon], attribute[last_colon + 1:])
         else:
             return None
-    
+        
     def create_entity(id):
-        aliases = transactional_names(id)
+        aliases = transactional_aliases(id)
         attributes = transactional_attributes(id)
 
         f = Entity.objects.filter(pk=id)
@@ -68,8 +80,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             attributes -= set([(attr.namespace, attr.value) for attr in e.attributes.all()])
         else:
             attributes.add((EntityAttribute.ENTITY_ID_NAMESPACE, id))
-            name = aliases.__iter__().next() if aliases else 'Unknown'
-            e = Entity(id=id, name=name, type=type_, reviewer=reviewer, timestamp=timestamp)
+            e = Entity(id=id, name=get_a_name(id), type=type_func(id), reviewer=reviewer, timestamp=timestamp)
             e.save()
             
         for alias in aliases:
