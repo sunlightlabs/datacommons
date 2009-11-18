@@ -109,6 +109,7 @@ class IntFilter(FieldFilter):
         except ValueError:
             return self._on_error
 
+
 class FieldListFilter(Filter):
     """ A filter to limit fields to those in a list, and add empty values for missing fields. """
     def __init__(self, keys):
@@ -141,9 +142,9 @@ class ContributorTypeFilter(Filter):
         if record['contributor_id'] and record['newemployerid'] and record['contributor_id'] == record['newemployerid']:
             committee += 1
         if individual > 0 and individual > committee:          
-            record['contributor_type'] = 'individual'
+            record['contributor_type'] = 'I'
         elif committee > 0 and committee > individual:
-            record['contributor_type'] = 'committee'
+            record['contributor_type'] = 'C'
         else:
             record['contributor_type'] = None
         return record
@@ -212,17 +213,17 @@ class SeatFilter(Filter):
 class UrnFilter(Filter):
 
     def process_record(self,record):
-        contributor_type_map = {'individual':'individual', 'committee':'committee', '': 'contributor', None: 'contributor'}
+        contributor_type_map = {'I':'I', 'C':'C', '': None, None: None}
 
         if record['candidate_id'] and record['committee_id']:
             warn('record has both candidate and committee ids. unhandled.', record)
             return record
         elif record['candidate_id']:
-            record['recipient_type'] = 'candidate'
+            record['recipient_type'] = 'P'
             record['recipient_urn'] = 'urn:nimsp:candidate:%d' % record['candidate_id']
             record['recipient_entity'] = hashlib.md5(record['recipient_urn']).hexdigest()
         elif record['committee_id']:
-            record['recipient_type'] = 'committee'
+            record['recipient_type'] = 'C'
             record['recipient_urn'] = record['committee_urn'] = 'urn:nimsp:committee:%d' % record['committee_id']
             record['recipient_entity'] = record['committee_entity'] = hashlib.md5(record['committee_urn']).hexdigest()
         if record['contributor_id']:
