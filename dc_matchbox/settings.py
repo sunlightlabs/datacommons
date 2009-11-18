@@ -11,12 +11,31 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'mysql'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_ENGINE = 'mysql'   # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME = 'datacommons'             # Or path to database file if using sqlite3.
 DATABASE_USER = 'root'             # Not used with sqlite3.
-DATABASE_PASSWORD = ''         # Not used with sqlite3.
-DATABASE_HOST = 'localhost'             # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+DATABASE_PASSWORD = ''            # Not used with sqlite3.
+DATABASE_HOST = 'localhost'               # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_PORT = ''                        # Set to empty string for default. Not used with sqlite3.
+
+OTHER_DATABASES = { 
+    'nimsp': { 
+        'DATABASE_NAME': 'nimsp',
+        'DATABASE_USER': 'datacommons',
+        'DATABASE_PASSWORD': 'vitamind'
+    },
+    'salts': { 
+        'DATABASE_NAME': 'salts',
+        'DATABASE_USER': 'datacommons',
+        'DATABASE_PASSWORD': 'vitamind'
+    },
+   'util': { 
+        'DATABASE_NAME': 'util',
+        'DATABASE_USER': 'datacommons',
+        'DATABASE_PASSWORD': 'vitamind'
+    }
+}
+
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
