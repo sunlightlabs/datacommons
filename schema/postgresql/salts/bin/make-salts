@@ -2,30 +2,61 @@
 
 import MySQLdb
 import psycopg2,psycopg2.extensions
+from optparse import OptionParser
+
 import random, re, sys
 
-N = 2500
+from settings import OTHER_DATABASES
+
+DEFAULT_N = 2500
+
+usage = "usage: %prog "
+
+parser = OptionParser(usage=usage)
+
+parser.add_option("-n", "--number", dest="n", type="int", metavar='INTEGER', default=DEFAULT_N,
+                  help="number of salts to create")
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                  help="verbose output")
+(options, args) = parser.parse_args()
 
 try:
-    nimsp_con = MySQLdb.connect(db='nimsp', user='datacommons', host='localhost', passwd='vitamind')
+    nimsp_con = MySQLdb.connect(
+        db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+        user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
+        host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
+        passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+)
     nimsp_cur = nimsp_con.cursor()
-except:
-    print "Unable to connect to nimsp database"
+except Exception, e:
+    print "Unable to connect to %s database: %s" % (OTHER_DATABASES['nimsp']['DATABASE_NAME'], e) 
     sys.exit(1)
 
+
 try:
-    util_con = psycopg2.connect("dbname='util' user='datacommons' host='localhost' password='vitamind'")
+    util_con = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+            OTHER_DATABASES['util']['DATABASE_NAME'],
+            OTHER_DATABASES['util']['DATABASE_USER'],
+            OTHER_DATABASES['util']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['util'] else 'localhost',
+            OTHER_DATABASES['util']['DATABASE_PASSWORD'],
+            ))
     util_cur = util_con.cursor()
-except:
-    print "Unable to connect to util database"
+except Exception, e:
+    print "Unable to connect to %s database: %s" % (OTHER_DATABASES['util']['DATABASE_NAME'], e) 
     sys.exit(1)
 
 try:
-    salt_con = psycopg2.connect("dbname='salts' user='datacommons' host='localhost' password='vitamind'")
+    salt_con = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+            OTHER_DATABASES['salts']['DATABASE_NAME'],
+            OTHER_DATABASES['salts']['DATABASE_USER'],
+            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
+            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
+            ))
     salt_cur = salt_con.cursor()
-except:
-    print "Unable to connect to salts database"
+except Exception, e:
+    print "Unable to connect to %s database: %s" % (OTHER_DATABASES['salts']['DATABASE_NAME'], e) 
     sys.exit(1)
+
 
 def random_name():
     global util_cur
@@ -44,11 +75,12 @@ for record in nimsp_cur.fetchall():
     states[record[0]] = record[1]
     total += record[1]
 
-N -= len(states.keys())
+N = options.n - (2 * len(states.keys()))
 
 for (state,cnt) in states.items():
     n = int(round((2.0 + (N * cnt / total)),0)) # 2 salts per state, then distributed by need
-    print "%s: %d %d" % (state, cnt, n)
+    if options.verbose:
+        print "%s: %d %d" % (state, cnt, n)
 
     for i in range(n):
         r = random.random()
@@ -57,8 +89,9 @@ for (state,cnt) in states.items():
             (city,zip) = util_cur.fetchone()
             (first,last) = random_name()
             contributor = last + ", " + first
-            print "%s  %s %s, %s" % (contributor,city,state,zip)
-            salt_cur.execute("insert into salts (contributor,newcontributor,first,last,occupation,employer,newemployer,address,newaddress,city,state,zipcode,catcode) values (%s,%s,%s,%s,'','','','','',%s,%s,%s,'');", (contributor,contributor,first,last,city,state,zip))
+            if options.verbose:
+                print "  %s  %s %s, %s" % (contributor,city,state,zip)
+            salt_cur.execute("insert into salts (contributor,city,state,zipcode) values (%s,%s,%s,%s);", (contributor,city,state,zip))
         except Exception, e:
             print e
     util_con.commit()

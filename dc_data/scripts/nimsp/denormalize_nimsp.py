@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import csv
+import hashlib
 import inspect
 import logging
 import os
+import string
 import sys
 
 import ConfigParser
@@ -15,22 +17,26 @@ from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.filters import *
 from saucebrush.sources import CSVSource
 
-from dcdata.utils.dryrub import CountEmitter
+from dcdata.utils.dryrub import CountEmitter, NullEmitter
+from dcdata.utils.name_patterns import first_name_pat, last_name_pat
 
 from salt import DCIDFilter, SaltFilter
-#from dcdata.utils.logger import initialize_logger, CountEmitter, DebugEmitter
 
+from settings import OTHER_DATABASES
 
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn', 'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state', 'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 'organization_entity', 'parent_organization_name', 'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order', 'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type', 'district', 'seat', 'seat_status', 'seat_result']
 
 
+committee_words_re = re.compile('(?:\\b(?:' + '|'.join(['CMTE','COMMITTEE','FRIENDS','PAC','UNION']) + '))' )
+first_name_re = re.compile(first_name_pat + '\\b')
+last_name_re = re.compile(last_name_pat + '\\b')
 zip5_re = re.compile("^\s*(?P<zip5>\d{5})(?:[- ]*\d{4})?(?!\d)")
 
 def debug(record, message):
     try:
-        logging.error("%s:[%s] %s" % (inspect.stack()[1][3], record['contributionid'], message))
+        logging.debug("%s:[%s] %s" % (inspect.stack()[1][3], record['contributionid'], message))
     except:
-        logging.error("%s:%s:%s" % (inspect.stack()[1][3], message, record))
+        logging.debug("%s:%s:%s" % (inspect.stack()[1][3], message, record))
 
 def error(record, message):
     try:
@@ -103,6 +109,7 @@ class IntFilter(FieldFilter):
         except ValueError:
             return self._on_error
 
+
 class FieldListFilter(Filter):
     """ A filter to limit fields to those in a list, and add empty values for missing fields. """
     def __init__(self, keys):
@@ -118,6 +125,31 @@ class FieldListFilter(Filter):
                 record[key] = None
         return record
 
+class ContributorTypeFilter(Filter):
+    def process_record(self,record):
+        """ Try to distinguish individuals from committees"""
+        individual = 0
+        committee = 0
+        if record['first'] and record['first'] != '' and record['last'] and record['last'] != '':
+            if first_name_re.match(record['first']) and last_name_re.match(record['last']):
+                individual += 5
+            individual -= string.count(record['first'], ' ')
+        if record['pacname'] and record['pacname'] != '':
+            committee += 1
+        for f in ['contributor', 'contributor_occupation', 'first']:
+            if record[f] and record[f] != '' and committee_words_re.search(record[f]):
+                committee += 1
+        if record['contributor_id'] and record['newemployerid'] and record['contributor_id'] == record['newemployerid']:
+            committee += 1
+        if individual > 0 and individual > committee:          
+            record['contributor_type'] = 'I'
+        elif committee > 0 and committee > individual:
+            record['contributor_type'] = 'C'
+        else:
+            record['contributor_type'] = None
+        return record
+        
+
 class EmployerOccupationFilter(Filter):
         
     def process_record(self, record):
@@ -125,7 +157,6 @@ class EmployerOccupationFilter(Filter):
             if record[f]:
                 if len(record[f]) > 64:
                     record[f] = record[f][:63]
-
         return record
 
 class RecipientFilter(Filter):
@@ -136,6 +167,8 @@ class RecipientFilter(Filter):
         }
         
     def process_record(self, record):
+        if record['committee_party'] and not record['recipient_party']: 
+            record['recipient_party'] = record['committee_party']
         if record['recipient_party']:
             if record['recipient_party'] == 'P':
                 record['recipient_party'] = None
@@ -151,28 +184,77 @@ class SeatFilter(Filter):
         'W':  'G', # General
         'WR': 'R'  # Judicial retention
         }
-    #office_code_map = {
-    #    'G': 'state:governor',
-    #    'H': 'state:house',
-    #    'S': 'state:senate',
-    #    'J': 'state:judicial',
-    #    'K': 'state:judicial',
-    #    'O': 'state:office'
-    #    }
+    office_code_map = {
+        'G': 'state:governor',
+        'H': 'state:lower',
+        'S': 'state:upper',
+        'J': 'state:judicial',
+        'K': 'state:judicial',
+        'O': 'state:office'
+        }
 
     def process_record(self, record):
         if record['district'] is not None:
-            record['district'] = re.sub("^0+(?:[1-9])","", record['district'])
-            if len(record['district']) > 8:
-                warn(record, "Bad or overlength district: %s" % record['district'])
-                record['district'] = None
-        #record['seat'] = self.office_code_map.get(record['officecode'])
+            m = re.match("^0*(?P<district_number>[1-9]+\w*)", record['district'])
+            if m:
+                record['district'] = "%s-%s" % (record['seat_state'], m.group("district_number"))
+            else:
+                record['district'] = None # how to handle nonstandard districts?
+        if record['seat'] is not None:
+            record['seat'] = self.office_code_map.get(record['seat'])
         if record['status'] is not None:
             if record['status'].startswith('W') or record['status'].endswith('W'):
                 record['seat_result'] = 'W'
             elif record['status'].startswith('L') or record['status'].endswith('L'):
                 record['seat_result'] = 'L'
         record['election_type'] = self.election_type_map.get(record['status'])
+        return record
+
+class UrnFilter(Filter):
+
+    def process_record(self,record):
+        contributor_type_map = {'I':'I', 'C':'C', '': None, None: None}
+
+        if record['candidate_id'] and record['committee_id']:
+            warn('record has both candidate and committee ids. unhandled.', record)
+            return record
+        elif record['candidate_id']:
+            record['recipient_type'] = 'P'
+            record['recipient_urn'] = 'urn:nimsp:candidate:%d' % record['candidate_id']
+            record['recipient_entity'] = hashlib.md5(record['recipient_urn']).hexdigest()
+        elif record['committee_id']:
+            record['recipient_type'] = 'C'
+            record['recipient_urn'] = record['committee_urn'] = 'urn:nimsp:committee:%d' % record['committee_id']
+            record['recipient_entity'] = record['committee_entity'] = hashlib.md5(record['committee_urn']).hexdigest()
+        if record['contributor_id']:
+            if record['contributor_id'] == record['newemployerid'] and (record['contributor_type'] is None or record['contributor_type'] == 'committee'):
+                # contributor is an organization which is probably really a business pac?
+                record['contributor_urn'] = 'urn:nimsp:%s:%d' % ('contributor', record['contributor_id'])
+                if record['contributor_occupation'] and record['contributor_occupation'] != '':
+                    # occupation would be kind of fake
+                    debug(record,"Overloaded occupation \"%s\" because contributor is an organization" % record['contributor_occupation'])
+            else:
+                record['contributor_urn'] = 'urn:nimsp:%s:%d' % ('contributor', record['contributor_id'])
+            record['contributor_entity'] = hashlib.md5(record['contributor_urn']).hexdigest()
+        elif record['contributor_name'] and record['contributor_name'] != '':
+            record['contributor_urn'] = 'urn:nimsp:%s:%s' % (contributor_type_map.get(record['contributor_id']), record['contributor_name'].strip())
+            record['contributor_entity'] = hashlib.md5(record['contributor_urn']).hexdigest()
+        if record['newemployerid']:
+            record['organization_urn'] = 'urn:nimsp:organization:%d' % record['newemployerid']
+            record['organization_entity'] = hashlib.md5(record['organization_urn']).hexdigest()
+        elif record['organization_name'] and record['organization_name'] != '':
+            record['organization_urn'] = 'urn:nimsp:organization:%s' % record['organization_name'].strip()
+            record['organization_entity'] = hashlib.md5(record['organization_urn']).hexdigest()
+        if record['parentcompanyid']:
+            record['parent_organization_urn'] = 'urn:nimsp:organization:%d' % record['parentcompanyid']
+            record['parent_organization_entity'] = hashlib.md5(record['parent_organization_urn']).hexdigest()
+        elif record['parent_organization_name'] and record['parent_organization_name'] != '':
+            record['parent_organization_urn'] = 'urn:nimsp:organization:%s' % record['parent_organization_name'].strip()
+            record['parent_organization_entity'] = hashlib.md5(record['parent_organization_urn']).hexdigest()
+
+        for f in ('candidate_id','committee_id','contributor_id','newemployerid','parentcompanyid'):
+            del(record[f])
+
         return record
 
 class ZipCleaner(Filter):
@@ -183,11 +265,11 @@ class ZipCleaner(Filter):
                 if m:
                     record['contributor_zipcode'] = m.group('zip5')
                 else:
-                    warn(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
+                    debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                     record['contributor_zipcode'] = None 
             else:
                 if record['contributor_zipcode'] not in ('-','N/A','N.A.','NONE','UNK','UNKNOWN'):
-                    warn(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
+                    debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                 record['contributor_zipcode'] = None
         return record
 
@@ -213,21 +295,6 @@ class UnsaltedEmitter(CSVEmitter):
             del(record['salted'])
             super(UnsaltedEmitter, self).emit_record(record)
 
-
-# urn methods
-
-def committee_urn(s):
-    return 'urn:nimsp:committee:%d' % s if s else None
-
-def contributor_urn(s):
-    return 'urn:nimsp:contributor:%d' % s if s else None
-
-def organization_urn(s):
-    return 'urn:nimsp:organization:%d' % s if s else None
-       
-def recipient_urn(s):
-    return 'urn:nimsp:candidate:%d' % s if s else None
-
 def main():
 
     from optparse import OptionParser
@@ -237,8 +304,6 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option("-c", "--cycle", dest="cycle", metavar='YYYY',
                       help="cycle to process (default all)")
-    parser.add_option("--config", dest="config_file", metavar='CONFIG_FILE',
-                      help="db config file")
     parser.add_option("-d", "--dataroot", dest="dataroot",
                       help="path to data directory", metavar="PATH")
     parser.add_option("-n", "--number", dest="n", metavar='ROWS',
@@ -251,16 +316,6 @@ def main():
     if not options.dataroot:
         parser.error("path to dataroot is required")
 
-    config_file = options.config_file
-    config = ConfigParser.ConfigParser()
-    for section in ('nimsp','salts'):
-        config.add_section(section)
-        for name,value in (('dbname',section), ('user','datacommons'), ('host','localhost'), ('passwd','vitamind')):
-            config.set(section,name,value)
-    if config_file is not None:
-        config.readfp(open(config_file))
-
-    #initialize_logger(verbose=options.verbose)
 
     dataroot = os.path.abspath(options.dataroot)
     if not os.path.exists(dataroot):
@@ -280,20 +335,32 @@ def main():
     
     allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
     unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
+
+    try:
+        con = MySQLdb.connect(
+            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
+            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
+            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+            )
+        cur = con.cursor(MySQLdb.cursors.DictCursor)
+    except Exception, e:
+        print "Unable to connect to nimso database: %s" % e 
+        sys.exit(1)
     
-    con = MySQLdb.connect(db=config.get('nimsp','dbname'), user=config.get('nimsp','user'), host=config.get('nimsp','host'), passwd=config.get('nimsp','passwd'))
-    cur = con.cursor(MySQLdb.cursors.DictCursor)
+  
     
     #Contributions
     stmt = """
-select ContributionID as contributionid,Amount as amount,Date as datestamp,Contributor as contributor,NewContributor as newcontributor,Occupation as contributor_occupation,Employer as employer,NewEmployer as newemployer,ParentCompany as parentcompany,ContributorOwner as contributorowner,PACName as pacname,Address as address,NewAddress as newaddress,City as contributor_city,State as contributor_state,ZipCode as contributor_zipcode,c.CatCode as contributor_category,NewContributorID as contributor_id,NewEmployerID as newemployerid,ParentCompanyID as parentcompanyid,ContributionsTimestamp as contributionstimestamp,c.RecipientReportsBundleID as recipientreportsbundleid,
+select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp,c.Contributor as contributor,c.NewContributor as newcontributor,c.First as first,c.Last as last,c.Occupation as contributor_occupation,c.Employer as employer,c.NewEmployer as newemployer,c.ParentCompany as parent_organization_name,c.ContributorOwner as contributorowner,c.PACName as pacname,c.Address as address,c.NewAddress as newaddress,c.City as contributor_city,c.State as contributor_state,c.ZipCode as contributor_zipcode,c.CatCode as contributor_category,c.NewContributorID as contributor_id,c.NewEmployerID as newemployerid,c.ParentCompanyID as parentcompanyid,c.ContributionsTimestamp as contributionstimestamp,c.RecipientReportsBundleID as recipientreportsbundleid,
    r.RecipientID as recipientid, r.CandidateID as candidate_id, r.CommitteeID as committee_id, r.RecipientName as recipient_name,
    syr.Yearcode as cycle,
-   os.District as district,
+   os.StateCode as seat_state, os.District as district,
    cand.Status as status, cand.ICO as incumbent,
    oc.OfficeType as seat,
    p_cand.PartyType as recipient_party,
    p_comm.PartyType as committee_party,
+   comm.CommitteeName as committee_name,
    cc.IndustryCode as contributor_industry
    from Contributions c
    left outer join RecipientReportsBundle rrb on c.RecipientReportsBundleID = rrb.RecipientReportsBundleID
@@ -309,32 +376,25 @@ select ContributionID as contributionid,Amount as amount,Date as datestamp,Contr
 
     recipe = saucebrush.run_recipe(
         ChunkedSqlSource(cur,stmt,limit=n),
+        ContributorTypeFilter(),
 
         # merge fields using first available 
         FieldMerger({'contributor_name': ('newcontributor','contributor', 'first','last')}, lambda nc,c,f,l: nc if (nc is not None and nc != "") else c if (c is not None and c != "") else ("%s %s" % [f,l]).strip() if (f is not None and f != "" and l is not None and l != "") else None),
         FieldMerger({'contributor_address': ('newaddress','address')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
-        FieldMerger({'contributor_employer': ('newemployer','employer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
-        FieldMerger({'organization_name': ('newemployer','employer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
-        
+        FieldMerger({'contributor_employer': ('employer','newemployer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
+        FieldMerger({'organization_name': ('employer','newemployer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
+
+        # munge fields       
         EmployerOccupationFilter(),
         RecipientFilter(),
         SeatFilter(),
-        
-        # create URNs
-        FieldMerger({'committee_urn': ('committee_id',)}, committee_urn),
-        FieldMerger({'contributor_urn': ('contributor_id',)}, contributor_urn),
-        FieldMerger({'organization_urn': ('newemployerid',)}, organization_urn),
-        FieldMerger({'parent_organization_urn': ('parentcompanyid',)}, organization_urn),
-        FieldMerger({'recipient_urn': ('candidate_id',)}, recipient_urn),
-        
-        # munge fields       
+        UrnFilter(),
         FieldModifier('datestamp', lambda x: str(x) if x else None),
         ZipCleaner(),
             
         # add static fields
         FieldAdder('is_amendment',False),
         FieldAdder('transaction_namespace', 'urn:nimsp:transaction'),
-        #FieldAdder('jurisdiction','S'),
 
         FieldListFilter(FIELDNAMES + ['contributionid']),
         #DebugEmitter(),
@@ -357,15 +417,27 @@ select ContributionID as contributionid,Amount as amount,Date as datestamp,Contr
     unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES)
 
     try:
-        pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (config.get('salts','dbname'), config.get('salts','user'), config.get('salts','host'), config.get('salts','passwd')) )
+        pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+            OTHER_DATABASES['salts']['DATABASE_NAME'],
+            OTHER_DATABASES['salts']['DATABASE_USER'],
+            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
+            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
+            ))
     except Exception, e:
-        print "Unable to connect to %s database: %s" % (config.get('salts','dbname'), e) 
+        print "Unable to connect to salts database: %s" %  e
         sys.exit(1)
-    try:
-        mcon = MySQLdb.connect(db=config.get('nimsp','dbname'), user=config.get('nimsp','user'), host=config.get('nimsp','host'), passwd=config.get('nimsp','passwd'))
-    except Exception, e:
-        print "Unable to connect to %s database: %s" % (config.get('nimsp','dbname'), e) 
 
+    try:
+        mcon = MySQLdb.connect(
+            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
+            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
+            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+            )
+    except Exception, e:
+        print "Unable to connect to nimsp database: %s" % e 
+        sys.exit(1)
+  
     salt_filter = SaltFilter(100,pcon,mcon)
 
     saucebrush.run_recipe(
