@@ -62,6 +62,7 @@ body div#statusbar {
     -webkit-border-radius: 0 0 10px 10px;
 }
 body div#statusbar p { margin: 0; padding: 0; }
+body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 
 #main { font-size: 93%; margin-bottom: 22em; }
 #content { float: left; width: 750px; margin: 0 0 200px 0; }
@@ -69,7 +70,7 @@ body div#statusbar p { margin: 0; padding: 0; }
 
 #sidebar ul#search_terms { margin: 0; padding: 0 0 0 15px; }
 
-#content h2 { margin: 0; }
+#content h2 { margin: 0 0 5px 0; }
 
 #content ul#entities { list-style: none; margin: 0; padding: 0; width: 740px; }
 #content ul#entities li { clear: both; padding: 5px; }
