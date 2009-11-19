@@ -3,8 +3,8 @@ from django.db.models import Q
 from django.db import connection
 import re
 
-from dcdata.utils.sql import dict_union, is_disjoint, augment
-from dcdata.contribution.models import sql_names as contribution_names
+from dcdata.utils.sql import dict_union, is_disjoint
+from dcdata.contribution.models import sql_names as contribution_names, Contribution
 from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity, entityref_cache, Note
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
