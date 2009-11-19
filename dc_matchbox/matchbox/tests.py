@@ -81,10 +81,10 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, apple.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apple.id).count())
 
 
-        apricot = Entity.objects.get(name="apricot")
+        apricot = Entity.objects.get(name="Apricot")
         self.assertEqual(1, Contribution.objects.with_entity(apricot, ['organization_entity']).count())
         
-        apricot_alias = EntityAlias.objects.get(alias="apricot")
+        apricot_alias = EntityAlias.objects.get(alias="Apricot")
         self.assertEqual(apricot.id, apricot_alias.entity.id)
         
         self.assertEqual(2, apricot.attributes.count())
@@ -92,7 +92,7 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, apricot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apricot.id).count())
 
         
-        avacado = Entity.objects.get(name='avacado')
+        avacado = Entity.objects.get(name='Avacado')
         self.assertEqual(0, Contribution.objects.with_entity(avacado, ['organization_entity']).count())
         
     def test_populate_entities_cross_column_duplication(self):
@@ -190,7 +190,7 @@ class TestQueries(unittest.TestCase):
             self.assertEqual(expected_count, count)
             
     def test_merge_entities(self):
-        new_id = merge_entities((Entity.objects.get(name="Apple").id, Entity.objects.get(name="Apricot").id), Entity(name=u"Applicot"))
+        new_id = merge_entities((self.apple_id, self.apricot_id), Entity(name=u"Applicot"))
         
         self.assertEqual(2, Entity.objects.count())
         applicot = Entity.objects.get(name="Applicot")

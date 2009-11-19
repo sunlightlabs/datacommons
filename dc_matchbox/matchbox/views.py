@@ -7,7 +7,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from matchbox.models import Entity, entityref_cache, MergeCandidate
 from matchbox.utils import decode_htmlentities
-from queries import search_entities_by_name, search_transactions_by_entity, transaction_result_columns, merge_entities
+from queries import search_entities_by_name, merge_entities
 import json
 import urllib
 
@@ -27,19 +27,6 @@ def dashboard(request):
     return render_to_response('matchbox/dashboard.html', data, context_instance=RequestContext(request))
 
 def _search(query, type_filter):    
-    # results = []
-    # for res in Entity.objects.filter(name__icontains=query, type=type_filter):
-    #    e = {
-    #        'id': res.id,
-    #        'type': res.type,
-    #        'name': res.name,
-    #        'count': res.count,
-    #        'notes': 0,
-    #    }
-    #    e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': res})
-    #    results.append(e)
-    # content = json.dumps(results)
-    # return HttpResponse(content, mimetype='application/javascript')
     results = []
     for (id_, name, count) in search_entities_by_name(query, type_filter):
         e = {
@@ -53,7 +40,19 @@ def _search(query, type_filter):
         results.append(e)
     content = json.dumps(results)
     return HttpResponse(content, mimetype='application/javascript')
-
+    # results = []
+    # for (id_, name, count) in search_entities_by_name(query):
+    #     e = {
+    #         'id': id_,
+    #         'type': 'organization',
+    #         'name': name,
+    #         'count': count,
+    #         'notes': 0,
+    #     }
+    #     e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
+    #     results.append(e)
+    # content = json.dumps(results)
+    # return HttpResponse(content, mimetype='application/javascript')
 
 
 @login_required
@@ -147,59 +146,4 @@ def entity_transactions(request, entity_id):
                                   'transactions': transactions
                               }, context_instance=RequestContext(request))
 
-
-
-
-
-
-
-
-
-
-
-
-#
-# Ethan's stuff
-#
-
-from django.template import Context, loader
-from django import forms
-
-def transactions_page(request):
-    template = loader.get_template('transactions.html')
-                                           
-    if 'entity_id' in request.GET:                                       
-        results = search_transactions_by_entity(request.GET['entity_id'])
-        context = Context()
-        context['results'] = results
-        context['headers'] = transaction_result_columns
-        
-        return HttpResponse(template.render(context))
-    else:
-        return HttpResponse("Error: request should include entity_id parameter.")
-    
-    
-    
-class EntitiesForm(forms.Form):    
-    query = forms.CharField(max_length = 40)
-        
-def entities_page(request):
-    template = loader.get_template('entities.html')
-    context = Context()
-    context['action'] = 'entities'
-    context['search_form'] = EntitiesForm()
-
-    if request.method == 'POST':
-        search_form = EntitiesForm(request.POST)
-        if search_form.is_valid():
-            results = search_entities_by_name(search_form.cleaned_data['query'])
-            context['search_form'] = search_form
-            context['results'] = results
-            context['headers'] = ['name', 'count']
-            
-            return HttpResponse(template.render(context))
-        else:
-            return HttpResponse("Error: invalid form data")
-    else:
-        return HttpResponse(template.render(context))
     

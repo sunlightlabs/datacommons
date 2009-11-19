@@ -1,11 +1,7 @@
 from django.conf.urls.defaults import *
 
-urlpatterns = patterns('matchbox.views',
-    url(r'^transactions', 'transactions_page'),
-    url(r'^entities', 'entities_page'),
-)
 
-urlpatterns += patterns('django.contrib.auth.views',
+urlpatterns = patterns('django.contrib.auth.views',
     url(r'^auth/login/$', 'login', name="login"),
     url(r'^auth/logout/$', 'logout_then_login', name="logout"),
 )
