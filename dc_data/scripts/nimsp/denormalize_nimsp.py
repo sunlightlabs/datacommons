@@ -236,7 +236,7 @@ class UrnFilter(Filter):
                 record['contributor_urn'] = 'urn:nimsp:%s:%d' % ('contributor', record['contributor_id'])
             record['contributor_entity'] = hashlib.md5(record['contributor_urn']).hexdigest()
         elif record['contributor_name'] and record['contributor_name'] != '':
-            record['contributor_urn'] = 'urn:nimsp:%s:%s' % (contributor_type_map.get(record['contributor_id']), record['contributor_name'].strip())
+            record['contributor_urn'] = 'urn:nimsp:%s:%s' % (contributor_type_map.get(record['contributor_type']), record['contributor_name'].strip())
             record['contributor_entity'] = hashlib.md5(record['contributor_urn']).hexdigest()
         if record['newemployerid']:
             record['organization_urn'] = 'urn:nimsp:organization:%d' % record['newemployerid']
@@ -381,7 +381,7 @@ select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp
         FieldMerger({'contributor_name': ('newcontributor','contributor', 'first','last')}, lambda nc,c,f,l: nc if (nc is not None and nc != "") else c if (c is not None and c != "") else ("%s %s" % [f,l]).strip() if (f is not None and f != "" and l is not None and l != "") else None),
         FieldMerger({'contributor_address': ('newaddress','address')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
         FieldMerger({'contributor_employer': ('employer','newemployer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
-        FieldMerger({'organization_name': ('employer','newemployer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
+        FieldCopier({'organization_name':'contributor_employer'}),
 
         # munge fields       
         EmployerOccupationFilter(),
