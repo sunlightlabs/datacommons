@@ -173,8 +173,9 @@ _entity_names = django2sql_names(Entity)
 _alias_names = django2sql_names(EntityAlias)
 _attribute_names = django2sql_names(EntityAttribute)
 _normalization_names = django2sql_names(Normalization)
+_merge_names = django2sql_names(MergeCandidate)
 
-assert is_disjoint(_entity_names, _alias_names, _attribute_names, _normalization_names)
-sql_names = dict_union(_entity_names, _alias_names, _attribute_names, _normalization_names)
+assert is_disjoint(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
+sql_names = dict_union(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
  
     

@@ -26,11 +26,12 @@ causes the Django connection to throw an error:
     _mysql_exceptions.InterfaceError: (0, '')
 Creating our own connection seems to solve the problem.
 """
-#from django.db import connection
+from django.db import connection
 
 from settings import DATABASE_HOST, DATABASE_USER, DATABASE_NAME
-from MySQLdb import connect
-connection = connect(host=DATABASE_HOST, user=DATABASE_USER, db=DATABASE_NAME)
+#from psycopg2 import connect
+#connection = connect(host=DATABASE_HOST, user=DATABASE_USER, db=DATABASE_NAME)
+#connection = connect("dbname=%s user=%s host=%s" % (DATABASE_NAME, DATABASE_USER, DATABASE_HOST))
 
 from matchbox.models import sql_names
 from matchbox_scripts.contribution.build_contribution_entities import run as build_entities
@@ -38,16 +39,15 @@ from matchbox_scripts.contribution.normalize_contributions import run as build_n
 
 
 def drop_model(model_name):
-    try:
+    cursor.execute("select exists (select * from information_schema.tables where table_name = %s)", [sql_names[model_name]])
+    if  cursor.__iter__().next()[0]:
         cursor.execute("drop table %s" % sql_names[model_name])
-    except:
-        pass
-    
+
 
 def build_matchbox():
     
     print("Clearing and rebuilding tables...")
-    for model_name in ['entity', 'entityalias', 'entityattribute', 'normalization']:
+    for model_name in ['entityalias', 'entityattribute', 'mergecandidate', 'normalization', 'entity']:
         drop_model(model_name)
     execute_from_command_line(["manage.py", "syncdb"])
 
@@ -55,6 +55,7 @@ def build_matchbox():
     build_entities()
     
     print("Indexing aliases...")
+    cursor = connection.cursor()
     cursor.execute("create index entityalias_alias_index on %(entityalias)s (%(entityalias_alias)s)" % sql_names)
     
     print("Building normalizations...")
@@ -62,7 +63,7 @@ def build_matchbox():
     
     print("Indexing normalizations...")
     cursor.execute("create index normalization_normalized_index on %(normalization)s (%(normalization_normalized)s)" % sql_names)
-    cursor.execute("create fulltext index normalization_original_fulltext on %(normalization)s (%(normalization_original)s)" % sql_names)
+    cursor.execute("create index normalization_original_fulltext on %(normalization)s using gin(to_tsvector('simple', %(normalization_original)s))" % sql_names)
 
 
 if __name__ == "__main__":
