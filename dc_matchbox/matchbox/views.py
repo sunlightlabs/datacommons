@@ -28,16 +28,16 @@ def dashboard(request):
 
 def _search(query, type_filter):    
     results = []
-    for res in Entity.objects.filter(name__icontains=query, type=type_filter):
-       e = {
-           'id': res.id,
-           'type': res.type,
-           'name': res.name,
-           'count': res.count,
-           'notes': 0,
-       }
-       e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': res})
-       results.append(e)
+    for (id_, name, count) in search_entities_by_name(query, type_filter):
+        e = {
+            'id': id_,
+            'type': 'organization',
+            'name': name,
+            'count': count,
+            'notes': 0,
+        }
+        e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
+        results.append(e)
     content = json.dumps(results)
     return HttpResponse(content, mimetype='application/javascript')
     # results = []

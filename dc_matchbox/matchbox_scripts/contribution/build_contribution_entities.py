@@ -13,6 +13,10 @@ from matchbox_scripts.support.build_entities import populate_entities
 
 
 def get_a_recipient_type(id):
+    """
+    Return either 'committee' or 'politician' based on the recipient_type of an arbitrary transaction with the given id.
+    """
+    
     t = Contribution.objects.filter(recipient_entity=id)[0]
     if t.recipient_type == 'C':
         return 'committee'
@@ -25,13 +29,22 @@ def run():
                       sql_names['contribution_organization_entity'],
                       [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
                       [sql_names['contribution_organization_urn']],
+                      (lambda id: 'organization'))   
+     
+    populate_entities(sql_names['contribution'], 
+                      sql_names['contribution_parent_organization_name'], 
+                      sql_names['contribution_parent_organization_entity'],
+                      [sql_names['contribution_parent_organization_name']],
+                      [],
                       (lambda id: 'organization'))
+    
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_recipient_name'],
                       sql_names['contribution_recipient_entity'],
                       [sql_names['contribution_recipient_name']],
                       [sql_names['contribution_recipient_urn']],
                       get_a_recipient_type)
+    
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_committee_name'],
                       sql_names['contribution_committee_entity'],

@@ -5,10 +5,25 @@ import sys
 
 import MySQLdb
 import psycopg2, psycopg2.extensions
+from optparse import OptionParser
+
+from settings import OTHER_DATABASES
+
+usage = "usage: %prog "
+
+parser = OptionParser(usage=usage)
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                  help="verbose output")
+(options, args) = parser.parse_args()
 
 
 try:
-    nimsp_con = MySQLdb.connect(db='nimsp', user='datacommons', host='localhost', passwd='vitamind')
+    nimsp_con = MySQLdb.connect(
+        db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+        user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
+        host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
+        passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+)
     nimsp_cur1 = nimsp_con.cursor()
     nimsp_cur2 = nimsp_con.cursor()
 except Exception, e:
@@ -16,18 +31,24 @@ except Exception, e:
     sys.exit(1)
 
 try:
-    util_con = psycopg2.connect("dbname='util' user='datacommons' host='localhost' password='vitamind'")
+    util_con = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+            OTHER_DATABASES['util']['DATABASE_NAME'],
+            OTHER_DATABASES['util']['DATABASE_USER'],
+            OTHER_DATABASES['util']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['util'] else 'localhost',
+            OTHER_DATABASES['util']['DATABASE_PASSWORD'],
+            ))
     util_con.set_client_encoding('LATIN1')
     util_cur1 = util_con.cursor()
     util_cur2 = util_con.cursor()
-except:
-    print "Unable to connect to util database"
+except Exception, e:
+    print "Unable to connect to util database: %s" % e
     sys.exit(1)
 
 nimsp_cur1.execute("select StateCode from States order by StateCode")
 for record1 in nimsp_cur1.fetchall():
     state = record1[0]
-    print state
+    if options.verbose:
+        print state
     cum_cnt = 0
     seen = {}
     util_cur1.execute("delete from locations where state = %s", [state])
@@ -57,7 +78,8 @@ for record1 in nimsp_cur1.fetchall():
         (city,zip,cnt) = (record2[0],record2[1],record2[2])
         freq = cnt/cum_cnt
         cum_freq += freq
-        print "%s %s: %i %f %f" % (city,zip,int(cnt),freq, cum_freq)
+        if options.verbose:
+            print "%s %s: %i %f %f" % (city,zip,int(cnt),freq, cum_freq)
         util_cur2.execute("update locations set freq = %f, cum_freq = %f where city = '%s' and state = '%s' and zip = '%s';" %  (freq,cum_freq,city,state,zip))
     util_con.commit()
 
