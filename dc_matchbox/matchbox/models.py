@@ -76,7 +76,6 @@ class Entity(models.Model):
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
-    notes = models.TextField(default="", blank=True)
     count = models.IntegerField(default=0)
     
     class Meta:
@@ -94,7 +93,19 @@ class Entity(models.Model):
                 original=self.name,
                 normalized=basic_normalizer(self.name)
             ).save()
+
+
+class Note(models.Model):
+    entity = models.ForeignKey(Entity, related_name='notes')
+    user = models.ForeignKey(User, related_name="entity_notes")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    content = models.TextField()
     
+    class Meta:
+        ordering = ('-timestamp',)
+    
+    def __unicode__(self):
+        return self.content
     
     
 class EntityAlias(models.Model):
