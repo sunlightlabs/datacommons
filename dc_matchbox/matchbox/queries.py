@@ -26,33 +26,19 @@ def search_entities_by_name(query, type_filter):
                     from \
                         (select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s \
                          union distinct \
-                        select distinct %(normalization_original)s from %(normalization)s where match(%(normalization_original)s) against(%%s in boolean mode)) n \
+                        select distinct %(normalization_original)s from %(normalization)s where %(normalization_original)s @@ to_tsquery('simple', %%s)) n \
                     inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
                     inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s \
                     where e.%(entity_type)s = %%s) matches \
                 left join %(contribution)s c on c.%(contribution_organization_entity)s = matches.%(entity_id)s \
-                group by matches.%(entity_id)s order by count(c.%(contribution_organization_entity)s) desc;" % \
+                group by matches.%(entity_id)s, matches.%(entity_name)s order by count(c.%(contribution_organization_entity)s) desc;" % \
                 sql_names
-                 
-        return _execute_stmt(stmt, basic_normalizer(query) + '%', _prepend_pluses(query), type_filter)
+        
+        cursor = connection.cursor()
+        cursor.execute(stmt, [basic_normalizer(query) + '%', ' & '.join(query.split(' ')), type_filter])
+        return cursor         
     else:
         return []
-
-transaction_result_columns = ['Contributor Name', 'Reported Organization', 'Recipient Name', 'Amount', 'Date']
-
-def search_transactions_by_entity(entity_id):
-    """
-    Search for all transactions that belong to a particular entity.
-    
-    Note: once transactions have donor and recipient entities in addition to employer entities
-    this function will have to be adapted.
-    """    
-    stmt = "select %(contribution_contributor_name)s, %(contribution_organization_name)s, %(contribution_recipient_name)s, %(contribution_amount)s, %(contribution_datestamp)s \
-            from %(contribution)s \
-            where %(contribution_organization_entity)s = %%s \
-            order by %(contribution_amount)s desc" % \
-            sql_names
-    return _execute_stmt(stmt, int(entity_id))
 
 
 def merge_entities(entity_ids, new_entity):
@@ -114,13 +100,6 @@ def _merge_attributes(old_ids, new_entity):
         new_entity.attributes.create(namespace=namespace, value=value)
     
     
-
-
-def _execute_stmt(stmt, *args):
-    cursor = connection.cursor()
-    cursor.execute(stmt, args)
-    return cursor
-
 NON_WHITESPACE_EXP = re.compile("\S+", re.U)
 def _prepend_pluses(query):
     terms = NON_WHITESPACE_EXP.findall(query)
