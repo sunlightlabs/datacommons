@@ -5,7 +5,7 @@ import re
 
 from dcdata.utils.sql import dict_union, is_disjoint
 from dcdata.contribution.models import sql_names as contribution_names, Contribution
-from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity, entityref_cache, Note
+from matchbox.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity, entityref_cache, EntityNote
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
 
@@ -77,7 +77,7 @@ def merge_entities(entity_ids, new_entity):
     return new_entity.id
 
 def _merge_notes(old_ids, new_entity):
-    notes = Note.objects.filter(entity__in=old_ids)
+    notes = EntityNote.objects.filter(entity__in=old_ids)
     for note in notes:
         new_entity.notes.add(note)
 
