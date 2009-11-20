@@ -95,7 +95,7 @@ class Entity(models.Model):
             ).save()
 
 
-class Note(models.Model):
+class EntityNote(models.Model):
     entity = models.ForeignKey(Entity, related_name='notes')
     user = models.ForeignKey(User, related_name="entity_notes")
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -185,8 +185,9 @@ _alias_names = django2sql_names(EntityAlias)
 _attribute_names = django2sql_names(EntityAttribute)
 _normalization_names = django2sql_names(Normalization)
 _merge_names = django2sql_names(MergeCandidate)
+_note_names = django2sql_names(EntityNote)
 
-assert is_disjoint(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
-sql_names = dict_union(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
+assert is_disjoint(_entity_names, _alias_names, _attribute_names, _note_names, _normalization_names, _merge_names)
+sql_names = dict_union(_entity_names, _alias_names, _attribute_names, _note_names, _normalization_names, _merge_names)
  
     

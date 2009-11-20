@@ -23,7 +23,22 @@ def get_a_recipient_type(id):
     elif t.recipient_type == 'P':
         return 'politician'
 
+def get_a_contributor_type(id):
+    t = Contribution.objects.filter(contributor_entity=id)[0]
+    if t.contributor_type == 'I':
+        return 'individual'
+    elif t.contributor_type == 'C':
+        return 'committee'
+    
+
 def run():
+    populate_entities(sql_names['contribution'],
+                      sql_names['contribution_contributor_name'],
+                      sql_names['contribution_contributor_entity'],
+                      [sql_names['contribution_contributor_name']],
+                      [sql_names['contribution_contributor_urn']],
+                       get_a_contributor_type)
+    
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_organization_name'], 
                       sql_names['contribution_organization_entity'],
@@ -35,7 +50,7 @@ def run():
                       sql_names['contribution_parent_organization_name'], 
                       sql_names['contribution_parent_organization_entity'],
                       [sql_names['contribution_parent_organization_name']],
-                      [],
+                      [sql_names['contribution_parent_organization_urn']],
                       (lambda id: 'organization'))
     
     populate_entities(sql_names['contribution'],

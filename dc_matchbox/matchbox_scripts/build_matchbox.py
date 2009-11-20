@@ -28,11 +28,6 @@ Creating our own connection seems to solve the problem.
 """
 from django.db import connection
 
-from settings import DATABASE_HOST, DATABASE_USER, DATABASE_NAME
-#from psycopg2 import connect
-#connection = connect(host=DATABASE_HOST, user=DATABASE_USER, db=DATABASE_NAME)
-#connection = connect("dbname=%s user=%s host=%s" % (DATABASE_NAME, DATABASE_USER, DATABASE_HOST))
-
 from matchbox.models import sql_names
 from matchbox_scripts.contribution.build_contribution_entities import run as build_entities
 from matchbox_scripts.contribution.normalize_contributions import run as build_normalizations
@@ -47,7 +42,7 @@ def drop_model(model_name):
 def build_matchbox():
     
     print("Clearing and rebuilding tables...")
-    for model_name in ['entityalias', 'entityattribute', 'mergecandidate', 'normalization', 'entity']:
+    for model_name in ['entityalias', 'entityattribute', 'entitynote', 'mergecandidate', 'normalization', 'entity']:
         drop_model(model_name)
     execute_from_command_line(["manage.py", "syncdb"])
 

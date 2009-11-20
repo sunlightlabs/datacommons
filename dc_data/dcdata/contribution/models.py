@@ -16,6 +16,7 @@ SEATS = (
 CONTRIBUTOR_TYPES = (
     ('I','Individual'),
     ('C','Committee'),
+    ('O', 'Organization')
 )
 
 RECIPIENT_TYPES = (
