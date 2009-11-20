@@ -113,6 +113,7 @@ class Contribution(DataCommonsModel):
     
     # parent organization
     parent_organization_name = models.CharField(max_length=255, blank=True, null=True)
+    parent_organization_urn =  models.CharField(max_length=128, blank=True, null=True)
     parent_organization_entity = EntityRef('parent_organization_transactions')
     
     # recipient fields

@@ -6,6 +6,7 @@ from dcdata.utils.dryrub import CountEmitter, MD5Filter
 from saucebrush.emitters import DebugEmitter
 from saucebrush.filters import FieldRemover, FieldAdder, Filter
 from saucebrush.sources import CSVSource
+from strings.normalizer import basic_normalizer
 import saucebrush
 import os
 
@@ -42,19 +43,19 @@ class CommitteeFilter(Filter):
     def process_record(self, record):
         return record
     
-def organization_hash_source(record):
-    if record.get('organization_urn', False):
-        return record['organization_urn']
-    if record.get('organization_name', False):
-        return 'urn:matchbox:organization:' + record['organization_name']
+
     
-def parent_organization_hash_source(record):
-    if record.get('parent_organization_urn', False):
-        return record['parent_organization_urn']
-    if record.get('parent_organization_name', False):
-        return 'urn:matchbox:organization:' + record['parent_organization_name']
+def urn_with_name_fallback(urn_field, name_field):
+    def source(record):
+        if record.get(urn_field, False):
+            return record[urn_field]
+        if record.get(name_field, False):
+            return 'urn:matchbox:name:' + basic_normalizer(record[name_field].decode('utf-8', 'ignore'))
+        return None
     
+    return source
     
+
 #
 # model loader
 #
@@ -118,11 +119,11 @@ class Command(BaseCommand):
             RecipientFilter(),
             CommitteeFilter(),
             
-            MD5Filter((lambda r: r['contributor_urn']), 'contributor_entity'),
-            MD5Filter((lambda r: r['recipient_urn']), 'recipient_entity'),
-            MD5Filter((lambda r: r['committee_urn']), 'committee_entity'),
-            MD5Filter(organization_hash_source, 'organization_entity'),
-            MD5Filter(parent_organization_hash_source, 'parent_organization_entity'),
+            MD5Filter(urn_with_name_fallback('contributor_urn', 'contributor_name'), 'contributor_entity'),
+            MD5Filter(urn_with_name_fallback('recipient_urn', 'recipient_name'), 'recipient_entity'),
+            MD5Filter(urn_with_name_fallback('committee_urn', 'committee_name'), 'committee_entity'),
+            MD5Filter(urn_with_name_fallback('organization_urn', 'organization_name'), 'organization_entity'),
+            MD5Filter(urn_with_name_fallback('parent_organization_urn', 'parent_organization_name'), 'parent_organization_entity'),
             
             #DebugEmitter(),
             LoaderEmitter(loader),
