@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ImproperlyConfigured
+from django.db import transaction
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, FloatFilter, IntFilter, ISODateFilter, EntityFilter
 from dcdata.utils.dryrub import CountEmitter, MD5Filter
@@ -89,6 +90,7 @@ class Command(BaseCommand):
 
     requires_model_validation = False
     
+    @transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
         
         fieldnames = model_fields('contribution.Contribution')

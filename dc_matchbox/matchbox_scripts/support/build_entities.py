@@ -3,7 +3,7 @@
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from django.db import connection
+from django.db import connection, transaction
 
 
 from datetime import datetime
@@ -13,6 +13,7 @@ def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
+@transaction.commit_on_success
 def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_columns=[],
                       type_func=(lambda id: None), reviewer=__name__, timestamp = datetime.now()):
     """
