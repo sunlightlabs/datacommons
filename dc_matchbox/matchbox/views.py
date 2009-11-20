@@ -150,11 +150,12 @@ def entity_transactions(request, entity_id):
 def entity_notes(request, entity_id):
     entity = Entity.objects.get(pk=entity_id)
     if request.method == 'POST':
-        content = request.POST.get('note', '').strip()
+        content = request.POST.get('content', '').strip()
         if content:
             note = EntityNote(user=request.user, content=content)
             entity.notes.add(note)
-            return render_to_response('matchbox/partials/entity_note.html',  content_type="application/json")
+            data = {'note': note}
+            return render_to_response('matchbox/partials/entity_note.html', data)
     else:
         return HttpResponse('these are not the notes you are looking for')
     

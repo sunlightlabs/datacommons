@@ -296,6 +296,23 @@ $().ready(function() {
         return false;
     });
     
+    // notes
+    $('#note_control').bind('click', function() {
+        $(this).hide();
+        $('#note_form').show();
+        return false;
+    });
+    $('#note_form input[type=button]').bind('click', function() {
+        $.post($('#note_control')[0].href,
+            { content: $('#note_form textarea').val() },
+            function(response) {
+                $('<li class="note"></li>').append(response).prependTo('#notes');
+            });
+        $('#note_form').hide().children('textarea').val('');
+        $('#note_control').show();
+        return false;
+    });
+    
     // attache merge button action
     $('#merge_button').click(function() {
         if (Matchbox.MergeManager.typeFilter) {

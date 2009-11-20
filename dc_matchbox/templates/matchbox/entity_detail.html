@@ -74,9 +74,13 @@
 {% block sidebar %}
 
     <h3>Notes</h3>
-    <a href="#">Add a note</a>
+    <a href="{% url matchbox_entity_notes entity.pk %}" id="note_control">Add a note</a>
+    <div id="note_form">
+        <textarea name="content" id="note_content"></textarea>
+        <input type="button" value="Save Note">
+    </div>
     {% if entity.notes %}
-        <ul>
+        <ul id="notes">
             {% for note in entity.notes.all %}
                 <li class="note">{% include "matchbox/partials/entity_note.html" %}</li>
             {% endfor %}

@@ -9,6 +9,7 @@ class AttributeInline(admin.TabularInline):
 
 class EntityAdmin(admin.ModelAdmin):
     inlines = [AliasInline, AttributeInline]
+    list_filter = ('type',)
 
 class MergeCandidateAdmin(admin.ModelAdmin):
     list_display = ('name','priority','owner','owner_timestamp')

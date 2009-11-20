@@ -112,6 +112,7 @@ ENTITY_TYPES = (
     'committee',
     'organization',
     'politician',
+    'individual',
 )
 
 try:
