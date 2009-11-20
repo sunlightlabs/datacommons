@@ -1,5 +1,5 @@
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
-from dcdata.utils.dryrub import CountEmitter, EntityIDFilter
+from dcdata.utils.dryrub import CountEmitter
 from saucebrush.filters import Filter, FieldAdder, FieldCopier, FieldMerger, FieldModifier, FieldRemover, FieldRenamer
 from saucebrush.emitters import Emitter, CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
@@ -94,13 +94,6 @@ def main():
         FieldRenamer({'contributor_city': 'city',
                       'conitrbutor_zipcode': 'zipcode'}),
         FieldModifier('contributor_state', lambda s: s.upper() if s else None),
-        
-        # EntityIDFilter('contributor_urn', 'contributor_entity'),
-        # EntityIDFilter('recipient_urn', 'recipient_entity'),
-        # EntityIDFilter('committee_urn', 'committee_entity'),
-        
-        # EntityIDFilter('organization_name', 'organization_entity', org_urn),
-        # EntityIDFilter('parent_organization_name', 'parent_organization_entity', org_urn),
         
         # add static fields
         FieldAdder('jurisdiction', 'F'),

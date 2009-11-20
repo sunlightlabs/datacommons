@@ -34,20 +34,17 @@ class FieldKeeper(Filter):
                record.pop(key, None)
         return record
 
-class EntityIDFilter(Filter):
+class MD5Filter(Filter):
     
-    def __init__(self, source_field, destination_field, modifier=None):
-        self._source_field = source_field
+    def __init__(self, source_func, destination_field):
+        self._source_func = source_func
         self._destination_field = destination_field
-        self._modifier = modifier
         
     def process_record(self, record):
-        import hashlib, uuid
-        value = (record[self._source_field] or '').strip()
+        import hashlib
+        value = self._source_func(record)
         if value:
             value = value.decode('utf-8', 'ignore')
-            if self._modifier:
-                value = self._modifier(value)
             entity_id = hashlib.md5(value).hexdigest()
             record[self._destination_field] = entity_id
         return record

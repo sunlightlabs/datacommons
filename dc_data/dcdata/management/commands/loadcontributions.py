@@ -2,12 +2,16 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ImproperlyConfigured
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, FloatFilter, IntFilter, ISODateFilter, EntityFilter
-from dcdata.utils.dryrub import CountEmitter
+from dcdata.utils.dryrub import CountEmitter, MD5Filter
 from saucebrush.emitters import DebugEmitter
 from saucebrush.filters import FieldRemover, FieldAdder, Filter
 from saucebrush.sources import CSVSource
 import saucebrush
 import os
+
+
+MATCHBOX_ORG_NAMESPACE = 'urn:matchbox:organization:'
+
 
 #
 # entity filters
@@ -22,25 +26,34 @@ class ContributorFilter(Filter):
 
 class OrganizationFilter(Filter):
     def process_record(self, record):
-        #record['organization_entity'] = None
         return record
 
 class ParentOrganizationFilter(Filter):
     def process_record(self, record):
-        #record['parent_organization_entity'] = None
         return record
 
 class RecipientFilter(Filter):
     type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
         record['recipient_type'] = self.type_mapping.get(record['recipient_type'], None)
-        #record['recipient_entity'] = None
         return record
 
 class CommitteeFilter(Filter):    
     def process_record(self, record):
-        #record['committee_entity'] = None
         return record
+    
+def organization_hash_source(record):
+    if record.get('organization_urn', False):
+        return record['organization_urn']
+    if record.get('organization_name', False):
+        return 'urn:matchbox:organization:' + record['organization_name']
+    
+def parent_organization_hash_source(record):
+    if record.get('parent_organization_urn', False):
+        return record['parent_organization_urn']
+    if record.get('parent_organization_name', False):
+        return 'urn:matchbox:organization:' + record['parent_organization_name']
+    
     
 #
 # model loader
@@ -104,6 +117,12 @@ class Command(BaseCommand):
             ParentOrganizationFilter(),
             RecipientFilter(),
             CommitteeFilter(),
+            
+            MD5Filter((lambda r: r['contributor_urn']), 'contributor_entity'),
+            MD5Filter((lambda r: r['recipient_urn']), 'recipient_entity'),
+            MD5Filter((lambda r: r['committee_urn']), 'committee_entity'),
+            MD5Filter(organization_hash_source, 'organization_entity'),
+            MD5Filter(parent_organization_hash_source, 'parent_organization_entity'),
             
             #DebugEmitter(),
             LoaderEmitter(loader),

@@ -1,10 +1,8 @@
-from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
-from dcdata.utils.dryrub import CountEmitter, FieldCountValidator, EntityIDFilter
-from saucebrush.filters import Filter, FieldAdder, FieldCopier, FieldMerger, FieldModifier, FieldRemover, FieldRenamer
-from saucebrush.emitters import Emitter, CSVEmitter, DebugEmitter
+from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
+from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
+from saucebrush.emitters import CSVEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
-import datetime
 import logging
 import os
 import saucebrush
@@ -220,13 +218,6 @@ def main():
         FieldMerger({'contributor_urn': ('contrib_id',)}, contributor_urn, keep_fields=True),
         FieldMerger({'recipient_urn': ('recip_id',)}, recipient_urn, keep_fields=True),
         FieldMerger({'committee_urn': ('cmte_id',)}, committee_urn, keep_fields=True),
-        
-        EntityIDFilter('contributor_urn', 'contributor_entity'),
-        EntityIDFilter('recipient_urn', 'recipient_entity'),
-        EntityIDFilter('committee_urn', 'committee_entity'),
-        
-        EntityIDFilter('organization_name', 'organization_entity', org_urn),
-        EntityIDFilter('parent_organization_name', 'parent_organization_entity', org_urn),
         
         # recip code filter
         RecipCodeFilter(),  # recipient party
