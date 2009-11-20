@@ -75,11 +75,10 @@
 
     <h3>Notes</h3>
     <a href="#">Add a note</a>
-    
     {% if entity.notes %}
         <ul>
-            {% for note in entity.notes %}
-                <li>{{ note }}</li>
+            {% for note in entity.notes.all %}
+                <li class="note">{% include "matchbox/partials/entity_note.html" %}</li>
             {% endfor %}
         </ul>
     {% endif %}

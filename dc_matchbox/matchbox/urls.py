@@ -8,6 +8,7 @@ urlpatterns = patterns('django.contrib.auth.views',
 
 urlpatterns += patterns('matchbox.views',
     url(r'^entity/(?P<entity_id>\w+)/transactions/$', 'entity_transactions', name='matchbox_entity_transactions'),
+    url(r'^entity/(?P<entity_id>\w+)/notes/$', 'entity_notes', name='matchbox_entity_notes'),
     url(r'^entity/(?P<entity_id>\w+)/$', 'entity_detail', name='matchbox_entity'),
     url(r'^merge/$', 'merge', name='matchbox_merge'),
     url(r'^search/google/$', 'google_search', name='matchbox_google_search'),

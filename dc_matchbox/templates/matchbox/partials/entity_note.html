@@ -1,0 +1,7 @@
+<div class="content">
+    {{ note.content }}
+</div>
+<div class="meta">
+    by <span>{{ note.user.username }}</span>
+    on <span>{{ note.timestamp|date:"M j, Y" }} {{ note.timestamp|time:"g:i A" }}</span>
+</div>

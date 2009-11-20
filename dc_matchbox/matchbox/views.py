@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from matchbox.models import Entity, entityref_cache, MergeCandidate
+from matchbox.models import Entity, entityref_cache, MergeCandidate, EntityNote
 from matchbox.utils import decode_htmlentities
 from queries import search_entities_by_name, merge_entities
 import json
@@ -146,4 +146,15 @@ def entity_transactions(request, entity_id):
                                   'transactions': transactions
                               }, context_instance=RequestContext(request))
 
+@login_required
+def entity_notes(request, entity_id):
+    entity = Entity.objects.get(pk=entity_id)
+    if request.method == 'POST':
+        content = request.POST.get('note', '').strip()
+        if content:
+            note = EntityNote(user=request.user, content=content)
+            entity.notes.add(note)
+            return render_to_response('matchbox/partials/entity_note.html',  content_type="application/json")
+    else:
+        return HttpResponse('these are not the notes you are looking for')
     
