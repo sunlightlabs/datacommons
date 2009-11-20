@@ -24,7 +24,7 @@ from salt import DCIDFilter, SaltFilter
 
 from settings import OTHER_DATABASES
 
-FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn', 'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state', 'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 'organization_urn', 'organization_entity', 'parent_organization_name', 'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order', 'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type', 'district', 'seat', 'seat_status', 'seat_result']
+FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn', 'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state', 'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 'organization_urn', 'organization_entity', 'parent_organization_name', 'parent_organization_urn', 'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order', 'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type', 'district', 'seat', 'seat_status', 'seat_result']
 
 
 committee_words_re = re.compile('(?:\\b(?:' + '|'.join(['CMTE','COMMITTEE','FRIENDS','PAC','UNION']) + '))' )
@@ -212,44 +212,30 @@ class SeatFilter(Filter):
 class UrnFilter(Filter):
 
     def process_record(self,record):
-        contributor_type_map = {'individual':'individual', 'committee':'committee', '': 'contributor', None: 'contributor'}
-
         if record['candidate_id'] and record['committee_id']:
             warn('record has both candidate and committee ids. unhandled.', record)
             return record
         elif record['candidate_id']:
             record['recipient_type'] = 'politician'
             record['recipient_urn'] = 'urn:nimsp:candidate:%d' % record['candidate_id']
-            record['recipient_entity'] = hashlib.md5(record['recipient_urn']).hexdigest()
         elif record['committee_id']:
             record['recipient_type'] = 'committee'
-            record['recipient_urn'] = record['committee_urn'] = 'urn:nimsp:committee:%d' % record['committee_id']
-            record['recipient_entity'] = record['committee_entity'] = hashlib.md5(record['committee_urn']).hexdigest()
+            record['recipient_urn'] =  'urn:nimsp:committee:%d' % record['committee_id']
+            record['committee_urn'] = record['recipient_urn']
+            
         if record['contributor_id']:
+            record['contributor_urn'] = 'urn:nimsp:%s:%d' % ('contributor', record['contributor_id'])
             if record['contributor_id'] == record['newemployerid'] and (record['contributor_type'] is None or record['contributor_type'] == 'committee'):
                 # contributor is an organization which is probably really a business pac?
-                record['contributor_urn'] = 'urn:nimsp:%s:%d' % ('contributor', record['contributor_id'])
                 if record['contributor_occupation'] and record['contributor_occupation'] != '':
                     # occupation would be kind of fake
                     debug(record,"Overloaded occupation \"%s\" because contributor is an organization" % record['contributor_occupation'])
-            else:
-                record['contributor_urn'] = 'urn:nimsp:%s:%d' % ('contributor', record['contributor_id'])
-            record['contributor_entity'] = hashlib.md5(record['contributor_urn']).hexdigest()
-        elif record['contributor_name'] and record['contributor_name'] != '':
-            record['contributor_urn'] = 'urn:nimsp:%s:%s' % (contributor_type_map.get(record['contributor_type']), record['contributor_name'].strip())
-            record['contributor_entity'] = hashlib.md5(record['contributor_urn']).hexdigest()
+            
         if record['newemployerid']:
             record['organization_urn'] = 'urn:nimsp:organization:%d' % record['newemployerid']
-            record['organization_entity'] = hashlib.md5(record['organization_urn']).hexdigest()
-        elif record['organization_name'] and record['organization_name'] != '':
-            record['organization_urn'] = 'urn:nimsp:organization:%s' % record['organization_name'].strip()
-            record['organization_entity'] = hashlib.md5(record['organization_urn']).hexdigest()
+            
         if record['parentcompanyid']:
             record['parent_organization_urn'] = 'urn:nimsp:organization:%d' % record['parentcompanyid']
-            record['parent_organization_entity'] = hashlib.md5(record['parent_organization_urn']).hexdigest()
-        elif record['parent_organization_name'] and record['parent_organization_name'] != '':
-            record['parent_organization_urn'] = 'urn:nimsp:organization:%s' % record['parent_organization_name'].strip()
-            record['parent_organization_entity'] = hashlib.md5(record['parent_organization_urn']).hexdigest()
 
         for f in ('candidate_id','committee_id','contributor_id','newemployerid','parentcompanyid'):
             del(record[f])

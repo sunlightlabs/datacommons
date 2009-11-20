@@ -2,19 +2,24 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ImproperlyConfigured
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, FloatFilter, IntFilter, ISODateFilter, EntityFilter
-from dcdata.utils.dryrub import CountEmitter
+from dcdata.utils.dryrub import CountEmitter, MD5Filter
 from saucebrush.emitters import DebugEmitter
 from saucebrush.filters import FieldRemover, FieldAdder, Filter
 from saucebrush.sources import CSVSource
+from strings.normalizer import basic_normalizer
 import saucebrush
 import os
+
+
+MATCHBOX_ORG_NAMESPACE = 'urn:matchbox:organization:'
+
 
 #
 # entity filters
 #
 
 class ContributorFilter(Filter):
-    type_mapping = {'individual': 'I', 'committee': 'C'}
+    type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
     def process_record(self, record):
         record['contributor_type'] = self.type_mapping.get(record['contributor_type'], None)
         #record['contributor_entity'] = None
@@ -22,26 +27,35 @@ class ContributorFilter(Filter):
 
 class OrganizationFilter(Filter):
     def process_record(self, record):
-        #record['organization_entity'] = None
         return record
 
 class ParentOrganizationFilter(Filter):
     def process_record(self, record):
-        #record['parent_organization_entity'] = None
         return record
 
 class RecipientFilter(Filter):
     type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
         record['recipient_type'] = self.type_mapping.get(record['recipient_type'], None)
-        #record['recipient_entity'] = None
         return record
 
 class CommitteeFilter(Filter):    
     def process_record(self, record):
-        #record['committee_entity'] = None
         return record
     
+
+    
+def urn_with_name_fallback(urn_field, name_field):
+    def source(record):
+        if record.get(urn_field, False):
+            return record[urn_field]
+        if record.get(name_field, False):
+            return 'urn:matchbox:name:' + basic_normalizer(record[name_field].decode('utf-8', 'ignore'))
+        return None
+    
+    return source
+    
+
 #
 # model loader
 #
@@ -104,6 +118,12 @@ class Command(BaseCommand):
             ParentOrganizationFilter(),
             RecipientFilter(),
             CommitteeFilter(),
+            
+            MD5Filter(urn_with_name_fallback('contributor_urn', 'contributor_name'), 'contributor_entity'),
+            MD5Filter(urn_with_name_fallback('recipient_urn', 'recipient_name'), 'recipient_entity'),
+            MD5Filter(urn_with_name_fallback('committee_urn', 'committee_name'), 'committee_entity'),
+            MD5Filter(urn_with_name_fallback('organization_urn', 'organization_name'), 'organization_entity'),
+            MD5Filter(urn_with_name_fallback('parent_organization_urn', 'parent_organization_name'), 'parent_organization_entity'),
             
             #DebugEmitter(),
             LoaderEmitter(loader),
