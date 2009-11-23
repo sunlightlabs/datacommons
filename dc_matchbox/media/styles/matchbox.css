@@ -80,6 +80,13 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 
 #content h2 { margin: 0 0 5px 0; }
 
+#content #entity_name_container form { display: none; }
+#content #entity_name_container form input[type=text]{
+    font-family: Tahoma,Helvetica,Arial,sans-serif;
+    font-size: 150%;
+    font-weight: bold;
+}
+
 #content ul#entities { list-style: none; margin: 0; padding: 0; width: 740px; }
 #content ul#entities li { clear: both; padding: 5px; }
 #content ul#entities li:hover { background-color: #F2F1F0; }

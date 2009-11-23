@@ -77,8 +77,15 @@ def merge(request):
         
         entity_ids = request.POST.getlist('entities')
         if len(entity_ids) > 1:
-            e = Entity(name=request.POST['new_name'], type=request.POST['type_filter'])
+            
+            old_names = Entity.objects.filter(id__in=entity_ids).order_by('name').values_list('name', flat=True)
+            old_names = ["'%s'" % str(n) for n in old_names]
+            
+            e = Entity(name=request.POST['new_name'], type=request.POST['new_type'])
             merge_entities(entity_ids, e)
+            
+            note_content = 'New entity created from merge of %s' % ", ".join(old_names)
+            e.notes.add(EntityNote(user=request.user, content=note_content))
         
         params = []
         params.extend([('q', q) for q in request.POST.getlist('query')])
@@ -87,8 +94,8 @@ def merge(request):
             MergeCandidate.objects.delete(pk=q)
             params.append(('queue', q))
             
-        if 'type' in request.POST:
-            params.append(('type_filter', request.POST['type']))
+        if 'new_type' in request.POST:
+            params.append(('type_filter', request.POST['new_type']))
         qs = urllib.urlencode(params)
         
         return HttpResponseRedirect("%s?%s" % (reverse('matchbox_merge'), qs))
@@ -122,14 +129,21 @@ def entity_detail(request, entity_id):
     """ Display entity detail page.
     """
     entity = Entity.objects.get(pk=entity_id)
-    transactions = { }
-    for model in entityref_cache.iterkeys():
-        if hasattr(model.objects, 'with_entity'):
-            transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
-    return render_to_response('matchbox/entity_detail.html', {
-                                  'entity': entity,
-                                  'transactions': transactions
-                              }, context_instance=RequestContext(request))
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            entity.name = name
+        entity.save()
+        return HttpResponseRedirect(reverse('matchbox_entity', args=(entity.id,)))
+    else:
+        transactions = { }
+        for model in entityref_cache.iterkeys():
+            if hasattr(model.objects, 'with_entity'):
+                transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
+        return render_to_response('matchbox/entity_detail.html', {
+                                      'entity': entity,
+                                      'transactions': transactions
+                                  }, context_instance=RequestContext(request))
 
 
 @login_required

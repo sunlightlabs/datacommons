@@ -317,6 +317,30 @@ $().ready(function() {
         $('#note_control').show();
     });
     
+    // edit entity name
+    $('#entity_name_container h2').bind('click', function() {
+        $('#entity_name_container input[type=text]').val(
+            $('#entity_name_container h2').hide().text());
+        $('#entity_name_container form').show();
+        $('.entity_type').hide();
+        return false;
+    });
+    $('#entity_name_container input[type=submit]').bind('click', function() {
+        $.post($('#entity_name_container form')[0].action,
+            { name: $('#entity_name_container input[type=text]').val() });
+        $('#entity_name_container h2').text(
+            $('#entity_name_container input[type=text]').val()).show();
+        $('#entity_name_container form').hide();
+        $('.entity_type').show();
+        return false;
+    });
+    $('#entity_name_container button').bind('click', function() {
+        $('.entity_type').show();
+        $('#entity_name_container h2').show();
+        $('#entity_name_container form').hide();
+        return false;
+    });
+    
     // attache merge button action
     $('#merge_button').click(function() {
         if (Matchbox.MergeManager.typeFilter) {
