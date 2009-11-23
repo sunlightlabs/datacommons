@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import csv
-import hashlib
 import inspect
 import logging
 import os
@@ -18,18 +17,23 @@ from saucebrush.filters import *
 from saucebrush.sources import CSVSource
 
 from dcdata.utils.dryrub import CountEmitter, NullEmitter
-from dcdata.utils.name_patterns import first_name_pat, last_name_pat
 
 from salt import DCIDFilter, SaltFilter
 
 from settings import OTHER_DATABASES
 
-FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn', 'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state', 'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 'organization_urn', 'organization_entity', 'parent_organization_name', 'parent_organization_urn', 'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order', 'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type', 'district', 'seat', 'seat_status', 'seat_result']
+FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
+              'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn',
+              'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
+              'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
+              'contributor_zipcode', 'contributor_category', 'contributor_category_order',
+              'organization_name', 'organization_urn', 'organization_entity', 'parent_organization_name', 'parent_organization_urn',
+              'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity',
+              'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order',
+              'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type',
+              'district', 'seat', 'seat_status', 'seat_result']
 
 
-committee_words_re = re.compile('(?:\\b(?:' + '|'.join(['CMTE','COMMITTEE','FRIENDS','PAC','UNION']) + '))' )
-first_name_re = re.compile(first_name_pat + '\\b')
-last_name_re = re.compile(last_name_pat + '\\b')
 zip5_re = re.compile("^\s*(?P<zip5>\d{5})(?:[- ]*\d{4})?(?!\d)")
 
 def debug(record, message):
@@ -124,30 +128,23 @@ class FieldListFilter(Filter):
                 record[key] = None
         return record
 
-class ContributorTypeFilter(Filter):
-    def process_record(self,record):
-        """ Try to distinguish individuals from committees"""
-        individual = 0
-        committee = 0
-        if record['first'] and record['first'] != '' and record['last'] and record['last'] != '':
-            if first_name_re.match(record['first']) and last_name_re.match(record['last']):
-                individual += 5
-            individual -= string.count(record['first'], ' ')
-        if record['pacname'] and record['pacname'] != '':
-            committee += 1
-        for f in ['contributor', 'contributor_occupation', 'first']:
-            if record[f] and record[f] != '' and committee_words_re.search(record[f]):
-                committee += 1
-        if record['contributor_id'] and record['newemployerid'] and record['contributor_id'] == record['newemployerid']:
-            committee += 1
-        if individual > 0 and individual > committee:          
-            record['contributor_type'] = 'individual'
-        elif committee > 0 and committee > individual:
-            record['contributor_type'] = 'committee'
-        else:
-            record['contributor_type'] = None
+
+class BestAvailableFilter(Filter):
+    """ Merge contributor fields using best available value """
+  
+    def process_record(self, record):
+        def nonempty(value):
+            return value is not None and value != ''
+
+        record['contributor_name'] = record['newcontributor'] if nonempty(record['newcontributor']) else record['contributor'] if nonempty(record['contributor']) else None 
+        record['contributor_address'] = record['newaddress'] if nonempty(record['newaddress']) else record['address'] if nonempty(record['address']) else None
+        record['contributor_employer'] = record['newemployer'] if nonempty(record['newemployer']) else record['employer'] if nonempty(record['employer']) else None
+        record['organization_name'] = record['contributor_employer']
+
+        for f in ('contributor','newcontributor','address','newaddress','employer','newemployer'):
+            del(record[f])
+
         return record
-        
 
 class EmployerOccupationFilter(Filter):
         
@@ -211,29 +208,50 @@ class SeatFilter(Filter):
 
 class UrnFilter(Filter):
 
+    def __init__(self,con):
+        super(UrnFilter, self).__init__()
+        cur = con.cursor()
+        cur.execute("SELECT CommitteeName, CommitteeID FROM Committees;")
+        self.committee_names = {}
+        while (True):
+            row = cur.fetchone ()
+            if row == None:
+                break
+            self.committee_names[row[0]] = row[1]
+        cur.close()
+
     def process_record(self,record):
+        # Recipient
         if record['candidate_id'] and record['committee_id']:
-            warn('record has both candidate and committee ids. unhandled.', record)
+            warn(record, 'record has both candidate and committee ids. unhandled.')
             return record
         elif record['candidate_id']:
             record['recipient_type'] = 'politician'
             record['recipient_urn'] = 'urn:nimsp:candidate:%d' % record['candidate_id']
         elif record['committee_id']:
             record['recipient_type'] = 'committee'
-            record['recipient_urn'] =  'urn:nimsp:committee:%d' % record['committee_id']
-            record['committee_urn'] = record['recipient_urn']
-            
-        if record['contributor_id']:
-            record['contributor_urn'] = 'urn:nimsp:%s:%d' % ('contributor', record['contributor_id'])
-            if record['contributor_id'] == record['newemployerid'] and (record['contributor_type'] is None or record['contributor_type'] == 'committee'):
-                # contributor is an organization which is probably really a business pac?
-                if record['contributor_occupation'] and record['contributor_occupation'] != '':
-                    # occupation would be kind of fake
-                    debug(record,"Overloaded occupation \"%s\" because contributor is an organization" % record['contributor_occupation'])
-            
+            record['recipient_urn'] = record['committee_urn'] = 'urn:nimsp:committee:%d' % record['committee_id']
+
+        # Contributor
+        if record['contributor_id'] and record['newemployerid'] and record['contributor_id'] == record['newemployerid']:
+            #contributor is an organization (by id match)
+            record['contributor_urn'] = 'urn:nimsp:organization:%d' % (record['contributor_id']) 
+            record['contributor_type'] = 'organization'
+        elif self.committee_names.has_key(record['contributor_name']): 
+            #contributor is a committee (by name match)
+            record['contributor_urn'] = 'urn:nimsp:committee:%d' % (self.committee_names[record['contributor_name']])
+            record['contributor_type'] = 'committee'
+            if record['contributor_id']:
+                warn(record,'Contributor \"%s\" has a contributor_id (%d), but looks like a committee (id %d). Handling as committee.' % (record['contributor_name'], record['contributor_id'], self.committee_names[record['contributor_name']])) 
+        elif record['contributor_id']:
+            #can't tell what the contributor is 
+            record['contributor_urn'] = 'urn:nimsp:contributor:%d' % (record['contributor_id'])
+            record['contributor_type'] = None
+        else:
+            record['contributor_type'] = None
+
         if record['newemployerid']:
             record['organization_urn'] = 'urn:nimsp:organization:%d' % record['newemployerid']
-            
         if record['parentcompanyid']:
             record['parent_organization_urn'] = 'urn:nimsp:organization:%d' % record['parentcompanyid']
 
@@ -332,9 +350,7 @@ def main():
     except Exception, e:
         print "Unable to connect to nimso database: %s" % e 
         sys.exit(1)
-    
-  
-    
+        
     #Contributions
     stmt = """
 select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp,c.Contributor as contributor,c.NewContributor as newcontributor,c.First as first,c.Last as last,c.Occupation as contributor_occupation,c.Employer as employer,c.NewEmployer as newemployer,c.ParentCompany as parent_organization_name,c.ContributorOwner as contributorowner,c.PACName as pacname,c.Address as address,c.NewAddress as newaddress,c.City as contributor_city,c.State as contributor_state,c.ZipCode as contributor_zipcode,c.CatCode as contributor_category,c.NewContributorID as contributor_id,c.NewEmployerID as newemployerid,c.ParentCompanyID as parentcompanyid,c.ContributionsTimestamp as contributionstimestamp,c.RecipientReportsBundleID as recipientreportsbundleid,
@@ -361,22 +377,16 @@ select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp
 
     recipe = saucebrush.run_recipe(
         ChunkedSqlSource(cur,stmt,limit=n),
-        ContributorTypeFilter(),
 
-        # merge fields using first available 
-        FieldMerger({'contributor_name': ('newcontributor','contributor', 'first','last')}, lambda nc,c,f,l: nc if (nc is not None and nc != "") else c if (c is not None and c != "") else ("%s %s" % [f,l]).strip() if (f is not None and f != "" and l is not None and l != "") else None),
-        FieldMerger({'contributor_address': ('newaddress','address')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
-        FieldMerger({'contributor_employer': ('employer','newemployer')}, lambda x,y: x if (x is not None and x != "") else y if (y is not None and y != "") else None),
-        FieldCopier({'organization_name':'contributor_employer'}),
-
-        # munge fields       
+        # munge fields
+        BestAvailableFilter(),
         EmployerOccupationFilter(),
         RecipientFilter(),
         SeatFilter(),
-        UrnFilter(),
+        UrnFilter(con),
         FieldModifier('datestamp', lambda x: str(x) if x else None),
         ZipCleaner(),
-            
+           
         # add static fields
         FieldAdder('is_amendment',False),
         FieldAdder('transaction_namespace', 'urn:nimsp:transaction'),
@@ -424,7 +434,6 @@ select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp
         sys.exit(1)
   
     salt_filter = SaltFilter(100,pcon,mcon)
-
     saucebrush.run_recipe(
         CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1),
         
