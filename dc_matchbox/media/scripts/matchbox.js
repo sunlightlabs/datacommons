@@ -302,7 +302,7 @@ $().ready(function() {
         $('#note_form').show();
         return false;
     });
-    $('#note_form input[type=button]').bind('click', function() {
+    $('#note_save').bind('click', function() {
         $.post($('#note_control')[0].href,
             { content: $('#note_form textarea').val() },
             function(response) {
@@ -311,6 +311,10 @@ $().ready(function() {
         $('#note_form').hide().children('textarea').val('');
         $('#note_control').show();
         return false;
+    });
+    $('#note_cancel').bind('click', function() {
+        $('#note_form').hide().children('textarea').val('');
+        $('#note_control').show();
     });
     
     // attache merge button action

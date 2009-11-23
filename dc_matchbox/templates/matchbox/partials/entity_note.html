@@ -2,6 +2,6 @@
     {{ note.content }}
 </div>
 <div class="meta">
-    by <span>{{ note.user.username }}</span>
-    on <span>{{ note.timestamp|date:"M j, Y" }} {{ note.timestamp|time:"g:i A" }}</span>
+    by <span class="user">{{ note.user.username }}</span>
+    on <span class="timestamp">{{ note.timestamp|date:"M j, Y" }} {{ note.timestamp|time:"g:iA" }}</span>
 </div>

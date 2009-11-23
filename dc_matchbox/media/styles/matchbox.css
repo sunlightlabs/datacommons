@@ -66,9 +66,14 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 
 #main { font-size: 93%; margin-bottom: 22em; }
 #content { float: left; width: 750px; margin: 0 0 200px 0; }
-#sidebar { border-left: 2px solid #CBCCCB; float: left; padding: 0 0 100px 20px; width: 180px; }
+#sidebar { border-left: 2px solid #CBCCCB; float: left; padding: 0 0 100px 10px; width: 180px; }
 
 #sidebar ul#search_terms { margin: 0; padding: 0 0 0 15px; }
+
+#sidebar #notes { list-style: none; margin: 0; padding: 0; }
+#sidebar #notes li { margin: 20px 0; }
+#sidebar #notes li .content { background-color: #FBF9F9; border: 1px solid #CBCCCB; padding: 5px; }
+#sidebar #notes li .meta { font-size: 79%; padding: 5px 0; }
 
 #sidebar #note_form { display: none; }
 #sidebar #note_form textarea { height: 200px; }
