@@ -64,6 +64,11 @@ def main():
     def org_urn(s):
         return 'urn:crp:organization:%s' % s.strip() if s else None
     
+    def real_code(s):
+        s = s.upper()
+        if s in catcodes:
+            return catcodes[s]['catorder'].upper()
+    
     saucebrush.run_recipe(
         
         # load source
@@ -89,7 +94,7 @@ def main():
         # catcode
         FieldRenamer({'contributor_name': 'donor_cmte'}),
         FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
-        FieldMerger({'contributor_category_order': ('real_code',)}, lambda s: catcodes[s.upper()]['catorder'].upper(), keep_fields=True),
+        FieldMerger({'contributor_category_order': ('real_code',)}, real_code, keep_fields=True),
         
         FieldRenamer({'contributor_city': 'city',
                       'conitrbutor_zipcode': 'zipcode'}),
@@ -103,9 +108,9 @@ def main():
         # filter through spec
         SpecFilter(spec),
         
-        DebugEmitter(),
+        #DebugEmitter(),
         CountEmitter(every=100),
-        #emitter,
+        emitter,
         
     )
 
