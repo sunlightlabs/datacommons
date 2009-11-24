@@ -4,6 +4,7 @@ from django.db.models import get_app, get_model, get_models
 from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter
 import datetime
+import sys
 
 #
 # saucebrush loading filters
@@ -165,5 +166,15 @@ class LoaderEmitter(Emitter):
     def __init__(self, loader):
         super(LoaderEmitter, self).__init__()
         self._loader = loader
+    def process_record(self, record):
+        self.emit_record(record)
+        if not record.get('__rejected__', False):
+            if '__rejected__' in record:
+                del record['__rejected__']
+            return record
     def emit_record(self, record):
-        self._loader.load_record(record)
+        try:
+            self._loader.load_record(record)
+        except:
+            self.reject_record(record, '%s' % sys.exc_info()[1])
+            record['__rejected__'] = True

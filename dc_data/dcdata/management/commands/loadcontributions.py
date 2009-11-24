@@ -10,7 +10,7 @@ from saucebrush.sources import CSVSource
 from strings.normalizer import basic_normalizer
 import saucebrush
 import os
-
+import sys
 
 MATCHBOX_ORG_NAMESPACE = 'urn:matchbox:organization:'
 
@@ -56,6 +56,21 @@ def urn_with_name_fallback(urn_field, name_field):
     
     return source
     
+
+class AbortFilter(Filter):
+    def __init__(self, threshold=0.1):
+        self._record_count = 0
+        self._threshold = threshold
+    def process_record(self, record):
+        self._record_count += 1
+        if self._record_count > 50:
+            reject_count = len(self._recipe.rejected)
+            ratio = float(reject_count) / float(self._record_count)
+            if ratio > self._threshold:
+                for reject in self._recipe.rejected:
+                    sys.stderr.write(repr(reject) + '\n')
+                raise Exception('Abort: %s of %s records contained errors' % (reject_count, self._record_count))
+        return record
 
 #
 # model loader
@@ -128,6 +143,7 @@ class Command(BaseCommand):
             MD5Filter(urn_with_name_fallback('parent_organization_urn', 'parent_organization_name'), 'parent_organization_entity'),
             
             #DebugEmitter(),
+            AbortFilter(),
             LoaderEmitter(loader),
             
         )
