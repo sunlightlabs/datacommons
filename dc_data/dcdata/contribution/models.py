@@ -154,10 +154,11 @@ class Contribution(DataCommonsModel):
             pass
         elif self.transaction_namespace == 'urn:fec:transaction':        
             # check transaction type
-            if self.datestamp.year < 2004 and self.transaction_type == '10levin':
-                raise ValueError, "Levin funds may only occur on or after 2004"
-            elif self.transaction_type == '10soft':
-                raise ValueError, "Soft funds may only occur before 2004"
+            if self.datestamp:
+                if self.datestamp.year < 2004 and self.transaction_type == '10levin':
+                    raise ValueError, "Levin funds may only occur on or after 2004"
+                elif self.transaction_type == '10soft':
+                    raise ValueError, "Soft funds may only occur before 2004"
         
             # check employer/occupation rules
             if self.contributor_employer and not self.contributor_occupation:
