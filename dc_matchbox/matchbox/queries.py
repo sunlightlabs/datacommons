@@ -12,6 +12,15 @@ sql_names = dict_union(contribution_names, matchbox_names)
 from strings.normalizer import basic_normalizer
 
 
+_entities_by_name_query = "select distinct e.id, e.name \
+                            from \
+                                (select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s \
+                                 union distinct \
+                                select distinct %(normalization_original)s from %(normalization)s where %(normalization_original)s @@ to_tsquery('simple', %%s)) n \
+                            inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
+                            inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s \
+                            where e.%(entity_type)s = %%s" % sql_names
+
 def search_entities_by_name(query, type_filter):
     """
     Search for all entities with a normalized name prefixed by the normalized query string.
@@ -22,23 +31,17 @@ def search_entities_by_name(query, type_filter):
     if query.strip():
         stmt = "select matches.%(entity_id)s, matches.%(entity_name)s, count(c.%(contribution_organization_entity)s) \
                 from \
-                (select distinct e.id, e.name \
-                    from \
-                        (select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s \
-                         union distinct \
-                        select distinct %(normalization_original)s from %(normalization)s where %(normalization_original)s @@ to_tsquery('simple', %%s)) n \
-                    inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
-                    inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s \
-                    where e.%(entity_type)s = %%s) matches \
+                    (%(entities_by_name_query)s) matches \
                 left join %(contribution)s c on c.%(contribution_organization_entity)s = matches.%(entity_id)s \
                 group by matches.%(entity_id)s, matches.%(entity_name)s order by count(c.%(contribution_organization_entity)s) desc;" % \
-                sql_names
+                dict_union({'entities_by_name_query': _entities_by_name_query}, sql_names)
         
         cursor = connection.cursor()
         cursor.execute(stmt, [basic_normalizer(query) + '%', ' & '.join(query.split(' ')), type_filter])
         return cursor         
     else:
         return []
+
 
 
 def merge_entities(entity_ids, new_entity):
