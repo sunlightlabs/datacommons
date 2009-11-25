@@ -116,34 +116,38 @@ class Command(BaseCommand):
             imported_by="loadcontributions.py (%s)" % os.getenv('LOGNAME', 'unknown'),
         )
         
-        saucebrush.run_recipe(
-        
-            CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1),
-            CountEmitter(every=1000),
+        try:
+            saucebrush.run_recipe(
             
-            FieldRemover('id'),
-            FieldRemover('import_reference'),
-            FieldAdder('import_reference', loader.import_session),
-            
-            IntFilter('cycle'),
-            ISODateFilter('datestamp'),
-            BooleanFilter('is_amendment'),
-            FloatFilter('amount'),
-            
-            ContributorFilter(),
-            OrganizationFilter(),
-            ParentOrganizationFilter(),
-            RecipientFilter(),
-            CommitteeFilter(),
-            
-            MD5Filter(urn_with_name_fallback('contributor_urn', 'contributor_name'), 'contributor_entity'),
-            MD5Filter(urn_with_name_fallback('recipient_urn', 'recipient_name'), 'recipient_entity'),
-            MD5Filter(urn_with_name_fallback('committee_urn', 'committee_name'), 'committee_entity'),
-            MD5Filter(urn_with_name_fallback('organization_urn', 'organization_name'), 'organization_entity'),
-            MD5Filter(urn_with_name_fallback('parent_organization_urn', 'parent_organization_name'), 'parent_organization_entity'),
-            
-            #DebugEmitter(),
-            AbortFilter(),
-            LoaderEmitter(loader),
-            
-        )
+                CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1),
+                CountEmitter(every=1000),
+                
+                FieldRemover('id'),
+                FieldRemover('import_reference'),
+                FieldAdder('import_reference', loader.import_session),
+                
+                IntFilter('cycle'),
+                ISODateFilter('datestamp'),
+                BooleanFilter('is_amendment'),
+                FloatFilter('amount'),
+                
+                ContributorFilter(),
+                OrganizationFilter(),
+                ParentOrganizationFilter(),
+                RecipientFilter(),
+                CommitteeFilter(),
+                
+                MD5Filter(urn_with_name_fallback('contributor_urn', 'contributor_name'), 'contributor_entity'),
+                MD5Filter(urn_with_name_fallback('recipient_urn', 'recipient_name'), 'recipient_entity'),
+                MD5Filter(urn_with_name_fallback('committee_urn', 'committee_name'), 'committee_entity'),
+                MD5Filter(urn_with_name_fallback('organization_urn', 'organization_name'), 'organization_entity'),
+                MD5Filter(urn_with_name_fallback('parent_organization_urn', 'parent_organization_name'), 'parent_organization_entity'),
+                
+                #DebugEmitter(),
+                AbortFilter(),
+                LoaderEmitter(loader),
+                
+            )
+        finally:
+            sys.stdout.flush()
+            sys.stderr.flush()
