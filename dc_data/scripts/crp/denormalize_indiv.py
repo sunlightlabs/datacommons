@@ -1,6 +1,6 @@
 from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
-from saucebrush.emitters import CSVEmitter
+from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
 import logging
@@ -193,7 +193,7 @@ def main():
 
         recipe = saucebrush.run_recipe(
             # load source
-            CSVSource(input_file, fieldnames=FILE_TYPES['indivs']),
+            CSVSource(open(input_file, 'r'), fieldnames=FILE_TYPES['indivs']),
 
             FieldCountValidator(len(FILE_TYPES['indivs'])),
 
