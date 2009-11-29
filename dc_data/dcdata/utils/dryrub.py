@@ -1,3 +1,4 @@
+import sys
 from saucebrush import utils
 from saucebrush.filters import Filter, ConditionalFilter
 from saucebrush.emitters import Emitter
@@ -54,17 +55,16 @@ class MD5Filter(Filter):
 #
 
 class CountEmitter(Emitter):
-    def __init__(self, every=1):
-        import logging
+    def __init__(self, every=1, file=sys.stdout):
         super(CountEmitter, self).__init__()
         self._every = every
         self._count = 0
+        self._file = file
     def emit_record(self, record):
-        import logging
         self._count += 1
         if self._count % self._every == 0:
-            #logging.info('processed %i records' % self._count)
-            print 'processed %i records' % self._count
+            self._file.write('processed %i records\n' % self._count)
+            self._file.flush()
 
 
 class NullEmitter(Emitter):
