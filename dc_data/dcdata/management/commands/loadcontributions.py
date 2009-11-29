@@ -69,6 +69,7 @@ class AbortFilter(Filter):
             if ratio > self._threshold:
                 for reject in self._recipe.rejected:
                     sys.stderr.write(repr(reject) + '\n')
+                    sys.stderr.flush()
                 raise Exception('Abort: %s of %s records contained errors' % (reject_count, self._record_count))
         return record
 
@@ -148,6 +149,8 @@ class Command(BaseCommand):
                 LoaderEmitter(loader),
                 
             )
+        except:
+            sys.stderr.write("Fatal exception: %s\n" % repr(sys.exc_info()))
         finally:
             sys.stdout.flush()
             sys.stderr.flush()
