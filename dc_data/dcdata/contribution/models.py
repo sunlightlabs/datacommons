@@ -166,6 +166,8 @@ class Contribution(DataCommonsModel):
         else: 
             raise ValueError, "Unhandled transaction_namespace (%s)" % (self.transaction_namespace or 'None')
 
+        if len(self.contributor_gender) > 1:
+            raise ValueError, 'Gender of %s is not valid' % self.contributor_gender 
         
         # save if all checks passed
         super(Contribution, self).save(**kwargs)
