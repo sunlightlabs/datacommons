@@ -1,12 +1,10 @@
-
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-import settings
 from django.db import models
 import unittest
 
-from sql import django2sql_names, augment, is_disjoint, dict_union
+from sql import *
 
 class CourseModel(models.Model):
     number = models.IntegerField()
@@ -71,3 +69,11 @@ class Test(unittest.TestCase):
         self.assertEqual(abc, dict_union(abc))
         self.assertEqual({'m': 4, 'n':5, 'x':6, 'y': 7}, dict_union(mn,xy))
         self.assertEqual({'a':1, 'b':2, 'c': 3, 'm': 4, 'n':5, 'x':6, 'y': 7}, dict_union(abc, mn, xy))
+        
+    def test_parse_date(self):
+        d = parse_date("1980-05-12")
+        self.assertEqual((1980, 05, 12), (d.year, d.month, d.day))
+        
+        d = parse_datetime("1980-05-12 01:23:56")
+        self.assertEqual((1980, 05, 12, 01, 23, 56), (d.year, d.month, d.day, d.hour, d.minute, d.second))
+        

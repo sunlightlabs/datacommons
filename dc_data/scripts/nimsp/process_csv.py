@@ -22,6 +22,9 @@ from salt import DCIDFilter, SaltFilter
 
 from settings import OTHER_DATABASES
 
+from common import CSV_SQL_MAPPING, SQL_DUMP_FILE
+
+
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
               'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn',
               'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
@@ -206,6 +209,19 @@ class SeatFilter(Filter):
         record['election_type'] = self.election_type_map.get(record['status'])
         return record
 
+
+class MultiFieldConversionFilter(Filter):
+    
+    def __init__(self, name_to_func):
+        super(MultiFieldConversionFilter, self).__init__()
+        self._name_to_func = name_to_func
+
+    def process_record(self, record):
+        for key in self._name_to_func.keys():
+            if key in record:
+                record[key] = self._name_to_func[key](record[key])
+
+
 class UrnFilter(Filter):
 
     def __init__(self,con):
@@ -324,20 +340,28 @@ def main():
     if not os.path.exists(dataroot):
         print "No such directory %s" % dataroot
         sys.exit(1)
-    tmppath = os.path.join(dataroot, 'tmp')
-    if not os.path.exists(tmppath):
-        os.makedirs(tmppath)
+    denorm_path = os.path.join(dataroot, 'denormalized')
+    if not os.path.exists(denorm_path):
+        os.makedirs(denorm_path)
     
     n = options.n if options.n else None
 
-    allocated_csv_filename = os.path.join(tmppath,'nimsp_allocated_contributions_%s.csv' % options.cycle if options.cycle else 'nimsp_allocated_contributions.csv')
-    unallocated_csv_filename = os.path.join(tmppath, 'nimsp_unallocated_contributions_%s.csv.TMP' % options.cycle if options.cycle else 'nimsp_unallocated_contributions.csv.TMP')
+    allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions_%s.csv' % options.cycle if options.cycle else 'nimsp_allocated_contributions.csv')
+    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_%s.csv.TMP' % options.cycle if options.cycle else 'nimsp_unallocated_contributions.csv.TMP')
 
-    allocated_csv = open(os.path.join(tmppath, allocated_csv_filename), 'w')
-    unallocated_csv = open(os.path.join(tmppath, unallocated_csv_filename), 'w')
+    allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
+    unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
     
     allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
     unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
+
+    input_path = os.path.join(denorm_path, SQL_DUMP_FILE)
+    input_file = open(input_path, 'r')
+    
+    
+    input_type_conversions = dict([(field, conversion_func) for (field, sql, conversion_func) in CSV_SQL_MAPPING if conversion_func])
+
+    input_fields = [name for (name, sql, conversion_func) in CSV_SQL_MAPPING]
 
     try:
         con = MySQLdb.connect(
@@ -346,37 +370,13 @@ def main():
             host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
             )
-        cur = con.cursor(MySQLdb.cursors.DictCursor)
     except Exception, e:
-        print "Unable to connect to nimso database: %s" % e 
+        print "Unable to connect to nimsp database: %s" % e 
         sys.exit(1)
-        
-    #Contributions
-    stmt = """
-select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp,c.Contributor as contributor,c.NewContributor as newcontributor,c.First as first,c.Last as last,c.Occupation as contributor_occupation,c.Employer as employer,c.NewEmployer as newemployer,c.ParentCompany as parent_organization_name,c.ContributorOwner as contributorowner,c.PACName as pacname,c.Address as address,c.NewAddress as newaddress,c.City as contributor_city,c.State as contributor_state,c.ZipCode as contributor_zipcode,c.CatCode as contributor_category,c.NewContributorID as contributor_id,c.NewEmployerID as newemployerid,c.ParentCompanyID as parentcompanyid,c.ContributionsTimestamp as contributionstimestamp,c.RecipientReportsBundleID as recipientreportsbundleid,
-   r.RecipientID as recipientid, r.CandidateID as candidate_id, r.CommitteeID as committee_id, r.RecipientName as recipient_name,
-   syr.Yearcode as cycle,
-   os.StateCode as seat_state, os.District as district,
-   cand.Status as status, cand.ICO as incumbent,
-   oc.OfficeType as seat,
-   p_cand.PartyType as recipient_party,
-   p_comm.PartyType as committee_party,
-   comm.CommitteeName as committee_name,
-   cc.IndustryCode as contributor_industry
-   from Contributions c
-   left outer join RecipientReportsBundle rrb on c.RecipientReportsBundleID = rrb.RecipientReportsBundleID
-   left outer join Recipients r on rrb.RecipientID = r.RecipientID
-   left outer join StateYearReports syr on rrb.StateYearReportsID = syr.StateYearReportsID
-   left outer join Candidates cand on r.CandidateID = cand.CandidateID
-   left outer join OfficeSeats os on cand.OfficeSeatID = os.OfficeSeatID
-   left outer join OfficeCodes oc on os.OfficeCode = oc.OfficeCode
-   left outer join Committees comm on r.CommitteeID = comm.CommitteeID
-   left outer join CatCodes cc on c.CatCode = cc.CatCode
-   left outer join PartyLookup p_cand on cand.PartyLookupID = p_cand.PartyLookupID
-   left outer join PartyLookup p_comm on comm.PartyLookupID = p_comm.PartyLookupID%s""" % ("\n   where syr.Yearcode = %s" % options.cycle if options.cycle else "")
 
-    recipe = saucebrush.run_recipe(
-        ChunkedSqlSource(cur,stmt,limit=n),
+    saucebrush.run_recipe(
+        CSVSource(input_file, input_fields),
+        MultiFieldConversionFilter(input_type_conversions),
 
         # munge fields
         BestAvailableFilter(),
@@ -398,13 +398,13 @@ select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp
         DCIDFilter(),
         allocated_emitter,
         )
-    for o in [allocated_csv,unallocated_csv,cur,con]:
+    for o in [allocated_csv,unallocated_csv]:
         o.close()
 
-    salted_csv_filename = os.path.join(tmppath, 'nimsp_unallocated_contributions_salted_%s.csv' % options.cycle if options.cycle else 'nimsp_unallocated_contributions_salted.csv')
-    unsalted_csv_filename = os.path.join(tmppath, 'nimsp_unallocated_contributions_unsalted_%s.csv' % options.cycle if options.cycle else 'nimsp_unallocated_contributions_unsalted.csv')
+    salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted_%s.csv' % options.cycle if options.cycle else 'nimsp_unallocated_contributions_salted.csv')
+    unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted_%s.csv' % options.cycle if options.cycle else 'nimsp_unallocated_contributions_unsalted.csv')
 
-    unallocated_csv = open(os.path.join(tmppath, unallocated_csv_filename), 'r')
+    unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
     salted_csv = open(salted_csv_filename, 'w')
     unsalted_csv = open(unsalted_csv_filename, 'w')
 
@@ -421,19 +421,8 @@ select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp
     except Exception, e:
         print "Unable to connect to salts database: %s" %  e
         sys.exit(1)
-
-    try:
-        mcon = MySQLdb.connect(
-            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
-            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
-            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
-            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
-            )
-    except Exception, e:
-        print "Unable to connect to nimsp database: %s" % e 
-        sys.exit(1)
   
-    salt_filter = SaltFilter(100,pcon,mcon)
+    salt_filter = SaltFilter(100,pcon,con)
     saucebrush.run_recipe(
         CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1),
         
@@ -450,7 +439,7 @@ select c.ContributionID as contributionid,c.Amount as amount,c.Date as datestamp
         salted_emitter
         )
 
-    for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, mcon]:
+    for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, con]:
         f.close()
 
 
