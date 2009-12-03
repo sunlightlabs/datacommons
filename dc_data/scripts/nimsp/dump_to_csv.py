@@ -29,7 +29,7 @@ def main():
     
     outfile = options.outfile if options.outfile else SQL_DUMP_FILE
 
-    select_fields = ",".join([sql_field for (name, sql_field) in CSV_SQL_MAPPING])
+    select_fields = ",".join([sql_field for (name, sql_field, conversion_func) in CSV_SQL_MAPPING])
 
     stmt = """
         select %s
