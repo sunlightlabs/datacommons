@@ -1,4 +1,14 @@
 
+from datetime import datetime
+
+
+def parse_date(date_str):
+    return datetime.strptime(date_str, "%Y-%m-%d")
+
+def parse_datetime(datetime_str):
+    return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+
+
 def django2sql_names(model):
     """ Return a dictionary from Django model field names to SQL column names, plus the model class name to table name. """
     
