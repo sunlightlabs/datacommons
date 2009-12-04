@@ -70,7 +70,25 @@ class Test(unittest.TestCase):
         self.assertEqual({'m': 4, 'n':5, 'x':6, 'y': 7}, dict_union(mn,xy))
         self.assertEqual({'a':1, 'b':2, 'c': 3, 'm': 4, 'n':5, 'x':6, 'y': 7}, dict_union(abc, mn, xy))
         
-    def test_parse_date(self):
+    def test_parse(self):
+        i = parse_int('\\N')
+        self.assertEqual(None, i)
+        
+        i = parse_int("123")
+        self.assertEqual(123, i)
+        
+        f = parse_float("""\N""")
+        self.assertEqual(None, f)
+        
+        f = parse_float("123.456")
+        self.assertEqual(123.456, f)
+        
+        s = parse_char("\\N")
+        self.assertEqual(None, s)
+        
+        s = parse_char('foobar')
+        self.assertEqual(u'foobar', s)
+        
         d = parse_date("0000-00-00")
         self.assertEqual(d, None) 
         

@@ -2,17 +2,27 @@
 from datetime import datetime
 
 
-def parse_date(date_str):
+def null_check(func):
+    return (lambda x: None if x == '\\N' else func(x))
+
+def _parse_date(date_str):
     if date_str == "0000-00-00":
         return None
     
     return datetime.strptime(date_str, "%Y-%m-%d")
 
-def parse_datetime(datetime_str):
+def _parse_datetime(datetime_str):
     if datetime_str == "0000-00-00 00:00:00":
         return None
 
     return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+
+parse_float = null_check(float)
+parse_int = null_check(int)
+parse_date = null_check(_parse_date)
+parse_datetime = null_check(_parse_datetime)
+parse_char = null_check(str.decode)
+
 
 
 def django2sql_names(model):
