@@ -219,7 +219,12 @@ class MultiFieldConversionFilter(Filter):
     def process_record(self, record):
         for key in self._name_to_func.keys():
             if key in record:
-                record[key] = self._name_to_func[key](record[key])
+                try:
+                    record[key] = self._name_to_func[key](record[key])
+                except:
+                    warn(record, "Could not convert value '%s': %s" % (record[key], sys.exc_info()[0]))
+                    record[key] = None
+                    
         return record
 
 
@@ -258,8 +263,6 @@ class UrnFilter(Filter):
             #contributor is a committee (by name match)
             record['contributor_urn'] = 'urn:nimsp:committee:%d' % (self.committee_names[record['contributor_name']])
             record['contributor_type'] = 'committee'
-            if record['contributor_id']:
-                warn(record,'Contributor \"%s\" has a contributor_id (%d), but looks like a committee (id %d). Handling as committee.' % (record['contributor_name'], record['contributor_id'], self.committee_names[record['contributor_name']])) 
         elif record['contributor_id']:
             #can't tell what the contributor is 
             record['contributor_urn'] = 'urn:nimsp:contributor:%d' % (record['contributor_id'])
