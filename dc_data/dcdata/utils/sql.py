@@ -3,6 +3,9 @@ from datetime import datetime
 
 
 def parse_date(date_str):
+    if date_str == "0000-00-00":
+        return None
+    
     return datetime.strptime(date_str, "%Y-%m-%d")
 
 def parse_datetime(datetime_str):

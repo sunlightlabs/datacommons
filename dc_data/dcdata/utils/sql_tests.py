@@ -71,6 +71,9 @@ class Test(unittest.TestCase):
         self.assertEqual({'a':1, 'b':2, 'c': 3, 'm': 4, 'n':5, 'x':6, 'y': 7}, dict_union(abc, mn, xy))
         
     def test_parse_date(self):
+        d = parse_date("0000-00-00")
+        self.assertEqual(d, None) 
+        
         d = parse_date("1980-05-12")
         self.assertEqual((1980, 05, 12), (d.year, d.month, d.day))
         
