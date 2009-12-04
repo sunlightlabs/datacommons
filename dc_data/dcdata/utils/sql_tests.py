@@ -86,6 +86,9 @@ class Test(unittest.TestCase):
         s = parse_char("\\N")
         self.assertEqual(None, s)
         
+        s = parse_char('\xbb')
+        self.assertEqual('\xbb', s)
+        
         s = parse_char('foobar')
         self.assertEqual(u'foobar', s)
         

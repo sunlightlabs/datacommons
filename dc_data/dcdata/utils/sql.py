@@ -21,7 +21,7 @@ parse_float = null_check(float)
 parse_int = null_check(int)
 parse_date = null_check(_parse_date)
 parse_datetime = null_check(_parse_datetime)
-parse_char = null_check(str.decode)
+parse_char = null_check(lambda x: x)
 
 
 
