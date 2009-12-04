@@ -9,6 +9,9 @@ def parse_date(date_str):
     return datetime.strptime(date_str, "%Y-%m-%d")
 
 def parse_datetime(datetime_str):
+    if datetime_str == "0000-00-00 00:00:00":
+        return None
+
     return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
 
 
