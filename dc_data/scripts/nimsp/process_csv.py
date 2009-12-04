@@ -220,6 +220,7 @@ class MultiFieldConversionFilter(Filter):
         for key in self._name_to_func.keys():
             if key in record:
                 record[key] = self._name_to_func[key](record[key])
+        return record
 
 
 class UrnFilter(Filter):
