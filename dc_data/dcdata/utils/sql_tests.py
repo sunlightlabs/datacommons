@@ -100,7 +100,8 @@ class Test(unittest.TestCase):
         
         d = parse_date("1980-05-12")
         self.assertEqual((1980, 05, 12), (d.year, d.month, d.day))
+        self.assertEqual('1980-05-12', str(d))
         
         d = parse_datetime("1980-05-12 01:23:56")
         self.assertEqual((1980, 05, 12, 01, 23, 56), (d.year, d.month, d.day, d.hour, d.minute, d.second))
-        
+        self.assertEqual('1980-05-12 01:23:56', str(d))

@@ -1,5 +1,7 @@
 
-from datetime import datetime
+from datetime import datetime, date
+from time import strptime
+
 
 
 def null_check(func):
@@ -9,13 +11,13 @@ def _parse_date(date_str):
     if date_str == "0000-00-00":
         return None
     
-    return datetime.strptime(date_str, "%Y-%m-%d")
+    return date(*(strptime(date_str, "%Y-%m-%d")[0:3]))
 
 def _parse_datetime(datetime_str):
     if datetime_str == "0000-00-00 00:00:00":
         return None
 
-    return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+    return datetime(*(strptime(datetime_str, "%Y-%m-%d %H:%M:%S")[0:6]))
 
 parse_float = null_check(float)
 parse_int = null_check(int)
