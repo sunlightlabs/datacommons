@@ -25,7 +25,7 @@ CSV_SQL_MAPPING = [('contributionid', 'c.ContributionID', parse_int),
                 ('contributor_id', 'c.NewContributorID', parse_int), 
                 ('newemployerid', 'c.NewEmployerID', parse_int), 
                 ('parentcompanyid', 'c.ParentCompanyID', parse_int), 
-                ('contributionstimestamp', 'c.ContributionsTimestamp', parse_datetime), 
+                ('contributionstimestamp', 'c.ContributionsTimestamp', parse_datetime), # should this field be here? I don't think we use it. -epg
                 ('recipientreportsbundleid', 'c.RecipientReportsBundleID', parse_int), 
                 ('recipientid', 'r.RecipientID', parse_int), 
                 ('candidate_id', 'r.CandidateID', parse_int), 

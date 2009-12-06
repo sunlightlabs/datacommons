@@ -25,6 +25,8 @@ from settings import OTHER_DATABASES
 from common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 
 
+# to do: these should be pulled automatically from the model, as is done in loadcontributions.py,
+# not hard-coded here. The CSV_MAPPING should also check that it is consistent with the model-based list.
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
               'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn',
               'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
