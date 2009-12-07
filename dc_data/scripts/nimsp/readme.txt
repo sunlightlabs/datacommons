@@ -66,8 +66,29 @@ Run the salting scripts:
 		
 	where 7500 was determined by Garrett to be an appropriate number of salted records to add.
 		
-Finally, denormalize the data with:
+Extract the data from the MySQL server:
 
-	python denormalize_nimsp.py -d ~/data
-		
+	python dump_to_csv.py -d /tmp/nimsp_partial_denormalization.csv
+	
+	Then copy the output to the denormalized directory:
+	
+	cp /tmp/nimsp_partial_denormalization.csv ~/data/denormalized
+	
+	(This manual copying is necessary because the MySQL server process doesn't have permission
+	to write to the datacommons' directories.)
+
+Finish the data denormalization:
+
+	python process_csv.py -d ~/data
+	
+Split the allocated contributions file into smaller chunks:
+
+	split -l 3000000 nimsp_allocated_contributions.csv nimsp_split.
+	
+	This is only necessary because the loadcontributions command will run out of memeory when run with
+	the full data set.	
+	
+Load each denormalized file from ~/data/denormalized with a command like:
+
+	python manage.py loadcontributions ~/data/tmp/nimsp_<xxx>.csv
 		
