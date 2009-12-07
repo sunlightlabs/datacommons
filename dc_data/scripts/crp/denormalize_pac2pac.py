@@ -43,7 +43,7 @@ def main():
         cycles = CYCLES
 
     dataroot = os.path.abspath(options.dataroot)
-    tmppath = os.path.join(dataroot, 'tmp')
+    tmppath = os.path.join(dataroot, 'denormalized')
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
 
