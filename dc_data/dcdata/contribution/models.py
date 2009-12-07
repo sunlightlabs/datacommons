@@ -169,6 +169,9 @@ class Contribution(DataCommonsModel):
         if len(self.contributor_gender) > 1:
             raise ValueError, 'Gender of %s is not valid' % self.contributor_gender 
         
+        if self.datestamp and self.datestamp.year < 1900:
+            raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.datestamp.year 
+        
         # save if all checks passed
         super(Contribution, self).save(**kwargs)
     
