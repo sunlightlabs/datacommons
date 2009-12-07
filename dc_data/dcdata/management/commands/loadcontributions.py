@@ -72,6 +72,25 @@ class AbortFilter(Filter):
                     sys.stderr.flush()
                 raise Exception('Abort: %s of %s records contained errors' % (reject_count, self._record_count))
         return record
+    
+    
+class UnicodeFilter(Filter):
+    def __init__(self, method='replace'):
+        self._method = method
+        
+    def process_record(self, record):
+        for (key, value) in record.items():
+            if isinstance(value, str):
+                # decoding and encoding seem weird...
+                # but in testing I tried decoding the 'È' character ('\xc2\xbb')
+                # and it gave u'\xbb', which is NOT valid unicode. Running encode
+                # gave back the original string '\xc2\xbb', which is the correct encoding.
+                # I don't fully understand it, but from the output of '\xc2\xbb'.decode('utf8')
+                # I can only conclude that there's a bug in Python's unicode handling...
+                # or that I'm misunderstanding something.
+                record[key] = value.decode('utf8', self._method).encode('utf8')
+        return record
+    
 
 #
 # model loader
@@ -131,6 +150,7 @@ class Command(BaseCommand):
                 ISODateFilter('datestamp'),
                 BooleanFilter('is_amendment'),
                 FloatFilter('amount'),
+                UnicodeFilter(),
                 
                 ContributorFilter(),
                 OrganizationFilter(),
@@ -145,7 +165,7 @@ class Command(BaseCommand):
                 MD5Filter(urn_with_name_fallback('parent_organization_urn', 'parent_organization_name'), 'parent_organization_entity'),
                 
                 #DebugEmitter(),
-                AbortFilter(),
+                AbortFilter(0.001), # fail if over 1 in 1000 records is bad
                 LoaderEmitter(loader),
                 
             )
