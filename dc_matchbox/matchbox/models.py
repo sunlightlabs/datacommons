@@ -84,16 +84,6 @@ class Entity(models.Model):
     def __unicode__(self):
         return self.name
     
-    def save(self, **kwargs):
-        super(Entity, self).save(**kwargs)
-        try:
-            Normalization.objects.get(original=self.name)
-        except Normalization.DoesNotExist:
-            Normalization(
-                original=self.name,
-                normalized=basic_normalizer(self.name)
-            ).save()
-
 
 class EntityNote(models.Model):
     entity = models.ForeignKey(Entity, related_name='notes')
