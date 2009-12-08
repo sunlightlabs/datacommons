@@ -16,14 +16,14 @@ def get_a_recipient_type(id):
     Return either 'committee' or 'politician' based on the recipient_type of an arbitrary transaction with the given id.
     """
     
-    t = Contribution.objects.filter(recipient_entity=id)[0]
+    t = Contribution.objects.filter(recipient_entity=id)[:1][0]
     if t.recipient_type == 'C':
         return 'committee'
     elif t.recipient_type == 'P':
         return 'politician'
 
 def get_a_contributor_type(id):
-    t = Contribution.objects.filter(contributor_entity=id)[0]
+    t = Contribution.objects.filter(contributor_entity=id)[:1][0]
     if t.contributor_type == 'I':
         return 'individual'
     elif t.contributor_type == 'C':
