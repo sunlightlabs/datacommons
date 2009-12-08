@@ -7,8 +7,9 @@ from django.db import connection, transaction
 
 
 from datetime import datetime
-from matchbox.models import Entity, EntityAttribute, EntityAlias
+from matchbox.models import Entity, EntityAttribute, EntityAlias, sql_names
 from matchbox_scripts.build_matchbox import log
+
 
 def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
@@ -82,14 +83,24 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             attributes -= set([(attr.namespace, attr.value) for attr in e.attributes.all()])
         else:
             attributes.add((EntityAttribute.ENTITY_ID_NAMESPACE, id))
-            e = Entity(id=id, name=get_a_name(id), type=type_func(cursor, id), reviewer=reviewer, timestamp=timestamp)
-            e.save()
+            
+            name = get_a_name(id)
+            type = type_func(cursor, id)
+            
+            stmt = 'insert into %s (%s, %s, %s, %s, %s) values (%%s, %%s, %%s, %%s, %%s)' % \
+                (sql_names['entity'], sql_names['entity_id'], sql_names['entity_name'], sql_names['entity_type'], sql_names['entity_reviewer'], sql_names['entity_timestamp'])
+            
+            cursor.execute(stmt, [id, name, type, reviewer, timestamp])
+            
             
         for alias in aliases:
-            e.aliases.add(EntityAlias(alias=alias))
+            stmt = 'insert into %s (%s, %s) values (%%s, %%s)' % (sql_names['entityalias'], sql_names['entityalias_entity'], sql_names['entityalias_alias'])
+            cursor.execute(stmt, [id, alias])
             
         for (namespace, value) in attributes:
-            e.attributes.add(EntityAttribute(namespace=namespace, value=value))
+            stmt = 'insert into %s (%s, %s, %s) values (%%s, %%s, %%s)' % \
+                (sql_names['entityattribute'], sql_names['entityattribute_entity'], sql_names['entityattribute_namespace'], sql_names['entityattribute_value'])
+            cursor.execute(stmt, [id, namespace, value])
 
     i = 0
     for (id,) in retrieve_entity_ids():            

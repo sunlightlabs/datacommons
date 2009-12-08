@@ -60,9 +60,8 @@ class EntityRef(models.CharField):
 entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
 
 class EntityManager(models.Manager):
+    # is this used?
     def merge(self, name, type_, entity_ids):
-        #count = Entity.objects.filter(pk__in=entity_ids).aggregate(Sum('count'))
-        #entity = Entity(name=name, type=type_, count=count)
         new_entity = Entity(name=name, type=type_)
         for entity_id in entity_ids:
             old_entity = Entity.objects.get(pk=entity_id)
@@ -76,10 +75,9 @@ class Entity(models.Model):
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
-    count = models.IntegerField(default=0)
+    #count = models.IntegerField(default=0)
     
-    class Meta:
-        ordering = ('-count',)
+
     
     def __unicode__(self):
         return self.name
