@@ -9,7 +9,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 
 from dcdata.contribution.models import sql_names, Contribution
-from matchbox_scripts.support.build_entities import populate_entities
 
 
 def get_a_recipient_type(id):
@@ -30,8 +29,12 @@ def get_a_contributor_type(id):
     elif t.contributor_type == 'C':
         return 'committee'
     
+    
+    
 
 def run():
+    
+    log("Building contributor entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_contributor_name'],
                       sql_names['contribution_contributor_entity'],
@@ -39,6 +42,7 @@ def run():
                       [sql_names['contribution_contributor_urn']],
                        get_a_contributor_type)
     
+    log("Building organization entities...")
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_organization_name'], 
                       sql_names['contribution_organization_entity'],
@@ -46,6 +50,7 @@ def run():
                       [sql_names['contribution_organization_urn']],
                       (lambda id: 'organization'))   
      
+    log("Building parent organization entities...")
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_parent_organization_name'], 
                       sql_names['contribution_parent_organization_entity'],
@@ -53,6 +58,7 @@ def run():
                       [sql_names['contribution_parent_organization_urn']],
                       (lambda id: 'organization'))
     
+    log("Building recipient entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_recipient_name'],
                       sql_names['contribution_recipient_entity'],
@@ -60,6 +66,7 @@ def run():
                       [sql_names['contribution_recipient_urn']],
                       get_a_recipient_type)
     
+    log("Building committee entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_committee_name'],
                       sql_names['contribution_committee_entity'],
@@ -67,6 +74,10 @@ def run():
                       [sql_names['contribution_committee_urn']],
                       (lambda id: 'committee'))
     
+    
+from matchbox_scripts.support.build_entities import populate_entities
+from matchbox_scripts.build_matchbox import log
+
     
 if __name__ == '__main__':
     run()

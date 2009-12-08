@@ -8,6 +8,7 @@ from django.db import connection, transaction
 
 from datetime import datetime
 from matchbox.models import Entity, EntityAttribute, EntityAlias
+from matchbox_scripts.build_matchbox import log
 
 def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
@@ -29,14 +30,14 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     
     def retrieve_entity_ids():
         loop_cursor = connection.cursor()
-        stmt = "select distinct %s from %s" % (entity_id_column, transaction_table)
+        stmt = "select %s from %s group by %s" % (entity_id_column, transaction_table, entity_id_column)
         loop_cursor.execute(stmt)
         return loop_cursor
     
     def transactional_aliases(id):
         result = set()
         for alias_column in alias_columns:
-            stmt = "select distinct %s from %s where %s = %%s and length(%s) > 0" % (alias_column, transaction_table, entity_id_column, alias_column)
+            stmt = "select %s from %s where %s = %%s and length(%s) > 0 group by %s" % (alias_column, transaction_table, entity_id_column, alias_column, alias_column)
             cursor.execute(stmt,[id])
             for (alias,) in cursor:
                 result.add(alias)
@@ -45,7 +46,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     def transactional_attributes(id):
         result = set()
         for attribute_column in attribute_columns:
-            stmt = "select distinct %s from %s where %s = %%s and length(%s) > 0" % (attribute_column, transaction_table, entity_id_column, attribute_column)
+            stmt = "select %s from %s where %s = %%s and length(%s) > 0 group by %s" % (attribute_column, transaction_table, entity_id_column, attribute_column, attribute_column)
             cursor.execute(stmt,[id])
             for (attribute,) in cursor:
                 (namespace, value) = attribute_name_value_pair(attribute) or ('', '')
@@ -54,7 +55,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         return result      
 
     def get_a_name(id):
-        stmt = "select distinct %s from %s where %s = %%s and length(%s) > 0 limit 1" % (entity_name_column, transaction_table, entity_id_column, entity_name_column)
+        stmt = "select %s from %s where %s = %%s and length(%s) > 0 limit 1" % (entity_name_column, transaction_table, entity_id_column, entity_name_column)
         cursor.execute(stmt, [id])
         if cursor:
             return cursor.__iter__().next()[0]
@@ -90,10 +91,14 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         for (namespace, value) in attributes:
             e.attributes.add(EntityAttribute(namespace=namespace, value=value))
 
-    
-    for (id,) in retrieve_entity_ids():
+    i = 0
+    for (id,) in retrieve_entity_ids():            
         if id:
             create_entity(id)
+            
+            i += 1
+            if i % 1000 == 0:
+                log("processed %d entities..." % i)
     
 
     
