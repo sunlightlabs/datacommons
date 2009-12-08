@@ -25,7 +25,7 @@ def get_a_recipient_type(cursor, id):
 def get_a_contributor_type(cursor, id):
     stmt = "select %s from %s where %s = %%s limit 1" % (sql_names['contribution_contributor_type'], sql_names['contribution'], sql_names['contribution_contributor_entity'])
     cursor.execute(stmt, [id])
-    if cursor.rowcount and cursor.fetch_one()[0] == 'C':
+    if cursor.rowcount and cursor.fetchone()[0] == 'C':
             return 'committee'    
     return 'individual'
     
