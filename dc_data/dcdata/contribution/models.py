@@ -169,6 +169,9 @@ class Contribution(DataCommonsModel):
         if len(self.contributor_gender) > 1:
             raise ValueError, 'Gender of %s is not valid' % self.contributor_gender 
         
+        if len(self.contributor_state) > 2:
+            raise ValueError, "State '%s' is not a valid state." % self.contributor_state
+        
         if self.datestamp and self.datestamp.year < 1900:
             raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.datestamp.year 
         
