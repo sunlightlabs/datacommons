@@ -11,7 +11,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from dcdata.contribution.models import sql_names, Contribution
 
 
-def get_a_recipient_type(id):
+def get_a_recipient_type(cursor, id):
     """
     Return either 'committee' or 'politician' based on the recipient_type of an arbitrary transaction with the given id.
     """
@@ -22,13 +22,12 @@ def get_a_recipient_type(id):
     elif t.recipient_type == 'P':
         return 'politician'
 
-def get_a_contributor_type(id):
-    t = Contribution.objects.filter(contributor_entity=id)[:1][0]
-    if t.contributor_type == 'I':
-        return 'individual'
-    elif t.contributor_type == 'C':
-        return 'committee'
-    
+def get_a_contributor_type(cursor, id):
+    stmt = "select %s from %s where %s = %%s limit 1" % (sql_names['contribution_contributor_type'], sql_names['contribution'], sql_names['contribution_contributor_entity'])
+    cursor.execute(stmt, [id])
+    if cursor.rowcount and cursor.fetch_one()[0] == 'C':
+            return 'committee'    
+    return 'individual'
     
     
 
@@ -48,7 +47,7 @@ def run():
                       sql_names['contribution_organization_entity'],
                       [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
                       [sql_names['contribution_organization_urn']],
-                      (lambda id: 'organization'))   
+                      (lambda cursor, id: 'organization'))   
      
     log("Building parent organization entities...")
     populate_entities(sql_names['contribution'], 
@@ -56,7 +55,7 @@ def run():
                       sql_names['contribution_parent_organization_entity'],
                       [sql_names['contribution_parent_organization_name']],
                       [sql_names['contribution_parent_organization_urn']],
-                      (lambda id: 'organization'))
+                      (lambda cursor, id: 'organization'))
     
     log("Building recipient entities...")
     populate_entities(sql_names['contribution'],
@@ -72,7 +71,7 @@ def run():
                       sql_names['contribution_committee_entity'],
                       [sql_names['contribution_committee_name']],
                       [sql_names['contribution_committee_urn']],
-                      (lambda id: 'committee'))
+                      (lambda cursor, id: 'committee'))
     
     
 from matchbox_scripts.support.build_entities import populate_entities

@@ -16,7 +16,7 @@ def quote(value):
 
 @transaction.commit_on_success
 def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_columns=[],
-                      type_func=(lambda id: None), reviewer=__name__, timestamp = datetime.now()):
+                      type_func=(lambda cursor, id: None), reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
     
@@ -82,7 +82,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             attributes -= set([(attr.namespace, attr.value) for attr in e.attributes.all()])
         else:
             attributes.add((EntityAttribute.ENTITY_ID_NAMESPACE, id))
-            e = Entity(id=id, name=get_a_name(id), type=type_func(id), reviewer=reviewer, timestamp=timestamp)
+            e = Entity(id=id, name=get_a_name(id), type=type_func(cursor, id), reviewer=reviewer, timestamp=timestamp)
             e.save()
             
         for alias in aliases:
