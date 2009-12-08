@@ -57,8 +57,8 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     def get_a_name(id):
         stmt = "select %s from %s where %s = %%s and length(%s) > 0 limit 1" % (entity_name_column, transaction_table, entity_id_column, entity_name_column)
         cursor.execute(stmt, [id])
-        if cursor:
-            return cursor.__iter__().next()[0]
+        if cursor.rowcount:
+            return cursor.fetchone()[0]
         else:
             return 'Unknown'
     
