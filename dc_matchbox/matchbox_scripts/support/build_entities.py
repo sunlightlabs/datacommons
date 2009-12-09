@@ -32,7 +32,8 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     
     """
     
-    connection = connect("host='%s' user='%s' password='%s' dbname='%s'" % (DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME))
+    from django.db import connection, transaction
+    #connection = connect("host='%s' user='%s' password='%s' dbname='%s'" % (DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME))
     cursor = connection.cursor()
     
     def retrieve_entity_ids():
@@ -122,10 +123,10 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             
             i += 1
             if i % 1000 == 0:
-                connection.commit()
+                transaction.commit()
                 log("processed %d entities..." % i)
     
-    connection.commit()
+    transaction.commit()
 
 
     
