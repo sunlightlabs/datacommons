@@ -3,7 +3,13 @@
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from django.db import connection, transaction
+from psycopg2 import connect
+from settings import DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME
+
+TEST_DATABASE_NAME = "test_" + DATABASE_NAME
+
+
+#from django.db import connection, transaction
 
 
 from datetime import datetime
@@ -26,6 +32,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     
     """
     
+    connection = connect("host='%s' user='%s' password='%s' dbname='%s'" % (DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME))
     cursor = connection.cursor()
     
     def retrieve_entity_ids():
@@ -106,7 +113,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             stmt = 'insert into %s (%s, %s, %s) values (%%s, %%s, %%s)' % \
                 (sql_names['entityattribute'], sql_names['entityattribute_entity'], sql_names['entityattribute_namespace'], sql_names['entityattribute_value'])
             cursor.execute(stmt, [id, namespace, value])
-            
+
 
     i = 0
     for (id,) in retrieve_entity_ids():            
@@ -115,10 +122,10 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             
             i += 1
             if i % 1000 == 0:
-                transaction.commit()
+                connection.commit()
                 log("processed %d entities..." % i)
     
-    transaction.commit()
+    connection.commit()
 
 
     
