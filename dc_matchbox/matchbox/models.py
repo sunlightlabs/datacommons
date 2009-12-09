@@ -60,6 +60,17 @@ class EntityRef(models.CharField):
 entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
 
 class EntityManager(models.Manager):
+    
+    def with_id(self, entity_id):
+        return Entity.objects.filter(
+            Q(id=entity_id) | Q(attributes__namespace=EntityAttribute.ENTITY_ID_NAMESPACE, attributes__value=entity_id))
+    
+    def with_attribute(self, namespace, value=None):
+        qs = Entity.objects.filter(attributes__namespace=namespace)
+        if value:
+            qs = qs.filter(attributes__value=value)
+        return qs
+        
     # is this used?
     def merge(self, name, type_, entity_ids):
         new_entity = Entity(name=name, type=type_)
@@ -68,6 +79,7 @@ class EntityManager(models.Manager):
             for model, fields in entityref_cache.iteritems():
                 for field in fields:
                     model.objects.filter(**{field: old_entity}).update(**{field: new_entity})
+
 
 class Entity(models.Model):
     id = models.CharField(max_length=32, primary_key=True, default=lambda: uuid4().hex)
