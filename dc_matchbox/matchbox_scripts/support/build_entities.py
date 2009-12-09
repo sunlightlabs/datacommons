@@ -15,7 +15,6 @@ def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
-@transaction.commit_on_success
 def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_columns=[],
                       type_func=(lambda cursor, id: None), reviewer=__name__, timestamp = datetime.now()):
     """
@@ -70,7 +69,8 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             return (attribute[0:last_colon], attribute[last_colon + 1:])
         else:
             return None
-        
+
+    @transaction.commit_on_success
     def create_entity(id):
         aliases = transactional_aliases(id)
         attributes = transactional_attributes(id)
