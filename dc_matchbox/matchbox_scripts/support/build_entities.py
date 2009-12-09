@@ -70,7 +70,6 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         else:
             return None
 
-    @transaction.commit_on_success
     def create_entity(id):
         aliases = transactional_aliases(id)
         attributes = transactional_attributes(id)
@@ -107,6 +106,8 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             stmt = 'insert into %s (%s, %s, %s) values (%%s, %%s, %%s)' % \
                 (sql_names['entityattribute'], sql_names['entityattribute_entity'], sql_names['entityattribute_namespace'], sql_names['entityattribute_value'])
             cursor.execute(stmt, [id, namespace, value])
+            
+        transaction.commit()
 
     i = 0
     for (id,) in retrieve_entity_ids():            
