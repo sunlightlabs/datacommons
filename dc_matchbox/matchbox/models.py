@@ -20,20 +20,6 @@ class EntityRefCache(dict):
        
 entityref_cache = EntityRefCache()
 
-# class EntityRef(models.ForeignKey):
-#    
-#     def __init__(self, related_name, ignore=False, *args, **kwargs):
-#         kwargs['related_name'] = related_name
-#         kwargs['blank'] = True
-#         kwargs['null'] = True
-#         super(EntityRef, self).__init__(Entity, *args, **kwargs)
-#         self._ignore = ignore
-#        
-#     def contribute_to_class(self, cls, name):
-#         super(EntityRef, self).contribute_to_class(cls, name)
-#         if not self._ignore:
-#             entityref_cache.register(cls, name)
-
 class EntityRef(models.CharField):
    
     def __init__(self, related_name, ignore=False, *args, **kwargs):
@@ -86,10 +72,7 @@ class Entity(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
-    reviewer = models.CharField(max_length=255, default="")
-    #count = models.IntegerField(default=0)
-    
-
+    reviewer = models.CharField(max_length=255, default="")    
     
     def __unicode__(self):
         return self.name
