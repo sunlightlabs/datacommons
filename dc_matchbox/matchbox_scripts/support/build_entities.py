@@ -107,7 +107,6 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
                 (sql_names['entityattribute'], sql_names['entityattribute_entity'], sql_names['entityattribute_namespace'], sql_names['entityattribute_value'])
             cursor.execute(stmt, [id, namespace, value])
             
-        transaction.commit()
 
     i = 0
     for (id,) in retrieve_entity_ids():            
@@ -116,7 +115,10 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
             
             i += 1
             if i % 1000 == 0:
+                transaction.commit()
                 log("processed %d entities..." % i)
     
+    transaction.commit()
+
 
     
