@@ -7,7 +7,7 @@ from django.db import connection, transaction
 
 
 from datetime import datetime
-from matchbox.models import Entity, EntityAttribute, EntityAlias, sql_names
+from matchbox.models import EntityAttribute, sql_names
 from matchbox_scripts.build_matchbox import log
 
 
@@ -75,12 +75,19 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         aliases = transactional_aliases(id)
         attributes = transactional_attributes(id)
 
-        f = Entity.objects.filter(pk=id)
-        if f:
-            e = f[0]
+        stmt = 'select 1 from %s where %s = %%s' % (sql_names['entity'], sql_names['entity_id'])
+        cursor.execute(stmt, [id])
+        if cursor.rowcount:
             # don't re-add existing aliases and attributes
-            aliases -= set([alias.alias for alias in e.aliases.all()])
-            attributes -= set([(attr.namespace, attr.value) for attr in e.attributes.all()])
+            stmt = 'select %s from %s where %s = %%s' % (sql_names['entityalias_alias'], sql_names['entityalias'], sql_names['entityalias_entity'])
+            cursor.execute(stmt, [id])
+            aliases -= set([alias for (alias,) in cursor])
+
+            stmt = 'select %s, %s from %s where %s = %%s' % \
+                (sql_names['entityattribute_namespace'], sql_names['entityattribute_value'], sql_names['entityattribute'], sql_names['entityattribute_entity'])
+            cursor.execute(stmt, [id])
+            attributes -= set([(namespace, value) for (namespace, value) in cursor])
+
         else:
             attributes.add((EntityAttribute.ENTITY_ID_NAMESPACE, id))
             
@@ -91,7 +98,6 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
                 (sql_names['entity'], sql_names['entity_id'], sql_names['entity_name'], sql_names['entity_type'], sql_names['entity_reviewer'], sql_names['entity_timestamp'])
             
             cursor.execute(stmt, [id, name, type, reviewer, timestamp])
-            
             
         for alias in aliases:
             stmt = 'insert into %s (%s, %s) values (%%s, %%s)' % (sql_names['entityalias'], sql_names['entityalias_entity'], sql_names['entityalias_alias'])
