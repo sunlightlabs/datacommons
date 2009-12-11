@@ -3,13 +3,12 @@
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from psycopg2 import connect
-from settings import DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME
+#from psycopg2 import connect
+#from settings import DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME
+#
+#TEST_DATABASE_NAME = "test_" + DATABASE_NAME
 
-TEST_DATABASE_NAME = "test_" + DATABASE_NAME
 
-
-#from django.db import connection, transaction
 
 
 from datetime import datetime
