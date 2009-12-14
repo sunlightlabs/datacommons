@@ -13,6 +13,16 @@ from denormalize import *
 
 #####
 
+class RecipCodeFilter(Filter):
+    def __init__(self):
+        super(RecipCodeFilter, self).__init__()
+    def process_record(self, record):
+        if record['recip_code']:
+            recip_code = record['recip_code'].strip().upper()
+            record['recipient_party'] = recip_code[0]
+            record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
+        return record
+
 class RecipientFilter(Filter):
     def __init__(self, candidates):
         super(RecipientFilter, self).__init__()
@@ -35,6 +45,10 @@ class RecipientFilter(Filter):
                     else:
                         record['seat'] = 'federal:house'
                         record['district'] = "%s-%s" % (seat[:2], seat[2:])
+            result = candidate.get('recip_code', '').strip().upper()
+            if result and result[1] in ('W','L'):
+                record['seat_result'] = result[1]
+                
         return record
 
 class ContributorFilter(Filter):
@@ -45,9 +59,9 @@ class ContributorFilter(Filter):
         pac_id = record['pac_id'].upper()
         committee = self._committees.get('%s:%s' % (record['cycle'], pac_id), None)
         if committee:
-            record['recipient_name'] = committee['pac_short']
-            record['recipient_party'] = committee['party']
-            record['recipient_type'] = 'committee'
+            record['contributor_name'] = committee['pac_short']
+            record['contributor_party'] = committee['party']
+            record['contributor_type'] = 'committee'
         return record
 
 def main():
@@ -141,7 +155,7 @@ def main():
         SpecFilter(spec),
         
         #DebugEmitter(),
-        CountEmitter(every=100),
+        CountEmitter(every=1000),
         emitter,
         
     )
