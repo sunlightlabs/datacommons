@@ -9,7 +9,7 @@ import logging
 import os
 import saucebrush
 
-from denormalize import FIELDNAMES, load_catcodes, parse_date_iso, SpecFilter, FECOccupationFilter
+from denormalize import FIELDNAMES, load_catcodes, load_candidates, load_committees, parse_date_iso, SpecFilter, FECOccupationFilter
 
 #####
 
@@ -46,12 +46,19 @@ def main():
     tmppath = os.path.join(dataroot, 'denormalized')
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
-
-    catcodes = load_catcodes(dataroot)
     
     emitter = CSVEmitter(open(os.path.join(tmppath, 'denorm_pac2pac.csv'), 'w'), fieldnames=FIELDNAMES)
 
     files = Files(*[os.path.join(dataroot, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
+
+    print "Loading catcodes..."
+    catcodes = load_catcodes(dataroot)
+    
+    print "Loading candidates..."
+    candidates = load_candidates(dataroot)
+    
+    print "Loading committees..."
+    committees = load_committees(dataroot)
     
     spec = dict(((fn, None) for fn in FIELDNAMES))
     
@@ -69,10 +76,97 @@ def main():
         if s in catcodes:
             return catcodes[s]['catorder'].upper()
     
+    class RecipientFilter(Filter):
+        def __init__(self, candidates, committees):
+            super(RecipientFilter, self).__init__()
+            self._candidates = candidates
+            self._committees = committees
+        def process_record(self, record):
+            recip_id = record['recip_id'].strip().upper()
+            if recip_id:
+                if recip_id.startswith('N'):
+                    candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
+                    if candidate:
+                        record['recipient_urn'] = candidate_urn(recip_id)
+                        record['recipient_name'] = candidate['first_last_p']
+                        record['recipient_party'] = candidate['party']
+                        record['recipient_type'] = 'politician'
+                        record['seat_status'] = candidate['crp_ico']
+                        seat = candidate['dist_id_run_for'].upper()
+                        if len(seat) == 4:
+                            if seat == 'PRES':
+                                record['seat'] = 'federal:president'
+                            else:
+                                if seat[2] == 'S':
+                                    record['seat'] = 'federal:senate'
+                                else:
+                                    record['seat'] = 'federal:house'
+                                    record['district'] = "%s-%s" % (seat[:2], seat[2:])
+                elif recip_id.startswith('C'):
+                    committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
+                    record['recipient_urn'] = committee_urn(recip_id)
+                    if committee:
+                        record['recipient_name'] = committee['pac_short']
+                        record['recipient_party'] = committee['party']
+                        record['recipient_type'] = 'committee'
+                    else:
+                        print "no committee for %s" % recip_id
+                else:
+                    print "!!!!!!!!!! invalid recipient %s" % recip_id
+            return record
+    
+    class CommitteeFilter(Filter):
+        def __init__(self, committees):
+            super(CommitteeFilter, self).__init__()
+            self._committees = committees
+        def process_record(self, record):
+            committee_urn = record.get('committee_urn', None)
+            if committee_urn:
+                cmte_id = committee_urn.rsplit(":", 1)[1]
+                committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
+                if committee:
+                    record['committee_name'] = committee['pac_short']
+                    record['committee_party'] = committee['party']
+            return record
+            
+    class ContribRecipFilter(Filter):
+
+        def process_record(self, record):
+            
+            filer_urn = committee_urn(record['filer_id'])
+            filer_name = record['contrib_lend_trans'].strip()
+            other_urn = committee_urn(record['other_id'])
+            trans_type = record['type'].strip().upper()
+            if trans_type.startswith('1'):
+                record['committee_urn'] = filer_urn
+                record['contributor_name'] = filer_name
+                record['contributor_urn'] = other_urn
+            elif trans_type.startswith('2'):
+                record['contributor_urn'] = filer_urn
+                record['committee_name'] = filer_name
+                record['committee_urn'] = other_urn
+                
+            donor_name = record['donor_cmte'].strip()
+            if donor_name:
+                record['contributor_name'] = donor_name
+
+            return record
+            
+    class RecipCodeFilter(Filter):
+        def process_record(self, record):
+            if record['recip_code']:
+                recip_code = record['recip_code'].strip().upper()
+                record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
+            return record
+    
     saucebrush.run_recipe(
         
-        # load source
+        # load sources
         CSVSource(files, fieldnames=FILE_TYPES['pac_other']),
+        
+        ContribRecipFilter(),
+        CommitteeFilter(committees),
+        RecipientFilter(candidates, committees),
         
         # transaction filters
         FieldAdder('transaction_namespace', 'urn:fec:transaction'),
@@ -85,25 +179,28 @@ def main():
         # date stamp
         FieldModifier('datestamp', parse_date_iso),
         
-        # contributor and recipient fields
-        # FieldMerger({'contributor_urn': ('pac_id',)}, committee_urn),
-        #         FieldAdder('contributor_type', 'committee'),
-        #         FieldMerger({'recipient_urn': ('cid',)}, candidate_urn),
-        #         FieldAdder('recipient_type', 'politician'),
-        
         # catcode
-        FieldRenamer({'contributor_name': 'donor_cmte'}),
         FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
         FieldMerger({'contributor_category_order': ('real_code',)}, real_code, keep_fields=True),
+        FieldMerger({'recipient_category': ('recip_prim_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
+        FieldMerger({'recipient_category_order': ('recip_prim_code',)}, real_code, keep_fields=True),
         
         FieldRenamer({'contributor_city': 'city',
-                      'conitrbutor_zipcode': 'zipcode'}),
-        FieldModifier('contributor_state', lambda s: s.upper() if s else None),
+                      'contributor_state': 'state',
+                      'contributor_zipcode': 'zipcode',
+                      'contributor_occupation': 'fec_occ_emp',
+                      'recipient_party': 'party',}),
+        FieldModifier('contributor_state', lambda s: s.strip().upper() if s else None),
+        
+        FieldAdder('contributor_type', 'committee'),
         
         # add static fields
         FieldAdder('jurisdiction', 'F'),
         FieldMerger({'is_amendment': ('amend',)}, lambda s: s.strip().upper() != 'N'),
         FieldAdder('election_type', 'G'),
+        
+        # recip_code
+        RecipCodeFilter(),
         
         # filter through spec
         SpecFilter(spec),
