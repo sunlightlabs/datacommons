@@ -21,36 +21,35 @@ class OrgSplitter(YieldFilter):
         org_name = record['organization_name'].strip()
         if org_name:
             yield {
-                'organization_entity': None,
-                'organization_name': org_name,
-                'type': 'child',
+                'id': None,
+                'name': org_name,
             }
         org_name = record['parent_organization_name'].strip()
         if org_name:
             yield {
-                'organization_entity': None,
-                'organization_name': org_name,
-                'type': 'parent',
+                'id': None,
+                'name': org_name,
             }
 
 class EntityEmitter(CSVEmitter):
     
     fields = ('id','name','type','timestamp','reviewer')
     
-    def __init__(self, csvfile, timestamp):
+    def __init__(self, csvfile, namespace, timestamp):
         super(EntityEmitter, self).__init__(csvfile, self.fields)
+        self._namespace = namespace
         self._timestamp = timestamp
         self._cache = { }
         
     def emit_record(self, record):
-        org_name = record['organization_name']
-        urn = 'urn:matchbox:name:%s' % basic_normalizer(org_name.decode('utf-8', 'ignore'))
+        org_name = record['name']
+        urn = '%s:%s' % (self._namespace, basic_normalizer(org_name.decode('utf-8', 'ignore')))
         entity_id = md5(urn).hexdigest()
         if entity_id not in self._cache:
             self._cache[entity_id] = None
-            record['organization_entity'] = md5(urn).hexdigest()
+            record['id'] = md5(urn).hexdigest()
             super(EntityEmitter, self).emit_record(dict(zip(self.fields, (
-                record['organization_entity'],
+                record['id'],
                 org_name,
                 'organization',
                 self._timestamp,
@@ -66,9 +65,9 @@ class EntityAttributeEmitter(CSVEmitter):
         
     def emit_record(self, record):
         super(EntityAttributeEmitter, self).emit_record(dict(zip(self.fields, (
-            record['organization_entity'],
+            record['id'],
             'urn:matchbox:entity',
-            record['organization_entity'],
+            record['id'],
         ))))
 
 
@@ -81,8 +80,8 @@ class EntityAliasEmitter(CSVEmitter):
         
     def emit_record(self, record):
         super(EntityAliasEmitter, self).emit_record(dict(zip(self.fields, (
-            record['organization_entity'],
-            record['organization_name'],
+            record['id'],
+            record['name'],
         ))))
 
 
