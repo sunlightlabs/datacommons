@@ -3,13 +3,6 @@
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-#from psycopg2 import connect
-#from settings import DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME
-#
-#TEST_DATABASE_NAME = "test_" + DATABASE_NAME
-
-
-
 
 from datetime import datetime
 from matchbox.models import EntityAttribute, sql_names
@@ -20,8 +13,8 @@ def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
-def populate_entities(transaction_table, entity_name_column, entity_id_column, alias_columns=[], attribute_columns=[],
-                      type_func=(lambda cursor, id: None), reviewer=__name__, timestamp = datetime.now()):
+def populate_entities(transaction_table, entity_id_column, name_column, attribute_column,
+                      type, reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
     
@@ -32,42 +25,20 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
     """
     
     from django.db import connection, transaction
-    #connection = connect("host='%s' user='%s' password='%s' dbname='%s'" % (DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME))
     cursor = connection.cursor()
     
-    def retrieve_entity_ids():
+    def query_entity_data():
         loop_cursor = connection.cursor()
-        stmt = "select %s from %s group by %s" % (entity_id_column, transaction_table, entity_id_column)
+        stmt = """select %(entity)s, %(name)s, %(attribute)s 
+                from %(table)s 
+                where %(entity)s is not null 
+                group by %(entity)s, %(name)s, %(attribute)s""" \
+                % {'table': transaction_table,
+                   'entity': entity_id_column,
+                   'name': name_column,
+                   'attribute': attribute_column}
         loop_cursor.execute(stmt)
         return loop_cursor
-    
-    def transactional_aliases(id):
-        result = set()
-        for alias_column in alias_columns:
-            stmt = "select %s from %s where %s = %%s and length(%s) > 0 group by %s" % (alias_column, transaction_table, entity_id_column, alias_column, alias_column)
-            cursor.execute(stmt,[id])
-            for (alias,) in cursor:
-                result.add(alias)
-        return result   
-    
-    def transactional_attributes(id):
-        result = set()
-        for attribute_column in attribute_columns:
-            stmt = "select %s from %s where %s = %%s and length(%s) > 0 group by %s" % (attribute_column, transaction_table, entity_id_column, attribute_column, attribute_column)
-            cursor.execute(stmt,[id])
-            for (attribute,) in cursor:
-                (namespace, value) = attribute_name_value_pair(attribute) or ('', '')
-                if namespace and value:
-                    result.add((namespace, value))
-        return result      
-
-    def get_a_name(id):
-        stmt = "select %s from %s where %s = %%s and length(%s) > 0 limit 1" % (entity_name_column, transaction_table, entity_id_column, entity_name_column)
-        cursor.execute(stmt, [id])
-        if cursor.rowcount:
-            return cursor.fetchone()[0]
-        else:
-            return 'Unknown'
     
     def attribute_name_value_pair(attribute):
         attribute = attribute.strip()
@@ -77,9 +48,9 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         else:
             return None
 
-    def create_entity(id):
-        aliases = transactional_aliases(id)
-        attributes = transactional_attributes(id)
+    def create_entity(id, aliases, attributes):
+        if not id:
+            return
 
         stmt = 'select 1 from %s where %s = %%s' % (sql_names['entity'], sql_names['entity_id'])
         cursor.execute(stmt, [id])
@@ -97,8 +68,7 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
         else:
             attributes.add((EntityAttribute.ENTITY_ID_NAMESPACE, id))
             
-            name = get_a_name(id)
-            type = type_func(cursor, id)
+            name = aliases.__iter__().next() if len(aliases) > 0 else 'Unknown'
             
             stmt = 'insert into %s (%s, %s, %s, %s, %s) values (%%s, %%s, %%s, %%s, %%s)' % \
                 (sql_names['entity'], sql_names['entity_id'], sql_names['entity_name'], sql_names['entity_type'], sql_names['entity_reviewer'], sql_names['entity_timestamp'])
@@ -116,14 +86,31 @@ def populate_entities(transaction_table, entity_name_column, entity_id_column, a
 
 
     i = 0
-    for (id,) in retrieve_entity_ids():            
-        if id:
-            create_entity(id)
+    prev_id = None
+    names = set()
+    attributes = set()
+    
+    for (id, name, attribute) in query_entity_data():            
+        if prev_id != id:
+            create_entity(prev_id, names, attributes)
             
             i += 1
             if i % 1000 == 0:
                 transaction.commit()
                 log("processed %d entities..." % i)
+            
+            prev_id = id
+            names.clear()
+            attributes.clear()
+
+        if name:
+            names.add(name)
+        if attribute:
+            (namespace, value) = attribute_name_value_pair(attribute) or ('', '')
+            if namespace and value:
+                attributes.add((namespace, value))
+
+    create_entity(prev_id, names, attributes)
     
     transaction.commit()
 

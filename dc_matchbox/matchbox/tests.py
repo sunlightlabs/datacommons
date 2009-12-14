@@ -53,10 +53,10 @@ class TestQueries(unittest.TestCase):
             self.save_contribution(org_name, org_entity)
 
         populate_entities(sql_names['contribution'], 
-                          sql_names['contribution_organization_name'], 
                           sql_names['contribution_organization_entity'], 
-                          [sql_names['contribution_organization_name']],
-                          [sql_names['contribution_organization_urn']])
+                          sql_names['contribution_organization_name'],
+                          sql_names['contribution_organization_urn'],
+                          'organization')
         
         orphan = Entity(name=u'Avacado')
         orphan.save()
@@ -113,10 +113,10 @@ class TestQueries(unittest.TestCase):
                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'],
-                  sql_names['contribution_recipient_name'],
                   sql_names['contribution_recipient_entity'],
-                  [sql_names['contribution_recipient_name']],
-                  [sql_names['contribution_recipient_urn']])
+                  sql_names['contribution_recipient_name'],
+                  sql_names['contribution_recipient_urn'],
+                  'fruits')
         
         self.assertEqual(3, Entity.objects.count())
         
@@ -156,11 +156,10 @@ class TestQueries(unittest.TestCase):
                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'],
-                          sql_names['contribution_recipient_name'],
                           sql_names['contribution_recipient_entity'],
-                          [sql_names['contribution_recipient_name']],
-                          [sql_names['contribution_recipient_urn']],
-                          get_a_recipient_type)
+                          sql_names['contribution_recipient_name'],
+                          sql_names['contribution_recipient_urn'],
+                          'to do')
         
         self.assertEqual(1, Entity.objects.filter(type='committee').count())
         self.assertEqual(1, Entity.objects.filter(type='committee', name='Apple Council').count())
