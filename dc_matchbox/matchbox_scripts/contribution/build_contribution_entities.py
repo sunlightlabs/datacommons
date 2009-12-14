@@ -8,25 +8,17 @@ import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 
-from dcdata.contribution.models import sql_names, Contribution
+from dcdata.contribution.models import sql_names
 
 
-def get_a_recipient_type(cursor, id):
-    """
-    Return either 'committee' or 'politician' based on the recipient_type of an arbitrary transaction with the given id.
-    """
-    
-    t = Contribution.objects.filter(recipient_entity=id)[:1][0]
-    if t.recipient_type == 'C':
+def get_recipient_type(types):
+    if 'C' in types:
         return 'committee'
-    elif t.recipient_type == 'P':
-        return 'politician'
+    return 'politician'
 
-def get_a_contributor_type(cursor, id):
-    stmt = "select %s from %s where %s = %%s limit 1" % (sql_names['contribution_contributor_type'], sql_names['contribution'], sql_names['contribution_contributor_entity'])
-    cursor.execute(stmt, [id])
-    if cursor.rowcount and cursor.fetchone()[0] == 'C':
-            return 'committee'    
+def get_contributor_type(types):
+    if 'C' in types:
+        return 'committee'    
     return 'individual'
     
     
@@ -35,43 +27,40 @@ def run():
     
     log("Building contributor entities...")
     populate_entities(sql_names['contribution'],
-                      sql_names['contribution_contributor_name'],
                       sql_names['contribution_contributor_entity'],
-                      [sql_names['contribution_contributor_name']],
-                      [sql_names['contribution_contributor_urn']],
-                       get_a_contributor_type)
+                      sql_names['contribution_contributor_name'],
+                      sql_names['contribution_contributor_urn'],
+                      get_contributor_type,
+                      sql_names['contribution_contributor_type'])
     
     log("Building organization entities...")
     populate_entities(sql_names['contribution'], 
-                      sql_names['contribution_organization_name'], 
                       sql_names['contribution_organization_entity'],
-                      [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                      [sql_names['contribution_organization_urn']],
-                      (lambda cursor, id: 'organization'))   
+                      sql_names['contribution_organization_name'], # to do: sql_names['contribution_contributor_employer']],
+                      sql_names['contribution_organization_urn'],
+                      'organization')   
      
     log("Building parent organization entities...")
     populate_entities(sql_names['contribution'], 
-                      sql_names['contribution_parent_organization_name'], 
                       sql_names['contribution_parent_organization_entity'],
-                      [sql_names['contribution_parent_organization_name']],
-                      [sql_names['contribution_parent_organization_urn']],
-                      (lambda cursor, id: 'organization'))
+                      sql_names['contribution_parent_organization_name'],
+                      sql_names['contribution_parent_organization_urn'],
+                      'organization')
     
     log("Building recipient entities...")
     populate_entities(sql_names['contribution'],
-                      sql_names['contribution_recipient_name'],
                       sql_names['contribution_recipient_entity'],
-                      [sql_names['contribution_recipient_name']],
-                      [sql_names['contribution_recipient_urn']],
-                      get_a_recipient_type)
+                      sql_names['contribution_recipient_name'],
+                      sql_names['contribution_recipient_urn'],
+                      get_recipient_type,
+                      sql_names['contribution_recipient_type'])
     
     log("Building committee entities...")
     populate_entities(sql_names['contribution'],
-                      sql_names['contribution_committee_name'],
                       sql_names['contribution_committee_entity'],
                       [sql_names['contribution_committee_name']],
                       [sql_names['contribution_committee_urn']],
-                      (lambda cursor, id: 'committee'))
+                      'committee')
     
     
 from matchbox_scripts.support.build_entities import populate_entities

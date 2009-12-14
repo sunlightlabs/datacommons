@@ -14,7 +14,7 @@ def quote(value):
 
 
 def populate_entities(transaction_table, entity_id_column, name_column, attribute_column,
-                      type, reviewer=__name__, timestamp = datetime.now()):
+                      type_determiner, type_column=None, reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
     
@@ -29,14 +29,16 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
     
     def query_entity_data():
         loop_cursor = connection.cursor()
-        stmt = """select %(entity)s, %(name)s, %(attribute)s 
+        stmt = """select %(entity)s, %(name)s, %(attribute)s %(type_result)s 
                 from %(table)s 
                 where %(entity)s is not null 
-                group by %(entity)s, %(name)s, %(attribute)s""" \
+                group by %(entity)s, %(name)s, %(attribute)s %(type_column)s""" \
                 % {'table': transaction_table,
                    'entity': entity_id_column,
                    'name': name_column,
-                   'attribute': attribute_column}
+                   'attribute': attribute_column,
+                   'type_result': ', ' + type_column if type_column else ", ''",
+                   'type_column': ', ' + type_column if type_column else ''}
         loop_cursor.execute(stmt)
         return loop_cursor
     
@@ -48,7 +50,7 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
         else:
             return None
 
-    def create_entity(id, aliases, attributes):
+    def create_entity(id, aliases, attributes, types):
         if not id:
             return
 
@@ -69,11 +71,15 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
             attributes.add((EntityAttribute.ENTITY_ID_NAMESPACE, id))
             
             name = aliases.__iter__().next() if len(aliases) > 0 else 'Unknown'
+            if callable(type_determiner):
+                type_val = type_determiner(types)
+            else:
+                type_val = type_determiner
             
             stmt = 'insert into %s (%s, %s, %s, %s, %s) values (%%s, %%s, %%s, %%s, %%s)' % \
                 (sql_names['entity'], sql_names['entity_id'], sql_names['entity_name'], sql_names['entity_type'], sql_names['entity_reviewer'], sql_names['entity_timestamp'])
             
-            cursor.execute(stmt, [id, name, type, reviewer, timestamp])
+            cursor.execute(stmt, [id, name, type_val, reviewer, timestamp])
             
         for alias in aliases:
             stmt = 'insert into %s (%s, %s) values (%%s, %%s)' % (sql_names['entityalias'], sql_names['entityalias_entity'], sql_names['entityalias_alias'])
@@ -89,10 +95,11 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
     prev_id = None
     names = set()
     attributes = set()
+    types = set()
     
-    for (id, name, attribute) in query_entity_data():            
+    for (id, name, attribute, type) in query_entity_data():            
         if prev_id != id:
-            create_entity(prev_id, names, attributes)
+            create_entity(prev_id, names, attributes, types)
             
             i += 1
             if i % 1000 == 0:
@@ -102,6 +109,7 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
             prev_id = id
             names.clear()
             attributes.clear()
+            types.clear()
 
         if name:
             names.add(name)
@@ -109,8 +117,10 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
             (namespace, value) = attribute_name_value_pair(attribute) or ('', '')
             if namespace and value:
                 attributes.add((namespace, value))
+        if type:
+            types.add(type)
 
-    create_entity(prev_id, names, attributes)
+    create_entity(prev_id, names, attributes, types)
     
     transaction.commit()
 

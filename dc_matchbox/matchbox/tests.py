@@ -7,7 +7,7 @@ import unittest
 from dcdata.contribution.models import Contribution, sql_names
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
-from matchbox_scripts.contribution.build_contribution_entities import get_a_recipient_type
+from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
 from matchbox_scripts.support.build_entities import populate_entities
 from matchbox_scripts.support.normalize_database import normalize
 from strings.normalizer import basic_normalizer
@@ -159,7 +159,8 @@ class TestQueries(unittest.TestCase):
                           sql_names['contribution_recipient_entity'],
                           sql_names['contribution_recipient_name'],
                           sql_names['contribution_recipient_urn'],
-                          'to do')
+                          get_recipient_type,
+                          sql_names['contribution_recipient_type'])
         
         self.assertEqual(1, Entity.objects.filter(type='committee').count())
         self.assertEqual(1, Entity.objects.filter(type='committee', name='Apple Council').count())
@@ -182,11 +183,12 @@ class TestQueries(unittest.TestCase):
         Normalization.objects.create(original="Appetite", normalized="appetite")
         
         result = search_entities_by_name(u'app', 'organization')
-        expected = [['Apple', 2]]
+        
+        (id, name, count) = result.fetchone()
+        
+        self.assertTrue(name in ['Apple', 'Apple Juice'])
+        self.assertEqual(2, count)
 
-        for ((expected_name, expected_count), (id, name, count)) in zip(expected, result):
-            self.assertEqual(expected_name, name)
-            self.assertEqual(expected_count, count)
             
     def test_merge_entities(self):
         new_id = merge_entities((self.apple_id, self.apricot_id), Entity(name=u"Applicot"))
