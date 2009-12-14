@@ -2,9 +2,9 @@
 from hashlib import md5
 from saucebrush import run_recipe
 from saucebrush.sources import CSVSource
-from saucebrush.filters import YieldFilter
-from saucebrush.emitters import CSVEmitter, DebugEmitter
+from saucebrush.filters import YieldFilter, Filter
 from strings.normalizer import basic_normalizer
+from util import EntityEmitter, EntityAliasEmitter, EntityAttributeEmitter
 import saucebrush
 import datetime
 import sys
@@ -15,74 +15,44 @@ import os
 """
 
 FILENAME = u"contrib_orgs_%s.csv"
+NAMESPACE = u"urn:matchbox:organization"
 
-class OrgSplitter(YieldFilter):
+def gen_id(org_name):
+    urn = '%s:%s' % (NAMESPACE, basic_normalizer(org_name.decode('utf-8', 'ignore')))
+    return md5(urn).hexdigest()
+
+class UniqueNameFilter(Filter):
+    
+    def __init__(self):
+        super(UniqueNameFilter, self).__init__();
+        self._cache = {}
+        
     def process_record(self, record):
-        org_name = record['organization_name'].strip()
-        if org_name:
-            yield {
-                'id': None,
-                'name': org_name,
-            }
-        org_name = record['parent_organization_name'].strip()
-        if org_name:
-            yield {
-                'id': None,
-                'name': org_name,
-            }
+        if record['name'] not in self._cache:
+            self._cache[record['name']] = None
+            return record
+            
+class UniqueIDFilter(Filter):
 
-class EntityEmitter(CSVEmitter):
-    
-    fields = ('id','name','type','timestamp','reviewer')
-    
-    def __init__(self, csvfile, namespace, timestamp):
-        super(EntityEmitter, self).__init__(csvfile, self.fields)
-        self._namespace = namespace
-        self._timestamp = timestamp
-        self._cache = { }
-        
-    def emit_record(self, record):
-        org_name = record['name']
-        urn = '%s:%s' % (self._namespace, basic_normalizer(org_name.decode('utf-8', 'ignore')))
-        entity_id = md5(urn).hexdigest()
-        if entity_id not in self._cache:
-            self._cache[entity_id] = None
-            record['id'] = md5(urn).hexdigest()
-            super(EntityEmitter, self).emit_record(dict(zip(self.fields, (
-                record['id'],
-                org_name,
-                'organization',
-                self._timestamp,
-                'basic entity script - jcarbaugh',
-            ))))
+    def __init__(self):
+        super(UniqueIDFilter, self).__init__();
+        self._cache = {}
 
-class EntityAttributeEmitter(CSVEmitter):
-    
-    fields = ('entity','namespace','value')
-    
-    def __init__(self, csvfile):
-        super(EntityAttributeEmitter, self).__init__(csvfile, self.fields)
-        
-    def emit_record(self, record):
-        super(EntityAttributeEmitter, self).emit_record(dict(zip(self.fields, (
-            record['id'],
-            'urn:matchbox:entity',
-            record['id'],
-        ))))
+    def process_record(self, record):
+        if record['id'] not in self._cache:
+            self._cache[record['id']] = None
+            return record
 
-
-class EntityAliasEmitter(CSVEmitter):
+class ParentChildOrgSplitter(YieldFilter):
     
-    fields = ('entity','alias')
-    
-    def __init__(self, csvfile):
-        super(EntityAliasEmitter, self).__init__(csvfile, self.fields)
-        
-    def emit_record(self, record):
-        super(EntityAliasEmitter, self).emit_record(dict(zip(self.fields, (
-            record['id'],
-            record['name'],
-        ))))
+    def process_record(self, record):
+        for key in ('organization_name', 'parent_organization_name'):
+            org_name = record[key].strip()
+            if org_name:
+                yield {
+                    'id': gen_id(org_name),
+                    'name': org_name,
+                }
 
 
 def extract_organizations(infile):
@@ -91,10 +61,12 @@ def extract_organizations(infile):
     
     run_recipe(
         CSVSource(infile),
-        OrgSplitter(),
+        ParentChildOrgSplitter(),
+        UniqueNameFilter(),
+        EntityAliasEmitter(open(FILENAME % 'entity_alias', 'w')),
+        UniqueIDFilter(),
         EntityEmitter(open(FILENAME % 'entity', 'w'), now),
         EntityAttributeEmitter(open(FILENAME % 'entity_attribute', 'w')),
-        EntityAliasEmitter(open(FILENAME % 'entity_alias', 'w')),
     )
 
 
