@@ -33,10 +33,6 @@ def normalize(source_columns, normalizer):
     cursor = connection.cursor()
     source_names = set()
     
-    # to do: when loading the resulting SQL into the DB we're getting lots of duplicate warnings.
-    # this is probably because the source_name set is case sensitive, whereas the DB is case insensitive.
-    # should probably lowercase every string before adding to source_names. 
-    
     for (table, column_list) in source_columns:
         for column in column_list:
             add_column(cursor, sql_names[table], sql_names[column], source_names)
