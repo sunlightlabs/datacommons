@@ -3,3 +3,4 @@
 pip-log.txt
 local_settings.py
 data/
+tmp/
