@@ -58,8 +58,8 @@ def run():
     log("Building committee entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_committee_entity'],
-                      [sql_names['contribution_committee_name']],
-                      [sql_names['contribution_committee_urn']],
+                      sql_names['contribution_committee_name'],
+                      sql_names['contribution_committee_urn'],
                       'committee')
     
     
