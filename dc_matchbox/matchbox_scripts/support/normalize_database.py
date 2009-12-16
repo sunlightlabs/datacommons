@@ -1,13 +1,15 @@
 
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from django.db import connection
+from django.db import connection, transaction
 
 import sys
 
-from matchbox.models import Normalization, sql_names
+from matchbox.models import Normalization
+from matchbox_scripts.build_matchbox import log
 
-def normalize(source_columns, normalizer):
+
+def normalize(source_table, source_column, normalizer):
     """
     Populate the normalizations table using normalizer on source_columns.
     
@@ -19,9 +21,7 @@ def normalize(source_columns, normalizer):
     def add_column(cursor, source_table, source_column, result_set):
         """ Add all strings from the given column to result_set. """
         
-        stmt = "select distinct %(column)s from %(table)s" % \
-                {'column': source_column, 'table': source_table}
-        cursor.execute(stmt)
+
         for row in cursor:
             assert len(row) == 1
             try:
@@ -31,15 +31,23 @@ def normalize(source_columns, normalizer):
 
 
     cursor = connection.cursor()
-    source_names = set()
     
-    for (table, column_list) in source_columns:
-        for column in column_list:
-            add_column(cursor, sql_names[table], sql_names[column], source_names)
+    stmt = "select %(column)s from %(table)s group by %(column)s" % \
+                {'column': source_column, 'table': source_table}
+    cursor.execute(stmt)
             
-    for name in source_names:
+    i = 0
+    for row in cursor:
+        name = row[0].decode('utf_8') 
         row = Normalization(original=name, normalized=normalizer(name))
         row.save()
+        
+        i += 1
+        if i % 1000 == 0:
+            transaction.commit()
+            log("processed %d normalizations..." % i)   
+    
+    transaction.commit()         
         
         
     

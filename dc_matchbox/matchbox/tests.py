@@ -9,9 +9,11 @@ from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
 from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
 from matchbox_scripts.support.build_entities import populate_entities
+from matchbox_scripts.contribution.normalize_contributions import run as run_normalization_script
 from matchbox_scripts.support.normalize_database import normalize
 from strings.normalizer import basic_normalizer
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses
+
 
 
 
@@ -62,7 +64,7 @@ class TestQueries(unittest.TestCase):
         orphan.save()
         orphan.aliases.create(alias=u'Avacado')
         
-        normalize([('entityalias', ['entityalias_alias'])], basic_normalizer)
+        run_normalization_script()
         
         
     def test_populate_entities(self):
@@ -317,4 +319,6 @@ class TestUtils(unittest.TestCase):
         self.assertEqual("+apple +computer, +inc.", _prepend_pluses("apple computer, inc."))
         self.assertEqual("+Procter +& +Gamble", _prepend_pluses("Procter & Gamble"))
         self.assertEqual("+Emily's +List", _prepend_pluses("Emily's List"))
+        
+    
         

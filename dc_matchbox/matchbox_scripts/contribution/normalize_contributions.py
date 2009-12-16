@@ -7,11 +7,10 @@ Relies on: contribution_organization_name column in contribution_contribution ta
 
 from strings.normalizer import basic_normalizer
 from matchbox_scripts.support.normalize_database import normalize
-
-columns = [('entityalias', ['entityalias_alias'])]
+from matchbox.models import sql_names
 
 def run():
-    normalize(columns, basic_normalizer)
+    normalize(sql_names['entityalias'], sql_names['entityalias_alias'], basic_normalizer)
     
 
 if __name__ == "main":
