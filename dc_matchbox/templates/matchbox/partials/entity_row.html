@@ -1,9 +1,9 @@
 <li id="{{ entity.id }}">
     <p class="actions">
         <span>{{ entity.count }}</span>
-        <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google" target="_blank">G</a>
-        <a href="{% url matchbox_entity entity.id %}" class="detail" target="_blank">D</a>
-        <a href="{% url matchbox_entity entity.id %}" class="notes">N({{ entity.notes.all.count }})</a>
+        <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google" target="_blank">Google</a>
+        <a href="{% url matchbox_entity entity.id %}" class="detail" target="_blank">Details</a>
+        <a href="{% url matchbox_entity entity.id %}" class="notes" title="notes">{{ entity.notes.all.count }}</a>
     </p>
     <input class="selector" type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
     <a class="transactions_control ui-icon ui-icon-triangle-1-e" href="{% url matchbox_entity_transactions entity.id %}">V</a>

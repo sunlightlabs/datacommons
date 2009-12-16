@@ -91,7 +91,29 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 #content ul#entities li { clear: both; padding: 5px; }
 #content ul#entities li:hover { background-color: #F2F1F0; }
 #content ul#entities li.odd { background-color: #F2F1F0; }
+
 #content ul#entities li p.actions { float: right; margin: 0; padding: 0; }
+#content ul#entities li p.actions a.google {
+    background: url(../images/google.png) top left no-repeat;
+    display: block;
+    text-indent: -9999em;
+    height: 22px;
+    width: 22px;
+}
+#content ul#entities li p.actions a.detail {
+    background: url(../images/detail.png) top left no-repeat;
+    display: block;
+    text-indent: -9999em;
+    height: 22px;
+    width: 22px;
+}
+#content ul#entities li p.actions a.notes {
+    background: url(../images/notes.png) top left no-repeat;
+    display: block;
+    height: 22px;
+    width: 40px;
+}
+
 #content ul#entities li a.transactions_control { display: inline-block; }
 #content ul#entities li div.details_container {
     clear: both;
