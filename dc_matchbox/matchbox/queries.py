@@ -14,9 +14,10 @@ from strings.normalizer import basic_normalizer
 
 _entities_by_name_query = "select distinct e.id, e.name \
                             from \
-                                (select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s \
+                                ((select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s limit 500)\
                                  union distinct \
-                                select distinct %(normalization_original)s from %(normalization)s where %(normalization_original)s @@ to_tsquery('simple', %%s)) n \
+                                (select distinct %(normalization_original)s from %(normalization)s \
+                                    where to_tsvector('simple', %(normalization_original)s) @@ to_tsquery('simple', %%s) limit 500)) n \
                             inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
                             inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s \
                             where e.%(entity_type)s = %%s" % sql_names
