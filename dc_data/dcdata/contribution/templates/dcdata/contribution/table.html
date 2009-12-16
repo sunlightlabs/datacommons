@@ -18,7 +18,15 @@
     		</td>
     		<td>{{ contrib.datestamp|date:"M d, Y" }}</td>
     		<td>${{ contrib.amount }}</td>
-    		<td>{{ contrib.contributor_name }}</td>
+    		<td>
+    		    {% if contrib.contributor_entity %}
+    		        <a href="{% url matchbox_entity contrib.contributor_entity %}">
+    		            {{ contrib.contributor_name }}
+    		        </a>
+    		    {% else %}
+    		        {{ contrib.contributor_name }}
+    		    {% endif %}
+    		</td>
     		<td>{{ contrib.contributor_address }}</td>
     		<td>{{ contrib.contributor_city }}</td>
     		<td>{{ contrib.contributor_state }}</td>
