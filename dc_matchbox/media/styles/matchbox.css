@@ -109,8 +109,11 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 }
 #content ul#entities li p.actions a.notes {
     background: url(../images/notes.png) top left no-repeat;
+    color: #555;
     display: inline-block;
+    font-size: 120%;
     padding-left: 25px;
+    text-decoration: none;
     height: 22px;
     width: 40px;
 }
