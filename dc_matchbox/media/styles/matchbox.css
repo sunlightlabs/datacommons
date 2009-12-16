@@ -95,21 +95,21 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 #content ul#entities li p.actions { float: right; margin: 0; padding: 0; }
 #content ul#entities li p.actions a.google {
     background: url(../images/google.png) top left no-repeat;
-    display: block;
+    display: inline-block;
     text-indent: -9999em;
     height: 22px;
     width: 22px;
 }
 #content ul#entities li p.actions a.detail {
     background: url(../images/detail.png) top left no-repeat;
-    display: block;
+    display: inline-block;
     text-indent: -9999em;
     height: 22px;
     width: 22px;
 }
 #content ul#entities li p.actions a.notes {
     background: url(../images/notes.png) top left no-repeat;
-    display: block;
+    display: inline-block;
     height: 22px;
     width: 40px;
 }
