@@ -14,5 +14,6 @@ urlpatterns += patterns('matchbox.views',
     url(r'^search/google/$', 'google_search', name='matchbox_google_search'),
     url(r'^search/$', 'search', name='matchbox_search'),
     url(r'^queue/(?P<queue_id>\d+)/$', 'queue', name='matchbox_queue'),
+    url(r'^debug/search/$', 'debug_search', name='matchbox_debug_search'),
     url(r'^$', 'dashboard', name='matchbox_dashboard'),
 )
