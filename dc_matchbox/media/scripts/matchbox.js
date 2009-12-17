@@ -342,7 +342,7 @@ $().ready(function() {
     });
     
     // attache merge button action
-    $('#merge_button').click(function() {
+    $('#faux_merge_form').submit(function() {
         if (Matchbox.MergeManager.typeFilter) {
             $('#merge_form').append(
                 $('<input type="hidden" name="type_filter" value="' + Matchbox.typeFilter + '">'));
@@ -357,7 +357,7 @@ $().ready(function() {
         }
     	$('#new_name').val( $('#merge_name').val() );
     	$('#new_type').val( $('#type_filter').val() );
-        $('#merge_form').trigger('submit');
+    	$('#merge_form').trigger('submit');
         return false;
     });
         
