@@ -17,6 +17,27 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
               'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type',
               'district', 'seat', 'seat_status', 'seat_result']
 
+SPEC = dict(((fn, None) for fn in FIELDNAMES))
+
+
+# functions for adding the namespace prefix to IDs
+def candidate_urn(s):    
+    return 'urn:crp:candidate:%s' % s.strip().upper() if s else None        
+
+def contributor_urn(s):
+    return 'urn:crp:individual:%s' % s.strip().upper() if s else None
+
+def committee_urn(s):
+    return 'urn:crp:committee:%s' % s.strip().upper() if s else None
+
+def recipient_urn(s):
+    if s.startswith('N'):
+        return candidate_urn(s)
+    elif s.startswith('C'):
+        return committee_urn(s)
+    return None
+
+
 def load_catcodes(dataroot):
     catcodes = { }
     fields = ('catcode','catname','catorder','industry','sector','sector_long')
@@ -27,6 +48,7 @@ def load_catcodes(dataroot):
     for record in reader:
         catcodes[record.pop('catcode').upper()] = record
     return catcodes
+
 
 def load_candidates(dataroot):
     candidates = { }
@@ -44,6 +66,7 @@ def load_candidates(dataroot):
             candidates[key] = record
     return candidates
 
+
 def load_committees(dataroot):
     committees = { }
     fields = FILE_TYPES['cmtes']
@@ -60,10 +83,12 @@ def load_committees(dataroot):
             committees[key] = record
     return committees
 
+
 def parse_date_iso(datestamp):
     pd = parse_date(datestamp)
     if pd:
         return pd.isoformat()
+
 
 def parse_date(datestamp):
     if datestamp:
@@ -72,6 +97,7 @@ def parse_date(datestamp):
             return datetime.date(int(y), int(m), int(d))
         except ValueError, ve:
             logging.warn("error parsing datestamp: %s" % datestamp)
+
 
 class SpecFilter(UnicodeFilter):
     def __init__(self, spec):
@@ -85,6 +111,7 @@ class SpecFilter(UnicodeFilter):
                 spec[key] = value
         return spec
 
+
 class FECTransactionFilter(Filter):
 
     def __init__(self, id_field, type_field, cycle_field='cycle'):
@@ -96,6 +123,7 @@ class FECTransactionFilter(Filter):
         record['transaction_id'] = "FEC:%s:%s" % (record[self._cycle_field], record[self._id_field])
         record['transaction_type'] = "urn:ogdc:transaction:%s" % record[self._type_field].lower().strip()
         return record
+
 
 class FECOccupationFilter(Filter):
 
@@ -111,6 +139,7 @@ class FECOccupationFilter(Filter):
             #record['contributor_employer'] = emp
 
         return record
+
 
 class CatCodeFilter(Filter):
     def __init__(self, prefix, catcodes, field='real_code'):

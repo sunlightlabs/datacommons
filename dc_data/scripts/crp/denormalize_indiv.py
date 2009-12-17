@@ -2,9 +2,6 @@ from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
-from saucebrush.utils import Files
-import logging
-import os
 import sys
 import saucebrush
 
@@ -49,6 +46,7 @@ disallowed_orgnames = set(['retired', 'homemaker', 'attorney', '[24i contributio
                           'freelance writer', 'investment banker', 'trader', 'computer consultant', 'banker', 
                           'oral surgeon', 'business executive', 'unknown', 'civic volunteer', 'filmmaker', 'economist'])
 
+
 class OrganizationFilter(Filter):
     def process_record(self, record):
         orgname = record.get('org_name', '').strip()
@@ -59,6 +57,7 @@ class OrganizationFilter(Filter):
                 orgname = emp.strip()
         record['organization_name'] = orgname if orgname and orgname.lower() not in disallowed_orgnames else None
         return record
+
 
 class CommitteeFilter(Filter):
     def __init__(self, committees):
@@ -115,6 +114,7 @@ class RecipientFilter(Filter):
                 candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
                 self.load_candidate(candidate, record)
 
+
 def main():
 
     from optparse import OptionParser
@@ -129,7 +129,7 @@ def main():
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="noisy output")
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if not options.dataroot:
         parser.error("path to dataroot is required")
@@ -158,104 +158,84 @@ def main():
     print "Loading committees..."
     committees = load_committees(dataroot)
        
-    spec = dict(((fn, None) for fn in FIELDNAMES))
-    
-    # urn methods
-    
-    def recipient_urn(s):
-        if s.startswith('N'):
-            return candidate_urn(s)
-        elif s.startswith('C'):
-            return committee_urn(s)
-        return None
-    
-    def candidate_urn(s):    
-        return 'urn:crp:candidate:%s' % s.strip().upper() if s else None        
-    
-    def contributor_urn(s):
-        return 'urn:crp:individual:%s' % s.strip().upper() if s else None
-    
-    def committee_urn(s):
-        return 'urn:crp:committee:%s' % s.strip().upper() if s else None
-    
-    def org_urn(s):
-        return 'urn:crp:organization:%s' % s.strip() if s else None
-    
-    #
-    # main recipe
-    #
-
     for cycle in cycles:
-        input_file = os.path.join(dataroot, 'raw', 'crp', 'indivs%s.csv' % cycle)
-        output_file = os.path.join(tmppath, 'denorm_indivs.%s.csv' % cycle)
+        in_path = os.path.join(dataroot, 'raw', 'crp', 'indivs%s.csv' % cycle)
+        infile = open(in_path, 'r')
+        out_path = os.path.join(tmppath, 'denorm_indivs.%s.csv' % cycle)
+        outfile = open(out_path, 'w')
 
-        sys.stdout.write('Reading from %s, writing to %s...\n' % (input_file, output_file))
+        sys.stdout.write('Reading from %s, writing to %s...\n' % (in_path, out_path))
 
-        recipe = saucebrush.run_recipe(
-            # load source
-            CSVSource(open(input_file, 'r'), fieldnames=FILE_TYPES['indivs']),
+        run_denormalization(infile, outfile, catcodes, candidates, committees)
 
-            FieldCountValidator(len(FILE_TYPES['indivs'])),
 
-            # transaction filters
-            FieldAdder('transaction_namespace', 'urn:fec:transaction'),
-            FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
-            FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower() if t else '', keep_fields=True),
+def run_denormalization(infile, outfile, catcodes, candidates, committees):
+    recipe = saucebrush.run_recipe(
+        # load source
+        CSVSource(infile, fieldnames=FILE_TYPES['indivs']),
 
-            # filing reference ID
-            FieldRenamer({'filing_id': 'microfilm'}),
+        FieldCountValidator(len(FILE_TYPES['indivs'])),
 
-            # date stamp
-            FieldModifier('datestamp', parse_date_iso),
+        # transaction filters
+        FieldAdder('transaction_namespace', 'urn:fec:transaction'),
+        FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
+        FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower() if t else '', keep_fields=True),
 
-            # rename contributor, organization, and parent_organization fields
-            FieldRenamer({'contributor_name': 'contrib',
-                      'parent_organization_name': 'ult_org',}),
-     
-            RecipientFilter(candidates, committees),
-            CommitteeFilter(committees),
-            OrganizationFilter(),
+        # filing reference ID
+        FieldRenamer({'filing_id': 'microfilm'}),
 
-            # create URNs
-            FieldMerger({'contributor_urn': ('contrib_id',)}, contributor_urn, keep_fields=True),
-            FieldMerger({'recipient_urn': ('recip_id',)}, recipient_urn, keep_fields=True),
-            FieldMerger({'committee_urn': ('cmte_id',)}, committee_urn, keep_fields=True),
+        # date stamp
+        FieldModifier('datestamp', parse_date_iso),
 
-            # recip code filter
-            RecipCodeFilter(),  # recipient party
-                            # seat result
+        # rename contributor, organization, and parent_organization fields
+        FieldRenamer({'contributor_name': 'contrib',
+                  'parent_organization_name': 'ult_org',}),
+ 
+        RecipientFilter(candidates, committees),
+        CommitteeFilter(committees),
+        OrganizationFilter(),
 
-            # address and gender fields
-            FieldRenamer({'contributor_address': 'street',
-                      'contributor_city': 'city',
-                      'contributor_state': 'state',
-                      'contributor_zipcode': 'zipcode',
-                      'contributor_gender': 'gender'}),
-            FieldModifier('contributor_state', lambda s: s.upper() if s else None),
-            FieldModifier('contributor_gender', lambda s: s.upper() if s else None),
+        # create URNs
+        FieldMerger({'contributor_urn': ('contrib_id',)}, contributor_urn, keep_fields=True),
+        FieldMerger({'recipient_urn': ('recip_id',)}, recipient_urn, keep_fields=True),
+        FieldMerger({'committee_urn': ('cmte_id',)}, committee_urn, keep_fields=True),
 
-            # employer/occupation filter
-            FECOccupationFilter(),
+        # recip code filter
+        RecipCodeFilter(),  # recipient party
+                        # seat result
 
-            # catcode
-            CatCodeFilter('contributor', catcodes),
+        # address and gender fields
+        FieldRenamer({'contributor_address': 'street',
+                  'contributor_city': 'city',
+                  'contributor_state': 'state',
+                  'contributor_zipcode': 'zipcode',
+                  'contributor_gender': 'gender'}),
+        FieldModifier('contributor_state', lambda s: s.upper() if s else None),
+        FieldModifier('contributor_gender', lambda s: s.upper() if s else None),
 
-            # add static fields
-            FieldAdder('contributor_type', 'individual'),
-            FieldAdder('is_amendment', False),
-            FieldAdder('election_type', 'G'),
+        # employer/occupation filter
+        FECOccupationFilter(),
 
-            # filter through spec
-            SpecFilter(spec),
+        # catcode
+        CatCodeFilter('contributor', catcodes),
 
-            #DebugEmitter(),
-            CountEmitter(every=1000),
-            CSVEmitter(open(output_file, 'w'), fieldnames=FIELDNAMES),
-        )
+        # add static fields
+        FieldAdder('contributor_type', 'individual'),
+        FieldAdder('is_amendment', False),
+        FieldAdder('election_type', 'G'),
 
-        sys.stderr.write(repr(recipe.rejected))
-        sys.stderr.flush()
-		
+        # filter through spec
+        SpecFilter(SPEC),
+
+        #DebugEmitter(),
+        CountEmitter(every=1000),
+        CSVEmitter(outfile, fieldnames=FIELDNAMES),
+    )
+
+    sys.stderr.write(repr(recipe.rejected))
+    sys.stderr.flush()
+
+
 
 if __name__ == "__main__":
 

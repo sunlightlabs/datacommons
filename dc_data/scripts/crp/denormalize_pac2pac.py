@@ -1,20 +1,104 @@
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.utils.dryrub import CountEmitter
-from saucebrush.filters import Filter, FieldAdder, FieldCopier, FieldMerger, FieldModifier, FieldRemover, FieldRenamer
-from saucebrush.emitters import Emitter, CSVEmitter, DebugEmitter
+from saucebrush.filters import Filter, FieldAdder, FieldMerger, FieldModifier, FieldRenamer
+from saucebrush.emitters import  CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
-import datetime
 import logging
 import os
 import saucebrush
 
-from denormalize import FIELDNAMES, load_catcodes, load_candidates, load_committees, parse_date_iso, SpecFilter, FECOccupationFilter
+from denormalize import FIELDNAMES, SPEC, load_catcodes, load_candidates, load_committees, parse_date_iso, SpecFilter
 
-#####
+
+class RecipientFilter(Filter):
+    def __init__(self, candidates, committees):
+        super(RecipientFilter, self).__init__()
+        self._candidates = candidates
+        self._committees = committees
+    def process_record(self, record):
+        recip_id = record['recip_id'].strip().upper()
+        if recip_id:
+            if recip_id.startswith('N'):
+                candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
+                if candidate:
+                    record['recipient_urn'] = candidate_urn(recip_id)
+                    record['recipient_name'] = candidate['first_last_p']
+                    record['recipient_party'] = candidate['party']
+                    record['recipient_type'] = 'politician'
+                    record['seat_status'] = candidate['crp_ico']
+                    seat = candidate['dist_id_run_for'].upper()
+                    if len(seat) == 4:
+                        if seat == 'PRES':
+                            record['seat'] = 'federal:president'
+                        else:
+                            if seat[2] == 'S':
+                                record['seat'] = 'federal:senate'
+                            else:
+                                record['seat'] = 'federal:house'
+                                record['district'] = "%s-%s" % (seat[:2], seat[2:])
+            elif recip_id.startswith('C'):
+                committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
+                record['recipient_urn'] = committee_urn(recip_id)
+                if committee:
+                    record['recipient_name'] = committee['pac_short']
+                    record['recipient_party'] = committee['party']
+                    record['recipient_type'] = 'committee'
+                else:
+                    print "no committee for %s" % recip_id
+            else:
+                print "!!!!!!!!!! invalid recipient %s" % recip_id
+        return record
+
+
+class CommitteeFilter(Filter):
+    def __init__(self, committees):
+        super(CommitteeFilter, self).__init__()
+        self._committees = committees
+    def process_record(self, record):
+        committee_urn = record.get('committee_urn', None)
+        if committee_urn:
+            cmte_id = committee_urn.rsplit(":", 1)[1]
+            committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
+            if committee:
+                record['committee_name'] = committee['pac_short']
+                record['committee_party'] = committee['party']
+        return record
+        
+        
+class ContribRecipFilter(Filter):
+
+    def process_record(self, record):
+        
+        filer_urn = committee_urn(record['filer_id'])
+        filer_name = record['contrib_lend_trans'].strip()
+        other_urn = committee_urn(record['other_id'])
+        trans_type = record['type'].strip().upper()
+        if trans_type.startswith('1'):
+            record['committee_urn'] = filer_urn
+            record['contributor_name'] = filer_name
+            record['contributor_urn'] = other_urn
+        elif trans_type.startswith('2'):
+            record['contributor_urn'] = filer_urn
+            record['committee_name'] = filer_name
+            record['committee_urn'] = other_urn
+            
+        donor_name = record['donor_cmte'].strip()
+        if donor_name:
+            record['contributor_name'] = donor_name
+
+        return record
+        
+        
+class RecipCodeFilter(Filter):
+    def process_record(self, record):
+        if record['recip_code']:
+            recip_code = record['recip_code'].strip().upper()
+            record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
+        return record
+
 
 def main():
-
     from optparse import OptionParser
 
     usage = "usage: %prog [options]"
@@ -27,7 +111,7 @@ def main():
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="noisy output")
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if not options.dataroot:
         parser.error("path to dataroot is required")
@@ -47,9 +131,9 @@ def main():
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
     
-    emitter = CSVEmitter(open(os.path.join(tmppath, 'denorm_pac2pac.csv'), 'w'), fieldnames=FIELDNAMES)
+    outfile = open(os.path.join(tmppath, 'denorm_pac2pac.csv'), 'w')
 
-    files = Files(*[os.path.join(dataroot, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
+    infiles = Files(*[os.path.join(dataroot, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
 
     print "Loading catcodes..."
     catcodes = load_catcodes(dataroot)
@@ -60,109 +144,18 @@ def main():
     print "Loading committees..."
     committees = load_committees(dataroot)
     
-    spec = dict(((fn, None) for fn in FIELDNAMES))
+    run_denormalization(infiles, outfile, catcodes, candidates, committees)
     
-    def candidate_urn(s):
-        return 'urn:crp:candidate:%s' % s.strip().upper() if s else None
-    
-    def committee_urn(s):
-        return 'urn:crp:committee:%s' % s.strip().upper() if s else None
-    
-    def org_urn(s):
-        return 'urn:crp:organization:%s' % s.strip() if s else None
-    
+
+def run_denormalization(infile, outfile, catcodes, candidates, committees):
     def real_code(s):
         s = s.upper()
         if s in catcodes:
             return catcodes[s]['catorder'].upper()
-    
-    class RecipientFilter(Filter):
-        def __init__(self, candidates, committees):
-            super(RecipientFilter, self).__init__()
-            self._candidates = candidates
-            self._committees = committees
-        def process_record(self, record):
-            recip_id = record['recip_id'].strip().upper()
-            if recip_id:
-                if recip_id.startswith('N'):
-                    candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-                    if candidate:
-                        record['recipient_urn'] = candidate_urn(recip_id)
-                        record['recipient_name'] = candidate['first_last_p']
-                        record['recipient_party'] = candidate['party']
-                        record['recipient_type'] = 'politician'
-                        record['seat_status'] = candidate['crp_ico']
-                        seat = candidate['dist_id_run_for'].upper()
-                        if len(seat) == 4:
-                            if seat == 'PRES':
-                                record['seat'] = 'federal:president'
-                            else:
-                                if seat[2] == 'S':
-                                    record['seat'] = 'federal:senate'
-                                else:
-                                    record['seat'] = 'federal:house'
-                                    record['district'] = "%s-%s" % (seat[:2], seat[2:])
-                elif recip_id.startswith('C'):
-                    committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-                    record['recipient_urn'] = committee_urn(recip_id)
-                    if committee:
-                        record['recipient_name'] = committee['pac_short']
-                        record['recipient_party'] = committee['party']
-                        record['recipient_type'] = 'committee'
-                    else:
-                        print "no committee for %s" % recip_id
-                else:
-                    print "!!!!!!!!!! invalid recipient %s" % recip_id
-            return record
-    
-    class CommitteeFilter(Filter):
-        def __init__(self, committees):
-            super(CommitteeFilter, self).__init__()
-            self._committees = committees
-        def process_record(self, record):
-            committee_urn = record.get('committee_urn', None)
-            if committee_urn:
-                cmte_id = committee_urn.rsplit(":", 1)[1]
-                committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
-                if committee:
-                    record['committee_name'] = committee['pac_short']
-                    record['committee_party'] = committee['party']
-            return record
-            
-    class ContribRecipFilter(Filter):
-
-        def process_record(self, record):
-            
-            filer_urn = committee_urn(record['filer_id'])
-            filer_name = record['contrib_lend_trans'].strip()
-            other_urn = committee_urn(record['other_id'])
-            trans_type = record['type'].strip().upper()
-            if trans_type.startswith('1'):
-                record['committee_urn'] = filer_urn
-                record['contributor_name'] = filer_name
-                record['contributor_urn'] = other_urn
-            elif trans_type.startswith('2'):
-                record['contributor_urn'] = filer_urn
-                record['committee_name'] = filer_name
-                record['committee_urn'] = other_urn
-                
-            donor_name = record['donor_cmte'].strip()
-            if donor_name:
-                record['contributor_name'] = donor_name
-
-            return record
-            
-    class RecipCodeFilter(Filter):
-        def process_record(self, record):
-            if record['recip_code']:
-                recip_code = record['recip_code'].strip().upper()
-                record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
-            return record
-    
-    saucebrush.run_recipe(
         
+    saucebrush.run_recipe(
         # load sources
-        CSVSource(files, fieldnames=FILE_TYPES['pac_other']),
+        CSVSource(infile, fieldnames=FILE_TYPES['pac_other']),
         
         ContribRecipFilter(),
         CommitteeFilter(committees),
@@ -203,12 +196,11 @@ def main():
         RecipCodeFilter(),
         
         # filter through spec
-        SpecFilter(spec),
+        SpecFilter(SPEC),
         
         #DebugEmitter(),
-        CountEmitter(every=100),
-        emitter,
-        
+        CountEmitter(every=1000),
+        CSVEmitter(outfile, fieldnames=FIELDNAMES),
     )
 
 

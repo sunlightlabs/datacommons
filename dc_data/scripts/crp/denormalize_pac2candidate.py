@@ -1,17 +1,12 @@
-from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.utils.dryrub import CountEmitter
-from saucebrush.filters import Filter, FieldAdder, FieldCopier, FieldMerger, FieldModifier, FieldRemover, FieldRenamer
-from saucebrush.emitters import Emitter, CSVEmitter, DebugEmitter
+from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier
+from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
-import datetime
-import logging
-import os
 import saucebrush
 
 from denormalize import *
 
-#####
 
 class RecipCodeFilter(Filter):
     def __init__(self):
@@ -22,6 +17,7 @@ class RecipCodeFilter(Filter):
             record['recipient_party'] = recip_code[0]
             record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
         return record
+
 
 class RecipientFilter(Filter):
     def __init__(self, candidates):
@@ -51,6 +47,7 @@ class RecipientFilter(Filter):
                 
         return record
 
+
 class ContributorFilter(Filter):
     def __init__(self, committees):
         super(ContributorFilter, self).__init__()
@@ -63,6 +60,7 @@ class ContributorFilter(Filter):
             record['contributor_party'] = committee['party']
             record['contributor_type'] = 'committee'
         return record
+
 
 def main():
 
@@ -78,7 +76,7 @@ def main():
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="noisy output")
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if not options.dataroot:
         parser.error("path to dataroot is required")
@@ -107,25 +105,17 @@ def main():
     print "Loading committees..."
     committees = load_committees(dataroot)
     
-    emitter = CSVEmitter(open(os.path.join(tmppath, 'denorm_pac2cand.csv'), 'w'), fieldnames=FIELDNAMES)
+    outfile = open(os.path.join(tmppath, 'denorm_pac2cand.csv'), 'w')
 
     files = Files(*[os.path.join(dataroot, 'raw', 'crp', 'pacs%s.csv' % cycle) for cycle in cycles])
     
-    spec = dict(((fn, None) for fn in FIELDNAMES))
+    run_denormalization(files, outfile, catcodes, candidates, committees)
     
-    def candidate_urn(s):
-        return 'urn:crp:candidate:%s' % s.strip().upper() if s else None
     
-    def committee_urn(s):
-        return 'urn:crp:committee:%s' % s.strip().upper() if s else None
-    
-    def org_urn(s):
-        return 'urn:crp:organization:%s' % s.strip() if s else None
-    
+def run_denormalization(infile, outfile, catcodes, candidates, committees):
     saucebrush.run_recipe(
-        
         # load source
-        CSVSource(files, fieldnames=FILE_TYPES['pacs']),
+        CSVSource(infile, fieldnames=FILE_TYPES['pacs']),
         
         # transaction filters
         FieldAdder('transaction_namespace', 'urn:fec:transaction'),
@@ -152,12 +142,11 @@ def main():
         FieldAdder('election_type', 'G'),
         
         # filter through spec
-        SpecFilter(spec),
+        SpecFilter(SPEC),
         
         #DebugEmitter(),
         CountEmitter(every=1000),
-        emitter,
-        
+        CSVEmitter(outfile, fieldnames=FIELDNAMES),
     )
 
 
