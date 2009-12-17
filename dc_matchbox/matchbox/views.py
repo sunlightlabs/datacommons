@@ -1,3 +1,7 @@
+
+import time
+import logging
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
@@ -26,9 +30,16 @@ def dashboard(request):
     }
     return render_to_response('matchbox/dashboard.html', data, context_instance=RequestContext(request))
 
-def _search(query, type_filter):    
+def _search(query, type_filter):
+    def run_logged_search():
+        start_time = time.time()
+        result = list(search_entities_by_name(query, type_filter))
+        runtime = time.time() - start_time
+        logging.info("Entity search for ('%s', '%s') returned %d results in %f seconds." % (query, type_filter, len(result), runtime))
+        return result
+        
     results = []
-    for (id_, name, count) in search_entities_by_name(query, type_filter):
+    for (id_, name, count) in run_logged_search():
         e = {
             'id': id_,
             'type': 'organization',
@@ -39,28 +50,14 @@ def _search(query, type_filter):
         e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
         results.append(e)
     content = json.dumps(results)
+    
     return HttpResponse(content, mimetype='application/javascript')
-    # results = []
-    # for (id_, name, count) in search_entities_by_name(query):
-    #     e = {
-    #         'id': id_,
-    #         'type': 'organization',
-    #         'name': name,
-    #         'count': count,
-    #         'notes': 0,
-    #     }
-    #     e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
-    #     results.append(e)
-    # content = json.dumps(results)
-    # return HttpResponse(content, mimetype='application/javascript')
+
 
 
 @login_required
 def search(request):
-    return _search(
-        decode_htmlentities(request.GET.get('q','')),
-        request.GET.get('type_filter', ''),
-    )
+    return _search(decode_htmlentities(request.GET.get('q','')),request.GET.get('type_filter', ''),)
 
 @login_required
 def debug_search(request):
