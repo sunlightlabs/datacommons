@@ -60,7 +60,7 @@ class TestQueries(unittest.TestCase):
                           sql_names['contribution_organization_urn'],
                           'organization')
         
-        orphan = Entity(name=u'Avacado')
+        orphan = Entity(name=u'Avacado', type='organization')
         orphan.save()
         orphan.aliases.create(alias=u'Avacado')
         
@@ -171,14 +171,22 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, Entity.objects.filter(type='politician', name='Apple Smith').count())
 
     def test_search_entities_by_name(self):
-        result = search_entities_by_name(u'a', 'organization')
+        results = list(search_entities_by_name(u'a', 'organization'))
         
-        expected = [['Apple', 2], ['Apricot', 1], ['Avacado', 0]]
+        self.assertEqual(3, len(results))
         
-        for ((expected_name, expected_count), (id, name, count)) in zip(expected, result):
-            self.assertEqual(expected_name, name)
-            self.assertEqual(expected_count, count)
-    
+        ((_, first_name, first_count), (_, second_name, second_count), (_, third_name, third_count)) = results
+        
+        self.assertTrue(first_name in ['Apple', 'Apple Juice'])
+        self.assertEqual(2, first_count)
+        
+        self.assertEqual('Apricot', second_name)
+        self.assertEqual(1, second_count)
+        
+        self.assertEqual('Avacado', third_name)
+        self.assertEqual(0, third_count)
+
+
     def test_search_entities_by_name_multiple_aliases(self):
         apple = Entity.objects.get(id=self.apple_id)
         apple.aliases.create(alias="Appetite")

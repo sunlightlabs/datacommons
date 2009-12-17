@@ -11,9 +11,9 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'mysql'   # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_ENGINE = 'postgresql_psycopg2'   # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME = 'datacommons'             # Or path to database file if using sqlite3.
-DATABASE_USER = 'root'             # Not used with sqlite3.
+DATABASE_USER = ''             # Not used with sqlite3.
 DATABASE_PASSWORD = ''            # Not used with sqlite3.
 DATABASE_HOST = 'localhost'               # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = ''                        # Set to empty string for default. Not used with sqlite3.
@@ -102,6 +102,7 @@ INSTALLED_APPS = (
     'matchbox',
     'dcdata.contribution',
     'dcdata',
+    'search'
 )
 
 LOGIN_URL = '/auth/login/'
@@ -109,6 +110,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_URL = '/auth/logout/'
 
 MEDIASYNC_DOCTYPE = 'html5'
+MEDIASYNC_SERVE_REMOTE = False
 
 INTERNAL_IPS = ('127.0.0.1','209.190.229.199')
 DEBUG_TOOLBAR_CONFIG = {
@@ -121,6 +123,12 @@ ENTITY_TYPES = (
     'politician',
     'individual',
 )
+
+import logging
+if DEBUG:
+    logging.getLogger().setLevel(logging.DEBUG)
+else:
+    logging.getLogger().setLevel(logging.INFO)
 
 try:
     from local_settings import *
