@@ -82,6 +82,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 ROOT_URLCONF = 'dc_matchbox.urls'
@@ -96,6 +97,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'debug_toolbar',
     'mediasync',
     'matchbox',
     'dcdata.contribution',
@@ -109,6 +111,11 @@ LOGOUT_URL = '/auth/logout/'
 
 MEDIASYNC_DOCTYPE = 'html5'
 MEDIASYNC_SERVE_REMOTE = False
+
+INTERNAL_IPS = ('127.0.0.1','209.190.229.199')
+DEBUG_TOOLBAR_CONFIG = {
+    'INTERCEPT_REDIRECTS': False,
+}
 
 ENTITY_TYPES = (
     'committee',

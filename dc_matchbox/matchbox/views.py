@@ -59,6 +59,13 @@ def _search(query, type_filter):
 def search(request):
     return _search(decode_htmlentities(request.GET.get('q','')),request.GET.get('type_filter', ''),)
 
+@login_required
+def debug_search(request):
+    _search(
+        decode_htmlentities(request.GET.get('q','')),
+        request.GET.get('type_filter', ''),
+    )
+    return render_to_response('matchbox/base.html')
 
 @login_required
 def queue(request, queue_id):
