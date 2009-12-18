@@ -3,7 +3,8 @@
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-
+import time
+import logging
 from datetime import datetime
 from matchbox.models import EntityAttribute, sql_names
 from matchbox_scripts.build_matchbox import log
@@ -97,6 +98,8 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
     attributes = set()
     types = set()
     
+    last_time = time.time()
+    
     for (id, name, attribute, type) in query_entity_data():            
         if prev_id != id:
             create_entity(prev_id, names, attributes, types)
@@ -104,8 +107,13 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
             i += 1
             if i % 1000 == 0:
                 transaction.commit()
-                log("processed %d entities..." % i)
-            
+                logging.debug("processed %d entities..." % i)
+                
+            if i % 1000000 == 0:
+                new_time = time.time()
+                logging.info("processing last million of %d million entities took %f seconds." % (i / 1000000, new_time - last_time))
+                last_time = new_time
+                
             prev_id = id
             names.clear()
             attributes.clear()
