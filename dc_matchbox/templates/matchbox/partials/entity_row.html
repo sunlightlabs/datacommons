@@ -1,22 +1,13 @@
 <li id="{{ entity.id }}">
     <p class="actions">
-        <span>{{ entity.count }}</span>
-        <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google" target="_blank">Google</a>
-        <a href="{% url matchbox_entity entity.id %}" class="detail" target="_blank">Details</a>
+        <a href="{% url matchbox_entity entity.id %}" class="transactions" title="transactions">{{ count }}</a>
+        <a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google">Google</a>
+        <a href="{% url matchbox_entity entity.id %}" class="detail">Details</a>
         <a href="{% url matchbox_entity entity.id %}" class="notes" title="notes">{{ entity.notes.all.count }}</a>
     </p>
     <input class="selector" type="checkbox" name="entities" value="{{ entity.id }}" id="entities_{{ entity.id }}">
     <a class="transactions_control ui-icon ui-icon-triangle-1-e" href="{% url matchbox_entity_transactions entity.id %}">V</a>
-    <label for="entities_{{ entity.id }}">{{ entity.name }}</label>
-    {% comment %}
-    {% if entity.aliases %}
-        <ul>
-            {% for alias in entity.aliases.all %}
-            <li><a href="{% url matchbox_google_search %}?q={{ alias.alias|urlencode }}">{{ alias.alias }}</a></li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    {% endcomment %}
+    <label for="entities_{{ entity.id }}">{{ entity.name }}</label> <span class="note">${{ total }}</span>
     <div class="details_container">
         <div class="transactions_container"></div>
         <div class="details_expander">

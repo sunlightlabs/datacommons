@@ -64,6 +64,8 @@ body div#statusbar {
 body div#statusbar p { margin: 0; padding: 0; }
 body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 
+.note { color: #8A8B8A; padding-left: 10px; }
+
 #main { font-size: 93%; margin-bottom: 22em; }
 #content { float: left; width: 750px; margin: 0 0 200px 0; }
 #sidebar { border-left: 2px solid #CBCCCB; float: left; padding: 0 0 100px 10px; width: 180px; }
@@ -115,7 +117,18 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
     padding-left: 25px;
     text-decoration: none;
     height: 22px;
-    width: 40px;
+    width: 35px;
+}
+#content ul#entities li p.actions a.transactions {
+    background: url(../images/transaction.png) top right no-repeat;
+    color: #555;
+    display: inline-block;
+    font-size: 120%;
+    padding-right: 30px;
+    text-align: right;
+    text-decoration: none;
+    height: 22px;
+    width: 55px;
 }
 
 #content ul#entities li a.transactions_control { display: inline-block; }

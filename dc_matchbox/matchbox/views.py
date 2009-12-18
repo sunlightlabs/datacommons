@@ -39,7 +39,7 @@ def _search(query, type_filter):
         return result
         
     results = []
-    for (id_, name, count) in run_logged_search():
+    for (id_, name, count, total) in run_logged_search():
         e = {
             'id': id_,
             'type': 'organization',
@@ -47,7 +47,11 @@ def _search(query, type_filter):
             'count': count,
             'notes': 0,
         }
-        e['html'] = render_to_string('matchbox/partials/entity_row.html', {'entity': Entity.objects.get(id=id_)})
+        e['html'] = render_to_string('matchbox/partials/entity_row.html', {
+            'entity': Entity.objects.get(id=id_),
+            'count': count,
+            'total': total,
+        })
         results.append(e)
     content = json.dumps(results)
     

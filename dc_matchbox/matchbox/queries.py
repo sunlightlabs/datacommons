@@ -30,7 +30,7 @@ def search_entities_by_name(query, type_filter):
     """
     
     if query.strip():
-        stmt = "select matches.%(entity_id)s, matches.%(entity_name)s, count(c.%(contribution_organization_entity)s) \
+        stmt = "select matches.%(entity_id)s, matches.%(entity_name)s, count(c.%(contribution_organization_entity)s), sum(c.amount) \
                 from \
                     (%(entities_by_name_query)s) matches \
                 left join %(contribution)s c on c.%(contribution_organization_entity)s = matches.%(entity_id)s \
