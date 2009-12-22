@@ -175,7 +175,7 @@ class TestQueries(unittest.TestCase):
         
         self.assertEqual(3, len(results))
         
-        ((_, first_name, first_count), (_, second_name, second_count), (_, third_name, third_count)) = results
+        ((_, first_name, first_count, _), (_, second_name, second_count, _), (_, third_name, third_count, _)) = results
         
         self.assertTrue(first_name in ['Apple', 'Apple Juice'])
         self.assertEqual(2, first_count)
@@ -194,7 +194,7 @@ class TestQueries(unittest.TestCase):
         
         result = search_entities_by_name(u'app', 'organization')
         
-        (id, name, count) = result.fetchone()
+        (id, name, count, dollar_total) = result.fetchone()
         
         self.assertTrue(name in ['Apple', 'Apple Juice'])
         self.assertEqual(2, count)
