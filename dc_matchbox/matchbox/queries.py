@@ -34,7 +34,12 @@ def search_entities_by_name(query, type_filter):
         stmt = "select matches.%(entity_id)s, matches.%(entity_name)s, count(c.%(contribution_organization_entity)s), sum(c.amount) \
                 from \
                     (%(entities_by_name_query)s) matches \
-                left join %(contribution)s c on c.%(contribution_organization_entity)s = matches.%(entity_id)s \
+                left join %(contribution)s c \
+                    on (c.%(contribution_organization_entity)s = matches.%(entity_id)s \
+                    or c.%(contribution_parent_organization_entity)s = matches.%(entity_id)s \
+                    or c.%(contribution_contributor_entity)s = matches.%(entity_id)s \
+                    or c.%(contribution_recipient_entity)s = matches.%(entity_id)s \
+                    or c.%(contribution_committee_entity)s = matches.%(entity_id)s) \
                 group by matches.%(entity_id)s, matches.%(entity_name)s order by count(c.%(contribution_organization_entity)s) desc;" % \
                 dict_union({'entities_by_name_query': _entities_by_name_query}, sql_names)
         
