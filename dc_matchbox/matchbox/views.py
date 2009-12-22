@@ -35,7 +35,7 @@ def _search(query, type_filter):
         start_time = time.time()
         result = list(search_entities_by_name(query, type_filter))
         runtime = time.time() - start_time
-        logging.info("Entity search for ('%s', '%s') returned %d results in %f seconds." % (query, type_filter, len(result), runtime))
+        print("Entity search for ('%s', '%s') returned %d results in %f seconds." % (query, type_filter, len(result), runtime))
         return result
         
     results = []
@@ -162,7 +162,7 @@ def entity_transactions(request, entity_id):
     transactions = { }
     for model in entityref_cache.iterkeys():
         if hasattr(model.objects, 'with_entity'):
-            transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
+            transactions[model.__name__] = model.objects.with_entity(entity)
     return render_to_response('matchbox/partials/entity_transactions.html', {
                                   'entity': entity,
                                   'transactions': transactions
