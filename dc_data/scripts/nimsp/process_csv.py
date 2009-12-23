@@ -234,20 +234,22 @@ class UrnFilter(Filter):
 
     def __init__(self,con):
         super(UrnFilter, self).__init__()
+        self.committee_names = {}
+        self.committee_ids = {}
         cur = con.cursor()
         cur.execute("SELECT CommitteeName, CommitteeID FROM Committees;")
-        self.committee_names = {}
         while (True):
             row = cur.fetchone ()
             if row == None:
                 break
+            self.committee_ids[row[1]] = row[0]
             self.committee_names[row[0]] = row[1]
         cur.close()
 
     def process_record(self,record):
         # Recipient
         if record['candidate_id'] and record['committee_id']:
-            warn(record, 'record has both candidate and committee ids. unhandled.')
+            error(record, 'record has both candidate and committee ids. unhandled.')
             return record
         elif record['candidate_id']:
             record['recipient_type'] = 'politician'
@@ -257,25 +259,16 @@ class UrnFilter(Filter):
             record['recipient_urn'] = record['committee_urn'] = 'urn:nimsp:committee:%d' % record['committee_id']
 
         # Contributor
-        if record['contributor_id'] and record['newemployerid'] and record['contributor_id'] == record['newemployerid']:
-            #contributor is an organization (by id match)
-            record['contributor_urn'] = 'urn:nimsp:organization:%d' % (record['contributor_id']) 
-            record['contributor_type'] = 'organization'
-        elif self.committee_names.has_key(record['contributor_name']): 
-            #contributor is a committee (by name match)
-            record['contributor_urn'] = 'urn:nimsp:committee:%d' % (self.committee_names[record['contributor_name']])
-            record['contributor_type'] = 'committee'
-        elif record['contributor_id']:
-            #can't tell what the contributor is 
+        if record['contributor_id']:
             record['contributor_urn'] = 'urn:nimsp:contributor:%d' % (record['contributor_id'])
             record['contributor_type'] = None
-        else:
-            record['contributor_type'] = None
-
+            if self.committee_ids.has_key(record['contributor_name']): 
+                # contributor is a committee (by name match in committees table).
+                record['contributor_type'] = 'committee'
         if record['newemployerid']:
-            record['organization_urn'] = 'urn:nimsp:organization:%d' % record['newemployerid']
+            record['organization_urn'] = 'urn:nimsp:contributor:%d' % record['newemployerid']
         if record['parentcompanyid']:
-            record['parent_organization_urn'] = 'urn:nimsp:organization:%d' % record['parentcompanyid']
+            record['parent_organization_urn'] = 'urn:nimsp:contributor:%d' % record['parentcompanyid']
 
         for f in ('candidate_id','committee_id','contributor_id','newemployerid','parentcompanyid'):
             del(record[f])
@@ -290,11 +283,11 @@ class ZipCleaner(Filter):
                 if m:
                     record['contributor_zipcode'] = m.group('zip5')
                 else:
-                    debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
+                    #debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                     record['contributor_zipcode'] = None 
             else:
-                if record['contributor_zipcode'] not in ('-','N/A','N.A.','NONE','UNK','UNKNOWN'):
-                    debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
+                #if record['contributor_zipcode'] not in ('-','N/A','N.A.','NONE','UNK','UNKNOWN'):
+                #    debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                 record['contributor_zipcode'] = None
         return record
 
@@ -327,14 +320,11 @@ def main():
     usage = "usage: %prog --dataroot DIR [options]"
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-c", "--cycle", dest="cycle", metavar='YYYY',
-                      help="cycle to process (default all)")
     parser.add_option("-d", "--dataroot", dest="dataroot",
                       help="path to data directory", metavar="PATH")
-    parser.add_option("-n", "--number", dest="n", metavar='ROWS',
-                      help="number of rows to process")
-    parser.add_option("-v", "--verbose", action='store_true', dest="verbose", 
-                      help="noisy output")
+    parser.add_option("-i", "--infile", dest="input_path",
+                      help="path to input csv", metavar="FILE")
+
 
     (options, args) = parser.parse_args()
 
@@ -350,10 +340,8 @@ def main():
     if not os.path.exists(denorm_path):
         os.makedirs(denorm_path)
     
-    n = options.n if options.n else None
-
-    allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions_%s.csv' % options.cycle if options.cycle else 'nimsp_allocated_contributions.csv')
-    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_%s.csv.TMP' % options.cycle if options.cycle else 'nimsp_unallocated_contributions.csv.TMP')
+    allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
+    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
 
     allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
     unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
@@ -361,7 +349,7 @@ def main():
     allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
     unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
 
-    input_path = os.path.join(denorm_path, SQL_DUMP_FILE)
+    input_path = options.input_path if options.input_path else os.path.join(denorm_path, SQL_DUMP_FILE)
     input_file = open(input_path, 'r')
     
     
@@ -407,8 +395,8 @@ def main():
     for o in [allocated_csv,unallocated_csv]:
         o.close()
 
-    salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted_%s.csv' % options.cycle if options.cycle else 'nimsp_unallocated_contributions_salted.csv')
-    unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted_%s.csv' % options.cycle if options.cycle else 'nimsp_unallocated_contributions_unsalted.csv')
+    salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted.csv')
+    unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
 
     unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
     salted_csv = open(salted_csv_filename, 'w')

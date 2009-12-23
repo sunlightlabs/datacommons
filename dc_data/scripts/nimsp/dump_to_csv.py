@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import MySQLdb
@@ -12,10 +14,10 @@ def main():
 
     from optparse import OptionParser
 
-    usage = "usage: %prog --dataroot DIR [options]"
+    usage = "usage: %prog [options]"
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-o", "--outfile", dest="outfile")
+    parser.add_option("-o", "--outfile", dest="outfile", help="csv file to create (default %s)" % SQL_DUMP_FILE)
     parser.add_option("-c", "--cycle", dest="cycle", metavar='YYYY',
                       help="cycle to process (default all)")
 #    parser.add_option("-d", "--dataroot", dest="dataroot",
@@ -27,7 +29,7 @@ def main():
 
     (options, args) = parser.parse_args()
     
-    outfile = options.outfile if options.outfile else SQL_DUMP_FILE
+    outfile = os.path.abspath(options.outfile) if options.outfile else  os.path.abspath(SQL_DUMP_FILE)
 
     select_fields = ",".join([sql_field for (name, sql_field, conversion_func) in CSV_SQL_MAPPING])
 
