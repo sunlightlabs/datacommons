@@ -1,14 +1,12 @@
-from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.utils.dryrub import CountEmitter
-from saucebrush.filters import Filter, FieldAdder, FieldMerger, FieldModifier, FieldRenamer
+from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import  CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
-import logging
-import os
+
 import saucebrush
 
-from denormalize import FIELDNAMES, SPEC, load_catcodes, load_candidates, load_committees, parse_date_iso, SpecFilter
+from denormalize import *
 
 
 class RecipientFilter(Filter):
