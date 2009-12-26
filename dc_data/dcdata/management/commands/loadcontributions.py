@@ -12,6 +12,7 @@ from saucebrush.filters import FieldRemover, FieldAdder, Filter
 from saucebrush.sources import CSVSource
 from strings.normalizer import basic_normalizer
 import saucebrush
+from optparse import make_option
 import os
 import sys
 
@@ -127,6 +128,11 @@ class Command(BaseCommand):
     args = ""
 
     requires_model_validation = False
+
+    option_list = BaseCommand.option_list + (
+        make_option('--source', '-s', dest='source', default='CRP', metavar="(CRP|NIMSP)",
+            help='Data source'),
+    )
     
     @transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
@@ -134,7 +140,7 @@ class Command(BaseCommand):
         fieldnames = model_fields('contribution.Contribution')
         
         loader = ContributionLoader(
-            source='CRP',
+            source=options.get('source'),
             description='load from denormalized CSVs',
             imported_by="loadcontributions.py (%s)" % os.getenv('LOGNAME', 'unknown'),
         )

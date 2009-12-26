@@ -36,6 +36,8 @@ Load the raw data into MySQL:
 	
 		load-nimsp-update -s ~/data/download/nimsp/2009-05-22
 		load-nimsp-update -s ~/data/download/nimsp/2009-09-01
+		load-nimsp-update -s ~/data/download/nimsp/2009-12-01
+
 		
 Run the salting scripts:
 
@@ -68,7 +70,7 @@ Run the salting scripts:
 		
 Extract the data from the MySQL server:
 
-	python dump_to_csv.py -d /tmp/nimsp_partial_denormalization.csv
+	python dump_to_csv.py -o /tmp/nimsp_partial_denormalization.csv
 	
 	Then copy the output to the denormalized directory:
 	
