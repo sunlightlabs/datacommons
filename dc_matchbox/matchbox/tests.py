@@ -10,6 +10,7 @@ from models import Entity, EntityAlias, EntityAttribute, Normalization
 from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
 from matchbox_scripts.support.build_entities import populate_entities
 from matchbox_scripts.contribution.normalize_contributions import run as run_normalization_script
+from matchbox_scripts.contribution.build_aggregates import build_aggregates
 from matchbox_scripts.support.normalize_database import normalize
 from strings.normalizer import basic_normalizer
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses
@@ -50,6 +51,7 @@ class TestQueries(unittest.TestCase):
         
         self.apple_id = uuid4().hex
         self.apricot_id = uuid4().hex
+        self.avacado_id = uuid4().hex
         
         for (org_name, org_entity) in [('Apple', self.apple_id), ('Apple Juice', self.apple_id), ('Apricot', self.apricot_id)]:
             self.save_contribution(org_name, org_entity)
@@ -60,11 +62,13 @@ class TestQueries(unittest.TestCase):
                           sql_names['contribution_organization_urn'],
                           'organization')
         
-        orphan = Entity(name=u'Avacado', type='organization')
+        orphan = Entity(id=self.avacado_id, name=u'Avacado', type='organization')
         orphan.save()
         orphan.aliases.create(alias=u'Avacado')
         
         run_normalization_script()
+        
+        
         
         
     def test_populate_entities(self):
@@ -171,6 +175,8 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, Entity.objects.filter(type='politician', name='Apple Smith').count())
 
     def test_search_entities_by_name(self):
+        build_aggregates()
+        
         results = list(search_entities_by_name(u'a', 'organization'))
         
         self.assertEqual(3, len(results))
@@ -191,6 +197,7 @@ class TestQueries(unittest.TestCase):
         apple = Entity.objects.get(id=self.apple_id)
         apple.aliases.create(alias="Appetite")
         Normalization.objects.create(original="Appetite", normalized="appetite")
+        build_aggregates()
         
         result = search_entities_by_name(u'app', 'organization')
         
@@ -314,7 +321,6 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(apple_catcher, Contribution.objects.with_entity(applicot, ['recipient_entity'])[0])
         self.assertEqual(apricot_council, Contribution.objects.with_entity(applicot, ['committee_entity'])[0])
         self.assertTrue(apricot_picker in Contribution.objects.with_entity(applicot, ['organization_entity']))
-        
         
     
 class TestUtils(unittest.TestCase):

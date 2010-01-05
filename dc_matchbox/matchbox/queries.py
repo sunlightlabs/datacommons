@@ -28,13 +28,12 @@ def search_entities_by_name(query, type_filter):
                         inner join matchbox_entityalias a on a.alias = n.original                             
                         inner join matchbox_entity e on e.id = a.entity_id                             
                         where e.type = %s) matches 
-                    left join matchbox_contribution_aggregates agg
+                    inner join matchbox_contribution_aggregates agg
                     on matches.id = agg.id
                     order by agg.count desc;
                 """
         
         cursor = connection.cursor()
-        print stmt
         cursor.execute(stmt, [basic_normalizer(query) + '%', ' & '.join(query.split(' ')), type_filter])
         return cursor         
     else:
