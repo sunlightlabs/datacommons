@@ -11,39 +11,30 @@ sql_names = dict_union(contribution_names, matchbox_names)
 
 from strings.normalizer import basic_normalizer
 
-
-_entities_by_name_query = "select distinct e.id, e.name \
-                            from \
-                                ((select distinct %(normalization_original)s from %(normalization)s where %(normalization_normalized)s like %%s limit 1000)\
-                                 union distinct \
-                                (select distinct %(normalization_original)s from %(normalization)s \
-                                    where to_tsvector('simple', %(normalization_original)s) @@ to_tsquery('simple', %%s) limit 1000)) n \
-                            inner join %(entityalias)s a on a.%(entityalias_alias)s = n.%(normalization_original)s \
-                            inner join %(entity)s e on e.%(entity_id)s = a.%(entityalias_entity)s \
-                            where e.%(entity_type)s = %%s \
-                            limit 50" % sql_names
-
 def search_entities_by_name(query, type_filter):
     """
     Search for all entities with a normalized name prefixed by the normalized query string.
     
-    Returns an iterator over triples (id, name, count).
+    Returns an iterator over triples (id, name, count, total_amount).
     """
     
     if query.strip():
-        stmt = "select matches.%(entity_id)s, matches.%(entity_name)s, count(c.%(contribution_organization_entity)s), sum(c.amount) \
-                from \
-                    (%(entities_by_name_query)s) matches \
-                left join %(contribution)s c \
-                    on (c.%(contribution_organization_entity)s = matches.%(entity_id)s \
-                    or c.%(contribution_parent_organization_entity)s = matches.%(entity_id)s \
-                    or c.%(contribution_contributor_entity)s = matches.%(entity_id)s \
-                    or c.%(contribution_recipient_entity)s = matches.%(entity_id)s \
-                    or c.%(contribution_committee_entity)s = matches.%(entity_id)s) \
-                group by matches.%(entity_id)s, matches.%(entity_name)s order by count(c.%(contribution_organization_entity)s) desc;" % \
-                dict_union({'entities_by_name_query': _entities_by_name_query}, sql_names)
+        stmt = """
+                select matches.id, matches.name, agg.count, agg.sum from                     
+                    (select distinct e.id, e.name from                                 
+                            (select distinct original from matchbox_normalization where normalized like %s union distinct                                 
+                            select distinct original from matchbox_normalization where to_tsvector('simple', original) @@ to_tsquery('simple', %s)
+                            limit 1000) n                             
+                        inner join matchbox_entityalias a on a.alias = n.original                             
+                        inner join matchbox_entity e on e.id = a.entity_id                             
+                        where e.type = %s) matches 
+                    left join matchbox_contribution_aggregates agg
+                    on matches.id = agg.id
+                    order by agg.count desc;
+                """
         
         cursor = connection.cursor()
+        print stmt
         cursor.execute(stmt, [basic_normalizer(query) + '%', ' & '.join(query.split(' ')), type_filter])
         return cursor         
     else:
