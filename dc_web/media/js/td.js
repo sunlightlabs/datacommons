@@ -7,6 +7,12 @@ TD.DataFilter = {
     
     init: function() {
         
+        // populate field selection drop down
+        $.each(TD.DataFilter.registry, function(item) {
+            var fieldDef = TD.DataFilter.registry[item];
+            $('#id_filter').append('<option value="' + item + '">' + fieldDef.config.label + '</option>');
+        });
+        
         // bind filter form to the submit button
         $('#filterForm').bind('submit', function() {
             return false;
@@ -22,22 +28,59 @@ TD.DataFilter = {
             return false;
         });
         
-        /***
-         * TEMPORARILY BIND DOWNLOAD DATA SET FOR DEBUGGING
-         */
-        $('#downloadDataSet').click(function() {
+        // bind data refresh
+        $('#id_refreshdata').bind('click', function() {
+            var qs = '';
             var values = TD.DataFilter.values();
             for (attr in values) {
-                alert(attr + '=' + _.reduce(values[attr], '', function(memo, item) {
+                if (qs) qs += '&';
+                var val = _.reduce(values[attr], '', function(memo, item) {
                     if (item && item != '') {
                         if (memo) memo += '|';
                         memo += item;
                     }
                     return memo;
-                }));
+                });
+                qs += attr + '=' + val;
             }
+            $('#mainTable tbody').empty();
+            $.getJSON('/data/contributions/?' + qs, function(data) {
+                for (var i = 0; i < data.length; i++) {
+                    var contrib = data[i];
+                    var className = (i % 2 == 0) ? 'even' : 'odd';
+                    var jurisdiction = (contrib.transaction_namespace == 'urn:fec:transaction') ? 'Federal' : 'State';
+                    var content = '<tr class="' + className + '">';
+                    content += '<td>' + jurisdiction + '</td>';
+                    content += '<td>' + (contrib.datestamp || '&nbsp;') + '</td>';
+                    content += '<td>$' + contrib.amount + '</td>';
+                    content += '<td>' + contrib.contributor_name + '</td>';
+                    content += '<td>' + contrib.contributor_city + ', ' + contrib.contributor_state + '</td>';
+                    content += '<td>' + contrib.recipient_name + '</td>';
+                    content += '</tr>';
+                    $('#mainTable tbody').append(content);
+                }
+            });
             return false;
         });
+        
+        $('#downloadDataSet').bind('click', function() {
+            var qs = '';
+            var values = TD.DataFilter.values();
+            for (attr in values) {
+                if (qs) qs += '&';
+                var val = _.reduce(values[attr], '', function(memo, item) {
+                    if (item && item != '') {
+                        if (memo) memo += '|';
+                        memo += item;
+                    }
+                    return memo;
+                });
+                qs += attr + '=' + val;
+            }
+            window.location.replace("/data/contributions/download/?" + qs);
+            return false;
+        });
+        
     },
     
     addField: function(field) {
@@ -92,6 +135,7 @@ TD.DataFilter.Field.prototype.instance = function() {
 TD.DataFilter.TextField = function(config) {
     
     var that = new TD.DataFilter.Field();
+    that.config = config;
     
     that.render = function() {
         var content = '';
@@ -119,6 +163,7 @@ TD.DataFilter.TextField = function(config) {
 TD.DataFilter.DropDownField = function(config) {
     
     var that = new TD.DataFilter.Field();
+    that.config = config;
     
     that.render = function() {
         var content = '';
@@ -150,6 +195,15 @@ TD.DataFilter.DropDownField = function(config) {
 TD.DataFilter.OperatorField = function(config) {
     
     var that = new TD.DataFilter.Field();
+    that.config = config;
+    
+    if (!config.operators) {
+        config.operators = [
+            ['&gt;', 'greater than'],
+            ['&lt;', 'less than'],
+            ['=', 'equal to']
+        ]
+    }
     
     that.render = function() {
         var content = '';
@@ -158,10 +212,10 @@ TD.DataFilter.OperatorField = function(config) {
         content += '<a class="minus-button" href="#" title="Delete Filter">Delete Filter</a>';
         content += '<span class="helper">' + config.helper + '</span>';
         content += '<select id="field_' + this.id + '_' + config.name + '_operator" name="' + config.name + '_operator">';
-        content += '<option value="&gt;">greater than</option>';
-        content += '<option value="&lt;">less than</option>';
-        content += '<option value="=">equal to</option>';
-        content += '<option value="!=">not equal to</option>';
+        for (var i = 0; i < config.operators.length; i++) {
+            var op = config.operators[i];
+            content += '<option value="' + op[0] + '">' + op[1] + '</option>';
+        }
         content += '</select>';
         content += '<input id="field_' + this.id + '_' + config.name + '" type="text" name="' + config.name + '"/>';
         content += '</li>';
@@ -183,6 +237,7 @@ TD.DataFilter.OperatorField = function(config) {
 TD.DataFilter.DateRangeField = function(config) {
     
     var that = new TD.DataFilter.Field();
+    that.config = config;
     
     that.render = function() {
         
@@ -222,6 +277,7 @@ TD.DataFilter.DateRangeField = function(config) {
 TD.DataFilter.EntityField = function(config) {
     
     var that = new TD.DataFilter.Field();
+    that.config = config;
     
     that.render = function() {
         
@@ -331,15 +387,70 @@ TD.UI = {
 $().ready(function() {
     
     TD.SearchBox.init();
-    TD.DataFilter.init();
     
     TD.DataFilter.registry = {
+        
+        // amount, cycle, and state
         
         amount: TD.DataFilter.OperatorField({
             label: 'Amount',
             name: 'amount',
             helper: 'Amount of contribution in dollars'
         }),
+
+        cycle: TD.DataFilter.DropDownField({
+            label: 'Cycle',
+            name: 'cycle',
+            helper: 'Federal election cycle',
+            options: [
+                ['1990','1990'], ['1992','1992'], ['1994','1994'], ['1996','1996'],
+                ['1998','1998'], ['2000','2000'], ['2002','2002'], ['2004','2004'],
+                ['2006','2006'], ['2008','2008'], ['2010','2010']
+            ]
+        }),
+        
+        state: TD.DataFilter.DropDownField({
+            label: 'State',
+            name: 'state',
+            helper: 'State from which the contribution was made',
+            options: [
+                ['AL', 'Alabama'],          ['AK', 'Alaska'],       ['AZ', 'Arizona'],      ['AR', 'Arkansas'],
+                ['CA', 'California'],       ['CO', 'Colorado'],     ['CT', 'Connecticut'],  ['DE', 'Delaware'],
+                ['FL', 'Florida'],          ['GA', 'Georgia'],      ['HI', 'Hawaii'],       ['ID', 'Idaho'],
+                ['IL', 'Illinois'],         ['IN', 'Indiana'],      ['IA', 'Iowa'],         ['KS', 'Kansas'],
+                ['KY', 'Kentucky'],         ['LA', 'Louisiana'],    ['ME', 'Maine'],        ['MD', 'Maryland'],
+                ['MA', 'Massachusetts'],    ['MI', 'Michigan'],     ['MN', 'Minnesota'],    ['MS', 'Mississippi'],
+                ['MO', 'Missouri'],         ['MT', 'Montana'],      ['NE', 'Nebraska'],     ['NV', 'Nevada'],
+                ['NH', 'New Hampshire'],    ['NJ', 'New Jersey'],   ['NM', 'New Mexico'],   ['NY', 'New York'],
+                ['NC', 'North Carolina'],   ['ND', 'North Dakota'], ['OH', 'Ohio'],         ['OK', 'Oklahoma'],
+                ['OR', 'Oregon'],           ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'],
+                ['SD', 'South Dakota'],     ['TN', 'Tennessee'],    ['TX', 'Texas'],        ['UT', 'Utah'],
+                ['VT', 'Vermont'],          ['VA', 'Virginia'],     ['WA', 'Washington'],   ['WV', 'West Virginia'],
+                ['WI', 'Wisconsin'],        ['WY', 'Wyoming']
+            ]
+        }),
+        
+        // entity fields
+        
+        contributor: TD.DataFilter.EntityField({
+            label: 'Contributor',
+            name: 'contributor_entity',
+            helper: 'Name of individual or PAC that made contribution'
+        }),
+                
+        recipient: TD.DataFilter.EntityField({
+            label: 'Recipient',
+            name: 'recipient_entity',
+            helper: 'Name of candidate or PAC that received contribution'
+        }),
+
+        organization: TD.DataFilter.EntityField({
+            label: 'Organization',
+            name: 'organization_entity',
+            helper: 'Corporation related to contribution'
+        }),
+        
+        // date 
         
         datestamp: TD.DataFilter.DateRangeField({
             label: 'Date',
@@ -355,14 +466,10 @@ $().ready(function() {
                 ['urn:fec:contribution','Federal'],
                 ['urn:nimsp:contribution','State']
             ]
-        }),
-        
-        organization: TD.DataFilter.EntityField({
-            label: 'Organization',
-            name: 'organization_entity',
-            helper: 'Corporation related to contribution'
         })
         
     }
+    
+    TD.DataFilter.init();
     
 });
