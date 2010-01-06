@@ -33,7 +33,7 @@ def dashboard(request):
 def _search(query, type_filter):
     def run_logged_search():
         start_time = time.time()
-        result = list(search_entities_by_name(query, type_filter))
+        result = list(search_entities_by_name(query, [type_filter]))
         runtime = time.time() - start_time
         print("Entity search for ('%s', '%s') returned %d results in %f seconds." % (query, type_filter, len(result), runtime))
         return result
