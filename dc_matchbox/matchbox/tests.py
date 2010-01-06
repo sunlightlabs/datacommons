@@ -177,7 +177,7 @@ class TestQueries(unittest.TestCase):
     def test_search_entities_by_name(self):
         build_aggregates()
         
-        results = list(search_entities_by_name(u'a', 'organization'))
+        results = list(search_entities_by_name(u'a', ['organization']))
         
         self.assertEqual(3, len(results))
         
@@ -199,7 +199,7 @@ class TestQueries(unittest.TestCase):
         Normalization.objects.create(original="Appetite", normalized="appetite")
         build_aggregates()
         
-        result = search_entities_by_name(u'app', 'organization')
+        result = search_entities_by_name(u'app', ['organization'])
         
         (id, name, count, dollar_total) = result.fetchone()
         

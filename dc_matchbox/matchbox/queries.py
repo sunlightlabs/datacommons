@@ -11,7 +11,7 @@ sql_names = dict_union(contribution_names, matchbox_names)
 
 from strings.normalizer import basic_normalizer
 
-def search_entities_by_name(query, type_filter):
+def search_entities_by_name(query, type_filter=[]):
     """
     Search for all entities with a normalized name prefixed by the normalized query string.
     
@@ -19,22 +19,24 @@ def search_entities_by_name(query, type_filter):
     """
     
     if query.strip():
+        type_clause = "where " + " or ".join(["e.type = '%s'" % type for type in type_filter]) if type_filter else ""
+        
         stmt = """
                 select matches.id, matches.name, agg.count, agg.sum from                     
                     (select distinct e.id, e.name from                                 
-                            (select distinct original from matchbox_normalization where normalized like %s union distinct                                 
-                            select distinct original from matchbox_normalization where to_tsvector('simple', original) @@ to_tsquery('simple', %s)
+                            (select distinct original from matchbox_normalization where normalized like %%s union distinct                                 
+                            select distinct original from matchbox_normalization where to_tsvector('simple', original) @@ to_tsquery('simple', %%s)
                             limit 1000) n                             
                         inner join matchbox_entityalias a on a.alias = n.original                             
                         inner join matchbox_entity e on e.id = a.entity_id                             
-                        where e.type = %s) matches 
+                        %s) matches 
                     inner join matchbox_contribution_aggregates agg
                     on matches.id = agg.id
                     order by agg.count desc;
-                """
+                """ % type_clause
         
         cursor = connection.cursor()
-        cursor.execute(stmt, [basic_normalizer(query) + '%', ' & '.join(query.split(' ')), type_filter])
+        cursor.execute(stmt, [basic_normalizer(query) + '%', ' & '.join(query.split(' '))])
         return cursor         
     else:
         return []
