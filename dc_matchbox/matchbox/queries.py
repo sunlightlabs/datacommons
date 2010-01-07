@@ -30,7 +30,7 @@ def search_entities_by_name(query, type_filter=[]):
                         inner join matchbox_entityalias a on a.alias = n.original                             
                         inner join matchbox_entity e on e.id = a.entity_id                             
                         %s) matches 
-                    inner join matchbox_contribution_aggregates agg
+                    left join matchbox_contribution_aggregates agg
                     on matches.id = agg.id
                     order by agg.count desc;
                 """ % type_clause
