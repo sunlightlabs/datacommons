@@ -4,3 +4,4 @@ pip-log.txt
 local_settings.py
 data/
 tmp/
+.settings/org.eclipse.core.resources.prefs
