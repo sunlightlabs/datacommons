@@ -30,16 +30,9 @@ def dashboard(request):
     }
     return render_to_response('matchbox/dashboard.html', data, context_instance=RequestContext(request))
 
-def _search(query, type_filter):
-    def run_logged_search():
-        start_time = time.time()
-        result = list(search_entities_by_name(query, [type_filter]))
-        runtime = time.time() - start_time
-        print("Entity search for ('%s', '%s') returned %d results in %f seconds." % (query, type_filter, len(result), runtime))
-        return result
-        
+def _search(query, type_filter):        
     results = []
-    for (id_, name, count, total) in run_logged_search():
+    for (id_, name, count, total) in search_entities_by_name(query, [type_filter]):
         e = {
             'id': id_,
             'type': 'organization',

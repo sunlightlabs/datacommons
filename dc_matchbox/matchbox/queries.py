@@ -1,3 +1,4 @@
+import time
 
 from django.db.models import Q
 from django.db import connection
@@ -11,12 +12,19 @@ sql_names = dict_union(contribution_names, matchbox_names)
 
 from strings.normalizer import basic_normalizer
 
+# todo use the global logger and debug settings
+DEBUG_SEARCH = True
+
 def search_entities_by_name(query, type_filter=[]):
     """
     Search for all entities with a normalized name prefixed by the normalized query string.
     
     Returns an iterator over triples (id, name, count, total_amount).
     """
+    
+    start_time = time.time()
+    if DEBUG_SEARCH:
+        print("Entity search for ('%s', '%s') beginning..." % (query, type_filter))
     
     if query.strip():
         type_clause = "where " + " or ".join(["e.type = '%s'" % type for type in type_filter]) if type_filter else ""
@@ -37,6 +45,13 @@ def search_entities_by_name(query, type_filter=[]):
         
         cursor = connection.cursor()
         cursor.execute(stmt, [basic_normalizer(query) + '%', ' & '.join(query.split(' '))])
+        
+        runtime = time.time() - start_time
+        if DEBUG_SEARCH:
+            result = list(cursor)
+            print("Entity search for ('%s', '%s') returned %d results in %f seconds." % (query, type_filter, len(result), runtime))
+            return result
+        
         return cursor         
     else:
         return []
