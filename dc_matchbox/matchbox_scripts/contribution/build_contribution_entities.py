@@ -25,13 +25,12 @@ def get_contributor_type(types):
 
 def run():
     
-    log("Building contributor entities...")
+    log("Building committee entities...")
     populate_entities(sql_names['contribution'],
-                      sql_names['contribution_contributor_entity'],
-                      sql_names['contribution_contributor_name'],
-                      sql_names['contribution_contributor_urn'],
-                      get_contributor_type,
-                      sql_names['contribution_contributor_type'])
+                      sql_names['contribution_committee_entity'],
+                      sql_names['contribution_committee_name'],
+                      sql_names['contribution_committee_urn'],
+                      'committee')
     
     log("Building organization entities...")
     populate_entities(sql_names['contribution'], 
@@ -46,7 +45,7 @@ def run():
                       sql_names['contribution_parent_organization_name'],
                       sql_names['contribution_parent_organization_urn'],
                       'organization')
-    
+        
     log("Building recipient entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_recipient_entity'],
@@ -55,12 +54,14 @@ def run():
                       get_recipient_type,
                       sql_names['contribution_recipient_type'])
     
-    log("Building committee entities...")
+    log("Building contributor entities...")
     populate_entities(sql_names['contribution'],
-                      sql_names['contribution_committee_entity'],
-                      sql_names['contribution_committee_name'],
-                      sql_names['contribution_committee_urn'],
-                      'committee')
+                      sql_names['contribution_contributor_entity'],
+                      sql_names['contribution_contributor_name'],
+                      sql_names['contribution_contributor_urn'],
+                      get_contributor_type,
+                      sql_names['contribution_contributor_type'])
+    
     
     
 from matchbox_scripts.support.build_entities import populate_entities
