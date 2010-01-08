@@ -10,7 +10,7 @@ from updates import edits, update
 
 class Tests(unittest.TestCase):
     def create_table(self, table_name):
-        self.cursor.execute("""create table `%s` ( \
+        self.cursor.execute("""create table %s ( \
                     id int not null, \
                     name varchar(255), \
                     age int, \
@@ -21,7 +21,7 @@ class Tests(unittest.TestCase):
         self.cursor.execute("drop table %s" % table_name)
         
     def insert_record(self, table_name, id, name, age):
-        self.cursor.execute("insert into `%s` (id, name, age) values ('%s', '%s', '%s')" % (table_name, id, name, age))
+        self.cursor.execute("insert into %s (id, name, age) values ('%s', '%s', '%s')" % (table_name, id, name, age))
         
     
     def setUp(self):
