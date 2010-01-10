@@ -45,7 +45,8 @@ class MD5Filter(Filter):
         import hashlib
         value = self._source_func(record)
         if value:
-            value = value.decode('utf-8', 'ignore')
+            # hashlib wants an ascii string for some reason
+            value = value.encode('ascii', 'replace')            
             entity_id = hashlib.md5(value).hexdigest()
             record[self._destination_field] = entity_id
         return record
