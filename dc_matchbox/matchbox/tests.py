@@ -201,7 +201,7 @@ class TestQueries(unittest.TestCase):
         
         result = search_entities_by_name(u'app', ['organization'])
         
-        (id, name, count, dollar_total) = result.fetchone()
+        (id, name, count, dollar_total) = result.__iter__().next()
         
         self.assertTrue(name in ['Apple', 'Apple Juice'])
         self.assertEqual(2, count)
