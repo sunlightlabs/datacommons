@@ -1,16 +1,38 @@
 
 
 import unittest
-
+import hashlib
 from django.db import connection
-#from MySQLdb import connect
-#connection = connect(host="localhost", user="root", db="test_datacommons")
 
 from updates import edits, update
+from dcdata.management.commands.loadcontributions import CONTRIBUTOR_ENTITY_FILTER, COMMITTEE_ENTITY_FILTER, ORGANIZATION_ENTITY_FILTER
+
+
+class LoadContributionTest(unittest.TestCase):
+    
+    def contributor_entity_test(self, expected, r):
+        self.assertEqual(hashlib.md5(expected).hexdigest(), CONTRIBUTOR_ENTITY_FILTER.process_record(r)['contributor_entity'])
+    
+    def committee_entity_test(self, expected, r):
+        self.assertEqual(hashlib.md5(expected).hexdigest(), COMMITTEE_ENTITY_FILTER.process_record(r)['committee_entity'])
+
+    def organization_entity_test(self, expected, r):
+        self.assertEqual(hashlib.md5(expected).hexdigest(), ORGANIZATION_ENTITY_FILTER.process_record(r)['organization_entity'])
+    
+    def testEntityIDs(self):
+        self.contributor_entity_test('abcd', {'contributor_urn': 'abcd'})
+        self.contributor_entity_test('urn:matchbox:name:joesmith, unknown, unknown', {'contributor_urn': '', 'contributor_name': 'Joe Smith', 'contributor_state': ''})
+        self.contributor_entity_test('urn:matchbox:name:joesmith, unknown, CA', {'contributor_urn': '', 'contributor_name': 'Joe Smith', 'contributor_state': 'CA'})
+        self.contributor_entity_test('urn:matchbox:name:joesmith, Berkeley, CA', {'contributor_urn': '', 'contributor_name': 'Joe Smith', 'contributor_state': 'CA', 'contributor_city': 'Berkeley'})
+        
+        self.committee_entity_test('urn:matchbox:committee_name:abcd', {'committee_name': 'abcd'})
+        
+        self.organization_entity_test('urn:matchbox:name:abcd', {'organization_name': 'abcd'})
+
 
 class Tests(unittest.TestCase):
     def create_table(self, table_name):
-        self.cursor.execute("""create table `%s` ( \
+        self.cursor.execute("""create table %s ( \
                     id int not null, \
                     name varchar(255), \
                     age int, \
@@ -21,7 +43,7 @@ class Tests(unittest.TestCase):
         self.cursor.execute("drop table %s" % table_name)
         
     def insert_record(self, table_name, id, name, age):
-        self.cursor.execute("insert into `%s` (id, name, age) values ('%s', '%s', '%s')" % (table_name, id, name, age))
+        self.cursor.execute("insert into %s (id, name, age) values ('%s', '%s', '%s')" % (table_name, id, name, age))
         
     
     def setUp(self):
