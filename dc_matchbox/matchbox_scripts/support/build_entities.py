@@ -14,7 +14,7 @@ def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
-def populate_entities(transaction_table, entity_id_column, name_column, attribute_column,
+def populate_entities(transaction_table, entity_id_column, name_columns, attribute_column,
                       type_determiner, type_column=None, reviewer=__name__, timestamp = datetime.now()):
     """
     Create the entities table based on transactional records.
@@ -30,16 +30,17 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
     
     def query_entity_data():
         loop_cursor = connection.cursor()
-        stmt = """select %(entity)s, %(name)s, %(attribute)s %(type_result)s 
-                from %(table)s 
-                where %(entity)s is not null 
-                group by %(entity)s, %(name)s, %(attribute)s %(type_column)s""" \
-                % {'table': transaction_table,
-                   'entity': entity_id_column,
-                   'name': name_column,
-                   'attribute': attribute_column,
-                   'type_result': ', ' + type_column if type_column else ", ''",
-                   'type_column': ', ' + type_column if type_column else ''}
+        
+        names_clause = ", ".join(name_columns)
+        type_clause = ', ' + type_column if type_column else ''
+        
+        columns = "%s, %s, %s %s" % (entity_id_column, attribute_column, names_clause, type_clause)
+        
+        stmt = """select %s 
+                from %s 
+                where %s is not null 
+                group by %s""" \
+                % (columns, transaction_table, entity_id_column, columns)
         loop_cursor.execute(stmt)
         return loop_cursor
     
@@ -99,9 +100,15 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
     types = set()
     
     last_time = time.time()
-    
-    for (id, name, attribute, type) in query_entity_data():            
-        if prev_id != id:
+
+    for row_tuple in query_entity_data():
+        row = list(row_tuple)        
+        row_id = row.pop(0)
+        row_attribute = row.pop(0)
+        row_names = row[:len(name_columns)]
+        row_type = row.pop(len(name_columns)) if type_column else None    
+            
+        if prev_id != row_id:
             create_entity(prev_id, names, attributes, types)
             
             i += 1
@@ -114,19 +121,20 @@ def populate_entities(transaction_table, entity_id_column, name_column, attribut
                 logging.info("processing last million of %d million entities took %f seconds." % (i / 1000000, new_time - last_time))
                 last_time = new_time
                 
-            prev_id = id
+            prev_id = row_id
             names.clear()
             attributes.clear()
             types.clear()
 
-        if name:
-            names.add(name)
-        if attribute:
-            (namespace, value) = attribute_name_value_pair(attribute) or ('', '')
+        for name in row_names:
+            if name:
+                names.add(name)
+        if row_attribute:
+            (namespace, value) = attribute_name_value_pair(row_attribute) or ('', '')
             if namespace and value:
                 attributes.add((namespace, value))
-        if type:
-            types.add(type)
+        if row_type:
+            types.add(row_type)
 
     create_entity(prev_id, names, attributes, types)
     

@@ -28,39 +28,40 @@ def run():
     log("Building committee entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_committee_entity'],
-                      sql_names['contribution_committee_name'],
+                      [sql_names['contribution_committee_name']],
                       sql_names['contribution_committee_urn'],
                       'committee')
     
     log("Building organization entities...")
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_organization_entity'],
-                      sql_names['contribution_organization_name'], # to do: sql_names['contribution_contributor_employer']],
+                      [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
                       sql_names['contribution_organization_urn'],
                       'organization')   
      
     log("Building parent organization entities...")
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_parent_organization_entity'],
-                      sql_names['contribution_parent_organization_name'],
+                      [sql_names['contribution_parent_organization_name']],
                       sql_names['contribution_parent_organization_urn'],
                       'organization')
         
     log("Building recipient entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_recipient_entity'],
-                      sql_names['contribution_recipient_name'],
+                      [sql_names['contribution_recipient_name']],
                       sql_names['contribution_recipient_urn'],
                       get_recipient_type,
                       sql_names['contribution_recipient_type'])
     
-    log("Building contributor entities...")
-    populate_entities(sql_names['contribution'],
-                      sql_names['contribution_contributor_entity'],
-                      sql_names['contribution_contributor_name'],
-                      sql_names['contribution_contributor_urn'],
-                      get_contributor_type,
-                      sql_names['contribution_contributor_type'])
+    # we won't be including contribution entities
+#    log("Building contributor entities...")
+#    populate_entities(sql_names['contribution'],
+#                      sql_names['contribution_contributor_entity'],
+#                      sql_names['contribution_contributor_name'],
+#                      sql_names['contribution_contributor_urn'],
+#                      get_contributor_type,
+#                      sql_names['contribution_contributor_type'])
     
     
     
