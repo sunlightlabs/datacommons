@@ -58,7 +58,7 @@ class TestQueries(unittest.TestCase):
 
         populate_entities(sql_names['contribution'], 
                           sql_names['contribution_organization_entity'], 
-                          sql_names['contribution_organization_name'],
+                          [sql_names['contribution_organization_name']],
                           sql_names['contribution_organization_urn'],
                           'organization')
         
@@ -120,7 +120,7 @@ class TestQueries(unittest.TestCase):
         
         populate_entities(sql_names['contribution'],
                   sql_names['contribution_recipient_entity'],
-                  sql_names['contribution_recipient_name'],
+                  [sql_names['contribution_recipient_name']],
                   sql_names['contribution_recipient_urn'],
                   'fruits')
         
@@ -163,7 +163,7 @@ class TestQueries(unittest.TestCase):
         
         populate_entities(sql_names['contribution'],
                           sql_names['contribution_recipient_entity'],
-                          sql_names['contribution_recipient_name'],
+                          [sql_names['contribution_recipient_name']],
                           sql_names['contribution_recipient_urn'],
                           get_recipient_type,
                           sql_names['contribution_recipient_type'])
@@ -321,6 +321,43 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(apple_catcher, Contribution.objects.with_entity(applicot, ['recipient_entity'])[0])
         self.assertEqual(apricot_council, Contribution.objects.with_entity(applicot, ['committee_entity'])[0])
         self.assertTrue(apricot_picker in Contribution.objects.with_entity(applicot, ['organization_entity']))
+        
+    def test_multiple_name_columns(self):
+        id = uuid4().hex
+        Contribution.objects.create(organization_name="one",
+                                                     contributor_employer="two",
+                                                    organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        Contribution.objects.create(organization_name="three",
+                                                    organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        Contribution.objects.create(organization_name="four",
+                                                    organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        Contribution.objects.create(organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        
+        populate_entities(sql_names['contribution'], 
+                          sql_names['contribution_organization_entity'], 
+                          [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
+                          sql_names['contribution_organization_urn'],
+                          'organization')
+        
+        e = Entity.objects.get(id=id)
+        
+        # to do: this test not yet finished...need to check that the entity gets all the names.
         
     
 class TestUtils(unittest.TestCase):
