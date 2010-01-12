@@ -337,7 +337,7 @@ class TestQueries(unittest.TestCase):
                                                     cycle='09', 
                                                     transaction_namespace='urn:unittest:transaction',
                                                     import_reference=self.import_)
-        Contribution.objects.create(organization_name="four",
+        Contribution.objects.create(contributor_employer="four",
                                                     organization_entity=id,
                                                     datestamp=datetime.now(),
                                                     cycle='09', 
@@ -355,10 +355,14 @@ class TestQueries(unittest.TestCase):
                           sql_names['contribution_organization_urn'],
                           'organization')
         
-        e = Entity.objects.get(id=id)
+        aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity=id)]
         
-        # to do: this test not yet finished...need to check that the entity gets all the names.
-        
+        self.assertEqual(4, len(aliases))
+        self.assertTrue('one' in aliases)
+        self.assertTrue('two' in aliases)
+        self.assertTrue('three' in aliases)
+        self.assertTrue('four' in aliases)
+    
     
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):
