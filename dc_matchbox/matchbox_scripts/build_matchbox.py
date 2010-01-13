@@ -18,14 +18,6 @@ import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 #import settings
 from django.core.management import execute_from_command_line
-
-
-"""
-As far as I can tell, there's a bug in MySQLdb or Django that sometimes
-causes the Django connection to throw an error:
-    _mysql_exceptions.InterfaceError: (0, '')
-Creating our own connection seems to solve the problem.
-"""
 from django.db import connection, transaction
 
 def log(message):
@@ -39,6 +31,7 @@ from matchbox_scripts.contribution.build_aggregates import build_aggregates
 
 
 def build_matchbox():
+    cursor = connection.cursor()
     
     log("Clearing and rebuilding tables...\n")
     for model_name in ['entityalias', 'entityattribute', 'entitynote', 'mergecandidate', 'normalization', 'entity']:
