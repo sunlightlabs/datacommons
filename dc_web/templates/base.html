@@ -28,8 +28,8 @@
                         {% if user.is_authenticated %}
                             <a href="#">logout</a>
                         {% endif %}
-                        <form id="searchForm" action="." method="get">
-                            <input id="searchBtn" type="text" name="search" title="Search candidates or organizations"/>
+                        <form id="searchForm" action="{% url filter %}" method="get">
+                            <input id="searchBtn" type="text" name="entityName" title="Search candidates or organizations"/>
                             <input id="searchEntityID" type="hidden" name="entityId" />
                             <button class="searchBtn" type="submit">
                                 <span>Search</span>
@@ -42,6 +42,7 @@
                                 <li id="nav_bulk"><a href="{% url bulk_index %}">Bulk Downloads</a></li>
                                 <li id="nav_docs"><a href="{% url doc_index %}">Documentation</a></li>
                                 <li id="nav_api"><a href="{% url api_index %}">API</a></li>
+                                <li><a href="http://ec2-174-129-44-3.compute-1.amazonaws.com/">Matchbox</a></li>
                             </ul>
                         </div>
                     </div>

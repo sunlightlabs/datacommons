@@ -58,7 +58,7 @@ class TestQueries(unittest.TestCase):
 
         populate_entities(sql_names['contribution'], 
                           sql_names['contribution_organization_entity'], 
-                          sql_names['contribution_organization_name'],
+                          [sql_names['contribution_organization_name']],
                           sql_names['contribution_organization_urn'],
                           'organization')
         
@@ -120,7 +120,7 @@ class TestQueries(unittest.TestCase):
         
         populate_entities(sql_names['contribution'],
                   sql_names['contribution_recipient_entity'],
-                  sql_names['contribution_recipient_name'],
+                  [sql_names['contribution_recipient_name']],
                   sql_names['contribution_recipient_urn'],
                   'fruits')
         
@@ -163,7 +163,7 @@ class TestQueries(unittest.TestCase):
         
         populate_entities(sql_names['contribution'],
                           sql_names['contribution_recipient_entity'],
-                          sql_names['contribution_recipient_name'],
+                          [sql_names['contribution_recipient_name']],
                           sql_names['contribution_recipient_urn'],
                           get_recipient_type,
                           sql_names['contribution_recipient_type'])
@@ -201,7 +201,7 @@ class TestQueries(unittest.TestCase):
         
         result = search_entities_by_name(u'app', ['organization'])
         
-        (id, name, count, dollar_total) = result.fetchone()
+        (id, name, count, dollar_total) = result.__iter__().next()
         
         self.assertTrue(name in ['Apple', 'Apple Juice'])
         self.assertEqual(2, count)
@@ -322,6 +322,47 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(apricot_council, Contribution.objects.with_entity(applicot, ['committee_entity'])[0])
         self.assertTrue(apricot_picker in Contribution.objects.with_entity(applicot, ['organization_entity']))
         
+    def test_multiple_name_columns(self):
+        id = uuid4().hex
+        Contribution.objects.create(organization_name="one",
+                                                     contributor_employer="two",
+                                                    organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        Contribution.objects.create(organization_name="three",
+                                                    organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        Contribution.objects.create(contributor_employer="four",
+                                                    organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        Contribution.objects.create(organization_entity=id,
+                                                    datestamp=datetime.now(),
+                                                    cycle='09', 
+                                                    transaction_namespace='urn:unittest:transaction',
+                                                    import_reference=self.import_)
+        
+        populate_entities(sql_names['contribution'], 
+                          sql_names['contribution_organization_entity'], 
+                          [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
+                          sql_names['contribution_organization_urn'],
+                          'organization')
+        
+        aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity=id)]
+        
+        self.assertEqual(4, len(aliases))
+        self.assertTrue('one' in aliases)
+        self.assertTrue('two' in aliases)
+        self.assertTrue('three' in aliases)
+        self.assertTrue('four' in aliases)
+    
     
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):

@@ -1,3 +1,12 @@
+var parseSuggest = function(res) {
+    var params = res.split(',');
+    var val = params[1];
+    for (var i = 2; i < params.length; i++) {
+        val += ',' + params[i];
+    }
+    return [params[0], val];
+};
+
 TD = { };
 
 TD.DataFilter = {
@@ -93,6 +102,7 @@ TD.DataFilter = {
         TD.DataFilter.fields[field.id] = field; // store reference to field
         field.bind(node);                       // bind field object to DOM
         node.appendTo('#filterForm > ul');      // append DOM node to filter list
+        return field;
     },
     
     removeField: function(field) {
@@ -303,15 +313,6 @@ TD.DataFilter.EntityField = function(config) {
     var that = new TD.DataFilter.Field();
     that.config = config;
     
-    var parseSuggest = function(res) {
-        var params = res.split(',');
-        var val = params[1];
-        for (var i = 2; i < params.length; i++) {
-            val += ',' + params[i];
-        }
-        return [params[0], val];
-    };
-    
     that.render = function() {
         
         var content = '';
@@ -416,7 +417,7 @@ TD.SearchBox = {
         }).trigger('blur');
         
         // do search
-        $('button.searchBtn').bind('click', function() {
+        $('searchForm').bind('submit', function() {
             var entityId = $('#searchEntityID').val();
             if (TD.SearchBox.isValid && entityId) {
                 alert('ok!');
@@ -424,6 +425,42 @@ TD.SearchBox = {
                 alert('not good');
             }
             return false;
+        });
+        
+        $('#searchBtn').autocomplete('/data/entities/quick/', {
+            delay: 600000000,
+            max: 20,
+            minChars: 2,
+            mustMatch: true,
+            formatItem: function(row, position, count, terms) {
+                var params = parseSuggest(row[0]);
+                if (position == count) {
+                    $(this).removeClass('loading');
+                }
+                return '<span data-id="' + params[0] + '">' + params[1] + '</span>';
+            },
+            formatResult: function(data, position, total) {
+                var params = parseSuggest(data[0]);
+                return params[1];
+            },
+            selectFirst: true
+        });
+
+        $('#searchBtn').bind('keydown', function(e) {
+            if (e.which == 13) {
+                if ($(this).val() != '') {
+                    $(this).addClass('loading');
+                    $(this).trigger('suggest');
+                }
+                return false;
+            }
+        }).bind('result', function(ev) {
+            $(this).removeClass('loading');
+        }).result(function(ev, li) {
+            if (li && li[0]) {
+                var params = parseSuggest(li[0]);
+                $('#searchEntityID').val(params[0]);
+            }
         });
         
     }
@@ -525,22 +562,54 @@ $().ready(function() {
         
         // entity fields
         
-        contributor: TD.DataFilter.EntityField({
+        committee: TD.DataFilter.TextField({
+            label: 'Committee',
+            name: 'committee_ft',
+            helper: 'Name of individual or PAC that made contribution'
+        }),
+        
+        contributor: TD.DataFilter.TextField({
             label: 'Contributor',
+            name: 'contributor_ft',
+            helper: 'Name of individual or PAC that made contribution'
+        }),
+        
+        organization: TD.DataFilter.TextField({
+            label: 'Employer',
+            name: 'organization_ft',
+            helper: 'Organization that employs the individual making the contribution'
+        }),
+        
+        recipient: TD.DataFilter.TextField({
+            label: 'Recipient',
+            name: 'recipient_ft',
+            helper: 'Name of candidate or PAC that received contribution'
+        }),
+        
+        // old entity fields
+        
+        committee_entity: TD.DataFilter.EntityField({
+            label: 'Committee (entity)',
+            name: 'committee',
+            helper: 'Committee making contribution'
+        }),
+        
+        contributor_entity: TD.DataFilter.EntityField({
+            label: 'Contributor (entity)',
             name: 'contributor',
             helper: 'Name of individual or PAC that made contribution'
         }),
-                
-        recipient: TD.DataFilter.EntityField({
-            label: 'Recipient',
-            name: 'recipient',
-            helper: 'Name of candidate or PAC that received contribution'
+
+        organization_entity: TD.DataFilter.EntityField({
+            label: 'Employer (entity)',
+            name: 'organization',
+            helper: 'Organization that employs the individual making the contribution'
         }),
 
-        organization: TD.DataFilter.EntityField({
-            label: 'Organization',
-            name: 'organization',
-            helper: 'Corporation related to contribution'
+        recipient_entity: TD.DataFilter.EntityField({
+            label: 'Recipient (entity)',
+            name: 'recipient',
+            helper: 'Name of candidate or PAC that received contribution'
         })
         
     }
