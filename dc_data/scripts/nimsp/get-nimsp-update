@@ -1,13 +1,13 @@
 #!/bin/bash
 
 server="http://my.followthemoney.org/sunlight/"
-date=2009-09-01
+date=2009-12-01
 
 if [ -n "$1" ]; then
    date=$1
 fi
 
-dest=/home/datacommons/var/nimsp/$date
+dest=/home/datacommons/data/download/nimsp/$date
 if [ $(uname) = 'Darwin' ]; then
    dest=/home/$USER/projects/datacommons/var/nimsp/$date
 fi

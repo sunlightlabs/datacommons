@@ -21,12 +21,15 @@ Data downloads:
 		- 2009-05-22
 		- 2009-09-01
 	(I'm assuming that these go in ~/data/download/nimsp/, but they can be put anywhere.)
+	
+	You can use the get-nimsp-update script to automate the download. You'll have to edit
+	the dest and date variables in the script.
 		
 Load the raw data into MySQL:
 
 	Create the tables with:
 	
-		mysql nimsp < ~/data/download/nimsp/2009-04-06/NIMSP_Data.sql
+		mysql -p nimsp < ~/data/download/nimsp/2009-04-06/NIMSP_Data.sql
 		
 	Load the initial data with:
 	
