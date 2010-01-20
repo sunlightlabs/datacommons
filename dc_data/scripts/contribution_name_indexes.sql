@@ -1,3 +1,16 @@
+drop index if exists contribution_contribution_contributor_name_lower;
+drop index if exists contribution_contribution_organization_name_lower;
+drop index if exists contribution_contribution_parent_organization_name_lower;
+drop index if exists contribution_contribution_committee_name_lower;
+drop index if exists contribution_contribution_recipient_name_lower;
+
+create index contribution_contribution_contributor_name_lower on contribution_contribution ((lower(contributor_name)));
+create index contribution_contribution_organization_name_lower on contribution_contribution ((lower(organization_name)));
+create index contribution_contribution_parent_organization_name_lower on contribution_contribution ((lower(parent_organization_name)));
+create index contribution_contribution_committee_name_lower on contribution_contribution ((lower(committee_name)));
+create index contribution_contribution_recipient_name_lower on contribution_contribution ((lower(recipient_name)));
+
+
 create text search dictionary datacommons ( template = simple, stopwords = datacommons );
 create text search configuration datacommons ( copy = simple );
 alter text search configuration datacommons alter mapping for asciiword with datacommons;
