@@ -8,7 +8,7 @@ from dcdata.contribution.models import Contribution, sql_names
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
 from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
-from matchbox_scripts.support.build_entities import populate_entities
+from matchbox_scripts.support.build_entities import populate_entities, build_entity
 from matchbox_scripts.contribution.normalize_contributions import run as run_normalization_script
 from matchbox_scripts.contribution.build_aggregates import build_aggregates
 from matchbox_scripts.support.normalize_database import normalize
@@ -363,6 +363,56 @@ class TestQueries(unittest.TestCase):
         self.assertTrue('three' in aliases)
         self.assertTrue('four' in aliases)
     
+    
+
+
+class TestEntityBuild(unittest.TestCase):
+    
+    def create_contribution(self, **kwargs):
+        c = Contribution(**kwargs)
+        if 'cycle' not in kwargs:
+            c.cycle='09'
+        c.transaction_namespace='urn:unittest:transaction'
+        c.import_reference=self.import_
+        c.save()
+    
+    def setUp(self):
+        print("Setting up database...")
+        Import.objects.all().delete()
+        Contribution.objects.all().delete()
+        Entity.objects.all().delete()
+        EntityAlias.objects.all().delete()
+        EntityAttribute.objects.all().delete()
+        Normalization.objects.all().delete()
+        
+        self.import_ = Import()
+        self.import_.save()
+        
+    def test_build_entity(self):
+        build_entity('Apple', 'organization', [('contributor_name', 'Apple Co', 'contributor_entity')])
+        
+        self.assertEqual(1, Entity.objects.count())
+        self.assertEqual(1, Entity.objects.filter(name='Apple').count())
+        self.assertEqual(1, Entity.objects.filter(type='organization').count())
+        
+        self.create_contribution(contributor_name='Banana Bar')
+
+        build_entity('Banana Bar', 'organization', [('contributor_name', 'Banana Bar', 'contributor_entity')])
+        
+        self.assertEqual(2, Entity.objects.count())
+        c = Contribution.objects.get(contributor_name='Banana Bar')
+        e = Entity.objects.get(name='Banana Bar')
+        self.assertEqual(e.id, c.contributor_entity)
+        
+        self.create_contribution(organization_name='Coconut Lounge')
+        self.create_contribution(organization_urn='1234')
+        
+        build_entity('Coconut Camp', 'organization', [('organization_name', 'Coconut Lounge', 'organization_entity'),
+                                                      ('organization_urn', '1234', 'organization_entity')])
+        
+        e = Entity.objects.get(name='Coconut Camp')
+        self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
+        
     
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):

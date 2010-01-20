@@ -5,15 +5,47 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import time
 import logging
+import csv
 from datetime import datetime
 from matchbox.models import EntityAttribute, sql_names
 from matchbox_scripts.build_matchbox import log
+from scripts.crp.denormalize import contributor_urn
+
 
 
 def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
+from matchbox.models import Entity
+from dcdata.contribution.models import Contribution
+
+
+def build_entity(name, type, criteria):
+    e = Entity.objects.create(name=name, type=type)
+    
+    for (match_column, match_value, entity_column) in criteria:
+        Contribution.objects.filter(**dict([(match_column, match_value)])).update(**dict([(entity_column, e.id)]))
+        
+
+
+def big_hitters_to_whitelist(filename):
+    def parse(crp_id, nimsp_id, name):
+        crp_urn = contributor_urn(crp_id)
+        nimsp_urn = 'urn:nimsp:contributor:' + nimsp_id
+        return (name, 'organization', [('contributor_name', name, 'contributor_entity'),
+                                       ('organization_name', name, 'organization_entity'),
+                                       ('parent_organization_name', name, 'parent_organization_entity'),
+                                       ('contributor_urn', nimsp_urn, 'contributor_entity'),
+                                       ('organization_urn', nimsp_urn, 'organization_urn'),
+                                       ('parent_organization_urn', nimsp_urn, 'parent_organization_entity'),
+                                       ('contributor_urn', crp_urn, 'contributor_entity')])
+    
+    return [parse(*row) for row in csv.reader(open(filename))]
+        
+
+
+# this is the old implementaiton that I'll be replacing
 def populate_entities(transaction_table, entity_id_column, name_columns, attribute_column,
                       type_determiner, type_column=None, reviewer=__name__, timestamp = datetime.now()):
     """
