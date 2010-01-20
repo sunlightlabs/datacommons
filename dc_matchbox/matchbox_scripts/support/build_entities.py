@@ -26,23 +26,7 @@ def build_entity(name, type, criteria):
     
     for (match_column, match_value, entity_column) in criteria:
         Contribution.objects.filter(**dict([(match_column, match_value)])).update(**dict([(entity_column, e.id)]))
-        
 
-
-def big_hitters_to_whitelist(filename):
-    def parse(crp_id, nimsp_id, name):
-        crp_urn = contributor_urn(crp_id)
-        nimsp_urn = 'urn:nimsp:contributor:' + nimsp_id
-        return (name, 'organization', [('contributor_name', name, 'contributor_entity'),
-                                       ('organization_name', name, 'organization_entity'),
-                                       ('parent_organization_name', name, 'parent_organization_entity'),
-                                       ('contributor_urn', nimsp_urn, 'contributor_entity'),
-                                       ('organization_urn', nimsp_urn, 'organization_urn'),
-                                       ('parent_organization_urn', nimsp_urn, 'parent_organization_entity'),
-                                       ('contributor_urn', crp_urn, 'contributor_entity')])
-    
-    return [parse(*row) for row in csv.reader(open(filename))]
-        
 
 
 # this is the old implementaiton that I'll be replacing

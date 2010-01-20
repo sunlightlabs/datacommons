@@ -14,6 +14,7 @@ from matchbox_scripts.contribution.build_aggregates import build_aggregates
 from matchbox_scripts.support.normalize_database import normalize
 from strings.normalizer import basic_normalizer
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses
+from matchbox_scripts.contribution.build_big_hitters import build_big_hitters
 
 
 
@@ -412,6 +413,25 @@ class TestEntityBuild(unittest.TestCase):
         
         e = Entity.objects.get(name='Coconut Camp')
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
+        
+    def test_big_hitters(self):
+        self.create_contribution(contributor_urn='urn:nimsp:contributor:1')
+        self.create_contribution(organization_urn='urn:nimsp:contributor:1')
+        self.create_contribution(parent_organization_urn='urn:nimsp:contributor:1')
+        self.create_contribution(contributor_urn='urn:crp:individual:D000031229')
+        self.create_contribution(contributor_name='1-800 Contacts')
+        self.create_contribution(organization_name='1-800 Contacts')
+        self.create_contribution(parent_organization_name='1-800 Contacts')
+        
+        whitelist_csv = ["D000031229, 1, 1-800 Contacts"]
+        
+        build_big_hitters(whitelist_csv)
+        
+        e = Entity.objects.get(name="1-800 Contacts")
+        
+        self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
+        self.assertEqual(2, Contribution.objects.filter(parent_organization_entity=e.id).count())
         
     
 class TestUtils(unittest.TestCase):
