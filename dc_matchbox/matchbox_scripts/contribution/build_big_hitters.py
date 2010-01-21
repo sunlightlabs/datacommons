@@ -10,7 +10,7 @@ def build_big_hitters(csv_rows):
     def parse(crp_id, nimsp_id, name):
         crp_urn = contributor_urn(crp_id.strip())
         nimsp_urn = 'urn:nimsp:contributor:' + nimsp_id.strip()
-        clean_name = name.strip()
+        clean_name = name.strip().decode('utf8', 'replace')
         return (clean_name, 'organization', [('contributor_name', clean_name, 'contributor_entity'),
                                        ('organization_name', clean_name, 'organization_entity'),
                                        ('parent_organization_name', clean_name, 'parent_organization_entity'),

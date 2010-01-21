@@ -10,6 +10,7 @@ from models import Entity, EntityAlias, EntityAttribute, Normalization
 from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
 from matchbox_scripts.support.build_entities import populate_entities, build_entity
 from matchbox_scripts.contribution.normalize_contributions import run as run_normalization_script
+from matchbox_scripts.contribution.normalize import normalize_contributions
 from matchbox_scripts.contribution.build_aggregates import build_aggregates
 from matchbox_scripts.support.normalize_database import normalize
 from strings.normalizer import basic_normalizer
@@ -377,6 +378,7 @@ class TestEntityBuild(unittest.TestCase):
         c.import_reference=self.import_
         c.save()
     
+    
     def setUp(self):
         print("Setting up database...")
         Import.objects.all().delete()
@@ -389,8 +391,28 @@ class TestEntityBuild(unittest.TestCase):
         self.import_ = Import()
         self.import_.save()
         
+        
+    def test_normalize(self):
+        self.create_contribution(contributor_name='contributor duplicate')
+        self.create_contribution(contributor_name='contributor duplicate')
+        self.create_contribution(organization_name='MULTIPLE ORIGINALS')
+        self.create_contribution(organization_name='multiple-originals')
+        self.create_contribution(parent_organization_name='multiple...originals')
+        self.create_contribution(committee_name='cross-column duplicate')
+        self.create_contribution(recipient_name='cross-column duplicate')
+        self.create_contribution(contributor_name='trailing whitespace ')
+        self.create_contribution(contributor_name='trailing whitespace')
+        
+        normalize_contributions()
+        
+        self.assertEqual(1, Normalization.objects.filter(normalized='contributorduplicate').count())
+        self.assertEqual(3, Normalization.objects.filter(normalized='multipleoriginals').count())
+        self.assertEqual(1, Normalization.objects.filter(normalized='crosscolumnduplicate').count())
+        self.assertEqual(2, Normalization.objects.filter(normalized='trailingwhitespace').count())
+            
+        
     def test_build_entity(self):
-        build_entity('Apple', 'organization', [('contributor_name', 'Apple Co', 'contributor_entity')])
+        build_entity('Apple', 'organization', [('contributor_name', u'Apple Co', 'contributor_entity')])
         
         self.assertEqual(1, Entity.objects.count())
         self.assertEqual(1, Entity.objects.filter(name='Apple').count())
@@ -398,7 +420,8 @@ class TestEntityBuild(unittest.TestCase):
         
         self.create_contribution(contributor_name='Banana Bar')
 
-        build_entity('Banana Bar', 'organization', [('contributor_name', 'Banana Bar', 'contributor_entity')])
+        normalize_contributions()
+        build_entity('Banana Bar', 'organization', [('contributor_name', u'Banana Bar', 'contributor_entity')])
         
         self.assertEqual(2, Entity.objects.count())
         c = Contribution.objects.get(contributor_name='Banana Bar')
@@ -408,8 +431,9 @@ class TestEntityBuild(unittest.TestCase):
         self.create_contribution(organization_name='Coconut Lounge')
         self.create_contribution(organization_urn='1234')
         
-        build_entity('Coconut Camp', 'organization', [('organization_name', 'Coconut Lounge', 'organization_entity'),
-                                                      ('organization_urn', '1234', 'organization_entity')])
+        normalize_contributions()
+        build_entity('Coconut Camp', 'organization', [('organization_name', u'Coconut Lounge', 'organization_entity'),
+                                                      ('organization_urn', u'1234', 'organization_entity')])
         
         e = Entity.objects.get(name='Coconut Camp')
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
@@ -425,6 +449,7 @@ class TestEntityBuild(unittest.TestCase):
         
         whitelist_csv = ["D000031229, 1, 1-800 Contacts"]
         
+        normalize_contributions()
         build_big_hitters(whitelist_csv)
         
         e = Entity.objects.get(name="1-800 Contacts")

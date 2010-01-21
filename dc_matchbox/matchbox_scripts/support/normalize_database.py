@@ -1,12 +1,17 @@
+from strings.normalizer import basic_normalizer
 
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from django.db import connection, transaction
 
 import sys
+import csv
 
 from matchbox.models import Normalization
 from matchbox_scripts.build_matchbox import log
+
+
+
 
 
 def normalize(source_table, source_column, normalizer):
