@@ -1,15 +1,49 @@
-drop index if exists contribution_contribution_contributor_name_lower;
-drop index if exists contribution_contribution_organization_name_lower;
-drop index if exists contribution_contribution_parent_organization_name_lower;
-drop index if exists contribution_contribution_committee_name_lower;
-drop index if exists contribution_contribution_recipient_name_lower;
 
-create index contribution_contribution_contributor_name_lower on contribution_contribution ((upper(contributor_name)));
-create index contribution_contribution_organization_name_lower on contribution_contribution ((upper(organization_name)));
-create index contribution_contribution_parent_organization_name_lower on contribution_contribution ((upper(parent_organization_name)));
-create index contribution_contribution_committee_name_lower on contribution_contribution ((upper(committee_name)));
-create index contribution_contribution_recipient_name_lower on contribution_contribution ((upper(recipient_name)));
+-- entity foreign key indexes
 
+drop index if exists contribution_contribution_contributor_entity;
+drop index if exists contribution_contribution_organization_entity;
+drop index if exists contribution_contribution_parent_organization_entity;
+drop index if exists contribution_contribution_committee_entity;
+drop index if exists contribution_contribution_recipient_entity;
+
+create index contribution_contribution_contributor_entity on contribution_contribution (contributor_entity);
+create index contribution_contribution_organization_entity on contribution_contribution (organization_entity);
+create index contribution_contribution_parent_organization_entity on contribution_contribution (parent_organization_entity);
+create index contribution_contribution_committee_entity on contribution_contribution (committee_entity);
+create index contribution_contribution_recipient_entity on contribution_contribution (recipient_entity);
+
+-- urn indexes
+
+drop index if exists contribution_contribution_contributor_urn;
+drop index if exists contribution_contribution_organization_urn;
+drop index if exists contribution_contribution_parent_organization_urn;
+drop index if exists contribution_contribution_committee_urn;
+drop index if exists contribution_contribution_recipient_urn;
+
+create index contribution_contribution_contributor_urn on contribution_contribution (contributor_urn);
+create index contribution_contribution_organization_urn on contribution_contribution (organization_urn);
+create index contribution_contribution_parent_organization_urn on contribution_contribution (parent_organization_urn);
+create index contribution_contribution_committee_urn on contribution_contribution (committee_urn);
+create index contribution_contribution_recipient_urn on contribution_contribution (recipient_urn);
+
+
+-- case-insensitive name indexes
+
+drop index if exists contribution_contribution_contributor_name_upper;
+drop index if exists contribution_contribution_organization_name_upper;
+drop index if exists contribution_contribution_parent_organization_name_upper;
+drop index if exists contribution_contribution_committee_name_upper;
+drop index if exists contribution_contribution_recipient_name_upper;
+
+create index contribution_contribution_contributor_name_upper on contribution_contribution ((upper(contributor_name)));
+create index contribution_contribution_organization_name_upper on contribution_contribution ((upper(organization_name)));
+create index contribution_contribution_parent_organization_name_upper on contribution_contribution ((upper(parent_organization_name)));
+create index contribution_contribution_committee_name_upper on contribution_contribution ((upper(committee_name)));
+create index contribution_contribution_recipient_name_upper on contribution_contribution ((upper(recipient_name)));
+
+
+-- full text indexes
 
 create text search dictionary datacommons ( template = simple, stopwords = datacommons );
 create text search configuration datacommons ( copy = simple );
