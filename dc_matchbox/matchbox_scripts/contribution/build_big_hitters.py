@@ -24,4 +24,4 @@ def build_big_hitters(csv_rows):
 
 
 if __name__ == "__main__":
-    build_big_hitters(sys.argv[1])
+    build_big_hitters(open(sys.argv[1]))

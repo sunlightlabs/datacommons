@@ -8,7 +8,6 @@ import logging
 import csv
 from datetime import datetime
 from matchbox.models import EntityAttribute, sql_names
-from matchbox_scripts.build_matchbox import log
 from scripts.crp.denormalize import contributor_urn
 
 
@@ -25,7 +24,7 @@ def build_entity(name, type, criteria):
     e = Entity.objects.create(name=name, type=type)
     
     for (match_column, match_value, entity_column) in criteria:
-        Contribution.objects.filter(**dict([(match_column, match_value)])).update(**dict([(entity_column, e.id)]))
+        Contribution.objects.filter(**dict([(match_column + "__iexact", match_value)])).update(**dict([(entity_column, e.id)]))
 
 
 
