@@ -1,7 +1,9 @@
 
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 import csv
 
-from django.db import connection, transaction
+from django.db import connection
 
 from strings.normalizer import basic_normalizer
 
@@ -18,7 +20,7 @@ def normalize_file(originals, out):
 def download_names(out):
     cursor = connection.cursor()
     
-    savepoint = transaction.savepoint()
+    cursor.execute('drop table if exists tmp_all_names')
     
     stmt = """
             create table tmp_all_names as
@@ -32,8 +34,8 @@ def download_names(out):
     
     cursor.copy_to(out, 'tmp_all_names')
     
-    transaction.savepoint_rollback(savepoint)
-    
+    cursor.execute('drop table if exists tmp_all_names')
+
     
 def upload_normalizations(normalizations):
     cursor = connection.cursor()
@@ -43,9 +45,7 @@ def upload_normalizations(normalizations):
     cursor.copy_from(normalizations, 'matchbox_normalization', sep=',')
     
 
-@transaction.commit_on_success
 def normalize_contributions():
-    transaction.set_dirty()
 
     originals_filename = '/tmp/originals.out'
     normalized_filename = '/tmp/normalized.csv'
@@ -63,4 +63,6 @@ def normalize_contributions():
     upload_normalizations(normalized_reader)
     
     
+if __name__ == '__main__':
+    normalize_contributions()
 
