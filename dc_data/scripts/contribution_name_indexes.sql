@@ -28,7 +28,7 @@ create index contribution_contribution_committee_urn on contribution_contributio
 create index contribution_contribution_recipient_urn on contribution_contribution (recipient_urn);
 
 
--- case-insensitive name indexes
+-- name indexes
 
 drop index if exists contribution_contribution_contributor_name_upper;
 drop index if exists contribution_contribution_organization_name_upper;
@@ -36,11 +36,11 @@ drop index if exists contribution_contribution_parent_organization_name_upper;
 drop index if exists contribution_contribution_committee_name_upper;
 drop index if exists contribution_contribution_recipient_name_upper;
 
-create index contribution_contribution_contributor_name_upper on contribution_contribution ((upper(contributor_name)));
-create index contribution_contribution_organization_name_upper on contribution_contribution ((upper(organization_name)));
-create index contribution_contribution_parent_organization_name_upper on contribution_contribution ((upper(parent_organization_name)));
-create index contribution_contribution_committee_name_upper on contribution_contribution ((upper(committee_name)));
-create index contribution_contribution_recipient_name_upper on contribution_contribution ((upper(recipient_name)));
+create index contribution_contribution_contributor_name on contribution_contribution (contributor_name);
+create index contribution_contribution_organization_name on contribution_contribution (organization_name);
+create index contribution_contribution_parent_organization_name on contribution_contribution (parent_organization_name);
+create index contribution_contribution_committee_name on contribution_contribution (committee_name);
+create index contribution_contribution_recipient_name on contribution_contribution (recipient_name);
 
 
 -- full text indexes
