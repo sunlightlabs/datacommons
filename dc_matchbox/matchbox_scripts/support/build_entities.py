@@ -1,19 +1,52 @@
-
-
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+from strings.normalizer import basic_normalizer
 
 import time
 import logging
+
+from django.db import connection
+
 from datetime import datetime
 from matchbox.models import EntityAttribute, sql_names
-from matchbox_scripts.build_matchbox import log
+
 
 
 def quote(value):
     return value.replace("\\","\\\\").replace("'","\\'")
 
 
+from matchbox.models import Entity
+
+
+
+def build_entity(name, type, criteria):
+    cursor = connection.cursor()
+    
+    e = Entity.objects.create(name=name, type=type)
+    
+    for (match_column, match_value, entity_column) in criteria:
+        if match_column.endswith('_name'):
+            match_value = basic_normalizer(match_value)
+            stmt = """
+                   update contribution_contribution set %s = %%s
+                   from matchbox_normalization  
+                   where 
+                       matchbox_normalization.original = contribution_contribution.%s and matchbox_normalization.normalized = %%s
+                   """ % (entity_column, match_column)
+        else:
+            stmt = """
+                   update contribution_contribution set %s = %%s
+                   where %s = %%s
+                   """ % (entity_column, match_column)
+        
+        cursor.execute(stmt, [e.id, match_value])
+    
+    cursor.close()
+    
+        
+        
+
+
+# this is the old implementaiton that I'll be replacing
 def populate_entities(transaction_table, entity_id_column, name_columns, attribute_column,
                       type_determiner, type_column=None, reviewer=__name__, timestamp = datetime.now()):
     """

@@ -50,11 +50,12 @@ disallowed_orgnames = set(['retired', 'homemaker', 'attorney', '[24i contributio
 class OrganizationFilter(Filter):
     def process_record(self, record):
         orgname = record.get('org_name', '').strip()
-        if not orgname or orgname.lower() in disallowed_orgnames:
-            orgname = record.get('emp_ef', '').strip()
-            if (not orgname or orgname.lower() in disallowed_orgnames) and '/' in record.get('fec_occ_emp',''):
-                (emp, occ) = record.get('fec_occ_emp','').split('/', 1)
-                orgname = emp.strip()
+        # disabling the orgname fallbacks--we want to be able to rely on the orgname being the human-verified name
+#        if not orgname or orgname.lower() in disallowed_orgnames:
+#            orgname = record.get('emp_ef', '').strip()
+#            if (not orgname or orgname.lower() in disallowed_orgnames) and '/' in record.get('fec_occ_emp',''):
+#                (emp, occ) = record.get('fec_occ_emp','').split('/', 1)
+#                orgname = emp.strip()
         record['organization_name'] = orgname if orgname and orgname.lower() not in disallowed_orgnames else None
         return record
 
