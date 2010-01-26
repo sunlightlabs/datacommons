@@ -13,7 +13,6 @@ from scripts.crp.denormalize import contributor_urn
 
 def build_big_hitters(csv_rows):
     def parse(crp_id, nimsp_id, name):
-        crp_urn = contributor_urn(crp_id.strip())
         nimsp_urn = 'urn:nimsp:contributor:' + nimsp_id.strip()
         clean_name = name.strip().decode('utf8', 'replace')
         
@@ -23,10 +22,9 @@ def build_big_hitters(csv_rows):
         entity_columns = [column + '_entity' for column in columns]
         
         name_criteria = zip(name_columns, [clean_name] * 5, entity_columns)
-        crp_urn_criteria = [('contributor_urn', crp_urn, 'contributor_entity')]
         nimsp_urn_criteria = zip(urn_columns[0:3], [nimsp_urn] * 3, entity_columns[0:3])
         
-        all_criteria = name_criteria + crp_urn_criteria + nimsp_urn_criteria
+        all_criteria = name_criteria + nimsp_urn_criteria
         
         return (clean_name, 'organization', all_criteria)
     
