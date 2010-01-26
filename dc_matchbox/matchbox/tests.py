@@ -442,7 +442,7 @@ class TestEntityBuild(unittest.TestCase):
         self.create_contribution(contributor_urn='urn:nimsp:contributor:1')
         self.create_contribution(organization_urn='urn:nimsp:contributor:1')
         self.create_contribution(parent_organization_urn='urn:nimsp:contributor:1')
-        self.create_contribution(contributor_urn='urn:crp:individual:D000031229')
+        self.create_contribution(contributor_urn='urn:crp:contributor:D000031229') # won't count toward total b/c we don't search on CRP IDs, since they don't occur in actual data
         self.create_contribution(contributor_name='1-800 Contacts')
         self.create_contribution(organization_name='1-800 Contacts')
         self.create_contribution(parent_organization_name='1-800 Contacts')
@@ -454,7 +454,7 @@ class TestEntityBuild(unittest.TestCase):
         
         e = Entity.objects.get(name="1-800 Contacts")
         
-        self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
         self.assertEqual(2, Contribution.objects.filter(parent_organization_entity=e.id).count())
         

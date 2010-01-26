@@ -25,7 +25,7 @@ def candidate_urn(s):
     return 'urn:crp:candidate:%s' % s.strip().upper() if s else None        
 
 def contributor_urn(s):
-    return 'urn:crp:individual:%s' % s.strip().upper() if s else None
+    return 'urn:crp:contributor:%s' % s.strip().upper() if s else None
 
 def committee_urn(s):
     return 'urn:crp:committee:%s' % s.strip().upper() if s else None

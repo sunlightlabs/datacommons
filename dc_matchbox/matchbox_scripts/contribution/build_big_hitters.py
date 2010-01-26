@@ -47,7 +47,7 @@ def build_big_hitters(csv_rows):
     for ((column, value), count) in aggregate_stats.iteritems():
         if column.endswith("_name"):
             totals[column] = totals.get(column, 0) + count
-        elif value.startswith("urn:crp:individual"):
+        elif value.startswith("urn:crp"):
             totals[column + "_crp"] = totals.get(column + "_crp", 0) + count
         else:
             totals[column + "_nimsp"] = totals.get(column + "_nimsp", 0) + count
