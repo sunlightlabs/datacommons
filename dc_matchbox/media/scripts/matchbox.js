@@ -217,12 +217,33 @@ var Matchbox = {
                 var entity = Matchbox.createEntity(entitySpec);
                 Matchbox.MergeManager.entities[entity['id']] = entity;
                 Matchbox.entities.push(entity);
-                var row = $(entitySpec['html']);
+                
+                var content = '';
+                content += '<li id="' + entity.id + '">';
+                content += '<p class="actions">';
+                content += '<a href="/entity/' + entity.id + '/" class="transactions" title="transactions">' + entity.count + '</a>';
+                content += '<a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google">Google</a>';
+                content += '<a href="/entity/' + entity.id + '/" class="detail">Details</a>';
+                content += '<a href="/entity/' + entity.id + '/" class="notes" title="notes">' + entity.notes + '</a>';
+                content += '</p>';
+                content += '<input class="selector" type="checkbox" name="entities" value="' + entity.id + '" id="entities_' + entity.id + '">';
+                content += '<a class="transactions_control ui-icon ui-icon-triangle-1-e" href="/entity/' + entity.id + '/transactions/">V</a>';
+                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">$' + entity.total + '</span>';
+                content += '<div class="details_container">';
+                content += '<div class="transactions_container"></div>';
+                content += '<div class="details_expander">';
+                content += '<a href="#">=</a>';
+                content += '</div>';
+                content += '</div>';
+                content += '</li>';
+                
+                var row = $(content);
                 // row.find('input[type=checkbox]').click(function() {
                 //     Matchbox.MergeManager.entities[$(this).val()].selected = this.checked;
                 // });
                 $('#entities').append(row);
                 entity.bind();
+                
             }
         },
         
