@@ -159,10 +159,6 @@ class Contribution(DataCommonsModel):
                     raise ValueError, "Levin funds may only occur on or after 2004"
                 elif self.transaction_type == '10soft':
                     raise ValueError, "Soft funds may only occur before 2004"
-        
-            # check employer/occupation rules
-            if self.contributor_employer and not self.contributor_occupation:
-                raise ValueError, "Joint employer/occupations should be saved in the contributor_occupation field"
         else: 
             raise ValueError, "Unhandled transaction_namespace (%s)" % (self.transaction_namespace or 'None')
 

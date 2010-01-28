@@ -132,8 +132,8 @@ class FECOccupationFilter(Filter):
         if record['occ_ef'] and record['emp_ef']:
             record['contributor_occupation'] = record['occ_ef']
             record['contributor_employer'] = record['emp_ef']
-        elif '/' in record['fec_occ_emp']:
-            (emp, occ) = record['fec_occ_emp'].split('/', 1)
+        elif record['fec_occ_emp'].count('/') == 1:
+            (emp, occ) = record['fec_occ_emp'].split('/')
             record['contributor_occupation'] = occ
             record['contributor_employer'] = emp
         else:
