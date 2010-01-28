@@ -72,7 +72,9 @@ class Entity(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
-    reviewer = models.CharField(max_length=255, default="")    
+    reviewer = models.CharField(max_length=255, default="")
+    contribuion_count = models.IntegerField()
+    contribution_amount = models.IntegerField()    
     
     def __unicode__(self):
         return self.name

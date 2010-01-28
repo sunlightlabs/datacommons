@@ -3,7 +3,7 @@ from strings.normalizer import basic_normalizer
 import time
 import logging
 
-from django.db import connection
+from django.db import connection, transaction
 
 from datetime import datetime
 from matchbox.models import EntityAttribute, sql_names
@@ -17,30 +17,39 @@ def quote(value):
 from matchbox.models import Entity
 
 
-
-def build_entity(name, type, criteria):
+@transaction.commit_on_success
+def build_entity(name, type, criteria, stats = None):
     cursor = connection.cursor()
     
-    e = Entity.objects.create(name=name, type=type)
-    
-    for (match_column, match_value, entity_column) in criteria:
-        if match_column.endswith('_name'):
-            match_value = basic_normalizer(match_value)
-            stmt = """
-                   update contribution_contribution set %s = %%s
-                   from matchbox_normalization  
-                   where 
-                       matchbox_normalization.original = contribution_contribution.%s and matchbox_normalization.normalized = %%s
-                   """ % (entity_column, match_column)
-        else:
-            stmt = """
-                   update contribution_contribution set %s = %%s
-                   where %s = %%s
-                   """ % (entity_column, match_column)
+    try:
+        e = Entity.objects.create(name=name, type=type)
         
-        cursor.execute(stmt, [e.id, match_value])
-    
-    cursor.close()
+        for (match_column, match_value, entity_column) in criteria:
+            if match_column.endswith('_name'):
+                match_value = basic_normalizer(match_value)
+                stmt = """
+                       update contribution_contribution set %s = %%s
+                       from matchbox_normalization  
+                       where 
+                           matchbox_normalization.original = contribution_contribution.%s and matchbox_normalization.normalized = %%s
+                       """ % (entity_column, match_column)
+            else:
+                stmt = """
+                       update contribution_contribution set %s = %%s
+                       where %s = %%s
+                       """ % (entity_column, match_column)
+            
+            try:
+                cursor.execute(stmt, [e.id, match_value])
+            except:
+                print "build_entity(): Error executing query: '%s' %% (%s, %s)" % (stmt, e.id, match_value)
+                raise
+            
+            if stats is not None:
+                stats[(match_column, match_value)] = cursor.rowcount
+                
+    finally:    
+        cursor.close()
     
         
         

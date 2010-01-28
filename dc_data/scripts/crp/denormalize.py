@@ -25,7 +25,7 @@ def candidate_urn(s):
     return 'urn:crp:candidate:%s' % s.strip().upper() if s else None        
 
 def contributor_urn(s):
-    return 'urn:crp:individual:%s' % s.strip().upper() if s else None
+    return 'urn:crp:contributor:%s' % s.strip().upper() if s else None
 
 def committee_urn(s):
     return 'urn:crp:committee:%s' % s.strip().upper() if s else None
@@ -132,11 +132,12 @@ class FECOccupationFilter(Filter):
         if record['occ_ef'] and record['emp_ef']:
             record['contributor_occupation'] = record['occ_ef']
             record['contributor_employer'] = record['emp_ef']
-        elif '/' in record['fec_occ_emp']:
+        elif record['fec_occ_emp'].count('/') == 1:
+            (emp, occ) = record['fec_occ_emp'].split('/')
+            record['contributor_occupation'] = occ
+            record['contributor_employer'] = emp
+        else:
             record['contributor_occupation'] = record['fec_occ_emp']
-            #(emp, occ) = record['fec_occ_emp'].split('/', 1)
-            #record['contributor_occupation'] = occ
-            #record['contributor_employer'] = emp
 
         return record
 
