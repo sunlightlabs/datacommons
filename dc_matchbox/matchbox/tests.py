@@ -480,7 +480,34 @@ class TestEntityBuild(unittest.TestCase):
         self.assertEqual(4, zapwow.contribution_count)
         self.assertEqual(1500, zapwow.contribution_amount)
         
-    
+    def test_entity_aliases(self):
+        self.create_contribution(contributor_name='Bob',
+                                 contributor_employer='Waz')
+        self.create_contribution(organization_name='Waz Co',
+                                 parent_organization_name='Wazzo Intl')
+        
+        whitelist=["0, 0, Waz Corp", "0, 0, Bob", "0, 0, Wazzo Intl"]
+        
+        normalize_contributions()
+        build_big_hitters(whitelist)
+        build_aggregates()
+        
+        self.assertEqual(3, Entity.objects.count())
+        
+        e = Entity.objects.get(name='Bob')
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
+        
+        e = Entity.objects.get(name='Wazzo Intl')
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Wazzo Intl').count())
+
+        e = Entity.objects.get(name='Waz Corp')
+        self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Co').count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
+        
+            
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):
         self.assertEqual("", _prepend_pluses(""))
