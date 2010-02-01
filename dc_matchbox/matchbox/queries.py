@@ -30,17 +30,16 @@ def search_entities_by_name(query, type_filter=[]):
         type_clause = "where " + " or ".join(["e.type = '%s'" % type for type in type_filter]) if type_filter else ""
         
         stmt = """
-                select matches.id, matches.name, agg.count, agg.sum from                     
-                    (select distinct e.id, e.name from                                 
-                            (select distinct original from matchbox_normalization where normalized like %%s union distinct                                 
-                            select distinct original from matchbox_normalization where to_tsvector('simple', original) @@ to_tsquery('simple', %%s)
-                            limit 1000) n                             
-                        inner join matchbox_entityalias a on a.alias = n.original                             
-                        inner join matchbox_entity e on e.id = a.entity_id                             
-                        %s) matches 
-                    left join matchbox_contribution_aggregates agg
-                    on matches.id = agg.id
-                    order by agg.count desc;
+                select distinct e.id, e.name, e.contribution_count, e.contribution_amount 
+                from                                 
+                    (select distinct original from matchbox_normalization where normalized like %%s 
+                    union distinct                                 
+                    select distinct original from matchbox_normalization where to_tsvector('simple', original) @@ to_tsquery('simple', %%s)
+                    limit 1000) n                             
+                    inner join matchbox_entityalias a on a.alias = n.original                             
+                    inner join matchbox_entity e on e.id = a.entity_id                             
+                    %s
+                order by e.contribution_count desc;
                 """ % type_clause
         
         cursor = connection.cursor()

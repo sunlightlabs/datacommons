@@ -23,8 +23,9 @@ def build_big_hitters(csv_rows):
         
         name_criteria = zip(name_columns, [clean_name] * 5, entity_columns)
         nimsp_urn_criteria = zip(urn_columns[0:3], [nimsp_urn] * 3, entity_columns[0:3])
+        contributor_employer_criterion = [('contributor_employer', clean_name, 'organization_entity')]
         
-        all_criteria = name_criteria + nimsp_urn_criteria
+        all_criteria = name_criteria + nimsp_urn_criteria + contributor_employer_criterion
         
         return (clean_name, 'organization', all_criteria)
     

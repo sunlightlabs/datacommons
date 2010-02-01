@@ -458,7 +458,56 @@ class TestEntityBuild(unittest.TestCase):
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
         self.assertEqual(2, Contribution.objects.filter(parent_organization_entity=e.id).count())
         
-    
+    def test_entity_aggregates(self):
+        self.create_contribution(contributor_name='FooBar', amount=100)
+        self.create_contribution(contributor_employer='FooBar Corp')
+        self.create_contribution(organization_name='ZapWow', amount=100)
+        self.create_contribution(parent_organization_name='ZapWow', amount=200)
+        self.create_contribution(committee_name='ZapWow', amount=400)
+        self.create_contribution(recipient_name='ZapWow', amount=800)
+        
+        whitelist = ["0, 0, FooBar", "0, 0, ZapWow"]
+        
+        normalize_contributions()
+        build_big_hitters(whitelist)
+        build_aggregates()
+        
+        foobar = Entity.objects.get(name="FooBar")
+        self.assertEqual(2, foobar.contribution_count)
+        self.assertEqual(100, foobar.contribution_amount)
+        
+        zapwow = Entity.objects.get(name="ZapWow")
+        self.assertEqual(4, zapwow.contribution_count)
+        self.assertEqual(1500, zapwow.contribution_amount)
+        
+    def test_entity_aliases(self):
+        self.create_contribution(contributor_name='Bob',
+                                 contributor_employer='Waz')
+        self.create_contribution(organization_name='Waz Co',
+                                 parent_organization_name='Wazzo Intl')
+        
+        whitelist=["0, 0, Waz Corp", "0, 0, Bob", "0, 0, Wazzo Intl"]
+        
+        normalize_contributions()
+        build_big_hitters(whitelist)
+        build_aggregates()
+        
+        self.assertEqual(3, Entity.objects.count())
+        
+        e = Entity.objects.get(name='Bob')
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
+        
+        e = Entity.objects.get(name='Wazzo Intl')
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Wazzo Intl').count())
+
+        e = Entity.objects.get(name='Waz Corp')
+        self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Co').count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
+        
+            
 class TestUtils(unittest.TestCase):
     def test_prepend_pluses(self):
         self.assertEqual("", _prepend_pluses(""))

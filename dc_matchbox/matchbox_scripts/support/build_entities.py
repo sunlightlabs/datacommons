@@ -25,18 +25,18 @@ def build_entity(name, type, criteria, stats = None):
         e = Entity.objects.create(name=name, type=type)
         
         for (match_column, match_value, entity_column) in criteria:
-            if match_column.endswith('_name'):
+            if match_column.endswith('_urn'):
+                stmt = """
+                       update contribution_contribution set %s = %%s
+                       where %s = %%s
+                       """ % (entity_column, match_column)
+            else:
                 match_value = basic_normalizer(match_value)
                 stmt = """
                        update contribution_contribution set %s = %%s
                        from matchbox_normalization  
                        where 
                            matchbox_normalization.original = contribution_contribution.%s and matchbox_normalization.normalized = %%s
-                       """ % (entity_column, match_column)
-            else:
-                stmt = """
-                       update contribution_contribution set %s = %%s
-                       where %s = %%s
                        """ % (entity_column, match_column)
             
             try:

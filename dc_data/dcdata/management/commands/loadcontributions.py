@@ -15,6 +15,7 @@ import saucebrush
 from optparse import make_option
 import os
 import sys
+import traceback
 
 MATCHBOX_ORG_NAMESPACE = 'urn:matchbox:organization:'
 
@@ -209,7 +210,8 @@ class Command(BaseCommand):
                 
             )
         except:
-            sys.stderr.write("Fatal exception: %s\n" % repr(sys.exc_info()))
+            traceback.print_exception(*sys.exc_info())
+            raise
         finally:
             sys.stdout.flush()
             sys.stderr.flush()

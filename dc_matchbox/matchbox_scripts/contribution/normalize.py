@@ -3,7 +3,7 @@ import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 import csv
 
-from django.db import connection
+from django.db import connection, transaction
 
 from strings.normalizer import basic_normalizer
 
@@ -25,6 +25,7 @@ def download_names(out):
     stmt = """
             create table tmp_all_names as
                 select distinct contributor_name from contribution_contribution where contributor_name != ''
+                union select distinct contributor_employer from contribution_contribution where contributor_employer != ''
                 union select distinct organization_name from contribution_contribution where organization_name != ''
                 union select distinct parent_organization_name from contribution_contribution where parent_organization_name != ''
                 union select distinct committee_name from contribution_contribution where committee_name != ''
@@ -44,8 +45,9 @@ def upload_normalizations(normalizations):
     
     cursor.copy_from(normalizations, 'matchbox_normalization', sep=',')
     
-
+@transaction.commit_on_success
 def normalize_contributions():
+    transaction.set_dirty()
 
     originals_filename = '/tmp/originals.out'
     normalized_filename = '/tmp/normalized.csv'
