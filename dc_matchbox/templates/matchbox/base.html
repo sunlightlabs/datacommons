@@ -19,29 +19,13 @@
     <body id="organizations">
         <header>
             <div class="container">
-                <h1><a href="{% url matchbox_dashboard %}">Data Commons</a></h1>
+                <h1><a href="/">Data Commons</a></h1>
                 {% if user.is_authenticated %}
                     <p class="welcome">Welcome, {{ user.username }} | <a href="{% url logout %}">Logout</a></p>
                 {% endif %}
                 <div class="clear"></div>
             </div>
-            <div id="search_form_container">
-                <form action="{% url matchbox_merge %}" method="get" id="search_form">
-                    <p class="container">
-                        {% if user.is_authenticated %}
-                            <label for="search_query">New Search</label>
-                            <input type="text" name="q" id="query" tabindex="1">
-                            <select name="type_filter" tabindex="2">
-                                <option value="organization"{% ifequal type_filter "organization" %} selected="selected"{% endifequal %}>organizations</option>
-                                <option value="committee"{% ifequal type_filter "committee" %} selected="selected"{% endifequal %}>committees</option>
-                                <option value="politician"{% ifequal type_filter "politician" %} selected="selected"{% endifequal %}>politicians</option>
-                                <option value="individual"{% ifequal type_filter "individual" %} selected="selected"{% endifequal %}>individuals</option>
-                            </select>
-                            <input type="submit" value="Go!">
-                        {% endif %}
-                    </p>
-                </form>
-            </div>
+            {% block nav %}{% endblock %}
         </header>
         
         <div id="main" class="container">

@@ -186,7 +186,7 @@ var Matchbox = {
             var message = Matchbox.StatusBar.notify("Loading query '" + query + "'");
             $.ajax({
                 type: 'GET',
-                url: '/search/?type_filter=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query),
+                url: '/merge/search/?type_filter=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query),
                 dataType: 'json',
                 success: function(results) {
                     $('#search_terms').append($('<li>' + query + ' (' + results.length + ')</li>'));
@@ -205,7 +205,7 @@ var Matchbox = {
         },
         
         loadQueue: function(queueId) {
-            $.getJSON('/queue/' + queueId + '/', Matchbox.MergeManager.loadEntities);
+            $.getJSON('/merge/queue/' + queueId + '/', Matchbox.MergeManager.loadEntities);
             Matchbox.MergeManager.loadedQueues.push(queueId)
             //$('<input type="hidden" name="queue" value="' + queueId + '">').appendTo('#merge_form')
         },

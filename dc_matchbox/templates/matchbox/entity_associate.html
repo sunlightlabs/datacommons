@@ -1,0 +1,23 @@
+{% extends "matchbox/base.html" %}
+
+{% block content %}
+    <form action="." method="post">
+        {% for field in form.hidden_fields %}
+            {{ field.errors }}
+            {{ field }}
+        {% endfor %}
+        <ul>
+            {% for field in form.visible_fields %}
+                <li>
+                    {{ field.errors }}
+                    {{ field.label_tag }} {{ field }}
+                </li>
+            {% endfor %}
+            <li><input type="submit" value="Execute"></li>
+        </ul>
+    </form>
+{% endblock %}
+
+{% block sidebar %}
+    
+{% endblock %}

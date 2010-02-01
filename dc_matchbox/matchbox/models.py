@@ -17,6 +17,11 @@ class EntityRefCache(dict):
         if not model in self:
             self[model] = []
         self[model].append(field)
+    def for_model_name(self, name):
+        name = name.lower()
+        for key, value in self.iteritems():
+            if key._meta.object_name.lower() == name:
+                return (key, self[key])
        
 entityref_cache = EntityRefCache()
 
