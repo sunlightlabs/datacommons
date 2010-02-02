@@ -76,11 +76,11 @@ def parse_transaction_ids(clob):
 @login_required
 def entity_associate(request, entity_id, model_name):
     (model, fields) = entityref_cache.for_model_name(model_name)
-    #entity = Entity.objects.get(pk=entity_id)
+    entity = Entity.objects.get(pk=entity_id)
     if request.method == 'POST':
         form = AssociationForm(model, entity_id, request.POST)
         if form.is_valid():
             print parse_transaction_ids(form.cleaned_data['transactions'])
     else:
         form = AssociationForm(model, entity_id)
-    return render_to_response('matchbox/entity_associate.html', {'form': form})
+    return render_to_response('matchbox/entity_associate.html', {'form': form, 'entity': entity})
