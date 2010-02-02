@@ -83,4 +83,4 @@ def entity_associate(request, entity_id, model_name):
             print parse_transaction_ids(form.cleaned_data['transactions'])
     else:
         form = AssociationForm(model, entity_id)
-    return render_to_response('matchbox/entity_associate.html', {'form': form, 'entity': entity})
+    return render_to_response('matchbox/entity_associate.html', {'form': form, 'entity': entity}, context_instance=RequestContext(request))
