@@ -1,6 +1,9 @@
 
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+import traceback
+import sys
 import csv
 
 from django.db import connection, transaction
@@ -38,16 +41,22 @@ def download_names(out):
     cursor.execute('drop table if exists tmp_all_names')
 
     
+@transaction.commit_on_success
 def upload_normalizations(normalizations):
+    transaction.set_dirty()
+
     cursor = connection.cursor()
 
     cursor.execute("delete from matchbox_normalization")
     
-    cursor.copy_from(normalizations, 'matchbox_normalization', sep=',')
+    try:
+        cursor.copy_from(normalizations, 'matchbox_normalization', sep=',')
+    except:
+        traceback.print_exception(*sys.exc_info())
+        raise
     
-@transaction.commit_on_success
+    
 def normalize_contributions():
-    transaction.set_dirty()
 
     originals_filename = '/tmp/originals.out'
     normalized_filename = '/tmp/normalized.csv'
@@ -63,7 +72,8 @@ def normalize_contributions():
     
     normalized_reader = open(normalized_filename, 'r')
     upload_normalizations(normalized_reader)
-    
+
+    print "Normalization successful..."
     
 if __name__ == '__main__':
     normalize_contributions()
