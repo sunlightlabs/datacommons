@@ -88,7 +88,7 @@
     {% if entity.notes %}
         <ul id="notes">
             {% for note in entity.notes.all %}
-                <li class="note">{% include "matchbox/partials/entity_note.html" %}</li>
+                <li class="note">{% include "matchbox/merge/partials/entity_note.html" %}</li>
             {% endfor %}
         </ul>
     {% endif %}
