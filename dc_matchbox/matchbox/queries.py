@@ -56,6 +56,104 @@ def search_entities_by_name(query, type_filter=[]):
         return []
 
 
+def _pairs_to_dict(pairs):
+    result = dict()
+    for (key, value) in pairs:
+        result.setdefault(key, set()).add(value)
+        
+    return result
+
+
+def associate_transactions(entity_id, column, transactions):
+    cursor = connection.cursor()
+    
+    for (namespace, ids) in _pairs_to_dict(transactions).iteritems():
+        contribution_update_stmt = """
+            update contribution_contribution
+            set %s = %%s
+            where transaction_namespace = %%s
+                and transaction_id in %s
+            """ % (column, "(%s)" % ", ".join(["'%s'"] * len(ids)))
+        cursor.execute(contribution_update_stmt, [entity_id, namespace] + list(ids))
+        
+    _recompute_aggregates(entity_id)
+    
+    
+def _recompute_aggregates(entity_id):
+    cursor = connection.cursor()
+    
+    aggregate_count_stmt = """
+        update matchbox_entity set contribution_count = (
+            select count(*) from contribution_contribution 
+            where contributor_entity = matchbox_entity.id
+                or organization_entity = matchbox_entity.id
+                or parent_organization_entity = matchbox_entity.id
+                or committee_entity = matchbox_entity.id
+                or recipient_entity = matchbox_entity.id)
+        where id = %s
+    """
+    cursor.execute(aggregate_count_stmt, [entity_id])
+    
+    aggregate_amount_stmt = """
+        update matchbox_entity set contribution_amount = (
+            select sum(amount) from contribution_contribution
+            where contributor_entity = matchbox_entity.id
+                or organization_entity = matchbox_entity.id
+                or parent_organization_entity = matchbox_entity.id
+                or committee_entity = matchbox_entity.id
+                or recipient_entity = matchbox_entity.id)
+        where id = %s
+    """
+    cursor.execute(aggregate_amount_stmt, [entity_id])
+    
+    delete_aliases_stmt = """
+        delete from matchbox_entityalias
+        where entity_id = %s
+    """
+    cursor.execute(delete_aliases_stmt, [entity_id])
+    
+    aggregate_aliases_stmt = """
+        insert into matchbox_entityalias (entity_id, alias)
+            select contributor_entity, contributor_name
+            from contribution_contribution
+            where contributor_entity = %s
+                and contributor_name != ''
+            group by contributor_entity, contributor_name
+        union
+            select organization_entity, organization_name
+            from contribution_contribution
+            where organization_entity = %s
+                and organization_name != ''
+            group by organization_entity, organization_name
+        union
+            select organization_entity, contributor_employer
+            from contribution_contribution
+            where organization_entity = %s
+                and contributor_employer != ''
+            group by organization_entity, contributor_employer
+        union
+            select parent_organization_entity, parent_organization_name
+            from contribution_contribution
+            where parent_organization_entity = %s
+                and parent_organization_name != ''
+            group by parent_organization_entity, parent_organization_name
+        union
+            select committee_entity, committee_name
+            from contribution_contribution
+            where committee_entity = %s
+                and committee_name != ''
+            group by committee_entity, committee_name
+        union
+            select recipient_entity, recipient_name
+            from contribution_contribution
+            where recipient_entity = %s
+                and recipient_name != ''
+            group by recipient_entity, recipient_name;
+    """    
+    cursor.execute(aggregate_aliases_stmt, [entity_id] * 6)
+    
+    # re-compute attribute aggregates
+
 
 def merge_entities(entity_ids, new_entity):
     """

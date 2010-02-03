@@ -12,15 +12,15 @@ from matchbox_scripts.support.build_entities import populate_entities, build_ent
 from matchbox_scripts.contribution.normalize_contributions import run as run_normalization_script
 from matchbox_scripts.contribution.normalize import normalize_contributions
 from matchbox_scripts.contribution.build_aggregates import build_aggregates
-from matchbox_scripts.support.normalize_database import normalize
-from strings.normalizer import basic_normalizer
-from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses
+from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
+    associate_transactions, _pairs_to_dict
 from matchbox_scripts.contribution.build_big_hitters import build_big_hitters
 
 
 
 
 class TestQueries(unittest.TestCase):
+    NAMESPACE = 'urn:unittest:transaction'
 
     def save_contribution(self, org_name, org_entity):
         c = Contribution(organization_name=org_name, 
@@ -28,7 +28,7 @@ class TestQueries(unittest.TestCase):
                      organization_entity=org_entity,
                      datestamp=datetime.now(),
                      cycle='09', 
-                     transaction_namespace='urn:unittest:transaction',
+                     transaction_namespace=self.NAMESPACE,
                      import_reference=self.import_)
         c.save()
         
@@ -109,7 +109,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_urn="urn:unittest:recipient:" + "Apple Sauce",
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         
         Contribution.objects.create(recipient_name="Apple",
@@ -117,7 +117,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_urn="urn:unittest:recipient:" + "Apple",
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'],
@@ -152,7 +152,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_type='C',
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         
         Contribution.objects.create(recipient_name="Apple Smith",
@@ -160,7 +160,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_type='P',
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'],
@@ -286,25 +286,25 @@ class TestQueries(unittest.TestCase):
                                     parent_organization_entity=self.apple_id,
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         apple_catcher = Contribution.objects.create(recipient_name="Apple Catcher",
                                     recipient_entity=self.apple_id,
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         apricot_council = Contribution.objects.create(committee_name="Apricot Council",
                                     committee_entity=self.apricot_id,
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         apricot_picker = Contribution.objects.create(organization_name="Apricot Picker",
                                     organization_entity=self.apricot_id,
                                     datestamp=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace='urn:unittest:transaction',
+                                    transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         
         apple = Entity.objects.get(pk=self.apple_id)
@@ -331,24 +331,24 @@ class TestQueries(unittest.TestCase):
                                                     organization_entity=id,
                                                     datestamp=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace='urn:unittest:transaction',
+                                                    transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(organization_name="three",
                                                     organization_entity=id,
                                                     datestamp=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace='urn:unittest:transaction',
+                                                    transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(contributor_employer="four",
                                                     organization_entity=id,
                                                     datestamp=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace='urn:unittest:transaction',
+                                                    transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(organization_entity=id,
                                                     datestamp=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace='urn:unittest:transaction',
+                                                    transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'], 
@@ -368,13 +368,14 @@ class TestQueries(unittest.TestCase):
     
 
 
-class TestEntityBuild(unittest.TestCase):
+class BaseEntityBuildTests(unittest.TestCase):
+    NAMESPACE = 'urn:unittest:transaction'
     
     def create_contribution(self, **kwargs):
         c = Contribution(**kwargs)
         if 'cycle' not in kwargs:
             c.cycle='09'
-        c.transaction_namespace='urn:unittest:transaction'
+        c.transaction_namespace=self.NAMESPACE
         c.import_reference=self.import_
         c.save()
     
@@ -392,6 +393,8 @@ class TestEntityBuild(unittest.TestCase):
         self.import_.save()
         
         
+        
+class TestEntityBuild(BaseEntityBuildTests):        
     def test_normalize(self):
         self.create_contribution(contributor_name='contributor duplicate')
         self.create_contribution(contributor_name='contributor duplicate')
@@ -508,7 +511,78 @@ class TestEntityBuild(unittest.TestCase):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
         
             
+class TestEntityAssociate(BaseEntityBuildTests):
+    
+    def test_associate_transactions(self):
+        self.create_contribution(contributor_name='Alice', amount=10)
+        self.create_contribution(contributor_name='Alice', amount=20)
+        self.create_contribution(transaction_id=1, amount=40)
+        self.create_contribution(transaction_id=2, amount=80, contributor_name='Bob')
+        self.create_contribution(transaction_id=3, amount=160, contributor_urn='urn:unittest:Bob')
+        self.create_contribution(transaction_id=4, contributor_employer="Carl")
+        self.create_contribution(transaction_id=5, organization_name="Dave")
+        self.create_contribution(transaction_id=6, parent_organization_name="Ethan")
+        self.create_contribution(transaction_id=7, committee_name="Frank")
+        self.create_contribution(transaction_id=8, recipient_name="Greg")
+        
+        whitelist = ["0, 0, Alice"]
+        
+        normalize_contributions()
+        build_big_hitters(whitelist)
+        build_aggregates()
+        
+        e = Entity.objects.get(name="Alice")
+        self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(2, e.contribution_count)
+        self.assertEqual(30, e.contribution_amount)
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
+
+        associate_transactions(e.id, 'contributor_entity', [(self.NAMESPACE, 1)])
+        
+        e = Entity.objects.get(name="Alice")
+        self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(3, e.contribution_count)
+        self.assertEqual(70, e.contribution_amount)
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
+        
+        associate_transactions(e.id, 'contributor_entity', zip([self.NAMESPACE] * 2, (2, 3)))
+
+        e = Entity.objects.get(name="Alice")
+        self.assertEqual(5, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(5, e.contribution_count)
+        self.assertEqual(310, e.contribution_amount)
+        self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
+# todo: enable when attribute aggregation is working        
+#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id).count())
+#       self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest', attribute='Bob').count())
+
+        associate_transactions(e.id, 'organization_entity', [(self.NAMESPACE, 4), (self.NAMESPACE, 5)])
+        associate_transactions(e.id, 'parent_organization_entity', [(self.NAMESPACE, 6)])
+        associate_transactions(e.id, 'committee_entity', [(self.NAMESPACE, 7)])
+        associate_transactions(e.id, 'recipient_entity', [(self.NAMESPACE, 8)])
+
+        e = Entity.objects.get(name="Alice")
+        self.assertEqual(10, e.contribution_count)
+        self.assertEqual(7, EntityAlias.objects.filter(entity=e.id).count())
+        
+
+        # still to test: Disassociating transactions.
+                  
+            
 class TestUtils(unittest.TestCase):
+    def test_pairs_to_dict(self):
+        self.assertEqual({}, _pairs_to_dict([]))
+        
+        self.assertEqual({'a': set([1])}, _pairs_to_dict([('a',1)]))
+        
+        self.assertEqual({'a': set([1,2])}, _pairs_to_dict([('a',1),('a',2)]))
+        self.assertEqual({'a': set([1]), 'b': set([2])}, _pairs_to_dict([('a', 1), ('b', 2)]))
+                         
+    
     def test_prepend_pluses(self):
         self.assertEqual("", _prepend_pluses(""))
         self.assertEqual("", _prepend_pluses("   "))
