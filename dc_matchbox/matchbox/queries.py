@@ -1,7 +1,7 @@
 import time
 
 from django.db.models import Q
-from django.db import connection
+from django.db import connection, transaction
 import re
 
 from dcdata.utils.sql import dict_union, is_disjoint
@@ -65,6 +65,7 @@ def _pairs_to_dict(pairs):
 
 
 def associate_transactions(entity_id, column, transactions):
+    transaction.set_dirty()
     cursor = connection.cursor()
     
     # make sure we update any entities that the transactions already belonged to
@@ -83,6 +84,7 @@ def associate_transactions(entity_id, column, transactions):
     
 
 def disassociate_transactions(column, transactions):
+    transaction.set_dirty()
     cursor = connection.cursor()
     
     updated_entities = set()

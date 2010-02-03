@@ -3,8 +3,10 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.db import transaction
 from matchbox.forms import AssociationForm
 from matchbox.models import entityref_cache, Entity, EntityNote
+from matchbox.queries import associate_transactions, disassociate_transactions
 import re
 
 @login_required
@@ -62,6 +64,7 @@ def parse_transaction_ids(clob):
     for row in rows:
         if row:
             parts = re.split(r'[\,\t\s]', row, 1)
+            parts = map(unicode.strip, parts)
             if len(parts) == 2 and parts[0].startswith('urn'):
                 (ns, transaction) = parts
             elif len(parts) == 2 and parts[1].startswith('urn'):
@@ -74,13 +77,20 @@ def parse_transaction_ids(clob):
     return ids
 
 @login_required
+@transaction.commit_on_success
 def entity_associate(request, entity_id, model_name):
     (model, fields) = entityref_cache.for_model_name(model_name)
     entity = Entity.objects.get(pk=entity_id)
     if request.method == 'POST':
         form = AssociationForm(model, entity_id, request.POST)
         if form.is_valid():
-            print parse_transaction_ids(form.cleaned_data['transactions'])
+            ids = parse_transaction_ids(form.cleaned_data['transactions'])
+            if form.cleaned_data['action'] == 'add':
+                for field in form.cleaned_data['fields']:
+                    associate_transactions(entity_id, field, ids)
+            elif form.cleaned_data['action'] == 'remove':
+                for field in form.cleaned_data['fields']:
+                    disassociate_transactions(field, ids)
     else:
         form = AssociationForm(model, entity_id)
     return render_to_response('matchbox/entity_associate.html', {'form': form, 'entity': entity}, context_instance=RequestContext(request))
