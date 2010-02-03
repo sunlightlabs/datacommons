@@ -13,7 +13,7 @@ from matchbox_scripts.contribution.normalize_contributions import run as run_nor
 from matchbox_scripts.contribution.normalize import normalize_contributions
 from matchbox_scripts.contribution.build_aggregates import build_aggregates
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
-    associate_transactions, _pairs_to_dict
+    associate_transactions, _pairs_to_dict, disassociate_transactions
 from matchbox_scripts.contribution.build_big_hitters import build_big_hitters
 
 
@@ -514,8 +514,8 @@ class TestEntityBuild(BaseEntityBuildTests):
 class TestEntityAssociate(BaseEntityBuildTests):
     
     def test_associate_transactions(self):
-        self.create_contribution(contributor_name='Alice', amount=10)
-        self.create_contribution(contributor_name='Alice', amount=20)
+        self.create_contribution(transaction_id='a', contributor_name='Alice', amount=10)
+        self.create_contribution(transaction_id='b', contributor_name='Alice', amount=20)
         self.create_contribution(transaction_id=1, amount=40)
         self.create_contribution(transaction_id=2, amount=80, contributor_name='Bob')
         self.create_contribution(transaction_id=3, amount=160, contributor_urn='urn:unittest:Bob')
@@ -538,7 +538,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
 
-        associate_transactions(e.id, 'contributor_entity', [(self.NAMESPACE, 1)])
+        associate_transactions(e.id, 'contributor_entity', [(self.NAMESPACE, '1')])
         
         e = Entity.objects.get(name="Alice")
         self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -547,7 +547,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
         
-        associate_transactions(e.id, 'contributor_entity', zip([self.NAMESPACE] * 2, (2, 3)))
+        associate_transactions(e.id, 'contributor_entity', zip([self.NAMESPACE] * 2, ('2', '3')))
 
         e = Entity.objects.get(name="Alice")
         self.assertEqual(5, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -560,18 +560,36 @@ class TestEntityAssociate(BaseEntityBuildTests):
 #        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id).count())
 #       self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest', attribute='Bob').count())
 
-        associate_transactions(e.id, 'organization_entity', [(self.NAMESPACE, 4), (self.NAMESPACE, 5)])
-        associate_transactions(e.id, 'parent_organization_entity', [(self.NAMESPACE, 6)])
-        associate_transactions(e.id, 'committee_entity', [(self.NAMESPACE, 7)])
-        associate_transactions(e.id, 'recipient_entity', [(self.NAMESPACE, 8)])
+        associate_transactions(e.id, 'organization_entity', [(self.NAMESPACE, '4'), (self.NAMESPACE, '5')])
+        associate_transactions(e.id, 'parent_organization_entity', [(self.NAMESPACE, '6')])
+        associate_transactions(e.id, 'committee_entity', [(self.NAMESPACE, '7')])
+        associate_transactions(e.id, 'recipient_entity', [(self.NAMESPACE, '8')])
 
         e = Entity.objects.get(name="Alice")
         self.assertEqual(10, e.contribution_count)
         self.assertEqual(7, EntityAlias.objects.filter(entity=e.id).count())
         
+        disassociate_transactions('contributor_entity', [(self.NAMESPACE, 'b'), (self.NAMESPACE, '2')])
 
-        # still to test: Disassociating transactions.
+        e = Entity.objects.get(name="Alice")
+        self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(8, e.contribution_count)
+        self.assertEqual(210, e.contribution_amount)
+        self.assertEqual(6, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
+        self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
+
+
                   
+                  
+def test_re_associate(self):
+    pass
+
+
+
+    # to do: need to test that associate works when the transactions already belonged to another entity.
+    # make sure the new entity aggregates are correct AND that the old entity aggregates are correctly updated.
+                      
             
 class TestUtils(unittest.TestCase):
     def test_pairs_to_dict(self):

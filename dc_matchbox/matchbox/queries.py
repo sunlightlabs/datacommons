@@ -67,16 +67,50 @@ def _pairs_to_dict(pairs):
 def associate_transactions(entity_id, column, transactions):
     cursor = connection.cursor()
     
+    # make sure we update any entities that the transactions already belonged to
+    disassociate_transactions(column, transactions)
+    
     for (namespace, ids) in _pairs_to_dict(transactions).iteritems():
         contribution_update_stmt = """
             update contribution_contribution
             set %s = %%s
             where transaction_namespace = %%s
                 and transaction_id in %s
-            """ % (column, "(%s)" % ", ".join(["'%s'"] * len(ids)))
+        """ % (column, "(%s)" % ", ".join(['%s'] * len(ids)))
         cursor.execute(contribution_update_stmt, [entity_id, namespace] + list(ids))
         
     _recompute_aggregates(entity_id)
+    
+
+def disassociate_transactions(column, transactions):
+    cursor = connection.cursor()
+    
+    updated_entities = set()
+    
+    for (namespace, ids) in _pairs_to_dict(transactions).iteritems():
+        # find all entities that will change
+        entity_stmt = """
+            select %s
+            from contribution_contribution
+            where transaction_namespace = %%s
+                and transaction_id in %s
+                and %s != ''
+        """ % (column, "(%s)" % ", ".join(['%s'] * len(ids)), column)
+        cursor.execute(entity_stmt, [namespace] + list(ids))
+        if cursor.rowcount > 0:
+            updated_entities |= set([id for (id) in cursor])
+          
+            # remove entity references from transactions    
+            contribution_update_stmt = """
+                update contribution_contribution
+                set %s = ''
+                where transaction_namespace = %%s
+                    and transaction_id in %s
+            """ % (column, "(%s)" % ", ".join(['%s'] * len(ids)))
+            cursor.execute(contribution_update_stmt, [namespace] + list(ids))
+       
+    for id in updated_entities:
+        _recompute_aggregates(id)   
     
     
 def _recompute_aggregates(entity_id):
