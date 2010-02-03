@@ -102,6 +102,8 @@ def merge(request):
         type_ = request.GET.get('type_filter', '')
         if type_ in ENTITY_TYPES:
             data['type_filter'] = type_
+            
+        data['has_query'] = queries or queues
         
         return render_to_response('matchbox/merge/merge.html',
                                   data,

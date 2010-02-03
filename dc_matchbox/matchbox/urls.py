@@ -6,12 +6,12 @@ urlpatterns = patterns('django.contrib.auth.views',
 )
 
 urlpatterns += patterns('matchbox.views_merge',
-    url(r'^merge/merge/$', 'merge', name='matchbox_merge'),
     url(r'^merge/search/google/$', 'google_search', name='matchbox_google_search'),
     url(r'^merge/search/$', 'search', name='matchbox_search'),
     url(r'^merge/queue/(?P<queue_id>\d+)/$', 'queue', name='matchbox_queue'),
     url(r'^merge/debug/search/$', 'debug_search', name='matchbox_debug_search'),
-    url(r'^merge/$', 'dashboard', name='matchbox_dashboard'),
+    url(r'^merge/$', 'merge', name='matchbox_merge'),
+    #url(r'^merge/$', 'dashboard', name='matchbox_dashboard'),
 )
 
 urlpatterns += patterns('',
