@@ -525,7 +525,10 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.create_contribution(transaction_id=7, committee_name="Frank")
         self.create_contribution(transaction_id=8, recipient_name="Greg")
         
-        whitelist = ["0, 0, Alice"]
+        self.create_contribution(transaction_id='m', contributor_name='Mary', contributor_urn='urn:nimsp:contributor:999')
+        self.create_contribution(transaction_id='n', contributor_name='Nancy', contributor_urn='urn:nimsp:contributor:999')
+        
+        whitelist = ["0, 0, Alice", "0, 999, Mary J."]
         
         normalize_contributions()
         build_big_hitters(whitelist)
@@ -579,17 +582,31 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
 
-
-                  
-                  
-def test_re_associate(self):
-    pass
-
-
-
-    # to do: need to test that associate works when the transactions already belonged to another entity.
-    # make sure the new entity aggregates are correct AND that the old entity aggregates are correctly updated.
-                      
+        e = Entity.objects.get(name="Mary J.")
+        self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(2, e.contribution_count)
+        self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary").count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Nancy").count())
+        
+        associate_transactions(e.id, 'contributor_entity', [(self.NAMESPACE, 'a'), (self.NAMESPACE, 'b')])
+        
+        e = Entity.objects.get(name="Mary J.")
+        self.assertEqual(4, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(4, e.contribution_count)
+        self.assertEqual(30, e.contribution_amount)
+        self.assertEqual(3, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary").count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Nancy").count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Alice").count())
+  
+        e = Entity.objects.get(name="Alice")
+        self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
+        self.assertEqual(7, e.contribution_count)
+        self.assertEqual(200, e.contribution_amount)
+        self.assertEqual(5, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
+        
             
 class TestUtils(unittest.TestCase):
     def test_pairs_to_dict(self):
