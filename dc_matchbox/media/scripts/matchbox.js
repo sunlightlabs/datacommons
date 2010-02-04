@@ -226,7 +226,7 @@ var Matchbox = {
                 content += '</p>';
                 content += '<input class="selector" type="checkbox" name="entities" value="' + entity.id + '" id="entities_' + entity.id + '">';
                 content += '<a class="transactions_control ui-icon ui-icon-triangle-1-e" href="/entity/' + entity.id + '/transactions/">V</a>';
-                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">' + entity.count + ' transactions totalling $' + entity.total + '</span>';
+                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">' + entity.count + ' transactions for a total of $' + entity.total + '</span>';
                 content += '<div class="details_container">';
                 content += '<div class="transactions_container"></div>';
                 content += '<div class="details_expander">';

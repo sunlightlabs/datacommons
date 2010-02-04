@@ -68,6 +68,7 @@
 	{% if transactions.Contribution %}
 	<div id="transactions">
     	<h3>Contributions</h3>
+    	<p>{{ entity.contribution_count }} transactions for a total of ${{ entity.contribution_amount }}</p>
 		<p>20 preview transactions are shown ordered by dollar amount</p>
 		<div class="transactions_container">
             {% contribution_table transactions.Contribution %}
