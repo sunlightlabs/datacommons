@@ -36,7 +36,7 @@ def _search(query, type_filter):
             'type': 'organization',
             'name': name,
             'count': count,
-            'notes': 0,
+            'total': total,
         })
     content = json.dumps(results)
     
