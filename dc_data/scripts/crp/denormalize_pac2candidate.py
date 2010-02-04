@@ -1,5 +1,5 @@
 from dcdata.utils.dryrub import CountEmitter
-from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier
+from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
@@ -128,11 +128,11 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         
         # contributor and recipient fields
         ContributorFilter(committees),
-        FieldMerger({'contributor_urn': ('pac_id',)}, committee_urn),
+        FieldRenamer({'contributor_urn': 'pac_id'}),
         FieldAdder('contributor_type', 'committee'),
         
         RecipientFilter(candidates),
-        FieldMerger({'recipient_urn': ('cid',)}, candidate_urn),
+        FieldRenamer({'recipient_urn': 'cid'}),
         FieldAdder('recipient_type', 'politician'),
         
         # catcode

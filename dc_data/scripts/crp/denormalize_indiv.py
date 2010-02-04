@@ -198,10 +198,8 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         OrganizationFilter(),
 
         # create URNs
-        FieldMerger({'contributor_urn': ('contrib_id',)}, contributor_urn, keep_fields=True),
-        FieldMerger({'recipient_urn': ('recip_id',)}, recipient_urn, keep_fields=True),
-        FieldMerger({'committee_urn': ('cmte_id',)}, committee_urn, keep_fields=True),
-
+        FieldRenamer({'contributor_urn': contrib_id, 'recipient_urn': recip_id, 'committee_urn': cmte_id})
+                      
         # recip code filter
         RecipCodeFilter(),  # recipient party
                         # seat result

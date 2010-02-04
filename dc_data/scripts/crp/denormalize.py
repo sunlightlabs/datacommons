@@ -20,24 +20,6 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
 SPEC = dict(((fn, None) for fn in FIELDNAMES))
 
 
-# functions for adding the namespace prefix to IDs
-def candidate_urn(s):    
-    return 'urn:crp:candidate:%s' % s.strip().upper() if s else None        
-
-def contributor_urn(s):
-    return 'urn:crp:contributor:%s' % s.strip().upper() if s else None
-
-def committee_urn(s):
-    return 'urn:crp:committee:%s' % s.strip().upper() if s else None
-
-def recipient_urn(s):
-    if s.startswith('N'):
-        return candidate_urn(s)
-    elif s.startswith('C'):
-        return committee_urn(s)
-    return None
-
-
 def load_catcodes(dataroot):
     catcodes = { }
     fields = ('catcode','catname','catorder','industry','sector','sector_long')

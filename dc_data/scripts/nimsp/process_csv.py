@@ -254,22 +254,22 @@ class UrnFilter(Filter):
             return record
         elif record['candidate_id']:
             record['recipient_type'] = 'politician'
-            record['recipient_urn'] = 'urn:nimsp:candidate:%d' % record['candidate_id']
+            record['recipient_urn'] = record['candidate_id']
         elif record['committee_id']:
             record['recipient_type'] = 'committee'
-            record['recipient_urn'] = record['committee_urn'] = 'urn:nimsp:committee:%d' % record['committee_id']
+            record['recipient_urn'] = record['committee_urn'] = record['committee_id']
 
         # Contributor
         if record['contributor_id']:
-            record['contributor_urn'] = 'urn:nimsp:contributor:%d' % (record['contributor_id'])
+            record['contributor_urn'] = record['contributor_id']
             record['contributor_type'] = None
             if self.committee_ids.has_key(record['contributor_name']): 
                 # contributor is a committee (by name match in committees table).
                 record['contributor_type'] = 'committee'
         if record['newemployerid']:
-            record['organization_urn'] = 'urn:nimsp:contributor:%d' % record['newemployerid']
+            record['organization_urn'] = record['newemployerid']
         if record['parentcompanyid']:
-            record['parent_organization_urn'] = 'urn:nimsp:contributor:%d' % record['parentcompanyid']
+            record['parent_organization_urn'] = record['parentcompanyid']
 
         for f in ('candidate_id','committee_id','contributor_id','newemployerid','parentcompanyid'):
             del(record[f])

@@ -21,7 +21,7 @@ class RecipientFilter(Filter):
             if recip_id.startswith('N'):
                 candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
                 if candidate:
-                    record['recipient_urn'] = candidate_urn(recip_id)
+                    record['recipient_urn'] = recip_id
                     record['recipient_name'] = candidate['first_last_p']
                     record['recipient_party'] = candidate['party']
                     record['recipient_type'] = 'politician'
@@ -38,7 +38,7 @@ class RecipientFilter(Filter):
                                 record['district'] = "%s-%s" % (seat[:2], seat[2:])
             elif recip_id.startswith('C'):
                 committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-                record['recipient_urn'] = committee_urn(recip_id)
+                record['recipient_urn'] = recip_id
                 if committee:
                     record['recipient_name'] = committee['pac_short']
                     record['recipient_party'] = committee['party']
@@ -57,7 +57,7 @@ class CommitteeFilter(Filter):
     def process_record(self, record):
         committee_urn = record.get('committee_urn', None)
         if committee_urn:
-            cmte_id = committee_urn.rsplit(":", 1)[1]
+            cmte_id = committee_urn
             committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
             if committee:
                 record['committee_name'] = committee['pac_short']
@@ -69,9 +69,9 @@ class ContribRecipFilter(Filter):
 
     def process_record(self, record):
         
-        filer_urn = committee_urn(record['filer_id'])
+        filer_urn = record['filer_id']
         filer_name = record['contrib_lend_trans'].strip()
-        other_urn = committee_urn(record['other_id'])
+        other_urn = record['other_id']
         trans_type = record['type'].strip().upper()
         if trans_type.startswith('1'):
             record['committee_urn'] = filer_urn
