@@ -1,3 +1,6 @@
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
 from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import CSVEmitter, DebugEmitter

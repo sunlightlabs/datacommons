@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
 
 import csv
