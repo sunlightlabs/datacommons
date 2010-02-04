@@ -1,4 +1,5 @@
 from strings.normalizer import basic_normalizer
+from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
 
 import time
 import logging
@@ -18,42 +19,43 @@ from matchbox.models import Entity
 
 
 @transaction.commit_on_success
-def build_entity(name, type, criteria, stats = None):
+def build_entity(name, type, crp_id, nimsp_id):
+    
+    def _execute(stmt, args):     
+        try:
+            cursor.execute(stmt, args)
+        except:
+            print "build_entity(): Error executing query: '%s' %% (%s)" % (stmt, args)
+            raise
+        
     cursor = connection.cursor()
     
-    try:
-        e = Entity.objects.create(name=name, type=type)
-        
-        for (match_column, match_value, entity_column) in criteria:
-            if match_column.endswith('_urn'):
-                stmt = """
-                       update contribution_contribution set %s = %%s
-                       where %s = %%s
-                       """ % (entity_column, match_column)
-            else:
-                match_value = basic_normalizer(match_value)
-                stmt = """
-                       update contribution_contribution set %s = %%s
-                       from matchbox_normalization  
-                       where 
-                           matchbox_normalization.original = contribution_contribution.%s and matchbox_normalization.normalized = %%s
-                       """ % (entity_column, match_column)
-            
-            try:
-                cursor.execute(stmt, [e.id, match_value])
-            except:
-                print "build_entity(): Error executing query: '%s' %% (%s, %s)" % (stmt, e.id, match_value)
-                raise
-            
-            if stats is not None:
-                stats[(match_column, match_value)] = cursor.rowcount
-                
-    finally:    
-        cursor.close()
+    e = Entity.objects.create(name=name, type=type)
     
-        
-        
+    # to do: build EntityAttribute entries
+    
+    # match records based on NIMSP ID
+    for column in ['contributor', 'organization', 'parent_organization']:
+        stmt = """
+           update contribution_contribution set %s = %%s
+           where
+               transaction_namespace = %%s
+               and %s = %%s
+           """ % (column + '_entity', column + '_ext_id')                
+        _execute(stmt, [e.id, NIMSP_TRANSACTION_NAMESPACE, nimsp_id])
 
+    # match records based on normalized name
+    normalized_name = basic_normalizer(name)
+    for column in ['contributor', 'organization', 'parent_organization', 'committee', 'recipient']:
+        stmt = """
+           update contribution_contribution set %s = %%s
+           from matchbox_normalization  
+           where 
+               matchbox_normalization.original = contribution_contribution.%s 
+               and matchbox_normalization.normalized = %%s
+           """ % (column + '_entity',  column + '_name')
+        _execute(stmt, [e.id, normalized_name])
+        
 
 # this is the old implementaiton that I'll be replacing
 def populate_entities(transaction_table, entity_id_column, name_columns, attribute_column,

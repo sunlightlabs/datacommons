@@ -5,7 +5,8 @@ from uuid import uuid4
 import unittest
 
 from dcdata.contribution.models import Contribution, sql_names,\
-    UNITTEST_TRANSACTION_NAMESPACE
+    UNITTEST_TRANSACTION_NAMESPACE, NIMSP_TRANSACTION_NAMESPACE,\
+    CRP_TRANSACTION_NAMESPACE
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
 from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
@@ -374,7 +375,8 @@ class BaseEntityBuildTests(unittest.TestCase):
         c = Contribution(**kwargs)
         if 'cycle' not in kwargs:
             c.cycle='09'
-        c.transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE
+        if 'transaction_namespace' not in kwargs:
+            c.transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE
         c.import_reference=self.import_
         c.save()
     
@@ -414,7 +416,7 @@ class TestEntityBuild(BaseEntityBuildTests):
             
         
     def test_build_entity(self):
-        build_entity('Apple', 'organization', [('contributor_name', u'Apple Co', 'contributor_entity')])
+        build_entity(u'Apple', 'organization', '999', '999')
         
         self.assertEqual(1, Entity.objects.count())
         self.assertEqual(1, Entity.objects.filter(name='Apple').count())
@@ -423,7 +425,7 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.create_contribution(contributor_name='Banana Bar')
 
         normalize_contributions()
-        build_entity('Banana Bar', 'organization', [('contributor_name', u'Banana Bar', 'contributor_entity')])
+        build_entity(u'Banana Bar', 'organization', '999', '999')
         
         self.assertEqual(2, Entity.objects.count())
         c = Contribution.objects.get(contributor_name='Banana Bar')
@@ -431,20 +433,21 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertEqual(e.id, c.contributor_entity)
         
         self.create_contribution(organization_name='Coconut Lounge')
-        self.create_contribution(organization_ext_id='1234')
-        
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, organization_ext_id='1234')
+        self.create_contribution(transaction_namespace=CRP_TRANSACTION_NAMESPACE, organization_ext_id='999')
+        self.create_contribution(transaction_namespace=CRP_TRANSACTION_NAMESPACE, organization_ext_id='1234')
+
         normalize_contributions()
-        build_entity('Coconut Camp', 'organization', [('organization_name', u'Coconut Lounge', 'organization_entity'),
-                                                      ('organization_ext_id', u'1234', 'organization_entity')])
+        build_entity(u'Coconut Lounge', 'organization', '999', '1234')
         
-        e = Entity.objects.get(name='Coconut Camp')
+        e = Entity.objects.get(name='Coconut Lounge')
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
         
     def test_big_hitters(self):
-        self.create_contribution(contributor_ext_id='urn:nimsp:contributor:1')
-        self.create_contribution(organization_ext_id='urn:nimsp:contributor:1')
-        self.create_contribution(parent_organization_ext_id='urn:nimsp:contributor:1')
-        self.create_contribution(contributor_ext_id='urn:crp:contributor:D000031229') # won't count toward total b/c we don't search on CRP IDs, since they don't occur in actual data
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id='1')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, organization_ext_id='1')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, parent_organization_ext_id='1')
+        self.create_contribution(transaction_namespace=CRP_TRANSACTION_NAMESPACE, contributor_ext_id='D000031229') # won't count toward total b/c we don't search on CRP IDs, since they don't occur in actual data
         self.create_contribution(contributor_name='1-800 Contacts')
         self.create_contribution(organization_name='1-800 Contacts')
         self.create_contribution(parent_organization_name='1-800 Contacts')
@@ -462,7 +465,7 @@ class TestEntityBuild(BaseEntityBuildTests):
         
     def test_entity_aggregates(self):
         self.create_contribution(contributor_name='FooBar', amount=100)
-        self.create_contribution(contributor_employer='FooBar Corp')
+        self.create_contribution(organization_name='FooBar Corp')
         self.create_contribution(organization_name='ZapWow', amount=100)
         self.create_contribution(parent_organization_name='ZapWow', amount=200)
         self.create_contribution(committee_name='ZapWow', amount=400)
@@ -484,7 +487,8 @@ class TestEntityBuild(BaseEntityBuildTests):
         
     def test_entity_aliases(self):
         self.create_contribution(contributor_name='Bob',
-                                 contributor_employer='Waz')
+                                 contributor_employer='Waz',
+                                 organization_name='Waz Co')
         self.create_contribution(organization_name='Waz Co',
                                  parent_organization_name='Wazzo Intl')
         
@@ -524,8 +528,8 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.create_contribution(transaction_id=7, committee_name="Frank")
         self.create_contribution(transaction_id=8, recipient_name="Greg")
         
-        self.create_contribution(transaction_id='m', contributor_name='Mary', contributor_ext_id='urn:nimsp:contributor:999')
-        self.create_contribution(transaction_id='n', contributor_name='Nancy', contributor_ext_id='urn:nimsp:contributor:999')
+        self.create_contribution(transaction_id='m', transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_name='Mary', contributor_ext_id='999')
+        self.create_contribution(transaction_id='n', transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_name='Nancy', contributor_ext_id='999')
         
         whitelist = ["0, 0, Alice", "0, 999, Mary J."]
         
