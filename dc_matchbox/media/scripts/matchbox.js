@@ -99,7 +99,7 @@ var Matchbox = {
             e.type = spec.type;
             e.name = spec.name;
             e.count = spec.count || 0;
-            e.notes = spec.notes || 0;
+            e.total = spec.total || 0;
             e.aliases = spec.aliases || [];
             return e;
         }
@@ -221,14 +221,12 @@ var Matchbox = {
                 var content = '';
                 content += '<li id="' + entity.id + '">';
                 content += '<p class="actions">';
-                content += '<a href="/entity/' + entity.id + '/" class="transactions" title="transactions">' + entity.count + '</a>';
-                content += '<a href="{% url matchbox_google_search %}?q={{ entity.name|urlencode }}" class="google">Google</a>';
+                content += '<a href="/merge/search/google/?q=' + encodeURIComponent(entity.name) + '" class="google">Google</a>';
                 content += '<a href="/entity/' + entity.id + '/" class="detail">Details</a>';
-                content += '<a href="/entity/' + entity.id + '/" class="notes" title="notes">' + entity.notes + '</a>';
                 content += '</p>';
                 content += '<input class="selector" type="checkbox" name="entities" value="' + entity.id + '" id="entities_' + entity.id + '">';
                 content += '<a class="transactions_control ui-icon ui-icon-triangle-1-e" href="/entity/' + entity.id + '/transactions/">V</a>';
-                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">$' + entity.total + '</span>';
+                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">' + entity.count + ' transactions totalling $' + entity.total + '</span>';
                 content += '<div class="details_container">';
                 content += '<div class="transactions_container"></div>';
                 content += '<div class="details_expander">';
