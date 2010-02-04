@@ -168,7 +168,7 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         FieldRenamer({'filing_id': 'microfilm'}),
         
         # date stamp
-        FieldModifier('datestamp', parse_date_iso),
+        FieldModifier('date', parse_date_iso),
         
         # catcode
         FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),

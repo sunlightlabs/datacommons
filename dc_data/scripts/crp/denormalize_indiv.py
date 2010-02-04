@@ -186,7 +186,7 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         FieldRenamer({'filing_id': 'microfilm'}),
 
         # date stamp
-        FieldModifier('datestamp', parse_date_iso),
+        FieldModifier('date', parse_date_iso),
 
         # rename contributor, organization, and parent_organization fields
         FieldRenamer({'contributor_name': 'contrib',

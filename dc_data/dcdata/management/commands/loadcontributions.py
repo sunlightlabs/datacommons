@@ -187,7 +187,7 @@ class Command(BaseCommand):
                 FieldAdder('import_reference', loader.import_session),
                 
                 IntFilter('cycle'),
-                ISODateFilter('datestamp'),
+                ISODateFilter('date'),
                 BooleanFilter('is_amendment'),
                 FloatFilter('amount'),
                 UnicodeFilter(),

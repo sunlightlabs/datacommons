@@ -86,9 +86,9 @@ class Contribution(DataCommonsModel):
     filing_id = models.CharField(max_length=128, blank=True, null=True)
     is_amendment = models.BooleanField(default=False)
     
-    # amount and datestamp
+    # amount and date
     amount = models.IntegerField(default=0)
-    datestamp = models.DateField(null=True)
+    date = models.DateField(null=True)
     
     # contributor fields
     contributor_name = models.CharField(max_length=255, blank=True, null=True)
@@ -128,7 +128,7 @@ class Contribution(DataCommonsModel):
     recipient_category_order = models.CharField(max_length=3, blank=True, null=True)
     
     # committee fields
-    committee_name = models.CharField(max_length=255)
+    committee_name = models.CharField(max_length=255, blank=True, null=True)
     committee_urn = models.CharField(max_length=128, blank=True, null=True)
     committee_entity = EntityRef('committee_transactions')
     committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
@@ -154,8 +154,8 @@ class Contribution(DataCommonsModel):
             pass
         elif self.transaction_namespace == 'urn:fec:transaction':        
             # check transaction type
-            if self.datestamp:
-                if self.datestamp.year < 2004 and self.transaction_type == '10levin':
+            if self.date:
+                if self.date.year < 2004 and self.transaction_type == '10levin':
                     raise ValueError, "Levin funds may only occur on or after 2004"
                 elif self.transaction_type == '10soft':
                     raise ValueError, "Soft funds may only occur before 2004"
@@ -168,8 +168,8 @@ class Contribution(DataCommonsModel):
         if self.contributor_state and len(self.contributor_state) > 2:
             raise ValueError, "State '%s' is not a valid state." % self.contributor_state
         
-        if self.datestamp and self.datestamp.year < 1900:
-            raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.datestamp.year 
+        if self.date and self.date.year < 1900:
+            raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.date.year 
         
         # save if all checks passed
         super(Contribution, self).save(**kwargs)

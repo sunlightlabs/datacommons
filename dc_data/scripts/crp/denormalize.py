@@ -7,7 +7,7 @@ import logging
 import os
 
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
-              'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn',
+              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_urn',
               'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
               'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order',

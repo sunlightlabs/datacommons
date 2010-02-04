@@ -28,7 +28,7 @@ from common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 # to do: these should be pulled automatically from the model, as is done in loadcontributions.py,
 # not hard-coded here. The CSV_MAPPING should also check that it is consistent with the model-based list.
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
-              'filing_id', 'is_amendment', 'amount', 'datestamp', 'contributor_name', 'contributor_urn',
+              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_urn',
               'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
               'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order',
@@ -379,6 +379,7 @@ def main():
         SeatFilter(),
         UrnFilter(con),
         FieldModifier('datestamp', lambda x: str(x) if x else None),
+        FieldRenamer({'date': 'datestamp'}),
         ZipCleaner(),
            
         # add static fields

@@ -123,7 +123,7 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
         
         # date stamp
-        FieldModifier('datestamp', parse_date_iso),
+        FieldModifier('date', parse_date_iso),
         
         # contributor and recipient fields
         ContributorFilter(committees),

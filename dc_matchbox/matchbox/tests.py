@@ -26,7 +26,7 @@ class TestQueries(unittest.TestCase):
         c = Contribution(organization_name=org_name, 
                      organization_urn='urn:unittest:organization:' + org_name,
                      organization_entity=org_entity,
-                     datestamp=datetime.now(),
+                     date=datetime.now(),
                      cycle='09', 
                      transaction_namespace=self.NAMESPACE,
                      import_reference=self.import_)
@@ -107,7 +107,7 @@ class TestQueries(unittest.TestCase):
         Contribution.objects.create(recipient_name="Apple Sauce",
                                     recipient_entity=self.apple_id,
                                     recipient_urn="urn:unittest:recipient:" + "Apple Sauce",
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
@@ -115,7 +115,7 @@ class TestQueries(unittest.TestCase):
         Contribution.objects.create(recipient_name="Apple",
                                     recipient_entity=self.apple_id,
                                     recipient_urn="urn:unittest:recipient:" + "Apple",
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
@@ -150,7 +150,7 @@ class TestQueries(unittest.TestCase):
         Contribution.objects.create(recipient_name="Apple Council",
                                     recipient_entity=uuid4().hex,
                                     recipient_type='C',
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
@@ -158,7 +158,7 @@ class TestQueries(unittest.TestCase):
         Contribution.objects.create(recipient_name="Apple Smith",
                                     recipient_entity=uuid4().hex,
                                     recipient_type='P',
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
@@ -284,25 +284,25 @@ class TestQueries(unittest.TestCase):
         
         apple_head = Contribution.objects.create(parent_organization_name="Apple Head",
                                     parent_organization_entity=self.apple_id,
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         apple_catcher = Contribution.objects.create(recipient_name="Apple Catcher",
                                     recipient_entity=self.apple_id,
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         apricot_council = Contribution.objects.create(committee_name="Apricot Council",
                                     committee_entity=self.apricot_id,
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
         apricot_picker = Contribution.objects.create(organization_name="Apricot Picker",
                                     organization_entity=self.apricot_id,
-                                    datestamp=datetime.now(),
+                                    date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=self.NAMESPACE,
                                     import_reference=self.import_)
@@ -329,24 +329,24 @@ class TestQueries(unittest.TestCase):
         Contribution.objects.create(organization_name="one",
                                                      contributor_employer="two",
                                                     organization_entity=id,
-                                                    datestamp=datetime.now(),
+                                                    date=datetime.now(),
                                                     cycle='09', 
                                                     transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(organization_name="three",
                                                     organization_entity=id,
-                                                    datestamp=datetime.now(),
+                                                    date=datetime.now(),
                                                     cycle='09', 
                                                     transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(contributor_employer="four",
                                                     organization_entity=id,
-                                                    datestamp=datetime.now(),
+                                                    date=datetime.now(),
                                                     cycle='09', 
                                                     transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(organization_entity=id,
-                                                    datestamp=datetime.now(),
+                                                    date=datetime.now(),
                                                     cycle='09', 
                                                     transaction_namespace=self.NAMESPACE,
                                                     import_reference=self.import_)
