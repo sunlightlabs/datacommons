@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
 
 import csv
 import inspect
@@ -384,7 +385,7 @@ def main():
            
         # add static fields
         FieldAdder('is_amendment',False),
-        FieldAdder('transaction_namespace', 'urn:nimsp:transaction'),
+        FieldAdder('transaction_namespace', NIMSP_TRANSACTION_NAMESPACE),
 
         FieldListFilter(FIELDNAMES + ['contributionid']),
         #DebugEmitter(),

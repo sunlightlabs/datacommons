@@ -112,19 +112,6 @@ class SpecFilter(UnicodeFilter):
         return spec
 
 
-class FECTransactionFilter(Filter):
-
-    def __init__(self, id_field, type_field, cycle_field='cycle'):
-        self._id_field = id_field
-        self._type_field = type_field
-        self._cycle_field = cycle_field
-
-    def process_record(self, record):
-        record['transaction_id'] = "FEC:%s:%s" % (record[self._cycle_field], record[self._id_field])
-        record['transaction_type'] = "urn:ogdc:transaction:%s" % record[self._type_field].lower().strip()
-        return record
-
-
 class FECOccupationFilter(Filter):
 
     def process_record(self, record):

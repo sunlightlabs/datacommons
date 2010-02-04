@@ -3,6 +3,7 @@ from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRena
 from saucebrush.emitters import  CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
+from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 
 import saucebrush
 
@@ -160,7 +161,7 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         RecipientFilter(candidates, committees),
         
         # transaction filters
-        FieldAdder('transaction_namespace', 'urn:fec:transaction'),
+        FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
         FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: 'FEC:%s:%s' % (cycle, fecid), keep_fields=True),
         FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
         

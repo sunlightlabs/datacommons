@@ -4,6 +4,11 @@ from dcdata.models import DataCommonsModel
 from matchbox.models import EntityRef
 from dcdata.utils.sql import django2sql_names
 
+
+NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
+CRP_TRANSACTION_NAMESPACE = 'urn:fec:transaction'
+
+
 SEATS = (
     ('federal:senate', 'US Senate'),
     ('federal:house', 'US House of Representatives'),
@@ -148,11 +153,11 @@ class Contribution(DataCommonsModel):
 
     def save(self, **kwargs):
 
-        if self.transaction_namespace == 'urn:nimsp:transaction':
+        if self.transaction_namespace == NIMSP_TRANSACTION_NAMESPACE:
             pass
         elif self.transaction_namespace == 'urn:unittest:transaction':
             pass
-        elif self.transaction_namespace == 'urn:fec:transaction':        
+        elif self.transaction_namespace == CRP_TRANSACTION_NAMESPACE:        
             # check transaction type
             if self.date:
                 if self.date.year < 2004 and self.transaction_type == '10levin':

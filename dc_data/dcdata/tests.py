@@ -8,28 +8,8 @@ from updates import edits, update
 from dcdata.management.commands.loadcontributions import CONTRIBUTOR_ENTITY_FILTER, COMMITTEE_ENTITY_FILTER, ORGANIZATION_ENTITY_FILTER
 
 
-class LoadContributionTest(unittest.TestCase):
-    
-    def contributor_entity_test(self, expected, r):
-        self.assertEqual(hashlib.md5(expected).hexdigest(), CONTRIBUTOR_ENTITY_FILTER.process_record(r)['contributor_entity'])
-    
-    def committee_entity_test(self, expected, r):
-        self.assertEqual(hashlib.md5(expected).hexdigest(), COMMITTEE_ENTITY_FILTER.process_record(r)['committee_entity'])
 
-    def organization_entity_test(self, expected, r):
-        self.assertEqual(hashlib.md5(expected).hexdigest(), ORGANIZATION_ENTITY_FILTER.process_record(r)['organization_entity'])
-    
-    def testEntityIDs(self):
-        self.contributor_entity_test('abcd', {'contributor_urn': 'abcd'})
-        self.contributor_entity_test('urn:matchbox:name:joesmith, unknown, unknown', {'contributor_urn': '', 'contributor_name': 'Joe Smith', 'contributor_state': ''})
-        self.contributor_entity_test('urn:matchbox:name:joesmith, unknown, CA', {'contributor_urn': '', 'contributor_name': 'Joe Smith', 'contributor_state': 'CA'})
-        self.contributor_entity_test('urn:matchbox:name:joesmith, Berkeley, CA', {'contributor_urn': '', 'contributor_name': 'Joe Smith', 'contributor_state': 'CA', 'contributor_city': 'Berkeley'})
-        
-        self.committee_entity_test('urn:matchbox:committee_name:abcd', {'committee_name': 'abcd'})
-        
-        self.organization_entity_test('urn:matchbox:name:abcd', {'organization_name': 'abcd'})
-
-
+# tests the experimental 'updates' module
 class Tests(unittest.TestCase):
     def create_table(self, table_name):
         self.cursor.execute("""create table %s ( \

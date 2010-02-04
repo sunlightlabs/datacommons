@@ -5,6 +5,7 @@ from saucebrush.sources import CSVSource
 import sys
 import saucebrush
 
+from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from denormalize import *
 
 ### Filters
@@ -178,7 +179,7 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         FieldCountValidator(len(FILE_TYPES['indivs'])),
 
         # transaction filters
-        FieldAdder('transaction_namespace', 'urn:fec:transaction'),
+        FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
         FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
         FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower() if t else '', keep_fields=True),
 
