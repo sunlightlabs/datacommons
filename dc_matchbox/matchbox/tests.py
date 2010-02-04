@@ -4,7 +4,8 @@ from datetime import datetime
 from uuid import uuid4
 import unittest
 
-from dcdata.contribution.models import Contribution, sql_names
+from dcdata.contribution.models import Contribution, sql_names,\
+    UNITTEST_TRANSACTION_NAMESPACE
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
 from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
@@ -20,7 +21,6 @@ from matchbox_scripts.contribution.build_big_hitters import build_big_hitters
 
 
 class TestQueries(unittest.TestCase):
-    NAMESPACE = 'urn:unittest:transaction'
 
     def save_contribution(self, org_name, org_entity):
         c = Contribution(organization_name=org_name, 
@@ -28,7 +28,7 @@ class TestQueries(unittest.TestCase):
                      organization_entity=org_entity,
                      date=datetime.now(),
                      cycle='09', 
-                     transaction_namespace=self.NAMESPACE,
+                     transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                      import_reference=self.import_)
         c.save()
         
@@ -109,7 +109,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_urn="urn:unittest:recipient:" + "Apple Sauce",
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         
         Contribution.objects.create(recipient_name="Apple",
@@ -117,7 +117,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_urn="urn:unittest:recipient:" + "Apple",
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'],
@@ -152,7 +152,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_type='C',
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         
         Contribution.objects.create(recipient_name="Apple Smith",
@@ -160,7 +160,7 @@ class TestQueries(unittest.TestCase):
                                     recipient_type='P',
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'],
@@ -286,25 +286,25 @@ class TestQueries(unittest.TestCase):
                                     parent_organization_entity=self.apple_id,
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         apple_catcher = Contribution.objects.create(recipient_name="Apple Catcher",
                                     recipient_entity=self.apple_id,
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         apricot_council = Contribution.objects.create(committee_name="Apricot Council",
                                     committee_entity=self.apricot_id,
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         apricot_picker = Contribution.objects.create(organization_name="Apricot Picker",
                                     organization_entity=self.apricot_id,
                                     date=datetime.now(),
                                     cycle='09', 
-                                    transaction_namespace=self.NAMESPACE,
+                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                     import_reference=self.import_)
         
         apple = Entity.objects.get(pk=self.apple_id)
@@ -331,24 +331,24 @@ class TestQueries(unittest.TestCase):
                                                     organization_entity=id,
                                                     date=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace=self.NAMESPACE,
+                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(organization_name="three",
                                                     organization_entity=id,
                                                     date=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace=self.NAMESPACE,
+                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(contributor_employer="four",
                                                     organization_entity=id,
                                                     date=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace=self.NAMESPACE,
+                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                                     import_reference=self.import_)
         Contribution.objects.create(organization_entity=id,
                                                     date=datetime.now(),
                                                     cycle='09', 
-                                                    transaction_namespace=self.NAMESPACE,
+                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
                                                     import_reference=self.import_)
         
         populate_entities(sql_names['contribution'], 
@@ -369,13 +369,12 @@ class TestQueries(unittest.TestCase):
 
 
 class BaseEntityBuildTests(unittest.TestCase):
-    NAMESPACE = 'urn:unittest:transaction'
     
     def create_contribution(self, **kwargs):
         c = Contribution(**kwargs)
         if 'cycle' not in kwargs:
             c.cycle='09'
-        c.transaction_namespace=self.NAMESPACE
+        c.transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE
         c.import_reference=self.import_
         c.save()
     
@@ -541,7 +540,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
 
-        associate_transactions(e.id, 'contributor_entity', [(self.NAMESPACE, '1')])
+        associate_transactions(e.id, 'contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '1')])
         
         e = Entity.objects.get(name="Alice")
         self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -550,7 +549,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
         
-        associate_transactions(e.id, 'contributor_entity', zip([self.NAMESPACE] * 2, ('2', '3')))
+        associate_transactions(e.id, 'contributor_entity', zip([UNITTEST_TRANSACTION_NAMESPACE] * 2, ('2', '3')))
 
         e = Entity.objects.get(name="Alice")
         self.assertEqual(5, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -563,16 +562,16 @@ class TestEntityAssociate(BaseEntityBuildTests):
 #        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id).count())
 #       self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest', attribute='Bob').count())
 
-        associate_transactions(e.id, 'organization_entity', [(self.NAMESPACE, '4'), (self.NAMESPACE, '5')])
-        associate_transactions(e.id, 'parent_organization_entity', [(self.NAMESPACE, '6')])
-        associate_transactions(e.id, 'committee_entity', [(self.NAMESPACE, '7')])
-        associate_transactions(e.id, 'recipient_entity', [(self.NAMESPACE, '8')])
+        associate_transactions(e.id, 'organization_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '4'), (UNITTEST_TRANSACTION_NAMESPACE, '5')])
+        associate_transactions(e.id, 'parent_organization_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '6')])
+        associate_transactions(e.id, 'committee_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '7')])
+        associate_transactions(e.id, 'recipient_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '8')])
 
         e = Entity.objects.get(name="Alice")
         self.assertEqual(10, e.contribution_count)
         self.assertEqual(7, EntityAlias.objects.filter(entity=e.id).count())
         
-        disassociate_transactions('contributor_entity', [(self.NAMESPACE, 'b'), (self.NAMESPACE, '2')])
+        disassociate_transactions('contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, 'b'), (UNITTEST_TRANSACTION_NAMESPACE, '2')])
 
         e = Entity.objects.get(name="Alice")
         self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -589,7 +588,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary").count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Nancy").count())
         
-        associate_transactions(e.id, 'contributor_entity', [(self.NAMESPACE, 'a'), (self.NAMESPACE, 'b')])
+        associate_transactions(e.id, 'contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, 'a'), (UNITTEST_TRANSACTION_NAMESPACE, 'b')])
         
         e = Entity.objects.get(name="Mary J.")
         self.assertEqual(4, Contribution.objects.filter(contributor_entity=e.id).count())

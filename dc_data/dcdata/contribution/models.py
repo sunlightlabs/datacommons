@@ -7,6 +7,7 @@ from dcdata.utils.sql import django2sql_names
 
 NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
 CRP_TRANSACTION_NAMESPACE = 'urn:fec:transaction'
+UNITTEST_TRANSACTION_NAMESPACE = 'urn:unittest:transaction'
 
 
 SEATS = (
@@ -155,7 +156,7 @@ class Contribution(DataCommonsModel):
 
         if self.transaction_namespace == NIMSP_TRANSACTION_NAMESPACE:
             pass
-        elif self.transaction_namespace == 'urn:unittest:transaction':
+        elif self.transaction_namespace == UNITTEST_TRANSACTION_NAMESPACE:
             pass
         elif self.transaction_namespace == CRP_TRANSACTION_NAMESPACE:        
             # check transaction type

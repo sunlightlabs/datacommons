@@ -18,6 +18,8 @@ import sys
 import traceback
 
 MATCHBOX_ORG_NAMESPACE = 'urn:matchbox:organization:'
+MATCHBOX_NAME_PREFIX = 'urn:matchbox:name:'
+MATCHBOX_COMMITTEE_NAME_PREFIX = 'urn:matchbox:committee_name:'
 
 
 #
@@ -56,8 +58,6 @@ def get_with_contributor_fallback():
     return source    
     
 
-MATCHBOX_NAME_PREFIX = 'urn:matchbox:name:'
-MATCHBOX_COMMITTEE_NAME_PREFIX = 'urn:matchbox:committee_name:'
 
 CONTRIBUTOR_ENTITY_FILTER = MD5Filter(get_with_contributor_fallback(), 'contributor_entity')
 RECIPIENT_ENTITY_FILTER = MD5Filter(get_with_name_fallback('recipient_urn', 'recipient_name', MATCHBOX_NAME_PREFIX), 'recipient_entity')
