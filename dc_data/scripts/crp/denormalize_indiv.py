@@ -198,7 +198,7 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         OrganizationFilter(),
 
         # create URNs
-        FieldRenamer({'contributor_urn': contrib_id, 'recipient_urn': recip_id, 'committee_urn': cmte_id})
+        FieldRenamer({'contributor_ext_id': contrib_id, 'recipient_ext_id': recip_id, 'committee_ext_id': cmte_id})
                       
         # recip code filter
         RecipCodeFilter(),  # recipient party

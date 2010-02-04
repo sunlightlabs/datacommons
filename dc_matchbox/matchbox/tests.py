@@ -24,7 +24,7 @@ class TestQueries(unittest.TestCase):
 
     def save_contribution(self, org_name, org_entity):
         c = Contribution(organization_name=org_name, 
-                     organization_urn='urn:unittest:organization:' + org_name,
+                     organization_ext_id='urn:unittest:organization:' + org_name,
                      organization_entity=org_entity,
                      date=datetime.now(),
                      cycle='09', 
@@ -61,7 +61,7 @@ class TestQueries(unittest.TestCase):
         populate_entities(sql_names['contribution'], 
                           sql_names['contribution_organization_entity'], 
                           [sql_names['contribution_organization_name']],
-                          sql_names['contribution_organization_urn'],
+                          sql_names['contribution_organization_ext_id'],
                           'organization')
         
         orphan = Entity(id=self.avacado_id, name=u'Avacado', type='organization')
@@ -106,7 +106,7 @@ class TestQueries(unittest.TestCase):
     def test_populate_entities_cross_column_duplication(self):
         Contribution.objects.create(recipient_name="Apple Sauce",
                                     recipient_entity=self.apple_id,
-                                    recipient_urn="urn:unittest:recipient:" + "Apple Sauce",
+                                    recipient_ext_id="urn:unittest:recipient:" + "Apple Sauce",
                                     date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
@@ -114,7 +114,7 @@ class TestQueries(unittest.TestCase):
         
         Contribution.objects.create(recipient_name="Apple",
                                     recipient_entity=self.apple_id,
-                                    recipient_urn="urn:unittest:recipient:" + "Apple",
+                                    recipient_ext_id="urn:unittest:recipient:" + "Apple",
                                     date=datetime.now(),
                                     cycle='09', 
                                     transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
@@ -123,7 +123,7 @@ class TestQueries(unittest.TestCase):
         populate_entities(sql_names['contribution'],
                   sql_names['contribution_recipient_entity'],
                   [sql_names['contribution_recipient_name']],
-                  sql_names['contribution_recipient_urn'],
+                  sql_names['contribution_recipient_ext_id'],
                   'fruits')
         
         self.assertEqual(3, Entity.objects.count())
@@ -166,7 +166,7 @@ class TestQueries(unittest.TestCase):
         populate_entities(sql_names['contribution'],
                           sql_names['contribution_recipient_entity'],
                           [sql_names['contribution_recipient_name']],
-                          sql_names['contribution_recipient_urn'],
+                          sql_names['contribution_recipient_ext_id'],
                           get_recipient_type,
                           sql_names['contribution_recipient_type'])
         
@@ -354,7 +354,7 @@ class TestQueries(unittest.TestCase):
         populate_entities(sql_names['contribution'], 
                           sql_names['contribution_organization_entity'], 
                           [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                          sql_names['contribution_organization_urn'],
+                          sql_names['contribution_organization_ext_id'],
                           'organization')
         
         aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity=id)]
@@ -431,20 +431,20 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertEqual(e.id, c.contributor_entity)
         
         self.create_contribution(organization_name='Coconut Lounge')
-        self.create_contribution(organization_urn='1234')
+        self.create_contribution(organization_ext_id='1234')
         
         normalize_contributions()
         build_entity('Coconut Camp', 'organization', [('organization_name', u'Coconut Lounge', 'organization_entity'),
-                                                      ('organization_urn', u'1234', 'organization_entity')])
+                                                      ('organization_ext_id', u'1234', 'organization_entity')])
         
         e = Entity.objects.get(name='Coconut Camp')
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
         
     def test_big_hitters(self):
-        self.create_contribution(contributor_urn='urn:nimsp:contributor:1')
-        self.create_contribution(organization_urn='urn:nimsp:contributor:1')
-        self.create_contribution(parent_organization_urn='urn:nimsp:contributor:1')
-        self.create_contribution(contributor_urn='urn:crp:contributor:D000031229') # won't count toward total b/c we don't search on CRP IDs, since they don't occur in actual data
+        self.create_contribution(contributor_ext_id='urn:nimsp:contributor:1')
+        self.create_contribution(organization_ext_id='urn:nimsp:contributor:1')
+        self.create_contribution(parent_organization_ext_id='urn:nimsp:contributor:1')
+        self.create_contribution(contributor_ext_id='urn:crp:contributor:D000031229') # won't count toward total b/c we don't search on CRP IDs, since they don't occur in actual data
         self.create_contribution(contributor_name='1-800 Contacts')
         self.create_contribution(organization_name='1-800 Contacts')
         self.create_contribution(parent_organization_name='1-800 Contacts')
@@ -517,15 +517,15 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.create_contribution(transaction_id='b', contributor_name='Alice', amount=20)
         self.create_contribution(transaction_id=1, amount=40)
         self.create_contribution(transaction_id=2, amount=80, contributor_name='Bob')
-        self.create_contribution(transaction_id=3, amount=160, contributor_urn='urn:unittest:Bob')
+        self.create_contribution(transaction_id=3, amount=160, contributor_ext_id='urn:unittest:Bob')
         self.create_contribution(transaction_id=4, contributor_employer="Carl")
         self.create_contribution(transaction_id=5, organization_name="Dave")
         self.create_contribution(transaction_id=6, parent_organization_name="Ethan")
         self.create_contribution(transaction_id=7, committee_name="Frank")
         self.create_contribution(transaction_id=8, recipient_name="Greg")
         
-        self.create_contribution(transaction_id='m', contributor_name='Mary', contributor_urn='urn:nimsp:contributor:999')
-        self.create_contribution(transaction_id='n', contributor_name='Nancy', contributor_urn='urn:nimsp:contributor:999')
+        self.create_contribution(transaction_id='m', contributor_name='Mary', contributor_ext_id='urn:nimsp:contributor:999')
+        self.create_contribution(transaction_id='n', contributor_name='Nancy', contributor_ext_id='urn:nimsp:contributor:999')
         
         whitelist = ["0, 0, Alice", "0, 999, Mary J."]
         

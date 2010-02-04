@@ -15,17 +15,17 @@ create index contribution_contribution_recipient_entity on contribution_contribu
 
 -- urn indexes
 
-drop index if exists contribution_contribution_contributor_urn;
-drop index if exists contribution_contribution_organization_urn;
-drop index if exists contribution_contribution_parent_organization_urn;
-drop index if exists contribution_contribution_committee_urn;
-drop index if exists contribution_contribution_recipient_urn;
+drop index if exists contribution_contribution_contributor_ext_id;
+drop index if exists contribution_contribution_organization_ext_id;
+drop index if exists contribution_contribution_parent_organization_ext_id;
+drop index if exists contribution_contribution_committee_ext_id;
+drop index if exists contribution_contribution_recipient_ext_id;
 
-create index contribution_contribution_contributor_urn on contribution_contribution (contributor_urn);
-create index contribution_contribution_organization_urn on contribution_contribution (organization_urn);
-create index contribution_contribution_parent_organization_urn on contribution_contribution (parent_organization_urn);
-create index contribution_contribution_committee_urn on contribution_contribution (committee_urn);
-create index contribution_contribution_recipient_urn on contribution_contribution (recipient_urn);
+create index contribution_contribution_contributor_ext_id on contribution_contribution (contributor_ext_id);
+create index contribution_contribution_organization_ext_id on contribution_contribution (organization_ext_id);
+create index contribution_contribution_parent_organization_ext_id on contribution_contribution (parent_organization_ext_id);
+create index contribution_contribution_committee_ext_id on contribution_contribution (committee_ext_id);
+create index contribution_contribution_recipient_ext_id on contribution_contribution (recipient_ext_id);
 
 
 -- name indexes

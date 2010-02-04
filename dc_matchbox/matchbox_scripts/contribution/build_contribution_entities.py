@@ -29,28 +29,28 @@ def run():
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_committee_entity'],
                       [sql_names['contribution_committee_name']],
-                      sql_names['contribution_committee_urn'],
+                      sql_names['contribution_committee_ext_id'],
                       'committee')
     
     log("Building organization entities...")
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_organization_entity'],
                       [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                      sql_names['contribution_organization_urn'],
+                      sql_names['contribution_organization_ext_id'],
                       'organization')   
      
     log("Building parent organization entities...")
     populate_entities(sql_names['contribution'], 
                       sql_names['contribution_parent_organization_entity'],
                       [sql_names['contribution_parent_organization_name']],
-                      sql_names['contribution_parent_organization_urn'],
+                      sql_names['contribution_parent_organization_ext_id'],
                       'organization')
         
     log("Building recipient entities...")
     populate_entities(sql_names['contribution'],
                       sql_names['contribution_recipient_entity'],
                       [sql_names['contribution_recipient_name']],
-                      sql_names['contribution_recipient_urn'],
+                      sql_names['contribution_recipient_ext_id'],
                       get_recipient_type,
                       sql_names['contribution_recipient_type'])
     

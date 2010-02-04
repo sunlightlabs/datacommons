@@ -128,11 +128,11 @@ def run_denormalization(infile, outfile, catcodes, candidates, committees):
         
         # contributor and recipient fields
         ContributorFilter(committees),
-        FieldRenamer({'contributor_urn': 'pac_id'}),
+        FieldRenamer({'contributor_ext_id': 'pac_id'}),
         FieldAdder('contributor_type', 'committee'),
         
         RecipientFilter(candidates),
-        FieldRenamer({'recipient_urn': 'cid'}),
+        FieldRenamer({'recipient_ext_id': 'cid'}),
         FieldAdder('recipient_type', 'politician'),
         
         # catcode

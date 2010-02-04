@@ -17,8 +17,8 @@ class TestMD5Filter(unittest.TestCase):
         
     def test_complicated(self):
         def generator(record):
-            if record.get('organization_urn', False):
-                return record['organization_urn']
+            if record.get('organization_ext_id', False):
+                return record['organization_ext_id']
             if record.get('organization_name', False):
                 return 'urn:matchbox:organization:' + record['organization_name']
         
@@ -28,7 +28,7 @@ class TestMD5Filter(unittest.TestCase):
         f.process_record(r)
         self.assertFalse(r.get('organization_entity', False))
 
-        r = {'organization_urn': '1234'}
+        r = {'organization_ext_id': '1234'}
         f.process_record(r)
         self.assertEqual(md5('1234').hexdigest(), r['organization_entity'])
         

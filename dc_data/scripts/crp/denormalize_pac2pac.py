@@ -21,7 +21,7 @@ class RecipientFilter(Filter):
             if recip_id.startswith('N'):
                 candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
                 if candidate:
-                    record['recipient_urn'] = recip_id
+                    record['recipient_ext_id'] = recip_id
                     record['recipient_name'] = candidate['first_last_p']
                     record['recipient_party'] = candidate['party']
                     record['recipient_type'] = 'politician'
@@ -38,7 +38,7 @@ class RecipientFilter(Filter):
                                 record['district'] = "%s-%s" % (seat[:2], seat[2:])
             elif recip_id.startswith('C'):
                 committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-                record['recipient_urn'] = recip_id
+                record['recipient_ext_id'] = recip_id
                 if committee:
                     record['recipient_name'] = committee['pac_short']
                     record['recipient_party'] = committee['party']
@@ -55,9 +55,9 @@ class CommitteeFilter(Filter):
         super(CommitteeFilter, self).__init__()
         self._committees = committees
     def process_record(self, record):
-        committee_urn = record.get('committee_urn', None)
-        if committee_urn:
-            cmte_id = committee_urn
+        committee_ext_id = record.get('committee_ext_id', None)
+        if committee_ext_id:
+            cmte_id = committee_ext_id
             committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
             if committee:
                 record['committee_name'] = committee['pac_short']
@@ -69,18 +69,18 @@ class ContribRecipFilter(Filter):
 
     def process_record(self, record):
         
-        filer_urn = record['filer_id']
+        filer_id = record['filer_id']
         filer_name = record['contrib_lend_trans'].strip()
-        other_urn = record['other_id']
+        other_id = record['other_id']
         trans_type = record['type'].strip().upper()
         if trans_type.startswith('1'):
-            record['committee_urn'] = filer_urn
+            record['committee_ext_id'] = filer_id
             record['contributor_name'] = filer_name
-            record['contributor_urn'] = other_urn
+            record['contributor_ext_id'] = other_id
         elif trans_type.startswith('2'):
-            record['contributor_urn'] = filer_urn
+            record['contributor_ext_id'] = filer_id
             record['committee_name'] = filer_name
-            record['committee_urn'] = other_urn
+            record['committee_ext_id'] = other_id
             
         donor_name = record['donor_cmte'].strip()
         if donor_name:

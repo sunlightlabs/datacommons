@@ -29,14 +29,14 @@ from common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 # to do: these should be pulled automatically from the model, as is done in loadcontributions.py,
 # not hard-coded here. The CSV_MAPPING should also check that it is consistent with the model-based list.
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
-              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_urn',
+              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
               'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
               'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order',
-              'organization_name', 'organization_urn', 'organization_entity', 'parent_organization_name', 'parent_organization_urn',
-              'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity',
+              'organization_name', 'organization_ext_id', 'organization_entity', 'parent_organization_name', 'parent_organization_ext_id',
+              'parent_organization_entity', 'recipient_name', 'recipient_ext_id', 'recipient_entity',
               'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order',
-              'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type',
+              'committee_name', 'committee_ext_id', 'committee_entity', 'committee_party', 'election_type',
               'district', 'seat', 'seat_status', 'seat_result']
 
 
@@ -254,22 +254,22 @@ class UrnFilter(Filter):
             return record
         elif record['candidate_id']:
             record['recipient_type'] = 'politician'
-            record['recipient_urn'] = record['candidate_id']
+            record['recipient_ext_id'] = record['candidate_id']
         elif record['committee_id']:
             record['recipient_type'] = 'committee'
-            record['recipient_urn'] = record['committee_urn'] = record['committee_id']
+            record['recipient_ext_id'] = record['committee_ext_id'] = record['committee_id']
 
         # Contributor
         if record['contributor_id']:
-            record['contributor_urn'] = record['contributor_id']
+            record['contributor_ext_id'] = record['contributor_id']
             record['contributor_type'] = None
             if self.committee_ids.has_key(record['contributor_name']): 
                 # contributor is a committee (by name match in committees table).
                 record['contributor_type'] = 'committee'
         if record['newemployerid']:
-            record['organization_urn'] = record['newemployerid']
+            record['organization_ext_id'] = record['newemployerid']
         if record['parentcompanyid']:
-            record['parent_organization_urn'] = record['parentcompanyid']
+            record['parent_organization_ext_id'] = record['parentcompanyid']
 
         for f in ('candidate_id','committee_id','contributor_id','newemployerid','parentcompanyid'):
             del(record[f])

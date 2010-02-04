@@ -7,14 +7,14 @@ import logging
 import os
 
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
-              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_urn',
+              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
               'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
               'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order',
-              'organization_name', 'organization_urn', 'organization_entity', 'parent_organization_name', 'parent_organization_urn',
-              'parent_organization_entity', 'recipient_name', 'recipient_urn', 'recipient_entity',
+              'organization_name', 'organization_ext_id', 'organization_entity', 'parent_organization_name', 'parent_organization_ext_id',
+              'parent_organization_entity', 'recipient_name', 'recipient_ext_id', 'recipient_entity',
               'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order',
-              'committee_name', 'committee_urn', 'committee_entity', 'committee_party', 'election_type',
+              'committee_name', 'committee_ext_id', 'committee_entity', 'committee_party', 'election_type',
               'district', 'seat', 'seat_status', 'seat_result']
 
 SPEC = dict(((fn, None) for fn in FIELDNAMES))
