@@ -17,7 +17,7 @@ class RecipCodeFilter(Filter):
     def __init__(self):
         super(RecipCodeFilter, self).__init__()
     def process_record(self, record):
-        if record['recip_id'].startswith('N'):
+        if 'recip_id' in record and record['recip_id'].startswith('N'):
             if record['recip_code']:
                 recip_code = record['recip_code'].strip().upper()
                 record['recipient_party'] = recip_code[0]
