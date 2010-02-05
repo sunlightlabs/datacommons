@@ -1,5 +1,6 @@
 from strings.normalizer import basic_normalizer
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
+from matchbox.queries import recompute_aggregates
 
 import time
 import logging
@@ -55,6 +56,8 @@ def build_entity(name, type, crp_id, nimsp_id):
                and matchbox_normalization.normalized = %%s
            """ % (column + '_entity',  column + '_name')
         _execute(stmt, [e.id, normalized_name])
+        
+    recompute_aggregates(e.id, [name])
         
 
 # this is the old implementaiton that I'll be replacing

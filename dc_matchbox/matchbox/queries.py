@@ -80,7 +80,7 @@ def associate_transactions(entity_id, column, transactions):
         """ % (column, "(%s)" % ", ".join(['%s'] * len(ids)))
         cursor.execute(contribution_update_stmt, [entity_id, namespace] + list(ids))
         
-    _recompute_aggregates(entity_id)
+    recompute_aggregates(entity_id)
     
 
 def disassociate_transactions(column, transactions):
@@ -112,10 +112,10 @@ def disassociate_transactions(column, transactions):
             cursor.execute(contribution_update_stmt, [namespace] + list(ids))
        
     for id in updated_entities:
-        _recompute_aggregates(id)   
+        recompute_aggregates(id)   
     
     
-def _recompute_aggregates(entity_id):
+def recompute_aggregates(entity_id, required_aliases = (), required_attributes = ()):
     cursor = connection.cursor()
     
     aggregate_count_stmt = """
@@ -148,45 +148,53 @@ def _recompute_aggregates(entity_id):
     """
     cursor.execute(delete_aliases_stmt, [entity_id])
     
+    
+    required_values_stmt = "union values %s" % (", ".join(['(%s, %s)'] * len(required_aliases))) if required_aliases else ""
+    required_values_args = list()
+    for alias in required_aliases:
+        required_values_args.append(entity_id)
+        required_values_args.append(alias)
+    
     aggregate_aliases_stmt = """
         insert into matchbox_entityalias (entity_id, alias)
             select contributor_entity, contributor_name
             from contribution_contribution
-            where contributor_entity = %s
+            where contributor_entity = %%s
                 and contributor_name != ''
             group by contributor_entity, contributor_name
         union
             select organization_entity, organization_name
             from contribution_contribution
-            where organization_entity = %s
+            where organization_entity = %%s
                 and organization_name != ''
             group by organization_entity, organization_name
         union
             select organization_entity, contributor_employer
             from contribution_contribution
-            where organization_entity = %s
+            where organization_entity = %%s
                 and contributor_employer != ''
             group by organization_entity, contributor_employer
         union
             select parent_organization_entity, parent_organization_name
             from contribution_contribution
-            where parent_organization_entity = %s
+            where parent_organization_entity = %%s
                 and parent_organization_name != ''
             group by parent_organization_entity, parent_organization_name
         union
             select committee_entity, committee_name
             from contribution_contribution
-            where committee_entity = %s
+            where committee_entity = %%s
                 and committee_name != ''
             group by committee_entity, committee_name
         union
             select recipient_entity, recipient_name
             from contribution_contribution
-            where recipient_entity = %s
+            where recipient_entity = %%s
                 and recipient_name != ''
-            group by recipient_entity, recipient_name;
-    """    
-    cursor.execute(aggregate_aliases_stmt, [entity_id] * 6)
+            group by recipient_entity, recipient_name
+        %s
+    """ % (required_values_stmt)   
+    cursor.execute(aggregate_aliases_stmt, ([entity_id] * 6) + required_values_args)
     
     # re-compute attribute aggregates
 

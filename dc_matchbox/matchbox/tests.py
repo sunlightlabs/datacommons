@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from uuid import uuid4
+from matchbox_scripts.contribution.build_aggregates import build_aggregates
 import unittest
 
 from dcdata.contribution.models import Contribution, sql_names,\
@@ -13,7 +14,6 @@ from matchbox_scripts.contribution.build_contribution_entities import get_recipi
 from matchbox_scripts.support.build_entities import populate_entities, build_entity
 from matchbox_scripts.contribution.normalize_contributions import run as run_normalization_script
 from matchbox_scripts.contribution.normalize import normalize_contributions
-from matchbox_scripts.contribution.build_aggregates import build_aggregates
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
     associate_transactions, _pairs_to_dict, disassociate_transactions
 from matchbox_scripts.contribution.build_big_hitters import build_big_hitters
@@ -197,10 +197,11 @@ class TestQueries(unittest.TestCase):
 
 
     def test_search_entities_by_name_multiple_aliases(self):
+        build_aggregates()
+
         apple = Entity.objects.get(id=self.apple_id)
         apple.aliases.create(alias="Appetite")
         Normalization.objects.create(original="Appetite", normalized="appetite")
-        build_aggregates()
         
         result = search_entities_by_name(u'app', ['organization'])
         
@@ -475,7 +476,6 @@ class TestEntityBuild(BaseEntityBuildTests):
         
         normalize_contributions()
         build_big_hitters(whitelist)
-        build_aggregates()
         
         foobar = Entity.objects.get(name="FooBar")
         self.assertEqual(2, foobar.contribution_count)
@@ -496,7 +496,6 @@ class TestEntityBuild(BaseEntityBuildTests):
         
         normalize_contributions()
         build_big_hitters(whitelist)
-        build_aggregates()
         
         self.assertEqual(3, Entity.objects.count())
         
@@ -509,9 +508,20 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Wazzo Intl').count())
 
         e = Entity.objects.get(name='Waz Corp')
-        self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(3, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Corp').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Co').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
+        
+        
+#    def test_recompute_aggregates(self):
+#        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id='1', contributor_name='Alice')
+#        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id='1', contributor_name='Bob')
+#        
+#        whitelist = ["0, 1, ]
+#        
+        normalize_contributions()
+        
         
             
 class TestEntityAssociate(BaseEntityBuildTests):
@@ -535,7 +545,6 @@ class TestEntityAssociate(BaseEntityBuildTests):
         
         normalize_contributions()
         build_big_hitters(whitelist)
-        build_aggregates()
         
         e = Entity.objects.get(name="Alice")
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -588,7 +597,8 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Mary J.")
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(2, e.contribution_count)
-        self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(3, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary J.").count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary").count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Nancy").count())
         
