@@ -51,14 +51,14 @@ class SaltFilter(YieldFilter):
         """
             Return an existing salt from the database, if it exists
         """
-        stmt = """SELECT saltid AS contributionid, amount, date as datestamp, contributor as contributor_name, city as contributor_city, state as contributor_state, zipcode as contributor_zipcode, catcode as contributor_category FROM salts WHERE contributionid = %s"""
+        stmt = """SELECT saltid AS contributionid, amount, date, contributor as contributor_name, city as contributor_city, state as contributor_state, zipcode as contributor_zipcode, catcode as contributor_category FROM salts WHERE contributionid = %s"""
         if 'contributionid' in record:
             self._pcur.execute(stmt, (record['contributionid'],))
             rtn = self._pcur.fetchone()
             if rtn is not None:
                 rtn['amount'] = float(rtn['amount'])
-                if rtn['datestamp']:
-                    rtn['datestamp'] = str(rtn['datestamp'])
+                if rtn['date']:
+                    rtn['date'] = str(rtn['date'])
                     return rtn
         else:
             print "No contributionid making salt: %s" % record
@@ -86,16 +86,16 @@ class SaltFilter(YieldFilter):
             salt['amount'] = portion
                 
             #get date from an average for this report bundle of contributions
-            if record['datestamp'] and record['datestamp'] != "":
-                salt['datestamp'] = record['datestamp']
+            if record['date'] and record['date'] != "":
+                salt['date'] = record['date']
             else:
-                salt['datestamp'] = None
-            stmt = """SELECT date(from_unixtime(AVG(unix_timestamp(date)))) AS datestamp FROM Contributions WHERE date IS NOT NULL AND RecipientReportsBundleID = (SELECT RecipientReportsBundleID FROM Contributions WHERE ContributionID = %s)""";
+                salt['date'] = None
+            stmt = """SELECT date(from_unixtime(AVG(unix_timestamp(date)))) FROM Contributions WHERE date IS NOT NULL AND RecipientReportsBundleID = (SELECT RecipientReportsBundleID FROM Contributions WHERE ContributionID = %s)""";
             try:
                 self._mcur.execute(stmt, (record['contributionid'],))
                 d = (self._mcur.fetchone())[0]
                 if d and (str(d) != '1969-12-31'):
-                    salt['datestamp'] = d
+                    salt['date'] = d
             except Exception, e:
                 print e
                 sys.exit(1)
@@ -104,7 +104,7 @@ class SaltFilter(YieldFilter):
             salt['contributor_category'] = 'Y0000' #uncoded
 
             stmt = """UPDATE salts SET contributionid = %s, saltid = %s, amount = %s, date = %s, catcode = %s WHERE id = %s"""
-            self._pcur.execute(stmt, (record['contributionid'], salt['contributionid'], salt['amount'],  salt['datestamp'], salt['contributor_category'], row['id']))
+            self._pcur.execute(stmt, (record['contributionid'], salt['contributionid'], salt['amount'],  salt['date'], salt['contributor_category'], row['id']))
             self._pcon.commit()
             salt['salted'] = True
             return salt

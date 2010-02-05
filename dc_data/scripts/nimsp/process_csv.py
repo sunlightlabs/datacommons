@@ -382,8 +382,7 @@ def main():
         RecipientFilter(),
         SeatFilter(),
         UrnFilter(con),
-        FieldModifier('datestamp', lambda x: str(x) if x else None),
-        FieldRenamer({'date': 'datestamp'}),
+        FieldModifier('date', lambda x: str(x) if x else None),
         ZipCleaner(),
            
         # add static fields

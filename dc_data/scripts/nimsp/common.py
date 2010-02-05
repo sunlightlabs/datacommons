@@ -5,7 +5,7 @@ SQL_DUMP_FILE = 'nimsp_partial_denormalization.csv'
 
 CSV_SQL_MAPPING = [('contributionid', 'c.ContributionID', parse_int), 
                 ('amount', 'c.Amount', parse_float), 
-                ('datestamp', 'c.Date', parse_date), 
+                ('date', 'c.Date', parse_date), 
                 ('contributor', 'c.Contributor', parse_char), 
                 ('newcontributor', 'c.NewContributor', parse_char), 
                 ('first', 'c.First', parse_char), 

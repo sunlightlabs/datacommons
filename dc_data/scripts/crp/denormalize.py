@@ -66,19 +66,19 @@ def load_committees(dataroot):
     return committees
 
 
-def parse_date_iso(datestamp):
-    pd = parse_date(datestamp)
+def parse_date_iso(date):
+    pd = parse_date(date)
     if pd:
         return pd.isoformat()
 
 
-def parse_date(datestamp):
-    if datestamp:
+def parse_date(date):
+    if date:
         try:
-            (m, d, y) = datestamp.split('/')
+            (m, d, y) = date.split('/')
             return datetime.date(int(y), int(m), int(d))
         except ValueError, ve:
-            logging.warn("error parsing datestamp: %s" % datestamp)
+            logging.warn("error parsing date: %s" % date)
 
 
 class SpecFilter(UnicodeFilter):
