@@ -197,13 +197,19 @@ def recompute_aggregates(entity_id, required_aliases = (), required_attributes =
     cursor.execute(aggregate_aliases_stmt, ([entity_id] * 6) + required_values_args)
     
     # re-compute attribute aggregates
+    delete_attributes_stmt = """
+        delete from matchbox_entityattribute
+        where entity_id = %s
+    """
+    cursor.execute(delete_attributes_stmt, [entity_id])
+    
     subquery_prototype = """
         select 
             %(role)s_entity, 
             case 
-                when transaction_namespace = 'urn:fec:transaction' then 'urn:crp:%(role)s:' 
-                when transaction_namespace = 'urn:nimsp:transaction' then 'urn:nimsp:%(role)s:'
-                when transaction_namespace = 'urn:unittest:transaction' then 'urn:unittest:%(role)s:'
+                when transaction_namespace = 'urn:fec:transaction' then 'urn:crp:%(role)s' 
+                when transaction_namespace = 'urn:nimsp:transaction' then 'urn:nimsp:%(role)s'
+                when transaction_namespace = 'urn:unittest:transaction' then 'urn:unittest:%(role)s'
             end,
             %(role)s_ext_id
         from contribution_contribution

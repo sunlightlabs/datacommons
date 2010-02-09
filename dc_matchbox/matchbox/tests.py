@@ -512,6 +512,34 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Corp').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Co').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
+        
+    def test_entity_attributes(self):
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE,
+                                 contributor_ext_id='2', contributor_name='FooBar',
+                                 organization_ext_id='3', organization_name='FooBar',
+                                 parent_organization_ext_id='4', parent_organization_name='FooBar')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE,
+                                 parent_organization_ext_id='4', parent_organization_name='FooBar',
+                                 committee_ext_id='5', committee_name='FooBar',
+                                 recipient_ext_id='6', recipient_name='FooBar')
+        self.create_contribution(transaction_namespace=CRP_TRANSACTION_NAMESPACE,
+                                 contributor_ext_id='7', contributor_name='FooBar')
+        
+        whitelist=["8, 1, FooBar"]
+        
+        normalize_contributions()
+        build_big_hitters(whitelist)
+        
+        self.assertEqual(1, Entity.objects.count())
+        
+        e = Entity.objects.get(name='FooBar')
+        self.assertEqual(3, e.contribution_count)
+        self.assertEqual(9, EntityAttribute.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=e.id).count())
+        for (namespace, id) in zip(['urn:nimsp:organization', 'urn:nimsp:contributor', 'urn:nimsp:organization', \
+                                    'urn:nimsp:parent_organization', 'urn:nimsp:committee', 'urn:nimsp:recipient', \
+                                    'urn:crp:contributor', 'urn:crp:organization'], range(1, 9)):
+            self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace=namespace, value=str(id)).count())
          
             
 class TestEntityAssociate(BaseEntityBuildTests):
@@ -521,7 +549,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.create_contribution(transaction_id='b', contributor_name='Alice', amount=20)
         self.create_contribution(transaction_id=1, amount=40)
         self.create_contribution(transaction_id=2, amount=80, contributor_name='Bob')
-        self.create_contribution(transaction_id=3, amount=160, contributor_ext_id='urn:unittest:Bob')
+        self.create_contribution(transaction_id=3, amount=160, contributor_ext_id='BobID')
         self.create_contribution(transaction_id=4, contributor_employer="Carl")
         self.create_contribution(transaction_id=5, organization_name="Dave")
         self.create_contribution(transaction_id=6, parent_organization_name="Ethan")
@@ -542,6 +570,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(30, e.contribution_amount)
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
+        self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
 
         associate_transactions(e.id, 'contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '1')])
         
@@ -551,6 +580,8 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(70, e.contribution_amount)
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
+# to do: recomputing attributes not working yet 
+#        self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
         
         associate_transactions(e.id, 'contributor_entity', zip([UNITTEST_TRANSACTION_NAMESPACE] * 2, ('2', '3')))
 
@@ -561,10 +592,12 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
-# todo: enable when attribute aggregation is working        
-#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id).count())
-#       self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest', attribute='Bob').count())
-
+#        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())
+#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=e.id).count())
+#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:organization', value='0').count())
+#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:nimsp:organization', value='0').count())
+#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest:contributor', value='BobID').count())        
+  
         associate_transactions(e.id, 'organization_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '4'), (UNITTEST_TRANSACTION_NAMESPACE, '5')])
         associate_transactions(e.id, 'parent_organization_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '6')])
         associate_transactions(e.id, 'committee_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '7')])
@@ -573,6 +606,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(10, e.contribution_count)
         self.assertEqual(7, EntityAlias.objects.filter(entity=e.id).count())
+#        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())        
         
         disassociate_transactions('contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, 'b'), (UNITTEST_TRANSACTION_NAMESPACE, '2')])
 
@@ -583,6 +617,8 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(6, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
+#        self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
+#        self.assertEqual(0, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:contributor', value='BobID').count())
 
         e = Entity.objects.get(name="Mary J.")
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -609,6 +645,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(200, e.contribution_amount)
         self.assertEqual(5, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
+        
         
             
 class TestUtils(unittest.TestCase):
