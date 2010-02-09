@@ -512,17 +512,7 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Corp').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Co').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
-        
-        
-#    def test_recompute_aggregates(self):
-#        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id='1', contributor_name='Alice')
-#        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id='1', contributor_name='Bob')
-#        
-#        whitelist = ["0, 1, ]
-#        
-        normalize_contributions()
-        
-        
+         
             
 class TestEntityAssociate(BaseEntityBuildTests):
     

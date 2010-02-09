@@ -197,6 +197,34 @@ def recompute_aggregates(entity_id, required_aliases = (), required_attributes =
     cursor.execute(aggregate_aliases_stmt, ([entity_id] * 6) + required_values_args)
     
     # re-compute attribute aggregates
+    subquery_prototype = """
+        select 
+            %(role)s_entity, 
+            case 
+                when transaction_namespace = 'urn:fec:transaction' then 'urn:crp:%(role)s:' 
+                when transaction_namespace = 'urn:nimsp:transaction' then 'urn:nimsp:%(role)s:'
+                when transaction_namespace = 'urn:unittest:transaction' then 'urn:unittest:%(role)s:'
+            end,
+            %(role)s_ext_id
+        from contribution_contribution
+        where
+            %(role)s_entity = %%s
+            and %(role)s_ext_id != ''
+        group by %(role)s_entity, transaction_namespace, %(role)s_ext_id
+        """
+        
+    contribution_subqueries = " union ".join(subquery_prototype % {'role': role} for role in ['contributor', 'organization', 'parent_organization', 'committee', 'recipient'])
+
+    required_values_stmt = "union values %s" % (", ".join(['(%s, %s, %s)'] * len(required_attributes))) if required_attributes else ""
+    required_values_args = list()
+    for (namespace, value) in required_attributes:
+        required_values_args.extend([entity_id, namespace, value])
+
+    aggregate_attributes_stmt = """ 
+        insert into matchbox_entityattribute (entity_id, namespace, value) %s %s
+    """ % (contribution_subqueries, required_values_stmt)
+
+    cursor.execute(aggregate_attributes_stmt, ([entity_id] * 5) + required_values_args)
 
 
 def merge_entities(entity_ids, new_entity):
