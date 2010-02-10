@@ -132,11 +132,11 @@ def populate_entities(transaction_table, entity_id_column, name_columns, attribu
             cursor.execute(stmt, [id, name, type_val, reviewer, timestamp])
             
         for alias in aliases:
-            stmt = 'insert into %s (%s, %s) values (%%s, %%s)' % (sql_names['entityalias'], sql_names['entityalias_entity'], sql_names['entityalias_alias'])
+            stmt = 'insert into %s (%s, %s, verified) values (%%s, %%s, TRUE)' % (sql_names['entityalias'], sql_names['entityalias_entity'], sql_names['entityalias_alias'])
             cursor.execute(stmt, [id, alias])
             
         for (namespace, value) in attributes:
-            stmt = 'insert into %s (%s, %s, %s) values (%%s, %%s, %%s)' % \
+            stmt = 'insert into %s (%s, %s, %s, verified) values (%%s, %%s, %%s, TRUE)' % \
                 (sql_names['entityattribute'], sql_names['entityattribute_entity'], sql_names['entityattribute_namespace'], sql_names['entityattribute_value'])
             cursor.execute(stmt, [id, namespace, value])
 

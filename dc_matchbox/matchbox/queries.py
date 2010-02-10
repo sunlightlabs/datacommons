@@ -142,52 +142,58 @@ def recompute_aggregates(entity_id, required_aliases = (), required_attributes =
     """
     cursor.execute(aggregate_amount_stmt, [entity_id])
     
+    _recompute_aliases(entity_id, required_aliases)
+    _recompute_attributes(entity_id, required_attributes)
+
+
+def _recompute_aliases(entity_id, required_aliases):    
+    cursor = connection.cursor()
+    
     delete_aliases_stmt = """
         delete from matchbox_entityalias
         where entity_id = %s
     """
     cursor.execute(delete_aliases_stmt, [entity_id])
     
-    
-    required_values_stmt = "union values %s" % (", ".join(['(%s, %s)'] * len(required_aliases))) if required_aliases else ""
+    required_values_stmt = "union values %s" % (", ".join(['(%s, %s, FALSE)'] * len(required_aliases))) if required_aliases else ""
     required_values_args = list()
     for alias in required_aliases:
         required_values_args.append(entity_id)
         required_values_args.append(alias)
     
     aggregate_aliases_stmt = """
-        insert into matchbox_entityalias (entity_id, alias)
-            select contributor_entity, contributor_name
+        insert into matchbox_entityalias (entity_id, alias, verified)
+            select contributor_entity, contributor_name, FALSE
             from contribution_contribution
             where contributor_entity = %%s
                 and contributor_name != ''
             group by contributor_entity, contributor_name
         union
-            select organization_entity, organization_name
+            select organization_entity, organization_name, FALSE
             from contribution_contribution
             where organization_entity = %%s
                 and organization_name != ''
             group by organization_entity, organization_name
         union
-            select organization_entity, contributor_employer
+            select organization_entity, contributor_employer, FALSE
             from contribution_contribution
             where organization_entity = %%s
                 and contributor_employer != ''
             group by organization_entity, contributor_employer
         union
-            select parent_organization_entity, parent_organization_name
+            select parent_organization_entity, parent_organization_name, FALSE
             from contribution_contribution
             where parent_organization_entity = %%s
                 and parent_organization_name != ''
-            group by parent_organization_entity, parent_organization_name
+            group by parent_organization_entity, parent_organization_name, FALSE
         union
-            select committee_entity, committee_name
+            select committee_entity, committee_name, FALSE
             from contribution_contribution
             where committee_entity = %%s
                 and committee_name != ''
             group by committee_entity, committee_name
         union
-            select recipient_entity, recipient_name
+            select recipient_entity, recipient_name, FALSE
             from contribution_contribution
             where recipient_entity = %%s
                 and recipient_name != ''
@@ -195,6 +201,10 @@ def recompute_aggregates(entity_id, required_aliases = (), required_attributes =
         %s
     """ % (required_values_stmt)   
     cursor.execute(aggregate_aliases_stmt, ([entity_id] * 6) + required_values_args)
+    
+    
+def _recompute_attributes(entity_id, required_attributes):    
+    cursor = connection.cursor()
     
     # re-compute attribute aggregates
     delete_attributes_stmt = """
@@ -211,7 +221,8 @@ def recompute_aggregates(entity_id, required_aliases = (), required_attributes =
                 when transaction_namespace = 'urn:nimsp:transaction' then 'urn:nimsp:%(role)s'
                 when transaction_namespace = 'urn:unittest:transaction' then 'urn:unittest:%(role)s'
             end,
-            %(role)s_ext_id
+            %(role)s_ext_id,
+            FALSE
         from contribution_contribution
         where
             %(role)s_entity = %%s
@@ -221,13 +232,13 @@ def recompute_aggregates(entity_id, required_aliases = (), required_attributes =
         
     contribution_subqueries = " union ".join(subquery_prototype % {'role': role} for role in ['contributor', 'organization', 'parent_organization', 'committee', 'recipient'])
 
-    required_values_stmt = "union values %s" % (", ".join(['(%s, %s, %s)'] * len(required_attributes))) if required_attributes else ""
+    required_values_stmt = "union values %s" % (", ".join(['(%s, %s, %s, FALSE)'] * len(required_attributes))) if required_attributes else ""
     required_values_args = list()
     for (namespace, value) in required_attributes:
         required_values_args.extend([entity_id, namespace, value])
 
     aggregate_attributes_stmt = """ 
-        insert into matchbox_entityattribute (entity_id, namespace, value) %s %s
+        insert into matchbox_entityattribute (entity_id, namespace, value, verified) %s %s
     """ % (contribution_subqueries, required_values_stmt)
 
     cursor.execute(aggregate_attributes_stmt, ([entity_id] * 5) + required_values_args)
