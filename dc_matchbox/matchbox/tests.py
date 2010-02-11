@@ -17,6 +17,7 @@ from matchbox_scripts.contribution.normalize import normalize_contributions
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
     associate_transactions, _pairs_to_dict, disassociate_transactions
 from matchbox_scripts.contribution.build_big_hitters import build_big_hitters
+from dcdata.utils.sql import dict_union
 
 
 
@@ -381,6 +382,10 @@ class BaseEntityBuildTests(unittest.TestCase):
         c.import_reference=self.import_
         c.save()
     
+    def assertFilter(self, model, primary, members):
+        self.assertEqual(len(members), model.objects.filter(**primary).count())
+        for member in members:
+            self.assertEqual(1, model.objects.filter(**dict_union(primary, member)).count())
     
     def setUp(self):
         print("Setting up database...")
@@ -540,7 +545,112 @@ class TestEntityBuild(BaseEntityBuildTests):
                                     'urn:nimsp:parent_organization', 'urn:nimsp:committee', 'urn:nimsp:recipient', \
                                     'urn:crp:contributor', 'urn:crp:organization'], range(1, 9)):
             self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace=namespace, value=str(id)).count())
-         
+
+
+    def test_verified_aggregates(self):
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id = '1', contributor_name='FooBar Co')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id = '2', contributor_name='FooBar Corp')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id = '100', contributor_name='Spaz Ltd')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id = '101', contributor_name='Spaz Limited')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, contributor_ext_id = '102', contributor_name='Spaz')
+        
+        whitelist = ["0, 1, FooBar", "0, 100, Spaz"]
+        normalize_contributions()
+        build_big_hitters(whitelist)
+        
+        foobar_id = Entity.objects.get(name='FooBar').id
+        self.assertFilter(EntityAlias, {'entity': foobar_id}, [{'alias': 'FooBar', 'verified': True},
+                                                               {'alias': 'FooBar Co', 'verified': False},
+                                                               {'alias': 'FooBar Corp', 'verified': False}])
+        self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': 'urn:nimsp:organization', 'value': '1', 'verified': True},
+                                                                  {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified': True},
+                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False}])
+        
+        spaz_id = Entity.objects.get(name='Spaz').id
+        self.assertFilter(EntityAlias, {'entity': spaz_id}, [{'alias': 'Spaz', 'verified': True},
+                                                             {'alias': 'Spaz Ltd', 'verified': False},
+                                                             {'alias': 'Spaz Limited', 'verified': False}])
+        self.assertFilter(EntityAttribute, {'entity':spaz_id}, [{'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': spaz_id, 'verified':True},
+                                                                {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
+                                                                {'namespace': 'urn:nimsp:organization', 'value': '100', 'verified':True},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '100', 'verified': False},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '101', 'verified': False},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '102', 'verified': False}])
+        
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, transaction_id='Food Bar', contributor_ext_id = '4', contributor_name='Food Bar')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, transaction_id='FooBar', contributor_ext_id = '2', contributor_name='FooBar')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, transaction_id='FooBar Corp', contributor_ext_id = '1', contributor_name='FooBar Corp')
+        
+        # on association: gets new aliases/attributes, no duplicates formed, existing verified stay verified
+        associate_transactions(foobar_id, 'contributor_entity', zip([NIMSP_TRANSACTION_NAMESPACE] * 3, ('Food Bar', 'FooBar', 'FooBar Corp')))
+        
+        self.assertFilter(EntityAlias, {'entity': foobar_id}, [{'alias': 'FooBar', 'verified': True},
+                                                               {'alias': 'FooBar Co', 'verified': False},
+                                                               {'alias': 'FooBar Corp', 'verified': False},
+                                                               {'alias': 'Food Bar', 'verified': False}])
+        self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': 'urn:nimsp:organization', 'value': '1', 'verified': True},
+                                                                  {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified': True},
+                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '4', 'verified': False}])
+        
+        # on disassociation: alias/attributes stay when verified, stay when still present, go when last one
+        associate_transactions(spaz_id, 'contributor_entity', zip([NIMSP_TRANSACTION_NAMESPACE] * 3, ('Food Bar', 'FooBar', 'FooBar Corp')))
+        
+        self.assertFilter(EntityAlias, {'entity': foobar_id}, [{'alias': 'FooBar', 'verified': True},
+                                                               {'alias': 'FooBar Co', 'verified': False},
+                                                               {'alias': 'FooBar Corp', 'verified': False}])
+        self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': 'urn:nimsp:organization', 'value': '1', 'verified': True},
+                                                                  {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified': True},
+                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False}])
+                        
+        self.assertFilter(EntityAlias, {'entity': spaz_id}, [{'alias': 'Spaz', 'verified': True},
+                                                             {'alias': 'Spaz Ltd', 'verified': False},
+                                                             {'alias': 'Spaz Limited', 'verified': False},
+                                                             {'alias': 'FooBar', 'verified': False},
+                                                             {'alias': 'FooBar Corp', 'verified': False},
+                                                             {'alias': 'Food Bar', 'verified': False}])
+       
+        self.assertFilter(EntityAttribute, {'entity':spaz_id}, [{'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': spaz_id, 'verified':True},
+                                                                {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
+                                                                {'namespace': 'urn:nimsp:organization', 'value': '100', 'verified':True},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '100', 'verified': False},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '101', 'verified': False},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '102', 'verified': False},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False},
+                                                                {'namespace': 'urn:nimsp:contributor', 'value': '4', 'verified': False}])
+
+        # on merge: verified from both show up, unverified from both show up, no duplicates
+        merge_entities([spaz_id], Entity.objects.get(name='FooBar'))
+        
+        self.assertFilter(EntityAlias, {'entity': foobar_id}, [{'alias': 'Spaz', 'verified': True},
+                                                               {'alias': 'Spaz Ltd', 'verified': False},
+                                                               {'alias': 'Spaz Limited', 'verified': False},
+                                                               {'alias': 'FooBar', 'verified': True},
+                                                               {'alias': 'FooBar Co', 'verified': False},
+                                                               {'alias': 'FooBar Corp', 'verified': False},
+                                                               {'alias': 'Food Bar', 'verified': False}])        
+        self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': spaz_id, 'verified':True},
+                                                                  {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified':True},
+                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
+                                                                  {'namespace': 'urn:nimsp:organization', 'value': '100', 'verified':True},
+                                                                  {'namespace': 'urn:nimsp:organization', 'value': '1', 'verified':True},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '100', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '101', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '102', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False},
+                                                                  {'namespace': 'urn:nimsp:contributor', 'value': '4', 'verified': False}])
+        
+        self.assertFilter(EntityAlias, {'entity': spaz_id}, [])
+        self.assertFilter(EntityAttribute, {'entity': spaz_id}, [])
+        
             
 class TestEntityAssociate(BaseEntityBuildTests):
     
@@ -568,8 +678,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(2, e.contribution_count)
         self.assertEqual(30, e.contribution_amount)
-        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
-        self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
+        self.assertFilter(EntityAlias, {'entity': e.id}, [{'alias': 'Alice', 'verified': True}])
         self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
 
         associate_transactions(e.id, 'contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '1')])
@@ -580,9 +689,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(70, e.contribution_amount)
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
-# to do: recomputing attributes not working yet 
-#        self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
-        
+ 
         associate_transactions(e.id, 'contributor_entity', zip([UNITTEST_TRANSACTION_NAMESPACE] * 2, ('2', '3')))
 
         e = Entity.objects.get(name="Alice")
@@ -592,11 +699,11 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
-#        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())
-#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=e.id).count())
-#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:organization', value='0').count())
-#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:nimsp:organization', value='0').count())
-#        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest:contributor', value='BobID').count())        
+        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=e.id).count())
+        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:organization', value='0').count())
+        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:nimsp:organization', value='0').count())
+        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest:contributor', value='BobID').count())        
   
         associate_transactions(e.id, 'organization_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '4'), (UNITTEST_TRANSACTION_NAMESPACE, '5')])
         associate_transactions(e.id, 'parent_organization_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '6')])
@@ -606,7 +713,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(10, e.contribution_count)
         self.assertEqual(7, EntityAlias.objects.filter(entity=e.id).count())
-#        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())        
+        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())        
         
         disassociate_transactions('contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, 'b'), (UNITTEST_TRANSACTION_NAMESPACE, '2')])
 
@@ -617,8 +724,8 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(6, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
-#        self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
-#        self.assertEqual(0, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:contributor', value='BobID').count())
+        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())
+        self.assertEqual(0, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:contributor', value='BobID').count())
 
         e = Entity.objects.get(name="Mary J.")
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
@@ -634,7 +741,8 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(4, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(4, e.contribution_count)
         self.assertEqual(30, e.contribution_amount)
-        self.assertEqual(3, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(4, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary J.").count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary").count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Nancy").count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Alice").count())
@@ -643,8 +751,8 @@ class TestEntityAssociate(BaseEntityBuildTests):
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(7, e.contribution_count)
         self.assertEqual(200, e.contribution_amount)
-        self.assertEqual(5, EntityAlias.objects.filter(entity=e.id).count())
-        self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
+        self.assertEqual(6, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         
         
             

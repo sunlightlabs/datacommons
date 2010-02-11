@@ -9,7 +9,7 @@ import logging
 from django.db import connection, transaction
 
 from datetime import datetime
-from matchbox.models import EntityAttribute, sql_names
+from matchbox.models import EntityAttribute, EntityAlias, sql_names
 
 
 
@@ -58,7 +58,12 @@ def build_entity(name, type, crp_id, nimsp_id):
            """ % (column + '_entity',  column + '_name')
         _execute(stmt, [e.id, normalized_name])
         
-    recompute_aggregates(e.id, [name], [(EntityAttribute.ENTITY_ID_NAMESPACE, e.id), ('urn:crp:organization', crp_id), ('urn:nimsp:organization', nimsp_id)])
+    EntityAlias.objects.create(entity=e, alias=name, verified=True)
+    EntityAttribute.objects.create(entity=e, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value = e.id, verified=True)
+    EntityAttribute.objects.create(entity=e, namespace='urn:crp:organization', value=crp_id, verified=True)
+    EntityAttribute.objects.create(entity=e, namespace='urn:nimsp:organization', value=nimsp_id, verified=True)    
+    
+    recompute_aggregates(e.id)
         
 
 # this is the old implementaiton that I'll be replacing
