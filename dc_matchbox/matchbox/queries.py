@@ -80,7 +80,7 @@ def associate_transactions(entity_id, column, transactions):
         """ % (column, "(%s)" % ", ".join(['%s'] * len(ids)))
         cursor.execute(contribution_update_stmt, [entity_id, namespace] + list(ids))
         
-    _recompute_aggregates(entity_id)
+    recompute_aggregates(entity_id)
     
 
 def disassociate_transactions(column, transactions):
@@ -112,10 +112,10 @@ def disassociate_transactions(column, transactions):
             cursor.execute(contribution_update_stmt, [namespace] + list(ids))
        
     for id in updated_entities:
-        _recompute_aggregates(id)   
+        recompute_aggregates(id)   
     
     
-def _recompute_aggregates(entity_id):
+def recompute_aggregates(entity_id):
     cursor = connection.cursor()
     
     aggregate_count_stmt = """
@@ -142,53 +142,111 @@ def _recompute_aggregates(entity_id):
     """
     cursor.execute(aggregate_amount_stmt, [entity_id])
     
+    _recompute_aliases(entity_id)
+    _recompute_attributes(entity_id)
+
+
+def _recompute_aliases(entity_id):    
+    cursor = connection.cursor()
+    
     delete_aliases_stmt = """
         delete from matchbox_entityalias
         where entity_id = %s
+        and verified = FALSE
     """
     cursor.execute(delete_aliases_stmt, [entity_id])
     
     aggregate_aliases_stmt = """
-        insert into matchbox_entityalias (entity_id, alias)
-            select contributor_entity, contributor_name
-            from contribution_contribution
-            where contributor_entity = %s
-                and contributor_name != ''
-            group by contributor_entity, contributor_name
-        union
-            select organization_entity, organization_name
-            from contribution_contribution
-            where organization_entity = %s
-                and organization_name != ''
-            group by organization_entity, organization_name
-        union
-            select organization_entity, contributor_employer
-            from contribution_contribution
-            where organization_entity = %s
-                and contributor_employer != ''
-            group by organization_entity, contributor_employer
-        union
-            select parent_organization_entity, parent_organization_name
-            from contribution_contribution
-            where parent_organization_entity = %s
-                and parent_organization_name != ''
-            group by parent_organization_entity, parent_organization_name
-        union
-            select committee_entity, committee_name
-            from contribution_contribution
-            where committee_entity = %s
-                and committee_name != ''
-            group by committee_entity, committee_name
-        union
-            select recipient_entity, recipient_name
-            from contribution_contribution
-            where recipient_entity = %s
-                and recipient_name != ''
-            group by recipient_entity, recipient_name;
-    """    
+        insert into matchbox_entityalias (entity_id, alias, verified)
+        select * from (
+                select contributor_entity as id, contributor_name as alias, FALSE as verified
+                from contribution_contribution
+                where contributor_entity = %s
+                    and contributor_name != ''
+                group by contributor_entity, contributor_name
+            union
+                select organization_entity, organization_name, FALSE
+                from contribution_contribution
+                where organization_entity = %s
+                    and organization_name != ''
+                group by organization_entity, organization_name
+            union
+                select organization_entity, contributor_employer, FALSE
+                from contribution_contribution
+                where organization_entity = %s
+                    and contributor_employer != ''
+                group by organization_entity, contributor_employer
+            union
+                select parent_organization_entity, parent_organization_name, FALSE
+                from contribution_contribution
+                where parent_organization_entity = %s
+                    and parent_organization_name != ''
+                group by parent_organization_entity, parent_organization_name, FALSE
+            union
+                select committee_entity, committee_name, FALSE
+                from contribution_contribution
+                where committee_entity = %s
+                    and committee_name != ''
+                group by committee_entity, committee_name
+            union
+                select recipient_entity, recipient_name, FALSE
+                from contribution_contribution
+                where recipient_entity = %s
+                    and recipient_name != ''
+                group by recipient_entity, recipient_name
+            ) inserts
+        where not exists 
+            (select 1 from matchbox_entityalias a
+            where
+                a.entity_id = inserts.id
+            and a.alias = inserts.alias)
+    """  
     cursor.execute(aggregate_aliases_stmt, [entity_id] * 6)
     
+    
+def _recompute_attributes(entity_id):    
+    cursor = connection.cursor()
+    
     # re-compute attribute aggregates
+    delete_attributes_stmt = """
+        delete from matchbox_entityattribute
+        where entity_id = %s
+        and verified = FALSE
+    """
+    cursor.execute(delete_attributes_stmt, [entity_id])
+    
+    subquery_prototype = """
+        select 
+            %(role)s_entity as id, 
+            case 
+                when transaction_namespace = 'urn:fec:transaction' then 'urn:crp:%(role)s' 
+                when transaction_namespace = 'urn:nimsp:transaction' then 'urn:nimsp:%(role)s'
+                when transaction_namespace = 'urn:unittest:transaction' then 'urn:unittest:%(role)s'
+            end as namespace,
+            %(role)s_ext_id as value,
+            FALSE as verified
+        from contribution_contribution
+        where
+            %(role)s_entity = %%s
+            and %(role)s_ext_id != ''
+        group by %(role)s_entity, transaction_namespace, %(role)s_ext_id
+        """
+        
+    contribution_subqueries = " union ".join(subquery_prototype % {'role': role} for role in ['contributor', 'organization', 'parent_organization', 'committee', 'recipient'])
+
+    aggregate_attributes_stmt = """ 
+        insert into matchbox_entityattribute (entity_id, namespace, value, verified) 
+        select * 
+        from (%s) inserts
+        where not exists
+            (select 1 from matchbox_entityattribute a
+            where
+                a.entity_id = inserts.id
+            and a.namespace = inserts.namespace
+            and a.value = inserts.value)
+    """ % (contribution_subqueries)
+
+    cursor.execute(aggregate_attributes_stmt, [entity_id] * 5)
 
 
 def merge_entities(entity_ids, new_entity):
@@ -234,25 +292,37 @@ def _merge_notes(old_ids, new_entity):
 def _merge_aliases(old_ids, new_entity):
     entity_ids = list(old_ids)
     entity_ids.append(new_entity) 
-    existing_aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity__in=entity_ids)]
-    existing_aliases.append(new_entity.name)
+    verified_aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity__in=entity_ids, verified=True)]
+    verified_aliases.append(new_entity.name)
+    
+    unverified_aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity__in=entity_ids, verified=False)]
     
     EntityAlias.objects.filter(entity__in=entity_ids).delete()
     
-    for alias in set(existing_aliases):
-        new_entity.aliases.create(alias=alias)
+    for alias in set(verified_aliases):
+        new_entity.aliases.create(alias=alias, verified=True)
+
+    for alias in set(unverified_aliases):
+        if alias not in verified_aliases:
+            new_entity.aliases.create(alias=alias, verified=False)
     
     
 def _merge_attributes(old_ids, new_entity):    
     entity_ids = list(old_ids)
     entity_ids.append(new_entity) 
-    existing_attributes = [(attr.namespace, attr.value) for attr in EntityAttribute.objects.filter(entity__in=entity_ids)]
-    existing_attributes.append((EntityAttribute.ENTITY_ID_NAMESPACE, new_entity.id))
+    verified_attributes = [(attr.namespace, attr.value) for attr in EntityAttribute.objects.filter(entity__in=entity_ids, verified=True)]
+    verified_attributes.append((EntityAttribute.ENTITY_ID_NAMESPACE, new_entity.id))
+    
+    unverified_attributes = [(attr.namespace, attr.value) for attr in EntityAttribute.objects.filter(entity__in=entity_ids, verified=False)]
     
     EntityAttribute.objects.filter(entity__in=entity_ids).delete()
     
-    for (namespace, value) in set(existing_attributes):
-        new_entity.attributes.create(namespace=namespace, value=value)
+    for (namespace, value) in set(verified_attributes):
+        new_entity.attributes.create(namespace=namespace, value=value, verified=True)
+        
+    for (namespace, value) in set(unverified_attributes):
+        if (namespace, value) not in verified_attributes:
+            new_entity.attributes.create(namespace=namespace, value=value, verified=False)
     
     
 NON_WHITESPACE_EXP = re.compile("\S+", re.U)

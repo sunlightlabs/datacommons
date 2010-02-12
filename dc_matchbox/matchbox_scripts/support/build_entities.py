@@ -1,5 +1,7 @@
 from strings.normalizer import basic_normalizer
-from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
+from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE,\
+    CRP_TRANSACTION_NAMESPACE
+from matchbox.queries import recompute_aggregates
 
 import time
 import logging
@@ -7,7 +9,7 @@ import logging
 from django.db import connection, transaction
 
 from datetime import datetime
-from matchbox.models import EntityAttribute, sql_names
+from matchbox.models import EntityAttribute, EntityAlias, sql_names
 
 
 
@@ -55,6 +57,13 @@ def build_entity(name, type, crp_id, nimsp_id):
                and matchbox_normalization.normalized = %%s
            """ % (column + '_entity',  column + '_name')
         _execute(stmt, [e.id, normalized_name])
+        
+    EntityAlias.objects.create(entity=e, alias=name, verified=True)
+    EntityAttribute.objects.create(entity=e, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value = e.id, verified=True)
+    EntityAttribute.objects.create(entity=e, namespace='urn:crp:organization', value=crp_id, verified=True)
+    EntityAttribute.objects.create(entity=e, namespace='urn:nimsp:organization', value=nimsp_id, verified=True)    
+    
+    recompute_aggregates(e.id)
         
 
 # this is the old implementaiton that I'll be replacing
@@ -128,11 +137,11 @@ def populate_entities(transaction_table, entity_id_column, name_columns, attribu
             cursor.execute(stmt, [id, name, type_val, reviewer, timestamp])
             
         for alias in aliases:
-            stmt = 'insert into %s (%s, %s) values (%%s, %%s)' % (sql_names['entityalias'], sql_names['entityalias_entity'], sql_names['entityalias_alias'])
+            stmt = 'insert into %s (%s, %s, verified) values (%%s, %%s, TRUE)' % (sql_names['entityalias'], sql_names['entityalias_entity'], sql_names['entityalias_alias'])
             cursor.execute(stmt, [id, alias])
             
         for (namespace, value) in attributes:
-            stmt = 'insert into %s (%s, %s, %s) values (%%s, %%s, %%s)' % \
+            stmt = 'insert into %s (%s, %s, %s, verified) values (%%s, %%s, %%s, TRUE)' % \
                 (sql_names['entityattribute'], sql_names['entityattribute_entity'], sql_names['entityattribute_namespace'], sql_names['entityattribute_value'])
             cursor.execute(stmt, [id, namespace, value])
 

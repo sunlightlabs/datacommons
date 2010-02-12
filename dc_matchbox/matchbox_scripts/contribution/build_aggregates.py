@@ -28,38 +28,38 @@ aggregate_amount_stmt = """
 """
 
 build_aliases_stmt = """
-    insert into matchbox_entityalias (entity_id, alias)
-        select contributor_entity, contributor_name
+    insert into matchbox_entityalias (entity_id, alias, verified)
+        select contributor_entity, contributor_name, FALSE
         from contribution_contribution
         where contributor_entity != ''
             and contributor_name != ''
         group by contributor_entity, contributor_name
     union
-        select organization_entity, organization_name
+        select organization_entity, organization_name, FALSE
         from contribution_contribution
         where organization_entity != ''
             and organization_name != ''
         group by organization_entity, organization_name
     union
-        select organization_entity, contributor_employer
+        select organization_entity, contributor_employer, FALSE
         from contribution_contribution
         where organization_entity != ''
             and contributor_employer != ''
         group by organization_entity, contributor_employer
     union
-        select parent_organization_entity, parent_organization_name
+        select parent_organization_entity, parent_organization_name, FALSE
         from contribution_contribution
         where parent_organization_entity != ''
             and parent_organization_name != ''
         group by parent_organization_entity, parent_organization_name
     union
-        select committee_entity, committee_name
+        select committee_entity, committee_name, FALSE
         from contribution_contribution
         where committee_entity != ''
             and committee_name != ''
         group by committee_entity, committee_name
     union
-        select recipient_entity, recipient_name
+        select recipient_entity, recipient_name, FALSE
         from contribution_contribution
         where recipient_entity != ''
             and recipient_name != ''
