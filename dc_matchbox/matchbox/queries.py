@@ -34,7 +34,7 @@ def search_entities_by_name(query, type_filter=[]):
                 from                                 
                     (select distinct original from matchbox_normalization where normalized like %%s 
                     union distinct                                 
-                    select distinct original from matchbox_normalization where to_tsvector('simple', original) @@ to_tsquery('simple', %%s)
+                    select distinct original from matchbox_normalization where to_tsvector('datacommons', original) @@ to_tsquery('datacommons', %%s)
                     limit 1000) n                             
                     inner join matchbox_entityalias a on a.alias = n.original                             
                     inner join matchbox_entity e on e.id = a.entity_id                             
