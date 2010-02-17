@@ -10,7 +10,7 @@ class AssociationForm(forms.Form):
         super(AssociationForm, self).__init__(*args, **kwargs)
         
         choices = [(f, f) for f in entityref_cache[model]]
-        self.fields['fields'] = forms.ChoiceField(
+        self.fields['column'] = forms.ChoiceField(
                                     required=True,
                                     label='Associate records to',
                                     choices=choices)

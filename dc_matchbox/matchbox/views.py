@@ -89,11 +89,9 @@ def entity_associate(request, entity_id, model_name):
         if form.is_valid():
             ids = parse_transaction_ids(form.cleaned_data['transactions'])
             if form.cleaned_data['action'] == 'add':
-                for field in form.cleaned_data['fields']:
-                    associate_transactions(entity_id, field, ids)
+                associate_transactions(entity_id, form.cleaned_data['column'], ids)
             elif form.cleaned_data['action'] == 'remove':
-                for field in form.cleaned_data['fields']:
-                    disassociate_transactions(field, ids)
+                disassociate_transactions(form.cleaned_data['column'], ids)
     else:
         form = AssociationForm(model, entity_id)
     return render_to_response('matchbox/entity_associate.html', {'form': form, 'entity': entity}, context_instance=RequestContext(request))
