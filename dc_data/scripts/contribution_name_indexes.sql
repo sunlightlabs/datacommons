@@ -64,3 +64,8 @@ create index contribution_contribution_organization_name_ft on contribution_cont
 create index contribution_contribution_parent_organization_name_ft on contribution_contribution using gin(to_tsvector('datacommons', parent_organization_name));
 create index contribution_contribution_committee_name_ft on contribution_contribution using gin(to_tsvector('datacommons', committee_name));
 create index contribution_contribution_recipient_name_ft on contribution_contribution using gin(to_tsvector('datacommons', recipient_name));
+
+
+-- other indexes
+
+create index contribution_contribution_transaction_id on contribution_contribution (transaction_id);
