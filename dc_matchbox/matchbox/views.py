@@ -7,6 +7,7 @@ from django.db import transaction
 from matchbox.forms import AssociationForm
 from matchbox.models import entityref_cache, Entity, EntityNote
 from matchbox.queries import associate_transactions, disassociate_transactions
+import base64
 import re
 
 @login_required
@@ -25,9 +26,11 @@ def entity_detail(request, entity_id):
         for model in entityref_cache.iterkeys():
             if hasattr(model.objects, 'with_entity'):
                 transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
+        td_url = "http://beta.transparencydata.org/filter/?return_entities=1#%s" % base64.b64encode("cycle=2010&contributor_ft=%s" % entity.name)
         return render_to_response('matchbox/merge/entity_detail.html', {
                                       'entity': entity,
-                                      'transactions': transactions
+                                      'transactions': transactions,
+                                      'td_url': td_url,
                                   }, context_instance=RequestContext(request))
 
 
