@@ -13,6 +13,7 @@
     <div class="clear"></div>
 
     <form action="." method="post" id="association_form">
+        {% csrf_token %}
         {% for field in form.hidden_fields %}
             {{ field.errors }}
             {{ field }}
