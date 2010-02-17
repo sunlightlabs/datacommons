@@ -5,6 +5,8 @@ from uuid import uuid4
 from matchbox_scripts.contribution.build_aggregates import build_aggregates
 import unittest
 
+from django.db import connection, transaction
+
 from dcdata.contribution.models import Contribution, sql_names,\
     UNITTEST_TRANSACTION_NAMESPACE, NIMSP_TRANSACTION_NAMESPACE,\
     CRP_TRANSACTION_NAMESPACE
@@ -71,9 +73,7 @@ class TestQueries(unittest.TestCase):
         orphan.aliases.create(alias=u'Avacado')
         
         run_normalization_script()
-        
-        
-        
+
         
     def test_populate_entities(self):
         self.assertEqual(3, Entity.objects.count())
@@ -179,6 +179,11 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, Entity.objects.filter(type='politician', name='Apple Smith').count())
 
     def test_search_entities_by_name(self):
+        cursor = connection.cursor()
+        for command in open( '../dc_data/scripts/contribution_name_indexes.sql', 'r'):
+            if command.strip() and not command.startswith('--'):
+                cursor.execute(command)
+  
         build_aggregates()
         
         results = list(search_entities_by_name(u'a', ['organization']))
