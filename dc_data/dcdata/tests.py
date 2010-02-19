@@ -1,16 +1,28 @@
 
 
-import unittest
-import hashlib
+from unittest import TestCase
 from django.db import connection
 
 from updates import edits, update
-from dcdata.management.commands.loadcontributions import CONTRIBUTOR_ENTITY_FILTER, COMMITTEE_ENTITY_FILTER, ORGANIZATION_ENTITY_FILTER
+from dcdata.contribution.sources.crp import FILE_TYPES
+from dcdata.loading import model_fields
+from scripts.crp.denormalize_indiv import CRPIndividualDenormalizer
 
 
+class TestCRPDenormalization(TestCase):
+    def test_crp_individual_record_processing(self):
+        denormalizer = CRPIndividualDenormalizer({}, {}, {})
+        
+        input_values = ["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"]
+        input_record = dict(zip(FILE_TYPES['indivs'], input_values))
+        
+        output_record = denormalizer.process_record(input_record)
+
+        self.assertEqual(set(model_fields('contribution.Contribution')), set(output_record.keys()))
+        
 
 # tests the experimental 'updates' module
-class Tests(unittest.TestCase):
+class TestUpdates(TestCase):
     def create_table(self, table_name):
         self.cursor.execute("""create table %s ( \
                     id int not null, \
