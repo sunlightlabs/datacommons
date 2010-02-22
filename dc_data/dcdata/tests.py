@@ -1,17 +1,18 @@
 
-from os import remove
+import os
 from unittest import TestCase
 from django.db import connection
 
 from updates import edits, update
 from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.loading import model_fields
-from scripts.crp.denormalize_indiv import CRPIndividualDenormalizer
+from django.core.management import call_command
+from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
 
 
 class TestCRPIndividualDenormalization(TestCase):
     def test_process_record(self):
-        denormalizer = CRPIndividualDenormalizer({}, {}, {})
+        denormalizer = CRPDenormalizeIndividual()
         
         input_values = ["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"]
         input_record = dict(zip(FILE_TYPES['indivs'], input_values))
@@ -21,7 +22,7 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(set(model_fields('contribution.Contribution')), set(output_record.keys()))
         
     def test_process(self):
-        denormalizer = CRPIndividualDenormalizer({}, {}, {})
+        denormalizer = CRPDenormalizeIndividual()
         
         input_rows = [["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"],
                       ["2000","0011162","f0000180392 ","MEADOR, F B JR","C00040998","","","T2300","02/16/1999","200","","PRNC FREDERCK","MD","20678","PB","15 ","C00040998","","M","BAYSIDE CHEVROLET BUICK","99034391444","","","P/PAC"],
@@ -36,12 +37,15 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(5, len(output_records))
         
     def test_execute(self):
-        remove('dc_data/test_data/denormalized/denorm_indivs.08.csv')
+        output_path = 'dc_data/test_data/denormalized/denorm_indivs.08.csv'
         
-        CRPIndividualDenormalizer.execute(['-c', '08', '-d', 'dc_data/test_data'])
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        
+        call_command('crp_denormalize_individuals', cycles='08', dataroot='dc_data/test_data')
         
         self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/indivs08.csv', 'r')))
-        self.assertEqual(11, sum(1 for _ in open('dc_data/test_data/denormalized/denorm_indivs.08.csv', 'r')))
+        self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
 
         
 

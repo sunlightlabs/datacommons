@@ -1,13 +1,10 @@
 from saucebrush.filters import Filter
+from django.core.management.base import BaseCommand
 
 
 
 
-class DataProcessor(object):
-    
-    @staticmethod
-    def execute(self, command):
-        raise NotImplementedError
+class DataLoadCommand(BaseCommand):
 
     def process_record(self, record):
         raise NotImplementedError
@@ -19,8 +16,6 @@ class DataProcessor(object):
             output_func(output)
             
             
-            
-
 
             
 class ChainedFilter(Filter):

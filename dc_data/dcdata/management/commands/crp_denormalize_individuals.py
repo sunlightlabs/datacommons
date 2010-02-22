@@ -1,6 +1,8 @@
 import sys
 import logging
 import os
+from optparse import make_option
+from django.core.management.base import CommandError
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer,\
@@ -9,7 +11,7 @@ from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 
 from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
-from dcdata.processor import DataProcessor, ChainedFilter
+from dcdata.processor import ChainedFilter, DataLoadCommand
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from scripts.crp.denormalize import FECOccupationFilter, CatCodeFilter, SPEC,\
@@ -126,8 +128,13 @@ class RecipientFilter(Filter):
 
 
 
-class CRPIndividualDenormalizer(DataProcessor):
-    def __init__(self, catcodes, candidates, committees):
+class CRPDenormalizeIndividual(DataLoadCommand):
+    
+    def __init__(self):
+        super(CRPDenormalizeIndividual, self).__init__()
+        self._initialize_filter({}, {}, {})
+    
+    def _initialize_filter(self, catcodes, candidates, committees):
         self.filter = ChainedFilter(
                 # broken at the moment--can't use anything deriving from YieldFilter
                 #FieldCountValidator(len(FILE_TYPES['indivs'])),
@@ -184,28 +191,19 @@ class CRPIndividualDenormalizer(DataProcessor):
     def process_record(self, record):
         return self.filter.process_record(record)
     
-    @staticmethod
-    def execute(args):
-        from optparse import OptionParser
-    
-        usage = "usage: %prog [options]"
-    
-        parser = OptionParser(usage=usage)
-        parser.add_option("-c", "--cycles", dest="cycles",
-                          help="cycles to load ex: 90,92,08", metavar="CYCLES")
-        parser.add_option("-d", "--dataroot", dest="dataroot",
-                          help="path to data directory", metavar="PATH")
-        parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
-                          help="noisy output")
-    
-        (options, _) = parser.parse_args(args)
-    
-        if not options.dataroot:
-            parser.error("path to dataroot is required")
+    option_list = DataLoadCommand.option_list + (
+        make_option("-c", "--cycles", dest="cycles", help="cycles to load ex: 90,92,08", metavar="CYCLES"),
+        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
+        make_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="noisy output"))
+
+
+    def handle(self, *args, **options):
+        if 'dataroot' not in options:
+            raise CommandError("path to dataroot is required")
     
         cycles = []
-        if options.cycles:
-            for cycle in options.cycles.split(','):
+        if 'cycles' in options:
+            for cycle in options['cycles'].split(','):
                 if len(cycle) == 4:
                     cycle = cycle[2:4]
                 if cycle in CYCLES:
@@ -213,7 +211,7 @@ class CRPIndividualDenormalizer(DataProcessor):
         else:
             cycles = CYCLES
         
-        dataroot = os.path.abspath(options.dataroot)
+        dataroot = os.path.abspath(options['dataroot'])
         tmppath = os.path.join(dataroot, 'denormalized')
         if not os.path.exists(tmppath):
             os.makedirs(tmppath)
@@ -227,7 +225,7 @@ class CRPIndividualDenormalizer(DataProcessor):
         print "Loading committees..."
         committees = load_committees(dataroot)
         
-        denormalizer = CRPIndividualDenormalizer(catcodes, candidates, committees)
+        self._initialize_filter(catcodes, candidates, committees)
            
         for cycle in cycles:
             in_path = os.path.join(dataroot, 'raw', 'crp', 'indivs%s.csv' % cycle)
@@ -240,12 +238,8 @@ class CRPIndividualDenormalizer(DataProcessor):
             input_source = CSVSource(infile, fieldnames=FILE_TYPES['indivs'])
             output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
     
-            denormalizer.process(input_source, output_func)
-                
-
-if __name__ == "__main__":
-
-    logging.basicConfig(level=logging.DEBUG)
-
-    CRPIndividualDenormalizer.execute(sys.argv[1:])
+            self.process(input_source, output_func)
+       
+       
+Command = CRPDenormalizeIndividual         
     
