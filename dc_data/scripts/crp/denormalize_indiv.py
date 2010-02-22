@@ -1,16 +1,20 @@
+import sys
+import logging
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from dcdata.processor import DataProcessor, ChainedFilter
-from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
-from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
+from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer,\
+    Filter
 from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
-import sys
-import saucebrush
 
+from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
+from dcdata.processor import DataProcessor, ChainedFilter
+from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
-from denormalize import *
+from scripts.crp.denormalize import FECOccupationFilter, CatCodeFilter, SPEC,\
+    SpecFilter, parse_date_iso, load_catcodes, load_candidates, load_committees,\
+    FIELDNAMES
 
 ### Filters
 
@@ -121,125 +125,6 @@ class RecipientFilter(Filter):
                 self.load_candidate(candidate, record)
 
 
-def main():
-
-    from optparse import OptionParser
-
-    usage = "usage: %prog [options]"
-
-    parser = OptionParser(usage=usage)
-    parser.add_option("-c", "--cycles", dest="cycles",
-                      help="cycles to load ex: 90,92,08", metavar="CYCLES")
-    parser.add_option("-d", "--dataroot", dest="dataroot",
-                      help="path to data directory", metavar="PATH")
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
-                      help="noisy output")
-
-    (options, _) = parser.parse_args()
-
-    if not options.dataroot:
-        parser.error("path to dataroot is required")
-
-    cycles = []
-    if options.cycles:
-        for cycle in options.cycles.split(','):
-            if len(cycle) == 4:
-                cycle = cycle[2:4]
-            if cycle in CYCLES:
-                cycles.append(cycle)
-    else:
-        cycles = CYCLES
-    
-    dataroot = os.path.abspath(options.dataroot)
-    tmppath = os.path.join(dataroot, 'denormalized')
-    if not os.path.exists(tmppath):
-        os.makedirs(tmppath)
-
-    print "Loading catcodes..."
-    catcodes = load_catcodes(dataroot)
-    
-    print "Loading candidates..."
-    candidates = load_candidates(dataroot)
-    
-    print "Loading committees..."
-    committees = load_committees(dataroot)
-       
-    for cycle in cycles:
-        in_path = os.path.join(dataroot, 'raw', 'crp', 'indivs%s.csv' % cycle)
-        infile = open(in_path, 'r')
-        out_path = os.path.join(tmppath, 'denorm_indivs.%s.csv' % cycle)
-        outfile = open(out_path, 'w')
-
-        sys.stdout.write('Reading from %s, writing to %s...\n' % (in_path, out_path))
-
-        run_denormalization(infile, outfile, catcodes, candidates, committees)
-
-
-def run_denormalization(infile, outfile, catcodes, candidates, committees):
-    recipe = saucebrush.run_recipe(
-        # load source
-        CSVSource(infile, fieldnames=FILE_TYPES['indivs']),
-
-        FieldCountValidator(len(FILE_TYPES['indivs'])),
-
-        # transaction filters
-        FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
-        FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
-        FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower() if t else '', keep_fields=True),
-
-        # filing reference ID
-        FieldRenamer({'filing_id': 'microfilm'}),
-
-        # date stamp
-        FieldModifier('date', parse_date_iso),
-
-        # rename contributor, organization, and parent_organization fields
-        FieldRenamer({'contributor_name': 'contrib',
-                  'parent_organization_name': 'ult_org',}),
- 
-        RecipientFilter(candidates, committees),
-        CommitteeFilter(committees),
-        OrganizationFilter(),
-
-        # create URNs
-        FieldRenamer({'contributor_ext_id': 'contrib_id', 'recipient_ext_id': 'recip_id', 'committee_ext_id': 'cmte_id'}),
-                      
-        # recip code filter
-        RecipCodeFilter(),  # recipient party
-                        # seat result
-
-        # address and gender fields
-        FieldRenamer({'contributor_address': 'street',
-                  'contributor_city': 'city',
-                  'contributor_state': 'state',
-                  'contributor_zipcode': 'zipcode',
-                  'contributor_gender': 'gender'}),
-        FieldModifier('contributor_state', lambda s: s.upper() if s else None),
-        FieldModifier('contributor_gender', lambda s: s.upper() if s else None),
-
-        # employer/occupation filter
-        FECOccupationFilter(),
-
-        # catcode
-        CatCodeFilter('contributor', catcodes),
-
-        # add static fields
-        FieldAdder('contributor_type', 'individual'),
-        FieldAdder('is_amendment', False),
-        FieldAdder('election_type', 'G'),
-
-        # filter through spec
-        SpecFilter(SPEC),
-
-        #DebugEmitter(),
-        CountEmitter(every=1000),
-        CSVEmitter(outfile, fieldnames=FIELDNAMES),
-    )
-
-    sys.stderr.write(repr(recipe.rejected))
-    sys.stderr.flush()
-
-
 
 class CRPIndividualDenormalizer(DataProcessor):
     def __init__(self, catcodes, candidates, committees):
@@ -300,7 +185,7 @@ class CRPIndividualDenormalizer(DataProcessor):
         return self.filter.process_record(record)
     
     @staticmethod
-    def execute():
+    def execute(args):
         from optparse import OptionParser
     
         usage = "usage: %prog [options]"
@@ -313,7 +198,7 @@ class CRPIndividualDenormalizer(DataProcessor):
         parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                           help="noisy output")
     
-        (options, _) = parser.parse_args()
+        (options, _) = parser.parse_args(args)
     
         if not options.dataroot:
             parser.error("path to dataroot is required")
@@ -362,5 +247,5 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    main()
+    CRPIndividualDenormalizer.execute(sys.argv[1:])
     

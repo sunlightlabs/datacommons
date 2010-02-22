@@ -1,5 +1,5 @@
 
-
+from os import remove
 from unittest import TestCase
 from django.db import connection
 
@@ -9,8 +9,8 @@ from dcdata.loading import model_fields
 from scripts.crp.denormalize_indiv import CRPIndividualDenormalizer
 
 
-class TestCRPDenormalization(TestCase):
-    def test_crp_individual_record_processing(self):
+class TestCRPIndividualDenormalization(TestCase):
+    def test_process_record(self):
         denormalizer = CRPIndividualDenormalizer({}, {}, {})
         
         input_values = ["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"]
@@ -19,6 +19,30 @@ class TestCRPDenormalization(TestCase):
         output_record = denormalizer.process_record(input_record)
 
         self.assertEqual(set(model_fields('contribution.Contribution')), set(output_record.keys()))
+        
+    def test_process(self):
+        denormalizer = CRPIndividualDenormalizer({}, {}, {})
+        
+        input_rows = [["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"],
+                      ["2000","0011162","f0000180392 ","MEADOR, F B JR","C00040998","","","T2300","02/16/1999","200","","PRNC FREDERCK","MD","20678","PB","15 ","C00040998","","M","BAYSIDE CHEVROLET BUICK","99034391444","","","P/PAC"],
+                      ["2000","0011163","f0000180361 ","PATKIN, MURRAY","C00040998","","","T2300","02/22/1999","500","","WATERTOWN","MA","02472","PB","15 ","C00040998","","M","TOYOTA OF WATERTOWN","99034391444","","","P/PAC"],
+                      ["2000","0011164","f0000082393 ","DELUCA, WILLIAM P III","C00040998","","","T2300","02/24/1999","1000","","BRADFORD","MA","01835","PB","15 ","C00040998","","M","BILL DELUCA CHEVY PONTIAC","99034391445","","","P/PAC"],
+                      ["2000","0011165","f0000180362 ","BERGER, MATTHEW S","C00040998","","","T2300","02/12/1999","2000","","GRAND RAPIDS","MI","49512","PB","15 ","C00040998","","M","BERGER CHEVROLET INC","99034391445","","","P/PAC"]]
+        input_records = [dict(zip(FILE_TYPES['indivs'], row)) for row in input_rows]
+        output_records = list()
+        
+        denormalizer.process(input_records, output_records.append)
+        
+        self.assertEqual(5, len(output_records))
+        
+    def test_execute(self):
+        remove('dc_data/test_data/denormalized/denorm_indivs.08.csv')
+        
+        CRPIndividualDenormalizer.execute(['-c', '08', '-d', 'dc_data/test_data'])
+        
+        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/indivs08.csv', 'r')))
+        self.assertEqual(11, sum(1 for _ in open('dc_data/test_data/denormalized/denorm_indivs.08.csv', 'r')))
+
         
 
 # tests the experimental 'updates' module
