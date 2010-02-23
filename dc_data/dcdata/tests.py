@@ -8,6 +8,7 @@ from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.loading import model_fields
 from django.core.management import call_command
 from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
+from dcdata.contribution.models import Contribution
 
 
 class TestCRPIndividualDenormalization(TestCase):
@@ -36,7 +37,7 @@ class TestCRPIndividualDenormalization(TestCase):
         
         self.assertEqual(5, len(output_records))
         
-    def test_execute(self):
+    def test_command(self):
         output_path = 'dc_data/test_data/denormalized/denorm_indivs.08.csv'
         
         if os.path.exists(output_path):
@@ -47,6 +48,16 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/indivs08.csv', 'r')))
         self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
 
+
+class TestLoadContributions(TestCase):
+        
+    def test_command(self):
+        Contribution.objects.all().delete()
+        
+        call_command('crp_denormalize_individuals', cycles='08', dataroot='dc_data/test_data')
+        call_command('loadcontributions', 'dc_data/test_data/denormalized/denorm_indivs.08.csv')
+        
+        self.assertEqual(10, Contribution.objects.all().count())
         
 
 # tests the experimental 'updates' module
