@@ -135,7 +135,7 @@ class CRPDenormalizeIndividual(DataLoadCommand):
         self._initialize_filter({}, {}, {})
     
     def _initialize_filter(self, catcodes, candidates, committees):
-        self.filter = ChainedFilter(
+        self.process_record = ChainedFilter(
                 # broken at the moment--can't use anything deriving from YieldFilter
                 #FieldCountValidator(len(FILE_TYPES['indivs'])),
         
@@ -186,10 +186,8 @@ class CRPDenormalizeIndividual(DataLoadCommand):
                 FieldAdder('election_type', 'G'),
         
                 # filter through spec
-                SpecFilter(SPEC))
+                SpecFilter(SPEC)).process_record
         
-    def process_record(self, record):
-        return self.filter.process_record(record)
     
     option_list = DataLoadCommand.option_list + (
         make_option("-c", "--cycles", dest="cycles", help="cycles to load ex: 90,92,08", metavar="CYCLES"),
