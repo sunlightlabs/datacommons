@@ -16,7 +16,7 @@ from optparse import make_option
 import os
 import sys
 import traceback
-from dcdata.processor import DataLoadCommand, ChainedFilter
+from dcdata.processor import get_chained_processor, load_data
 
 
 
@@ -109,7 +109,7 @@ class ContributionLoader(Loader):
         self.copy_fields(record, obj)
         
 
-class LoadContributions(DataLoadCommand):
+class LoadContributions(BaseCommand):
 
     help = "load contributions from csv"
     args = ""
@@ -121,12 +121,9 @@ class LoadContributions(DataLoadCommand):
             help='Data source'),
     )
     
-    def __init__(self):
-        super(LoadContributions, self).__init__()
-        self._initialize_process_record('')
-    
-    def _initialize_process_record(self, import_session):
-        self.process_record = ChainedFilter(FieldRemover('id'),
+    @staticmethod
+    def get_record_processor(import_session):
+        return get_chained_processor(FieldRemover('id'),
                 FieldRemover('import_reference'),
                 FieldAdder('import_reference', import_session),
                 
@@ -140,7 +137,7 @@ class LoadContributions(DataLoadCommand):
                 OrganizationFilter(),
                 ParentOrganizationFilter(),
                 RecipientFilter(),
-                CommitteeFilter()).process_record
+                CommitteeFilter())
     
     @transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
@@ -153,13 +150,13 @@ class LoadContributions(DataLoadCommand):
             imported_by="loadcontributions.py (%s)" % os.getenv('LOGNAME', 'unknown'),
         )
         
-        self._initialize_process_record(loader.import_session)
         
         try:
             input_iterator = CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1)
             output_func = LoaderEmitter(loader).process_record
+            record_processor = self.get_record_processor(loader.import_session)
 
-            self.process(input_iterator, output_func)
+            load_data(input_iterator, record_processor, output_func)
 
         except:
             traceback.print_exception(*sys.exc_info())

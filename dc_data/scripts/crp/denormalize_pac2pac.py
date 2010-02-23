@@ -133,10 +133,6 @@ def main():
     if not os.path.exists(tmppath):
         os.makedirs(tmppath)
     
-    outfile = open(os.path.join(tmppath, 'denorm_pac2pac.csv'), 'w')
-
-    infiles = Files(*[os.path.join(dataroot, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
-
     print "Loading catcodes..."
     catcodes = load_catcodes(dataroot)
     
@@ -145,6 +141,9 @@ def main():
     
     print "Loading committees..."
     committees = load_committees(dataroot)
+
+    outfile = open(os.path.join(tmppath, 'denorm_pac2pac.csv'), 'w')
+    infiles = Files(*[os.path.join(dataroot, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
     
     run_denormalization(infiles, outfile, catcodes, candidates, committees)
     

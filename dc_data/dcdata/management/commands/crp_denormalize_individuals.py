@@ -11,12 +11,10 @@ from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 
 from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
-from dcdata.processor import ChainedFilter, DataLoadCommand
+from dcdata.processor import get_chained_processor, load_data
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
-from scripts.crp.denormalize import FECOccupationFilter, CatCodeFilter, SPEC,\
-    SpecFilter, parse_date_iso, load_catcodes, load_candidates, load_committees,\
-    FIELDNAMES
+from crp_denormalize import *
 
 ### Filters
 
@@ -128,14 +126,11 @@ class RecipientFilter(Filter):
 
 
 
-class CRPDenormalizeIndividual(DataLoadCommand):
-    
-    def __init__(self):
-        super(CRPDenormalizeIndividual, self).__init__()
-        self._initialize_filter({}, {}, {})
-    
-    def _initialize_filter(self, catcodes, candidates, committees):
-        self.process_record = ChainedFilter(
+class CRPDenormalizeIndividual(CRPDenormalizeBase):
+
+    @staticmethod
+    def get_record_processor(catcodes, candidates, committees):
+        return get_chained_processor(
                 # broken at the moment--can't use anything deriving from YieldFilter
                 #FieldCountValidator(len(FILE_TYPES['indivs'])),
         
@@ -186,49 +181,16 @@ class CRPDenormalizeIndividual(DataLoadCommand):
                 FieldAdder('election_type', 'G'),
         
                 # filter through spec
-                SpecFilter(SPEC)).process_record
+                SpecFilter(SPEC))
         
     
-    option_list = DataLoadCommand.option_list + (
-        make_option("-c", "--cycles", dest="cycles", help="cycles to load ex: 90,92,08", metavar="CYCLES"),
-        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
-        make_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="noisy output"))
-
-
-    def handle(self, *args, **options):
-        if 'dataroot' not in options:
-            raise CommandError("path to dataroot is required")
-    
-        cycles = []
-        if 'cycles' in options:
-            for cycle in options['cycles'].split(','):
-                if len(cycle) == 4:
-                    cycle = cycle[2:4]
-                if cycle in CYCLES:
-                    cycles.append(cycle)
-        else:
-            cycles = CYCLES
-        
-        dataroot = os.path.abspath(options['dataroot'])
-        tmppath = os.path.join(dataroot, 'denormalized')
-        if not os.path.exists(tmppath):
-            os.makedirs(tmppath)
-    
-        print "Loading catcodes..."
-        catcodes = load_catcodes(dataroot)
-        
-        print "Loading candidates..."
-        candidates = load_candidates(dataroot)
-        
-        print "Loading committees..."
-        committees = load_committees(dataroot)
-        
-        self._initialize_filter(catcodes, candidates, committees)
+    def denormalize(self, data_path, cycles, catcodes, candidates, committees):
+        record_processor = self.get_record_processor(catcodes, candidates, committees)   
            
         for cycle in cycles:
-            in_path = os.path.join(dataroot, 'raw', 'crp', 'indivs%s.csv' % cycle)
+            in_path = os.path.join(data_path, 'raw', 'crp', 'indivs%s.csv' % cycle)
             infile = open(in_path, 'r')
-            out_path = os.path.join(tmppath, 'denorm_indivs.%s.csv' % cycle)
+            out_path = os.path.join(data_path, 'denormalized', 'denorm_indivs.%s.csv' % cycle)
             outfile = open(out_path, 'w')
     
             sys.stdout.write('Reading from %s, writing to %s...\n' % (in_path, out_path))
@@ -236,7 +198,7 @@ class CRPDenormalizeIndividual(DataLoadCommand):
             input_source = CSVSource(infile, fieldnames=FILE_TYPES['indivs'])
             output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
     
-            self.process(input_source, output_func)
+            load_data(input_source, record_processor, output_func)
        
        
 Command = CRPDenormalizeIndividual         

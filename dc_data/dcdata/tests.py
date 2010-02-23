@@ -9,21 +9,21 @@ from dcdata.loading import model_fields
 from django.core.management import call_command
 from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
 from dcdata.contribution.models import Contribution
+from dcdata.processor import load_data
 
 
 class TestCRPIndividualDenormalization(TestCase):
     def test_process_record(self):
-        denormalizer = CRPDenormalizeIndividual()
         
         input_values = ["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"]
         input_record = dict(zip(FILE_TYPES['indivs'], input_values))
         
-        output_record = denormalizer.process_record(input_record)
+        record_processor = CRPDenormalizeIndividual.get_record_processor({}, {}, {})
+        output_record = record_processor(input_record)
 
         self.assertEqual(set(model_fields('contribution.Contribution')), set(output_record.keys()))
         
     def test_process(self):
-        denormalizer = CRPDenormalizeIndividual()
         
         input_rows = [["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"],
                       ["2000","0011162","f0000180392 ","MEADOR, F B JR","C00040998","","","T2300","02/16/1999","200","","PRNC FREDERCK","MD","20678","PB","15 ","C00040998","","M","BAYSIDE CHEVROLET BUICK","99034391444","","","P/PAC"],
@@ -32,8 +32,9 @@ class TestCRPIndividualDenormalization(TestCase):
                       ["2000","0011165","f0000180362 ","BERGER, MATTHEW S","C00040998","","","T2300","02/12/1999","2000","","GRAND RAPIDS","MI","49512","PB","15 ","C00040998","","M","BERGER CHEVROLET INC","99034391445","","","P/PAC"]]
         input_records = [dict(zip(FILE_TYPES['indivs'], row)) for row in input_rows]
         output_records = list()
+        record_processor = CRPDenormalizeIndividual.get_record_processor({}, {}, {})
         
-        denormalizer.process(input_records, output_records.append)
+        load_data(input_records, record_processor, output_records.append)
         
         self.assertEqual(5, len(output_records))
         
@@ -49,6 +50,20 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
 
 
+class TestCRPDenormalizePac2Candidate(TestCase):
+    
+    def test_command(self):
+        output_path = 'dc_data/test_data/denormalized/denorm_pac2cand.csv'
+        
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        
+        call_command('crp_denormalize_pac2candidate', cycles='08', dataroot='dc_data/test_data')
+        
+        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/pacs08.csv', 'r')))
+        self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
+                
+
 class TestLoadContributions(TestCase):
         
     def test_command(self):
@@ -59,6 +74,8 @@ class TestLoadContributions(TestCase):
         
         self.assertEqual(10, Contribution.objects.all().count())
         
+
+
 
 # tests the experimental 'updates' module
 class TestUpdates(TestCase):
