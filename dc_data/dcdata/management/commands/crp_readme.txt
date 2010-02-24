@@ -1,4 +1,7 @@
 
+# note: these instructions are slightly out of date due to the new command system.
+# in general, run as 'python manage.py <command-name> ...' instead of running the script directly.
+
 CRP:
 
 Download the data with:
