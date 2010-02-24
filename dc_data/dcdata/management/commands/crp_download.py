@@ -6,6 +6,8 @@ import logging
 import os
 import re
 import urllib, urllib2
+from django.core.management.base import BaseCommand, CommandError
+from optparse import make_option
 
 LOGIN_URL = "http://www.opensecrets.org/MyOS/index.php"
 MYOSHOME_URL = "http://www.opensecrets.org/MyOS/home.php"
@@ -136,47 +138,36 @@ class CRPDownloader(object):
         
         return resources
     
-def main():
+class CRPDownloadCommand(BaseCommand):
+    option_list = BaseCommand.option_list + (
+        make_option("-f", "--force", action="store_true", dest="force", default=False,
+                          help="force re-download of all files"),
+        make_option("-d", "--dataroot", dest="dataroot",
+                          help="path to data directory", metavar="PATH"),
+        make_option("-m", "--meta", action="store_true", dest="meta", default=False,
+                          help="show the metadata for currently available CRP downloads"),
+        make_option("-b", "--verbose", action="store_true", dest="verbose", default=False,
+                          help="noisy output"))
     
-    from optparse import OptionParser
-    import sys
-    
-    usage = "usage: %prog [options]"
-    
-    parser = OptionParser(usage=usage)
-    parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
-                      help="force re-download of all files")
-    parser.add_option("-d", "--dataroot", dest="dataroot",
-                      help="path to data directory", metavar="PATH")
-    parser.add_option("-m", "--meta", action="store_true", dest="meta", default=False,
-                      help="show the metadata for currently available CRP downloads")
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
-                      help="noisy output")
-    
-    (options, args) = parser.parse_args()
-    
-    if not options.dataroot:
-        parser.error("path to dataroot is required")
-    
-    if options.meta:
+    def handle(self, *args, **options):
+        if 'dataroot' not in options:
+            raise CommandError("path to dataroot is required")
         
-        dl = CRPDownloader('jcarbaugh@sunlightfoundation.com', '5unlight')
-        for res in dl.get_resources():
-            print res
-    
-    else:
+        if options['meta']:
+            
+            dl = CRPDownloader('jcarbaugh@sunlightfoundation.com', '5unlight')
+            for res in dl.get_resources():
+                print res
         
-        path = os.path.join(os.path.abspath(options.dataroot), 'download', 'crp')
-        
-        if not os.path.exists(path):
-            os.makedirs(path)
-        
-        dl = CRPDownloader('jcarbaugh@sunlightfoundation.com', '5unlight', path)
-        dl.go(redownload=options.force)
-        
+        else:
+            
+            path = os.path.join(os.path.abspath(options['dataroot']), 'download', 'crp')
+            
+            if not os.path.exists(path):
+                os.makedirs(path)
+            
+            dl = CRPDownloader('jcarbaugh@sunlightfoundation.com', '5unlight', path)
+            dl.go(redownload=options['force'])
 
-if __name__ == "__main__":
     
-    logging.basicConfig(level=logging.DEBUG)
-    
-    main()
+Command = CRPDownloadCommand
