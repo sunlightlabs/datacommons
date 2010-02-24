@@ -94,6 +94,8 @@ class Contribution(DataCommonsModel):
     
     # amount and date
     amount = models.IntegerField(default=0)
+    # todo: switch to decimal once we're ready to test it
+    #amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     date = models.DateField(null=True)
     
     # contributor fields

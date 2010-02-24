@@ -150,7 +150,6 @@ class LoadContributions(BaseCommand):
             imported_by="loadcontributions.py (%s)" % os.getenv('LOGNAME', 'unknown'),
         )
         
-        
         try:
             input_iterator = CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1)
             output_func = LoaderEmitter(loader).process_record

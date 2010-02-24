@@ -64,6 +64,20 @@ class TestCRPDenormalizePac2Candidate(TestCase):
         self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
                 
 
+class TestCRPDenormalizePac2Pac(TestCase):
+    
+    def test_command(self):
+        output_path = 'dc_data/test_data/denormalized/denorm_pac2pac.csv'
+        
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        
+        call_command('crp_denormalize_pac2pac', cycles='08', dataroot='dc_data/test_data')
+        
+        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/pac_other08.csv', 'r')))
+        self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
+        
+
 class TestLoadContributions(TestCase):
         
     def test_command(self):
