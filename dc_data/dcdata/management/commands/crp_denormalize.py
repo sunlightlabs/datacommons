@@ -1,10 +1,12 @@
 #!/usr/bin/env python
-from saucebrush.filters import Filter, UnicodeFilter
+from saucebrush.filters import *
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 import csv
 import datetime
 import logging
 import os
+from optparse import make_option
+from django.core.management.base import CommandError, BaseCommand
 
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
               'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
@@ -123,3 +125,42 @@ class CatCodeFilter(Filter):
             if catcode in self._catcodes:
                 record['%s_category_order' % self._prefix] = self._catcodes[catcode]['catorder'].upper()
         return record
+
+
+
+class CRPDenormalizeBase(BaseCommand):
+    option_list = BaseCommand.option_list + (
+        make_option("-c", "--cycles", dest="cycles", help="cycles to load ex: 90,92,08", metavar="CYCLES"),
+        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
+        make_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="noisy output"))
+
+    def handle(self, *args, **options):
+        if 'dataroot' not in options:
+            raise CommandError("path to dataroot is required")
+    
+        cycles = []
+        if 'cycles' in options:
+            for cycle in options['cycles'].split(','):
+                if len(cycle) == 4:
+                    cycle = cycle[2:4]
+                if cycle in CYCLES:
+                    cycles.append(cycle)
+        else:
+            cycles = CYCLES
+        
+        dataroot = os.path.abspath(options['dataroot'])
+    
+        print "Loading catcodes..."
+        catcodes = load_catcodes(dataroot)
+        
+        print "Loading candidates..."
+        candidates = load_candidates(dataroot)
+        
+        print "Loading committees..."
+        committees = load_committees(dataroot)
+        
+        self.denormalize(dataroot, cycles, catcodes, candidates, committees)
+                 
+    # to be implemented by subclasses
+    def denormalize(self, root_path, cycles, catcodes, candidates, committees):
+        raise NotImplementedError

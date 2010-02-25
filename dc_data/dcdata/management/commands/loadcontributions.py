@@ -16,8 +16,11 @@ from optparse import make_option
 import os
 import sys
 import traceback
+from dcdata.processor import get_chained_processor, load_data
 
 
+
+# todo: we should just change the denormalize scripts to put the proper value in these fields
 class ContributorFilter(Filter):
     type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
     def process_record(self, record):
@@ -33,6 +36,7 @@ class ParentOrganizationFilter(Filter):
     def process_record(self, record):
         return record
 
+# todo: we should just change the denormalize scripts to put the proper value in these fields
 class RecipientFilter(Filter):
     type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
@@ -77,7 +81,7 @@ class UnicodeFilter(Filter):
                 # or that I'm misunderstanding something.
                 record[key] = value.decode('utf8', self._method).encode('utf8')
         return record
-    
+
 
 #
 # model loader
@@ -105,7 +109,7 @@ class ContributionLoader(Loader):
         self.copy_fields(record, obj)
         
 
-class Command(BaseCommand):
+class LoadContributions(BaseCommand):
 
     help = "load contributions from csv"
     args = ""
@@ -116,6 +120,24 @@ class Command(BaseCommand):
         make_option('--source', '-s', dest='source', default='CRP', metavar="(CRP|NIMSP)",
             help='Data source'),
     )
+    
+    @staticmethod
+    def get_record_processor(import_session):
+        return get_chained_processor(FieldRemover('id'),
+                FieldRemover('import_reference'),
+                FieldAdder('import_reference', import_session),
+                
+                IntFilter('cycle'),
+                ISODateFilter('date'),
+                BooleanFilter('is_amendment'),
+                FloatFilter('amount'),
+                UnicodeFilter(),
+                
+                ContributorFilter(),
+                OrganizationFilter(),
+                ParentOrganizationFilter(),
+                RecipientFilter(),
+                CommitteeFilter())
     
     @transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
@@ -129,35 +151,18 @@ class Command(BaseCommand):
         )
         
         try:
-            saucebrush.run_recipe(
-            
-                CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1),
-                CountEmitter(every=1000),
-                
-                FieldRemover('id'),
-                FieldRemover('import_reference'),
-                FieldAdder('import_reference', loader.import_session),
-                
-                IntFilter('cycle'),
-                ISODateFilter('date'),
-                BooleanFilter('is_amendment'),
-                FloatFilter('amount'),
-                UnicodeFilter(),
-                
-                ContributorFilter(),
-                OrganizationFilter(),
-                ParentOrganizationFilter(),
-                RecipientFilter(),
-                CommitteeFilter(),
-                
-                #DebugEmitter(),
-                AbortFilter(0.001), # fail if over 1 in 1000 records is bad
-                LoaderEmitter(loader),
-                
-            )
+            input_iterator = CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1)
+            output_func = LoaderEmitter(loader).process_record
+            record_processor = self.get_record_processor(loader.import_session)
+
+            load_data(input_iterator, record_processor, output_func)
+
         except:
             traceback.print_exception(*sys.exc_info())
             raise
         finally:
             sys.stdout.flush()
             sys.stderr.flush()
+ 
+            
+Command = LoadContributions

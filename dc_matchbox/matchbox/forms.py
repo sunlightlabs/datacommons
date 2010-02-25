@@ -10,10 +10,9 @@ class AssociationForm(forms.Form):
         super(AssociationForm, self).__init__(*args, **kwargs)
         
         choices = [(f, f) for f in entityref_cache[model]]
-        self.fields['fields'] = forms.MultipleChoiceField(
+        self.fields['column'] = forms.ChoiceField(
                                     required=True,
-                                    label='Associate with',
-                                    widget=forms.CheckboxSelectMultiple(attrs={'class':'checkbox_choice_field'}),
+                                    label='Associate records to',
                                     choices=choices)
         
         self.fields['entity_id'] = forms.CharField(

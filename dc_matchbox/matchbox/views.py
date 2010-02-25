@@ -7,6 +7,7 @@ from django.db import transaction
 from matchbox.forms import AssociationForm
 from matchbox.models import entityref_cache, Entity, EntityNote
 from matchbox.queries import associate_transactions, disassociate_transactions
+import base64
 import re
 
 @login_required
@@ -25,9 +26,11 @@ def entity_detail(request, entity_id):
         for model in entityref_cache.iterkeys():
             if hasattr(model.objects, 'with_entity'):
                 transactions[model.__name__] = model.objects.with_entity(entity).order_by('-amount')[:50]
+        td_url = "http://beta.transparencydata.org/filter/?return_entities=1#%s" % base64.b64encode("cycle=2010&contributor_ft=%s" % entity.name)
         return render_to_response('matchbox/merge/entity_detail.html', {
                                       'entity': entity,
-                                      'transactions': transactions
+                                      'transactions': transactions,
+                                      'td_url': td_url,
                                   }, context_instance=RequestContext(request))
 
 
@@ -86,11 +89,9 @@ def entity_associate(request, entity_id, model_name):
         if form.is_valid():
             ids = parse_transaction_ids(form.cleaned_data['transactions'])
             if form.cleaned_data['action'] == 'add':
-                for field in form.cleaned_data['fields']:
-                    associate_transactions(entity_id, field, ids)
+                associate_transactions(entity_id, form.cleaned_data['column'], ids)
             elif form.cleaned_data['action'] == 'remove':
-                for field in form.cleaned_data['fields']:
-                    disassociate_transactions(field, ids)
+                disassociate_transactions(form.cleaned_data['column'], ids)
     else:
         form = AssociationForm(model, entity_id)
     return render_to_response('matchbox/entity_associate.html', {'form': form, 'entity': entity}, context_instance=RequestContext(request))

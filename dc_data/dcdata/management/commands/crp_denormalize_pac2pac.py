@@ -1,5 +1,3 @@
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from dcdata.utils.dryrub import CountEmitter
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
@@ -10,7 +8,8 @@ from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 
 import saucebrush
 
-from denormalize import *
+from crp_denormalize import *
+from dcdata.processor import get_chained_processor, load_data
 
 
 class RecipientFilter(Filter):
@@ -100,114 +99,68 @@ class RecipCodeFilter(Filter):
         return record
 
 
-def main():
-    from optparse import OptionParser
-
-    usage = "usage: %prog [options]"
-
-    parser = OptionParser(usage=usage)
-    parser.add_option("-c", "--cycles", dest="cycles",
-                      help="cycles to load ex: 90,92,08", metavar="CYCLES")
-    parser.add_option("-d", "--dataroot", dest="dataroot",
-                      help="path to data directory", metavar="PATH")
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
-                      help="noisy output")
-
-    (options, _) = parser.parse_args()
-
-    if not options.dataroot:
-        parser.error("path to dataroot is required")
-
-    cycles = []
-    if options.cycles:
-        for cycle in options.cycles.split(','):
-            if len(cycle) == 4:
-                cycle = cycle[2:4]
-            if cycle in CYCLES:
-                cycles.append(cycle)
-    else:
-        cycles = CYCLES
-
-    dataroot = os.path.abspath(options.dataroot)
-    tmppath = os.path.join(dataroot, 'denormalized')
-    if not os.path.exists(tmppath):
-        os.makedirs(tmppath)
+class CRPDenormalizePac2Pac(CRPDenormalizeBase):
     
-    outfile = open(os.path.join(tmppath, 'denorm_pac2pac.csv'), 'w')
+    @staticmethod
+    def get_record_processor(catcodes, candidates, committees):
+        def real_code(s):
+            s = s.upper()
+            if s in catcodes:
+                return catcodes[s]['catorder'].upper()        
+        
+        return get_chained_processor(
+            ContribRecipFilter(),
+            CommitteeFilter(committees),
+            RecipientFilter(candidates, committees),
+            
+            # transaction filters
+            FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
+            FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
+            FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
+            
+            # filing reference ID
+            FieldRenamer({'filing_id': 'microfilm'}),
+            
+            # date stamp
+            FieldModifier('date', parse_date_iso),
+            
+            # catcode
+            FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
+            FieldMerger({'contributor_category_order': ('real_code',)}, real_code, keep_fields=True),
+            FieldMerger({'recipient_category': ('recip_prim_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
+            FieldMerger({'recipient_category_order': ('recip_prim_code',)}, real_code, keep_fields=True),
+            
+            FieldRenamer({'contributor_city': 'city',
+                          'contributor_state': 'state',
+                          'contributor_zipcode': 'zipcode',
+                          'contributor_occupation': 'fec_occ_emp',
+                          'recipient_party': 'party',}),
+            FieldModifier('contributor_state', lambda s: s.strip().upper() if s else None),
+            
+            FieldAdder('contributor_type', 'committee'),
+            
+            # add static fields
+            FieldAdder('jurisdiction', 'F'),
+            FieldMerger({'is_amendment': ('amend',)}, lambda s: s.strip().upper() != 'N'),
+            FieldAdder('election_type', 'G'),
+            
+            # recip_code
+            RecipCodeFilter(),
+            
+            # filter through spec
+            SpecFilter(SPEC))
+        
+    def denormalize(self, data_path, cycles, catcodes, candidates, committees):
+        infiles = Files(*[os.path.join(data_path, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
+        outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2pac.csv'), 'w')
+        
+        source = CSVSource(infiles, fieldnames=FILE_TYPES['pac_other'])
+        output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
 
-    infiles = Files(*[os.path.join(dataroot, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
+        record_processor = self.get_record_processor(catcodes, candidates, committees)
 
-    print "Loading catcodes..."
-    catcodes = load_catcodes(dataroot)
-    
-    print "Loading candidates..."
-    candidates = load_candidates(dataroot)
-    
-    print "Loading committees..."
-    committees = load_committees(dataroot)
-    
-    run_denormalization(infiles, outfile, catcodes, candidates, committees)
-    
-
-def run_denormalization(infile, outfile, catcodes, candidates, committees):
-    def real_code(s):
-        s = s.upper()
-        if s in catcodes:
-            return catcodes[s]['catorder'].upper()
+        load_data(source, record_processor, output_func)
         
-    saucebrush.run_recipe(
-        # load sources
-        CSVSource(infile, fieldnames=FILE_TYPES['pac_other']),
-        
-        ContribRecipFilter(),
-        CommitteeFilter(committees),
-        RecipientFilter(candidates, committees),
-        
-        # transaction filters
-        FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
-        FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
-        FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
-        
-        # filing reference ID
-        FieldRenamer({'filing_id': 'microfilm'}),
-        
-        # date stamp
-        FieldModifier('date', parse_date_iso),
-        
-        # catcode
-        FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
-        FieldMerger({'contributor_category_order': ('real_code',)}, real_code, keep_fields=True),
-        FieldMerger({'recipient_category': ('recip_prim_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
-        FieldMerger({'recipient_category_order': ('recip_prim_code',)}, real_code, keep_fields=True),
-        
-        FieldRenamer({'contributor_city': 'city',
-                      'contributor_state': 'state',
-                      'contributor_zipcode': 'zipcode',
-                      'contributor_occupation': 'fec_occ_emp',
-                      'recipient_party': 'party',}),
-        FieldModifier('contributor_state', lambda s: s.strip().upper() if s else None),
-        
-        FieldAdder('contributor_type', 'committee'),
-        
-        # add static fields
-        FieldAdder('jurisdiction', 'F'),
-        FieldMerger({'is_amendment': ('amend',)}, lambda s: s.strip().upper() != 'N'),
-        FieldAdder('election_type', 'G'),
-        
-        # recip_code
-        RecipCodeFilter(),
-        
-        # filter through spec
-        SpecFilter(SPEC),
-        
-        #DebugEmitter(),
-        CountEmitter(every=1000),
-        CSVEmitter(outfile, fieldnames=FIELDNAMES),
-    )
-
-
-if __name__ == "__main__":
-
-    logging.basicConfig(level=logging.DEBUG)
-
-    main()
+            
+Command = CRPDenormalizePac2Pac            
+            

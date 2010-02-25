@@ -66,7 +66,7 @@
     {% endif %}
 
 	{% if transactions.Contribution %}
-	<div id="transactions">
+	<div id="transactions" class="clear">
     	<h3>Contributions</h3>
     	<p>{{ entity.contribution_count }} transactions for a total of ${{ entity.contribution_amount }}</p>
 		<p>20 preview transactions are shown ordered by dollar amount</p>
@@ -79,6 +79,8 @@
 {% endblock %}
 
 {% block sidebar %}
+
+    <a href="{{ td_url }}" target="_blank">{{ entity.name }} on TransparencyData.com</a>
 
     <h3>Modify Associations</h3>
     <ul>
