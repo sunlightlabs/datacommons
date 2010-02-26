@@ -8,6 +8,7 @@ import os
 from optparse import make_option
 from django.core.management.base import CommandError, BaseCommand
 
+
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
               'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
               'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
@@ -164,3 +165,17 @@ class CRPDenormalizeBase(BaseCommand):
     # to be implemented by subclasses
     def denormalize(self, root_path, cycles, catcodes, candidates, committees):
         raise NotImplementedError
+    
+    
+class CRPDenormalizeAll(CRPDenormalizeBase):
+    
+    def denormalize(self, data_path, cycles, catcodes, candidates, committees):
+        from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
+        from dcdata.management.commands.crp_denormalize_pac2candidate import CRPDenormalizePac2Candidate
+        from dcdata.management.commands.crp_denormalize_pac2pac import CRPDenormalizePac2Pac
+                
+        CRPDenormalizeIndividual().denormalize(data_path, cycles, catcodes, candidates, committees)
+        CRPDenormalizePac2Candidate().denormalize(data_path, cycles, catcodes, candidates, committees)
+        CRPDenormalizePac2Pac().denormalize(data_path, cycles, catcodes, candidates, committees)
+        
+Command = CRPDenormalizeAll

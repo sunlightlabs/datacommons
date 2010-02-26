@@ -330,7 +330,7 @@ def main():
                       help="path to input csv", metavar="FILE")
 
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if not options.dataroot:
         parser.error("path to dataroot is required")
@@ -344,23 +344,8 @@ def main():
     if not os.path.exists(denorm_path):
         os.makedirs(denorm_path)
     
-    allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
-    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-
-    allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
-    unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
-    
-    allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
-    unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
-
     input_path = options.input_path if options.input_path else os.path.join(denorm_path, SQL_DUMP_FILE)
-    input_file = open(input_path, 'r')
     
-    
-    input_type_conversions = dict([(field, conversion_func) for (field, sql, conversion_func) in CSV_SQL_MAPPING if conversion_func])
-
-    input_fields = [name for (name, sql, conversion_func) in CSV_SQL_MAPPING]
-
     try:
         con = MySQLdb.connect(
             db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
@@ -370,8 +355,40 @@ def main():
             )
     except Exception, e:
         print "Unable to connect to nimsp database: %s" % e 
+        sys.exit(1)    
+        
+    process_allocated(denorm_path, input_path, con)
+    
+    try:
+        pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+            OTHER_DATABASES['salts']['DATABASE_NAME'],
+            OTHER_DATABASES['salts']['DATABASE_USER'],
+            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
+            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
+            ))
+    except Exception, e:
+        print "Unable to connect to salts database: %s" %  e
         sys.exit(1)
+        
+    process_unallocated(denorm_path, pcon, con)
 
+
+def process_allocated(denorm_path, input_path, con):
+    allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
+    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
+    
+    allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
+    unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
+    
+    allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
+    unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
+
+    input_file = open(input_path, 'r')
+    
+    input_type_conversions = dict([(field, conversion_func) for (field, sql, conversion_func) in CSV_SQL_MAPPING if conversion_func])
+
+    input_fields = [name for (name, sql, conversion_func) in CSV_SQL_MAPPING]
+    
     saucebrush.run_recipe(
         CSVSource(input_file, input_fields),
         MultiFieldConversionFilter(input_type_conversions),
@@ -399,6 +416,11 @@ def main():
     for o in [allocated_csv,unallocated_csv]:
         o.close()
 
+
+
+def process_unallocated(denorm_path, pcon, con):
+    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
+    
     salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted.csv')
     unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
 
@@ -408,17 +430,6 @@ def main():
 
     salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES)
     unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES)
-
-    try:
-        pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-            OTHER_DATABASES['salts']['DATABASE_NAME'],
-            OTHER_DATABASES['salts']['DATABASE_USER'],
-            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
-            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
-            ))
-    except Exception, e:
-        print "Unable to connect to salts database: %s" %  e
-        sys.exit(1)
   
     salt_filter = SaltFilter(100,pcon,con)
     saucebrush.run_recipe(
@@ -435,11 +446,9 @@ def main():
         CountEmitter(every=2000),
         unsalted_emitter,
         salted_emitter
-        )
-
+        )  
+    
     for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, con]:
         f.close()
+    
 
-
-if __name__ == "__main__":
-    main()

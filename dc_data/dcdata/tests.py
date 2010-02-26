@@ -12,7 +12,39 @@ from dcdata.contribution.models import Contribution
 from dcdata.processor import load_data
 
 
+class TestCRPDenormalizeAll(TestCase):
+    
+    def test_denormalize_and_load(self):
+        if os.path.exists(TestCRPIndividualDenormalization.output_path):
+            os.remove(TestCRPIndividualDenormalization.output_path)   
+        if os.path.exists(TestCRPDenormalizePac2Candidate.output_path):
+            os.remove(TestCRPDenormalizePac2Candidate.output_path)      
+        if os.path.exists(TestCRPDenormalizePac2Pac.output_path):
+            os.remove(TestCRPDenormalizePac2Pac.output_path)    
+            
+        Contribution.objects.all().delete()    
+            
+        call_command('crp_denormalize', cycles='08', dataroot='dc_data/test_data') 
+        call_command('loadcontributions', TestCRPIndividualDenormalization.output_path)
+        call_command('loadcontributions', TestCRPDenormalizePac2Candidate.output_path)
+        call_command('loadcontributions', TestCRPDenormalizePac2Pac.output_path) 
+         
+        self.assertEqual(30, Contribution.objects.all().count())
+        
+
 class TestCRPIndividualDenormalization(TestCase):
+    output_path = 'dc_data/test_data/denormalized/denorm_indivs.08.csv'
+    
+    def test_command(self):
+        
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+        
+        call_command('crp_denormalize_individuals', cycles='08', dataroot='dc_data/test_data')
+        
+        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/indivs08.csv', 'r')))
+        self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
+
     def test_process_record(self):
         
         input_values = ["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"]
@@ -38,44 +70,34 @@ class TestCRPIndividualDenormalization(TestCase):
         
         self.assertEqual(5, len(output_records))
         
-    def test_command(self):
-        output_path = 'dc_data/test_data/denormalized/denorm_indivs.08.csv'
-        
-        if os.path.exists(output_path):
-            os.remove(output_path)
-        
-        call_command('crp_denormalize_individuals', cycles='08', dataroot='dc_data/test_data')
-        
-        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/indivs08.csv', 'r')))
-        self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
 
 
 class TestCRPDenormalizePac2Candidate(TestCase):
+    output_path = 'dc_data/test_data/denormalized/denorm_pac2cand.csv'
     
     def test_command(self):
-        output_path = 'dc_data/test_data/denormalized/denorm_pac2cand.csv'
         
-        if os.path.exists(output_path):
-            os.remove(output_path)
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
         
         call_command('crp_denormalize_pac2candidate', cycles='08', dataroot='dc_data/test_data')
         
         self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/pacs08.csv', 'r')))
-        self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
+        self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
                 
 
 class TestCRPDenormalizePac2Pac(TestCase):
+    output_path = 'dc_data/test_data/denormalized/denorm_pac2pac.csv'
     
     def test_command(self):
-        output_path = 'dc_data/test_data/denormalized/denorm_pac2pac.csv'
         
-        if os.path.exists(output_path):
-            os.remove(output_path)
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
         
         call_command('crp_denormalize_pac2pac', cycles='08', dataroot='dc_data/test_data')
         
         self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/pac_other08.csv', 'r')))
-        self.assertEqual(11, sum(1 for _ in open(output_path, 'r')))
+        self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
         
 
 class TestLoadContributions(TestCase):
