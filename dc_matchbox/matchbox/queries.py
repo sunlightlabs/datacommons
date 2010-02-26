@@ -281,6 +281,8 @@ def merge_entities(entity_ids, new_entity):
 
     # remove the old entity objects
     Entity.objects.filter(id__in=entity_ids).delete()
+    
+    recompute_aggregates(new_entity.id)
             
     return new_entity.id
 
