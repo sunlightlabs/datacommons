@@ -8,7 +8,7 @@ from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 import saucebrush
 
 from crp_denormalize import *
-from dcdata.processor import get_chained_processor, load_data
+from dcdata.processor import chain_filters, load_data
 from optparse import make_option
 
 
@@ -70,7 +70,7 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
     
     @staticmethod
     def get_record_processor(catcodes, candidates, committees):
-        return get_chained_processor(
+        return chain_filters(
             # transaction filters
             FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
             FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),

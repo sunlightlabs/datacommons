@@ -9,7 +9,7 @@ from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 import saucebrush
 
 from crp_denormalize import *
-from dcdata.processor import get_chained_processor, load_data
+from dcdata.processor import chain_filters, load_data
 
 
 class RecipientFilter(Filter):
@@ -108,7 +108,7 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             if s in catcodes:
                 return catcodes[s]['catorder'].upper()        
         
-        return get_chained_processor(
+        return chain_filters(
             ContribRecipFilter(),
             CommitteeFilter(committees),
             RecipientFilter(candidates, committees),

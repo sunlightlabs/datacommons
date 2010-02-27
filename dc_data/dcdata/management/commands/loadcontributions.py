@@ -16,7 +16,7 @@ from optparse import make_option
 import os
 import sys
 import traceback
-from dcdata.processor import get_chained_processor, load_data
+from dcdata.processor import chain_filters, load_data
 
 
 
@@ -123,7 +123,7 @@ class LoadContributions(BaseCommand):
     
     @staticmethod
     def get_record_processor(import_session):
-        return get_chained_processor(FieldRemover('id'),
+        return chain_filters(FieldRemover('id'),
                 FieldRemover('import_reference'),
                 FieldAdder('import_reference', import_session),
                 

@@ -11,7 +11,7 @@ from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 
 from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
-from dcdata.processor import get_chained_processor, load_data
+from dcdata.processor import chain_filters, load_data
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from crp_denormalize import *
@@ -130,7 +130,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
 
     @staticmethod
     def get_record_processor(catcodes, candidates, committees):
-        return get_chained_processor(
+        return chain_filters(
                 # broken at the moment--can't use anything deriving from YieldFilter
                 #FieldCountValidator(len(FILE_TYPES['indivs'])),
         
