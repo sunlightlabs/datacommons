@@ -9,8 +9,23 @@ from dcdata.loading import model_fields
 from django.core.management import call_command
 from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
 from dcdata.contribution.models import Contribution
-from dcdata.processor import load_data
+from dcdata.processor import load_data, chain_filters, compose_one2many
+from saucebrush.filters import FieldAdder, ConditionalFilter, YieldFilter,\
+    FieldModifier
 
+dataroot = 'dc_data/test_data'
+
+class TestNIMSPDenormalize(TestCase):
+    output_paths = ['nimsp_allocated_contributions.csv', 
+                    'nimsp_unallocated_contributions_salted.csv',
+                    'nimsp_unallocated_contributions_unsalted.csv']
+    
+    def test_command(self):
+        for path in self.output_paths:
+            if os.path.exists(path):
+                os.remove(path)     
+
+        call_command('nimsp_denormalize', dataroot=dataroot)
 
 class TestCRPDenormalizeAll(TestCase):
     
@@ -24,7 +39,7 @@ class TestCRPDenormalizeAll(TestCase):
             
         Contribution.objects.all().delete()    
             
-        call_command('crp_denormalize', cycles='08', dataroot='dc_data/test_data') 
+        call_command('crp_denormalize', cycles='08', dataroot=dataroot) 
         call_command('loadcontributions', TestCRPIndividualDenormalization.output_path)
         call_command('loadcontributions', TestCRPDenormalizePac2Candidate.output_path)
         call_command('loadcontributions', TestCRPDenormalizePac2Pac.output_path) 
@@ -51,9 +66,10 @@ class TestCRPIndividualDenormalization(TestCase):
         input_record = dict(zip(FILE_TYPES['indivs'], input_values))
         
         record_processor = CRPDenormalizeIndividual.get_record_processor({}, {}, {})
-        output_record = record_processor(input_record)
-
-        self.assertEqual(set(model_fields('contribution.Contribution')), set(output_record.keys()))
+        output_records = record_processor(input_record)
+        
+        self.assertEqual(1, len(output_records))
+        self.assertEqual(set(model_fields('contribution.Contribution')), set(output_records[0].keys()))
         
     def test_process(self):
         
@@ -112,6 +128,58 @@ class TestLoadContributions(TestCase):
         
 
 
+class TestProcessor(TestCase):
+    
+    def test_chain(self):
+        f = compose_one2many()
+        
+        self.assertEqual([5], list(f(5)))
+        self.assertEqual(['foo'], list(f('foo')))
+        
+        f = compose_one2many(lambda x: [x * 2])
+        
+        self.assertEqual([4], list(f(2)))
+        self.assertEqual(['foofoo'], list(f('foo')))
+        
+        f = compose_one2many(lambda x: [x, x])
+        
+        self.assertEqual([2, 2], list(f(2)))
+        self.assertEqual(['foo', 'foo'], list(f('foo')))
+        
+        f = compose_one2many(lambda x: [x, x + 3],
+                          lambda x: [x, x * 3])
+        
+        self.assertEqual([1, 3, 4, 12], list(f(1)))
+        
+        f = compose_one2many(lambda x: [x + 'a', x + 'b'],
+                          lambda x: [x + 'c'],
+                          lambda x: [x + 'd', x + 'e', x + 'f'])
+        
+        self.assertEqual(['acd', 'ace', 'acf', 'bcd', 'bce', 'bcf'], list(f('')))
+
+    def test_filters(self):
+        class Cube(YieldFilter):
+            def process_record(self, r):
+                yield r
+                r2 = r.copy()
+                r2['value'] *= r['value']
+                yield r2
+                r3 = r2.copy()
+                r3['value'] *= r['value']
+                yield r3
+                
+        class Evens(ConditionalFilter):
+            def test_record(self, record):
+                return record['value'] % 2 == 0
+            
+        f = chain_filters(Cube(),
+                          FieldModifier(('value'), abs),
+                          Evens())
+        
+        self.assertEqual([{'value':0}] * 3, f({'value':0}))
+        self.assertEqual([], f({'value':1}))
+        self.assertEqual([{'value': 2}, {'value': 4}, {'value': 8}], f({'value':2}))
+        self.assertEqual([{'value': 2}, {'value': 4}, {'value': 8}], f({'value':-2}))
 
 # tests the experimental 'updates' module
 class TestUpdates(TestCase):

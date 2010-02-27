@@ -1,32 +1,32 @@
-#!/usr/bin/env python
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
-
-import csv
 import inspect
 import logging
-import os
-import string
 import sys
+import os
+import re
 
-import ConfigParser
 import MySQLdb
 import psycopg2
 
+
+from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
+
+
 import saucebrush
-from saucebrush.emitters import CSVEmitter, DebugEmitter
-from saucebrush.filters import *
+from saucebrush.emitters import CSVEmitter
 from saucebrush.sources import CSVSource
+from saucebrush.filters import *
 
-from dcdata.utils.dryrub import CountEmitter, NullEmitter
+from dcdata.utils.dryrub import CountEmitter
 
-from salt import DCIDFilter, SaltFilter
+from scripts.nimsp.salt import DCIDFilter, SaltFilter
 
 from settings import OTHER_DATABASES
 
-from common import CSV_SQL_MAPPING, SQL_DUMP_FILE
+from scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
+from dcdata.processor import chain_filters, load_data
+from django.core.management.base import BaseCommand, CommandError
+from optparse import make_option
 
 
 # to do: these should be pulled automatically from the model, as is done in loadcontributions.py,
@@ -317,60 +317,55 @@ class UnsaltedEmitter(CSVEmitter):
             del(record['salted'])
             super(UnsaltedEmitter, self).emit_record(record)
 
-def main():
-
-    from optparse import OptionParser
-
-    usage = "usage: %prog --dataroot DIR [options]"
-
-    parser = OptionParser(usage=usage)
-    parser.add_option("-d", "--dataroot", dest="dataroot",
-                      help="path to data directory", metavar="PATH")
-    parser.add_option("-i", "--infile", dest="input_path",
-                      help="path to input csv", metavar="FILE")
 
 
-    (options, _) = parser.parse_args()
+class NIMSPDenormalize(BaseCommand):
+    option_list = BaseCommand.option_list + (
+        make_option("-d", "--dataroot", dest="dataroot",
+                      help="path to data directory", metavar="PATH"),
+        make_option("-i", "--infile", dest="input_path",
+                      help="path to input csv", metavar="FILE"))
 
-    if not options.dataroot:
-        parser.error("path to dataroot is required")
 
-
-    dataroot = os.path.abspath(options.dataroot)
-    if not os.path.exists(dataroot):
-        print "No such directory %s" % dataroot
-        sys.exit(1)
-    denorm_path = os.path.join(dataroot, 'denormalized')
-    if not os.path.exists(denorm_path):
-        os.makedirs(denorm_path)
+    def handle(self, *args, **options):
+        if 'dataroot' not in options:
+            CommandError("path to dataroot is required")
     
-    input_path = options.input_path if options.input_path else os.path.join(denorm_path, SQL_DUMP_FILE)
-    
-    try:
-        con = MySQLdb.connect(
-            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
-            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
-            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
-            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
-            )
-    except Exception, e:
-        print "Unable to connect to nimsp database: %s" % e 
-        sys.exit(1)    
+        dataroot = os.path.abspath(options['dataroot'])
+        if not os.path.exists(dataroot):
+            print "No such directory %s" % dataroot
+            sys.exit(1)
+        denorm_path = os.path.join(dataroot, 'denormalized')
+        if not os.path.exists(denorm_path):
+            os.makedirs(denorm_path)
         
-    process_allocated(denorm_path, input_path, con)
-    
-    try:
-        pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-            OTHER_DATABASES['salts']['DATABASE_NAME'],
-            OTHER_DATABASES['salts']['DATABASE_USER'],
-            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
-            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
-            ))
-    except Exception, e:
-        print "Unable to connect to salts database: %s" %  e
-        sys.exit(1)
+        input_path = options.get('input_path', os.path.join(denorm_path, SQL_DUMP_FILE))
         
-    process_unallocated(denorm_path, pcon, con)
+        try:
+            con = MySQLdb.connect(
+                db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+                user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
+                host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
+                passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+                )
+        except Exception, e:
+            print "Unable to connect to nimsp database: %s" % e 
+            sys.exit(1)    
+            
+        process_allocated(denorm_path, input_path, con)
+        
+        try:
+            pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+                OTHER_DATABASES['salts']['DATABASE_NAME'],
+                OTHER_DATABASES['salts']['DATABASE_USER'],
+                OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
+                OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
+                ))
+        except Exception, e:
+            print "Unable to connect to salts database: %s" %  e
+            sys.exit(1)
+            
+        process_unallocated(denorm_path, pcon, con)
 
 
 def process_allocated(denorm_path, input_path, con):
@@ -385,12 +380,18 @@ def process_allocated(denorm_path, input_path, con):
 
     input_file = open(input_path, 'r')
     
-    input_type_conversions = dict([(field, conversion_func) for (field, sql, conversion_func) in CSV_SQL_MAPPING if conversion_func])
+    input_type_conversions = dict([(field, conversion_func) for (field, _, conversion_func) in CSV_SQL_MAPPING if conversion_func])
 
-    input_fields = [name for (name, sql, conversion_func) in CSV_SQL_MAPPING]
+    input_fields = [name for (name, _, conversion_func) in CSV_SQL_MAPPING]
     
-    saucebrush.run_recipe(
-        CSVSource(input_file, input_fields),
+    source = CSVSource(input_file, input_fields)
+    
+    output_func = chain_filters(
+        unallocated_emitter,
+        DCIDFilter(),
+        allocated_emitter)
+    
+    filter = chain_filters(
         MultiFieldConversionFilter(input_type_conversions),
 
         # munge fields
@@ -406,13 +407,10 @@ def process_allocated(denorm_path, input_path, con):
         FieldAdder('is_amendment',False),
         FieldAdder('transaction_namespace', NIMSP_TRANSACTION_NAMESPACE),
 
-        FieldListFilter(FIELDNAMES + ['contributionid']),
-        #DebugEmitter(),
-        CountEmitter(every=2000),
-        unallocated_emitter,
-        DCIDFilter(),
-        allocated_emitter,
-        )
+        FieldListFilter(FIELDNAMES + ['contributionid']))
+        
+    load_data(source, filter, output_func)
+    
     for o in [allocated_csv,unallocated_csv]:
         o.close()
 
@@ -428,27 +426,25 @@ def process_unallocated(denorm_path, pcon, con):
     salted_csv = open(salted_csv_filename, 'w')
     unsalted_csv = open(unsalted_csv_filename, 'w')
 
+    source = CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
+
     salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES)
     unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES)
+    output_func = chain_filters(salted_emitter, unsalted_emitter)
   
-    salt_filter = SaltFilter(100,pcon,con)
-    saucebrush.run_recipe(
-        CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1),
-        
+    filter = chain_filters(        
         IntFilter('contributionid'),
         FloatFilter('amount'),
         
         FieldAdder('salted',False),
-        salt_filter,
-        DCIDFilter(),
-
-        #DebugEmitter(),
-        CountEmitter(every=2000),
-        unsalted_emitter,
-        salted_emitter
-        )  
+        SaltFilter(100,pcon,con),
+        DCIDFilter())
+    
+    load_data(source, filter, output_func)
     
     for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, con]:
         f.close()
     
+
+Command = NIMSPDenormalize
 
