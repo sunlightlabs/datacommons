@@ -118,6 +118,14 @@ def disassociate_transactions(column, transactions):
 def recompute_aggregates(entity_id):
     cursor = connection.cursor()
     
+    _recompute_sums(entity_id)
+    _recompute_aliases(entity_id)
+    _recompute_attributes(entity_id)
+
+
+def _recompute_sums(entity_id):
+    cursor = connection.cursor()
+    
     aggregate_count_stmt = """
         update matchbox_entity set contribution_count = (
             select count(*) from contribution_contribution 
@@ -142,9 +150,6 @@ def recompute_aggregates(entity_id):
     """
     cursor.execute(aggregate_amount_stmt, [entity_id])
     
-    _recompute_aliases(entity_id)
-    _recompute_attributes(entity_id)
-
 
 def _recompute_aliases(entity_id):    
     cursor = connection.cursor()
@@ -278,11 +283,11 @@ def merge_entities(entity_ids, new_entity):
     _merge_aliases(entity_ids, new_entity)
     _merge_attributes(entity_ids, new_entity)
     _merge_notes(entity_ids, new_entity)
+    _recompute_sums(new_entity.id)
 
     # remove the old entity objects
     Entity.objects.filter(id__in=entity_ids).delete()
     
-    recompute_aggregates(new_entity.id)
             
     return new_entity.id
 
