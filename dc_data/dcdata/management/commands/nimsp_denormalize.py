@@ -326,7 +326,24 @@ class NIMSPDenormalize(BaseCommand):
         make_option("-i", "--infile", dest="input_path",
                       help="path to input csv", metavar="FILE"))
 
-
+    @staticmethod
+    def mysql_connection():
+        return MySQLdb.connect(
+            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
+            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
+            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+            )
+    
+    @staticmethod
+    def pg_connection():        
+        return psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+            OTHER_DATABASES['salts']['DATABASE_NAME'],
+            OTHER_DATABASES['salts']['DATABASE_USER'],
+            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
+            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
+            ))
+                    
     def handle(self, *args, **options):
         if 'dataroot' not in options:
             CommandError("path to dataroot is required")
@@ -341,109 +358,94 @@ class NIMSPDenormalize(BaseCommand):
         
         input_path = options.get('input_path', os.path.join(denorm_path, SQL_DUMP_FILE))
         
-        try:
-            con = MySQLdb.connect(
-                db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
-                user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
-                host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
-                passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
-                )
-        except Exception, e:
-            print "Unable to connect to nimsp database: %s" % e 
-            sys.exit(1)    
+        con = self.mysql_connection() 
             
-        process_allocated(denorm_path, input_path, con)
+        self.process_allocated(denorm_path, input_path, con)
         
-        try:
-            pcon = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-                OTHER_DATABASES['salts']['DATABASE_NAME'],
-                OTHER_DATABASES['salts']['DATABASE_USER'],
-                OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
-                OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
-                ))
-        except Exception, e:
-            print "Unable to connect to salts database: %s" %  e
-            sys.exit(1)
+        pcon = self.pg_connection()
             
-        process_unallocated(denorm_path, pcon, con)
+        self.process_unallocated(denorm_path, pcon, con)
 
+    @staticmethod
+    def get_allocated_record_processor(con):
+        input_type_conversions = dict([(field, conversion_func) for (field, _, conversion_func) in CSV_SQL_MAPPING if conversion_func])
+        
+        return chain_filters(
+            MultiFieldConversionFilter(input_type_conversions),
 
-def process_allocated(denorm_path, input_path, con):
-    allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
-    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-    
-    allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
-    unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
-    
-    allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
-    unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
-
-    input_file = open(input_path, 'r')
-    
-    input_type_conversions = dict([(field, conversion_func) for (field, _, conversion_func) in CSV_SQL_MAPPING if conversion_func])
-
-    input_fields = [name for (name, _, conversion_func) in CSV_SQL_MAPPING]
-    
-    source = CSVSource(input_file, input_fields)
-    
-    output_func = chain_filters(
-        unallocated_emitter,
-        DCIDFilter(),
-        allocated_emitter)
-    
-    filter = chain_filters(
-        MultiFieldConversionFilter(input_type_conversions),
-
-        # munge fields
-        BestAvailableFilter(),
-        EmployerOccupationFilter(),
-        RecipientFilter(),
-        SeatFilter(),
-        UrnFilter(con),
-        FieldModifier('date', lambda x: str(x) if x else None),
-        ZipCleaner(),
+            # munge fields
+            BestAvailableFilter(),
+            EmployerOccupationFilter(),
+            RecipientFilter(),
+            SeatFilter(),
+            UrnFilter(con),
+            FieldModifier('date', lambda x: str(x) if x else None),
+            ZipCleaner(),
            
-        # add static fields
-        FieldAdder('is_amendment',False),
-        FieldAdder('transaction_namespace', NIMSP_TRANSACTION_NAMESPACE),
+            # add static fields
+            FieldAdder('is_amendment',False),
+            FieldAdder('transaction_namespace', NIMSP_TRANSACTION_NAMESPACE),
 
-        FieldListFilter(FIELDNAMES + ['contributionid']))
+            FieldListFilter(FIELDNAMES + ['contributionid']))
+    
+    @staticmethod
+    def process_allocated(denorm_path, input_path, con):
+        allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
+        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
+    
+        allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
+        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
+    
+        allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
+        unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
+
+        input_file = open(input_path, 'r')
+    
+        input_fields = [name for (name, _, conversion_func) in CSV_SQL_MAPPING]
+    
+        source = CSVSource(input_file, input_fields)
+    
+        output_func = chain_filters(
+            unallocated_emitter,
+            DCIDFilter(),
+            allocated_emitter)
+    
+        load_data(source, NIMSPDenormalize.get_allocated_record_processor(con), output_func)
+    
+        for o in [allocated_csv,unallocated_csv]:
+            o.close()
+
+    @staticmethod
+    def get_unallocated_record_processor(pcon, con):
+        return chain_filters(        
+            IntFilter('contributionid'),
+            FloatFilter('amount'),
         
-    load_data(source, filter, output_func)
+            FieldAdder('salted',False),
+            SaltFilter(100,pcon,con),
+            DCIDFilter())
     
-    for o in [allocated_csv,unallocated_csv]:
-        o.close()
-
-
-
-def process_unallocated(denorm_path, pcon, con):
-    unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
+    @staticmethod        
+    def process_unallocated(denorm_path, pcon, con):
+        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
     
-    salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted.csv')
-    unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
+        salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted.csv')
+        unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
 
-    unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
-    salted_csv = open(salted_csv_filename, 'w')
-    unsalted_csv = open(unsalted_csv_filename, 'w')
+        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
+        salted_csv = open(salted_csv_filename, 'w')
+        unsalted_csv = open(unsalted_csv_filename, 'w')
 
-    source = CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
+        source = CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
 
-    salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES)
-    unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES)
-    output_func = chain_filters(salted_emitter, unsalted_emitter)
+        salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES)
+        unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES)
+        output_func = chain_filters(salted_emitter, unsalted_emitter)
   
-    filter = chain_filters(        
-        IntFilter('contributionid'),
-        FloatFilter('amount'),
-        
-        FieldAdder('salted',False),
-        SaltFilter(100,pcon,con),
-        DCIDFilter())
+        load_data(source, NIMSPDenormalize.get_unallocated_record_processor(pcon, con), output_func)
     
-    load_data(source, filter, output_func)
-    
-    for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, con]:
-        f.close()
+        for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, con]:
+            f.close()
     
 
 Command = NIMSPDenormalize

@@ -8,17 +8,37 @@ from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.loading import model_fields
 from django.core.management import call_command
 from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
+from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 from dcdata.contribution.models import Contribution
 from dcdata.processor import load_data, chain_filters, compose_one2many
 from saucebrush.filters import FieldAdder, ConditionalFilter, YieldFilter,\
     FieldModifier
+from scripts.nimsp.common import CSV_SQL_MAPPING
 
 dataroot = 'dc_data/test_data'
 
+
 class TestNIMSPDenormalize(TestCase):
-    output_paths = ['nimsp_allocated_contributions.csv', 
-                    'nimsp_unallocated_contributions_salted.csv',
-                    'nimsp_unallocated_contributions_unsalted.csv']
+    output_paths = ['dc_data/test_data/denormalized/nimsp_allocated_contributions.csv', 
+                    'dc_data/test_data/denormalized/nimsp_unallocated_contributions_salted.csv',
+                    'dc_data/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv']
+    
+    def test_salting(self):
+        input_values = ["2521050","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",
+                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",
+                        "0","2008-06-09 15:02:35","1160742","433907","0","1825","PAC 483","2006","\N","\N","\N","\N",
+                        "\N","\N","I","PAC 483","130"]
+        self.assertEqual(len(CSV_SQL_MAPPING), len(input_values))
+        input_record = dict(zip([name for (name, _, _) in CSV_SQL_MAPPING], input_values))
+    
+        processor = NIMSPDenormalize.get_unallocated_record_processor(
+                    NIMSPDenormalize.pg_connection(),
+                    NIMSPDenormalize.mysql_connection())
+        
+        outputs = processor(input_record)            
+                    
+        self.assertEqual(2, len(outputs))
+      
     
     def test_command(self):
         for path in self.output_paths:
@@ -26,6 +46,11 @@ class TestNIMSPDenormalize(TestCase):
                 os.remove(path)     
 
         call_command('nimsp_denormalize', dataroot=dataroot)
+        
+        self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
+        self.assertEqual(2, sum(1 for _ in open(self.output_paths[1], 'r')))
+        self.assertEqual(2, sum(1 for _ in open(self.output_paths[2], 'r')))
+        
 
 class TestCRPDenormalizeAll(TestCase):
     
