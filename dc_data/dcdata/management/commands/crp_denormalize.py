@@ -168,7 +168,7 @@ class CRPDenormalizeBase(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option("-c", "--cycles", dest="cycles", help="cycles to load ex: 90,92,08", metavar="CYCLES"),
         make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
-        make_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="noisy output"))
+        make_option("-b", "--verbose", action="store_true", dest="verbose", default=False, help="noisy output"))
 
     def handle(self, *args, **options):
         if 'dataroot' not in options:
