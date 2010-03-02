@@ -10,7 +10,6 @@ from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRena
 from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 
-from dcdata.utils.dryrub import CountEmitter, FieldCountValidator
 from dcdata.processor import chain_filters, load_data
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
@@ -18,16 +17,7 @@ from crp_denormalize import *
 
 ### Filters
 
-class RecipCodeFilter(Filter):
-    def __init__(self):
-        super(RecipCodeFilter, self).__init__()
-    def process_record(self, record):
-        if 'recip_id' in record and record['recip_id'].startswith('N'):
-            if record['recip_code']:
-                recip_code = record['recip_code'].strip().upper()
-                record['recipient_party'] = recip_code[0]
-                record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
-        return record
+
 
 # this list was built by searching for the most frequent organization names in the unfiltered
 # contribution data. I went through all organization names with at least 200 entries and entered
@@ -59,12 +49,6 @@ disallowed_orgnames = set(['retired', 'homemaker', 'attorney', '[24i contributio
 class OrganizationFilter(Filter):
     def process_record(self, record):
         orgname = record.get('org_name', '').strip()
-        # disabling the orgname fallbacks--we want to be able to rely on the orgname being the human-verified name
-#        if not orgname or orgname.lower() in disallowed_orgnames:
-#            orgname = record.get('emp_ef', '').strip()
-#            if (not orgname or orgname.lower() in disallowed_orgnames) and '/' in record.get('fec_occ_emp',''):
-#                (emp, occ) = record.get('fec_occ_emp','').split('/', 1)
-#                orgname = emp.strip()
         record['organization_name'] = orgname if orgname and orgname.lower() not in disallowed_orgnames else None
         return record
 
@@ -80,51 +64,34 @@ class CommitteeFilter(Filter):
             record['committee_name'] = committee['pac_short']
             record['committee_party'] = committee['party']
         return record
-        
+     
+    
 
 class RecipientFilter(Filter):
     def __init__(self, candidates, committees):
         super(RecipientFilter, self).__init__()
         self._candidates = candidates
         self._committees = committees
+        
     def process_record(self, record):
         recip_id = record.get('recip_id','').upper()
         if recip_id.startswith('N'):
-            recipient = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-            self.load_candidate(recipient, record)
+            candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
+            add_candidate_recipient(candidate, record)
         else:
-            recipient = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-            self.load_committee(recipient, record)
-        return record
-    def load_candidate(self, candidate, record):
-        if candidate:
-            record['recipient_name'] = candidate['first_last_p']
-            record['recipient_party'] = candidate['party']
-            record['recipient_type'] = 'politician'
-            record['seat_status'] = candidate['crp_ico']
-            seat = candidate['dist_id_run_for'].upper()
-            if len(seat) == 4:
-                if seat == 'PRES':
-                    record['seat'] = 'federal:president'
+            committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
+            if committee:
+                cmte_id = record.get('cmte_id', '').upper()
+                cmte_recip_id = committee.get('recip_id', '').upper() 
+                # if this was a contribution to a committee, and that committee record points to a candidate,
+                # then load the candidate as the recipient, not the committee.
+                if cmte_id == recip_id and cmte_id != cmte_recip_id:
+                    candidate = self._candidates.get('%s:%s' % (record['cycle'], cmte_recip_id), None)
+                    add_candidate_recipient(candidate, record)
                 else:
-                    if seat[2] == 'S':
-                        record['seat'] = 'federal:senate'
-                    else:
-                        record['seat'] = 'federal:house'
-                        record['district'] = "%s-%s" % (seat[:2], seat[2:])
-    def load_committee(self, committee, record):
-        if committee:
-            record['recipient_name'] = committee['pac_short']
-            record['recipient_party'] = committee['party']
-            record['recipient_type'] = 'committee'
-            cmte_id = record['cmte_id'].upper()
-            recip_id = committee.get('recip_id', '').upper() 
-            if cmte_id == record['recip_id'].upper() and cmte_id != recip_id:
-                print "!!!!  loading committee recipient"
-                candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-                self.load_candidate(candidate, record)
-
-
+                    add_committee_recipient(committee, record)
+        return record
+ 
 
 class CRPDenormalizeIndividual(CRPDenormalizeBase):
 
@@ -154,11 +121,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
                 OrganizationFilter(),
         
                 # create URNs
-                FieldRenamer({'contributor_ext_id': 'contrib_id', 'recipient_ext_id': 'recip_id', 'committee_ext_id': 'cmte_id'}),
-                              
-                # recip code filter
-                RecipCodeFilter(),  # recipient party
-                                # seat result
+                FieldRenamer({'contributor_ext_id': 'contrib_id', 'committee_ext_id': 'cmte_id'}),
         
                 # address and gender fields
                 FieldRenamer({'contributor_address': 'street',

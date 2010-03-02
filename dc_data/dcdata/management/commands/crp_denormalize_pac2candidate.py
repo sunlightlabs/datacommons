@@ -1,5 +1,4 @@
 
-from dcdata.utils.dryrub import CountEmitter
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import CSVEmitter
 from saucebrush.sources import CSVSource
@@ -12,15 +11,7 @@ from dcdata.processor import chain_filters, load_data
 from optparse import make_option
 
 
-class RecipCodeFilter(Filter):
-    def __init__(self):
-        super(RecipCodeFilter, self).__init__()
-    def process_record(self, record):
-        if record['recip_code']:
-            recip_code = record['recip_code'].strip().upper()
-            record['recipient_party'] = recip_code[0]
-            record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
-        return record
+
 
 
 class RecipientFilter(Filter):
@@ -30,25 +21,7 @@ class RecipientFilter(Filter):
     def process_record(self, record):
         cid = record['cid'].upper()
         candidate = self._candidates.get('%s:%s' % (record['cycle'], cid), None)
-        if candidate:
-            record['recipient_name'] = candidate['first_last_p']
-            record['recipient_party'] = candidate['party']
-            record['recipient_type'] = 'politician'
-            record['seat_status'] = candidate['crp_ico']
-            seat = candidate['dist_id_run_for'].upper()
-            if len(seat) == 4:
-                if seat == 'PRES':
-                    record['seat'] = 'federal:president'
-                else:
-                    if seat[2] == 'S':
-                        record['seat'] = 'federal:senate'
-                    else:
-                        record['seat'] = 'federal:house'
-                        record['district'] = "%s-%s" % (seat[:2], seat[2:])
-            result = candidate.get('recip_code', '').strip().upper()
-            if result and result[1] in ('W','L'):
-                record['seat_result'] = result[1]
-                
+        add_candidate_recipient(candidate, record)
         return record
 
 
@@ -85,7 +58,6 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             FieldAdder('contributor_type', 'committee'),
             
             RecipientFilter(candidates),
-            FieldRenamer({'recipient_ext_id': 'cid'}),
             FieldAdder('recipient_type', 'politician'),
             
             # catcode

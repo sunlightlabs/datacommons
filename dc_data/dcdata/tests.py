@@ -18,9 +18,70 @@ from django.db import connection
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
 from scripts.nimsp.common import CSV_SQL_MAPPING
 from updates import edits, update
+from dcdata.management.commands.crp_denormalize import load_candidates,\
+    load_committees
 
 
 dataroot = 'dc_data/test_data'
+
+def assert_record_contains(tester, expected, actual):
+    for (name, value) in expected.iteritems():
+        tester.assertEqual(value, actual[name])
+
+
+
+class TestRecipientFilter(TestCase):
+    
+    def test_indiv(self):
+        processor = CRPDenormalizeIndividual.get_record_processor((),
+                                                                  load_candidates(dataroot),
+                                                                  load_committees(dataroot))
+        
+        input_row = ["2008","0000011","i3003166469 ","ADAMS, KENT","N00005985","Adams & Boswell","","K1000",
+                        "12/11/2006","1000","PO  12523","BEAUMONT","TX","77726","RN","15 ","C00257402","","M",
+                        "ADAMS & BOSWELL/ATTORNEY","27930036083","Attorney","Adams & Boswell","Rept "]
+        self.assertEqual(len(FILE_TYPES['indivs']), len(input_row))
+        input_record = dict(zip(FILE_TYPES['indivs'], input_row))
+        
+        (output_record,) = processor(input_record)
+        
+        assert_record_contains(self, {'recipient_name': 'Henry Bonilla (R)',
+                                      'recipient_party': 'R',
+                                      'recipient_type': 'politician',
+                                      'recipient_ext_id': 'N00005985',
+                                      'seat_status': ' ',
+                                      'seat_result': None,
+                                      'recipient_state': 'TX',
+                                      'seat': 'federal:house',
+                                      'district': 'TX-23'},
+                                       output_record)
+        
+        input_row = ["2008","0000880","j1001101935 ","AMBERSON, RAY","C00030718","","","F4200",
+                     "12/08/2006","300","PO  6","ALBERTVILLE","AL","35950","PB","15 ","C00030718",
+                     "","M","HENDERSON & SPURLIN REAL ESTAT/REAL","27930132133","Real Estate Broker",
+                     "Henderson & Spurlin Real Estat","P/PAC"]
+        self.assertEqual(len(FILE_TYPES['indivs']), len(input_row))
+        input_record = dict(zip(FILE_TYPES['indivs'], input_row))
+        
+        (output_record,) = processor(input_record)
+
+        assert_record_contains(self, {'recipient_name': 'National Assn of Realtors',
+                                      'recipient_party': '',
+                                      'recipient_type': 'committee',
+                                      'recipient_ext_id': 'C00030718',
+                                      'seat_result': None},
+                                       output_record)
+        
+        pass
+    
+    def test_special(self):
+        call_command('crp_denormalize_individuals', cycle='08', dataroot='/Users/ethanpg/dev/data')
+    
+    def test_pac2pac(self):
+        pass
+    
+    def test_pac2candidiate(self):
+        pass
 
 
 class TestNIMSPDenormalize(TestCase):

@@ -1,5 +1,4 @@
 
-from dcdata.utils.dryrub import CountEmitter
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import  CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
@@ -12,6 +11,8 @@ from crp_denormalize import *
 from dcdata.processor import chain_filters, load_data
 
 
+
+
 class RecipientFilter(Filter):
     def __init__(self, candidates, committees):
         super(RecipientFilter, self).__init__()
@@ -22,35 +23,12 @@ class RecipientFilter(Filter):
         if recip_id:
             if recip_id.startswith('N'):
                 candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-                if candidate:
-                    record['recipient_ext_id'] = recip_id
-                    record['recipient_name'] = candidate['first_last_p']
-                    record['recipient_party'] = candidate['party']
-                    record['recipient_type'] = 'politician'
-                    record['seat_status'] = candidate['crp_ico']
-                    seat = candidate['dist_id_run_for'].upper()
-                    if len(seat) == 4:
-                        if seat == 'PRES':
-                            record['seat'] = 'federal:president'
-                        else:
-                            if seat[2] == 'S':
-                                record['seat'] = 'federal:senate'
-                            else:
-                                record['seat'] = 'federal:house'
-                                record['district'] = "%s-%s" % (seat[:2], seat[2:])
+                add_candidate_recipient(candidate, record)
             elif recip_id.startswith('C'):
                 committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-                record['recipient_ext_id'] = recip_id
-                if committee:
-                    record['recipient_name'] = committee['pac_short']
-                    record['recipient_party'] = committee['party']
-                    record['recipient_type'] = 'committee'
-                else:
-                    print "no committee for %s" % recip_id
-            else:
-                print "!!!!!!!!!! invalid recipient %s" % recip_id
+                add_committee_recipient(committee, record)
         return record
-
+    
 
 class CommitteeFilter(Filter):
     def __init__(self, committees):
@@ -91,12 +69,7 @@ class ContribRecipFilter(Filter):
         return record
         
         
-class RecipCodeFilter(Filter):
-    def process_record(self, record):
-        if record['recip_code']:
-            recip_code = record['recip_code'].strip().upper()
-            record['seat_result'] = recip_code[1] if recip_code[1] in ('W','L') else None
-        return record
+
 
 
 class CRPDenormalizePac2Pac(CRPDenormalizeBase):
@@ -143,9 +116,6 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             FieldAdder('jurisdiction', 'F'),
             FieldMerger({'is_amendment': ('amend',)}, lambda s: s.strip().upper() != 'N'),
             FieldAdder('election_type', 'G'),
-            
-            # recip_code
-            RecipCodeFilter(),
             
             # filter through spec
             SpecFilter(SPEC))
