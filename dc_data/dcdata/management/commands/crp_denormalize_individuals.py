@@ -64,34 +64,6 @@ class CommitteeFilter(Filter):
             record['committee_name'] = committee['pac_short']
             record['committee_party'] = committee['party']
         return record
-     
-    
-
-class RecipientFilter(Filter):
-    def __init__(self, candidates, committees):
-        super(RecipientFilter, self).__init__()
-        self._candidates = candidates
-        self._committees = committees
-        
-    def process_record(self, record):
-        recip_id = record.get('recip_id','').upper()
-        if recip_id.startswith('N'):
-            candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-            add_candidate_recipient(candidate, record)
-        else:
-            committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-            if committee:
-                cmte_id = record.get('cmte_id', '').upper()
-                cmte_recip_id = committee.get('recip_id', '').upper() 
-                # if this was a contribution to a committee, and that committee record points to a candidate,
-                # then load the candidate as the recipient, not the committee.
-                if cmte_id == recip_id and cmte_id != cmte_recip_id:
-                    print "!!!!!!!!! Found indirect recipient through committee: %s --> %s" % (cmte_id, cmte_recip_id)
-                    candidate = self._candidates.get('%s:%s' % (record['cycle'], cmte_recip_id), None)
-                    add_candidate_recipient(candidate, record)
-                else:
-                    add_committee_recipient(committee, record)
-        return record
  
 
 class CRPDenormalizeIndividual(CRPDenormalizeBase):

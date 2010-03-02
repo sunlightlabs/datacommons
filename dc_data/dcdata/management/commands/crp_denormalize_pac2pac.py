@@ -11,25 +11,6 @@ from crp_denormalize import *
 from dcdata.processor import chain_filters, load_data
 
 
-
-
-class RecipientFilter(Filter):
-    def __init__(self, candidates, committees):
-        super(RecipientFilter, self).__init__()
-        self._candidates = candidates
-        self._committees = committees
-    def process_record(self, record):
-        recip_id = record['recip_id'].strip().upper()
-        if recip_id:
-            if recip_id.startswith('N'):
-                candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-                add_candidate_recipient(candidate, record)
-            elif recip_id.startswith('C'):
-                committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-                add_committee_recipient(committee, record)
-        return record
-    
-
 class CommitteeFilter(Filter):
     def __init__(self, committees):
         super(CommitteeFilter, self).__init__()

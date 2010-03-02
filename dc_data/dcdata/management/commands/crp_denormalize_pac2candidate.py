@@ -12,16 +12,13 @@ from optparse import make_option
 
 
 
-
-
-class RecipientFilter(Filter):
+class Pac2CandRecipientFilter(RecipientFilter):
     def __init__(self, candidates):
-        super(RecipientFilter, self).__init__()
-        self._candidates = candidates
+        super(Pac2CandRecipientFilter, self).__init__(candidates, {})
     def process_record(self, record):
         cid = record['cid'].upper()
         candidate = self._candidates.get('%s:%s' % (record['cycle'], cid), None)
-        add_candidate_recipient(candidate, record)
+        self.add_candidate_recipient(candidate, record)
         return record
 
 
@@ -57,7 +54,7 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             FieldRenamer({'contributor_ext_id': 'pac_id'}),
             FieldAdder('contributor_type', 'committee'),
             
-            RecipientFilter(candidates),
+            Pac2CandRecipientFilter(candidates),
             FieldAdder('recipient_type', 'politician'),
             
             # catcode

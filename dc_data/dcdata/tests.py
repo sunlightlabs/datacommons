@@ -32,7 +32,7 @@ def assert_record_contains(tester, expected, actual):
 
 class TestRecipientFilter(TestCase):
     
-    def test_indiv(self):
+    def test(self):
         processor = CRPDenormalizeIndividual.get_record_processor((),
                                                                   load_candidates(dataroot),
                                                                   load_committees(dataroot))
@@ -72,13 +72,6 @@ class TestRecipientFilter(TestCase):
                                       'seat_result': None},
                                        output_record)
 
-        # to do: test "indirect recipient", if it exists in data
-
-    def test_pac2pac(self):
-        pass
-    
-    def test_pac2candidiate(self):
-        pass
 
 
 class TestNIMSPDenormalize(TestCase):

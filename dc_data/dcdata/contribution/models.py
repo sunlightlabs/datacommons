@@ -129,6 +129,7 @@ class Contribution(DataCommonsModel):
     recipient_entity = EntityRef('recipient_transactions')
     recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
     recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True, null=True)
+    recipient_state = USStateField(blank=True, null=True)
     
     recipient_category = models.CharField(max_length=8, blank=True, null=True)
     recipient_category_order = models.CharField(max_length=3, blank=True, null=True)
