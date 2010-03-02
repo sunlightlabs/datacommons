@@ -71,12 +71,9 @@ class TestRecipientFilter(TestCase):
                                       'recipient_ext_id': 'C00030718',
                                       'seat_result': None},
                                        output_record)
-        
-        pass
-    
-    def test_special(self):
-        call_command('crp_denormalize_individuals', cycle='08', dataroot='/Users/ethanpg/dev/data')
-    
+
+        # to do: test "indirect recipient", if it exists in data
+
     def test_pac2pac(self):
         pass
     

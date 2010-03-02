@@ -24,8 +24,8 @@ SPEC = dict(((fn, None) for fn in FIELDNAMES))
 
 
 def get_recip_code_result(recip_code):
-        recip_code = recip_code.strip().upper()
-        return recip_code[1] if recip_code[1] in ('W','L') else None
+    recip_code = recip_code.strip().upper()
+    return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else None
 
 def add_candidate_recipient(candidate, record):
     if candidate:
