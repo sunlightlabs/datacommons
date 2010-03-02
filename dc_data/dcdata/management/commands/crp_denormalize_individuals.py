@@ -86,6 +86,7 @@ class RecipientFilter(Filter):
                 # if this was a contribution to a committee, and that committee record points to a candidate,
                 # then load the candidate as the recipient, not the committee.
                 if cmte_id == recip_id and cmte_id != cmte_recip_id:
+                    print "!!!!!!!!! Found indirect recipient through committee: %s --> %s" % (cmte_id, cmte_recip_id)
                     candidate = self._candidates.get('%s:%s' % (record['cycle'], cmte_recip_id), None)
                     add_candidate_recipient(candidate, record)
                 else:
