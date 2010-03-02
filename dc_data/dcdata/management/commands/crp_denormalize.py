@@ -175,7 +175,7 @@ class CRPDenormalizeBase(BaseCommand):
             raise CommandError("path to dataroot is required")
     
         cycles = []
-        if 'cycles' in options:
+        if 'cycles' in options and options['cycles']:
             for cycle in options['cycles'].split(','):
                 if len(cycle) == 4:
                     cycle = cycle[2:4]
