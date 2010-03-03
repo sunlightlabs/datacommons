@@ -54,9 +54,10 @@ class SaltFilter(YieldFilter):
         stmt = """SELECT saltid AS contributionid, amount, date, contributor as contributor_name, city as contributor_city, state as contributor_state, zipcode as contributor_zipcode, catcode as contributor_category FROM salts WHERE contributionid = %s"""
         if 'contributionid' in record:
             self._pcur.execute(stmt, (record['contributionid'],))
-            rtn = self._pcur.fetchone().copy()
-            if rtn is not None:
-                rtn['salted'] = True
+            row = self._pcur.fetchone()
+            if row is not None:
+                rtn = row.copy()
+                #rtn['salted'] = True
                 rtn['amount'] = float(rtn['amount'])
                 if rtn['date']:
                     rtn['date'] = str(rtn['date'])
