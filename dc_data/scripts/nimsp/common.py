@@ -40,4 +40,6 @@ CSV_SQL_MAPPING = [('contributionid', 'c.ContributionID', parse_int),
                 ('recipient_party', 'p_cand.PartyType', parse_char), 
                 ('committee_party', 'p_comm.PartyType', parse_char), 
                 ('committee_name', 'comm.CommitteeName', parse_char), 
-                ('contributor_industry', 'cc.IndustryCode', parse_char)]
+                ('contributor_industry', 'cc.IndustryCode', parse_char),
+                ('recipient_state', 'r.StateCode', parse_char)]
+

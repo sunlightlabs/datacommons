@@ -4,5 +4,13 @@ pip-log.txt
 local_settings.py
 data/
 tmp/
-.settings/org.eclipse.core.resources.prefs
 *~
+.settings/org.eclipse.core.resources.prefs
+dc_data/test_data/denormalized/denorm_indivs.08.csv
+dc_data/test_data/denormalized/denorm_pac2cand.csv
+dc_data/test_data/denormalized/denorm_pac2pac.csv
+dc_data/test_data/denormalized/nimsp_allocated_contributions.csv
+dc_data/test_data/denormalized/nimsp_unallocated_contributions.csv.TMP
+dc_data/test_data/denormalized/nimsp_unallocated_contributions_salted.csv
+dc_data/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv
+
