@@ -51,7 +51,6 @@ class IntFilter(FieldFilter):
 
 def model_fields(label):
     (app_label, model_label) = label.split('.')
-    app = get_app(app_label)
     model = get_model(app_label, model_label)
     model_fields = [field.name for field in model._meta.fields]
     return model_fields
