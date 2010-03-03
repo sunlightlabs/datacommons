@@ -83,7 +83,7 @@ class TestNIMSPDenormalize(TestCase):
         input_values = ["2521050","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",
                         "0","2008-06-09 15:02:35","1160742","433907","0","1825","PAC 483","2006","\N","\N","\N","\N",
-                        "\N","\N","I","PAC 483","130"]
+                        "\N","\N","I","PAC 483","130", "WA"]
         self.assertEqual(len(CSV_SQL_MAPPING), len(input_values))
         input_record = dict(zip([name for (name, _, _) in CSV_SQL_MAPPING], input_values))
     
@@ -106,6 +106,20 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
         self.assertEqual(2, sum(1 for _ in open(self.output_paths[1], 'r')))
         self.assertEqual(2, sum(1 for _ in open(self.output_paths[2], 'r')))
+        
+        Contribution.objects.all().delete()
+        
+        for path in self.output_paths:
+            call_command('loadcontributions', path)
+        
+        self.assertEqual(10, Contribution.objects.all().count())
+    
+    
+    def test_recipient_state(self):
+        self.test_command()
+        
+        self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
+        self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
         
 
 class TestCRPDenormalizeAll(TestCase):
