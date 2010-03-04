@@ -30,7 +30,7 @@ def search_entities_by_name(query, type_filter=[]):
         type_clause = "where " + " or ".join(["e.type = '%s'" % type for type in type_filter]) if type_filter else ""
         
         stmt = """
-                select distinct e.id, e.name, e.contribution_count, e.contribution_amount 
+                select distinct e.id, e.name, e.contribution_count, e.contribution_total_given, e.contribution_total_received 
                 from                                 
                     (select distinct original from matchbox_normalization where normalized like %%s 
                     union distinct                                 
@@ -138,18 +138,26 @@ def _recompute_sums(entity_id):
     """
     cursor.execute(aggregate_count_stmt, [entity_id])
     
-    aggregate_amount_stmt = """
-        update matchbox_entity set contribution_amount = (
-            select sum(amount) from contribution_contribution
+    aggregate_amount_given_stmt = """
+        update matchbox_entity set contribution_total_given = (
+            select coalesce(sum(amount),0) from contribution_contribution
             where contributor_entity = matchbox_entity.id
                 or organization_entity = matchbox_entity.id
-                or parent_organization_entity = matchbox_entity.id
-                or committee_entity = matchbox_entity.id
+                or parent_organization_entity = matchbox_entity.id)
+        where id = %s
+    """
+    cursor.execute(aggregate_amount_given_stmt, [entity_id])
+    
+    aggregate_amount_received_stmt = """
+        update matchbox_entity set contribution_total_received = (
+            select coalesce(sum(amount),0) from contribution_contribution
+            where 
+                committee_entity = matchbox_entity.id
                 or recipient_entity = matchbox_entity.id)
         where id = %s
     """
-    cursor.execute(aggregate_amount_stmt, [entity_id])
-    
+    cursor.execute(aggregate_amount_received_stmt, [entity_id])
+        
 
 def _recompute_aliases(entity_id):    
     cursor = connection.cursor()

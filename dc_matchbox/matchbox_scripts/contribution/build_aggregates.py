@@ -16,13 +16,20 @@ aggregate_count_stmt = """
 """
 
 
-aggregate_amount_stmt = """
-    update matchbox_entity set contribution_amount = (
-        select sum(amount) from contribution_contribution
+aggregate_amount_given_stmt = """
+    update matchbox_entity set contribution_total_given = (
+        select coalesce(sum(amount),0) from contribution_contribution
         where contributor_entity = matchbox_entity.id
             or organization_entity = matchbox_entity.id
             or parent_organization_entity = matchbox_entity.id
-            or committee_entity = matchbox_entity.id
+    )
+"""
+
+aggregate_amount_received_stmt = """
+    update matchbox_entity set contribution_total_received = (
+        select coalesce(sum(amount),0) from contribution_contribution
+        where 
+            committee_entity = matchbox_entity.id
             or recipient_entity = matchbox_entity.id
     )
 """
@@ -75,7 +82,8 @@ def build_aggregates():
     transaction.set_dirty()
     
     cursor.execute(aggregate_count_stmt)
-    cursor.execute(aggregate_amount_stmt)
+    cursor.execute(aggregate_amount_given_stmt)
+    cursor.execute(aggregate_amount_received_stmt)
     cursor.execute(build_aliases_stmt)
     
 if __name__ == '__main__':
