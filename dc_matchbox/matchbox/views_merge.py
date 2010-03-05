@@ -30,14 +30,14 @@ def dashboard(request):
 
 def _search(query, type_filter):        
     results = []
-    for (id_, name, count, total) in search_entities_by_name(query, [type_filter]):
+    for (id_, name, count, total_given, total_received) in search_entities_by_name(query, [type_filter]):
         results.append({
             'id': id_,
             'type': 'organization',
             'name': name,
             'count': count,
-            'total_given': total,
-            'total_received': 0
+            'total_given': total_given,
+            'total_received': total_received
         })
     content = json.dumps(results)
     
