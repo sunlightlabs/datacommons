@@ -1,3 +1,4 @@
 django
 django-mediasync
 django-debug-toolbar
+python-psycopg2

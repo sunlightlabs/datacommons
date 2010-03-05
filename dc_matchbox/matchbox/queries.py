@@ -30,7 +30,7 @@ def search_entities_by_name(query, type_filter=[]):
         type_clause = "where " + " or ".join(["e.type = '%s'" % type for type in type_filter]) if type_filter else ""
         
         stmt = """
-                select distinct e.id, e.name, e.contribution_count, e.contribution_amount 
+                select distinct e.id, e.name, e.contribution_count, e.contribution_total_given, e.contribution_total_received 
                 from                                 
                     (select distinct original from matchbox_normalization where normalized like %%s 
                     union distinct                                 
@@ -118,6 +118,14 @@ def disassociate_transactions(column, transactions):
 def recompute_aggregates(entity_id):
     cursor = connection.cursor()
     
+    _recompute_sums(entity_id)
+    _recompute_aliases(entity_id)
+    _recompute_attributes(entity_id)
+
+
+def _recompute_sums(entity_id):
+    cursor = connection.cursor()
+    
     aggregate_count_stmt = """
         update matchbox_entity set contribution_count = (
             select count(*) from contribution_contribution 
@@ -130,21 +138,26 @@ def recompute_aggregates(entity_id):
     """
     cursor.execute(aggregate_count_stmt, [entity_id])
     
-    aggregate_amount_stmt = """
-        update matchbox_entity set contribution_amount = (
-            select sum(amount) from contribution_contribution
+    aggregate_amount_given_stmt = """
+        update matchbox_entity set contribution_total_given = (
+            select coalesce(sum(amount),0) from contribution_contribution
             where contributor_entity = matchbox_entity.id
                 or organization_entity = matchbox_entity.id
-                or parent_organization_entity = matchbox_entity.id
-                or committee_entity = matchbox_entity.id
+                or parent_organization_entity = matchbox_entity.id)
+        where id = %s
+    """
+    cursor.execute(aggregate_amount_given_stmt, [entity_id])
+    
+    aggregate_amount_received_stmt = """
+        update matchbox_entity set contribution_total_received = (
+            select coalesce(sum(amount),0) from contribution_contribution
+            where 
+                committee_entity = matchbox_entity.id
                 or recipient_entity = matchbox_entity.id)
         where id = %s
     """
-    cursor.execute(aggregate_amount_stmt, [entity_id])
-    
-    _recompute_aliases(entity_id)
-    _recompute_attributes(entity_id)
-
+    cursor.execute(aggregate_amount_received_stmt, [entity_id])
+        
 
 def _recompute_aliases(entity_id):    
     cursor = connection.cursor()
@@ -278,11 +291,11 @@ def merge_entities(entity_ids, new_entity):
     _merge_aliases(entity_ids, new_entity)
     _merge_attributes(entity_ids, new_entity)
     _merge_notes(entity_ids, new_entity)
+    _recompute_sums(new_entity.id)
 
     # remove the old entity objects
     Entity.objects.filter(id__in=entity_ids).delete()
     
-    recompute_aggregates(new_entity.id)
             
     return new_entity.id
 

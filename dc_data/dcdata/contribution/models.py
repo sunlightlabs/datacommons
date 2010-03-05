@@ -93,9 +93,7 @@ class Contribution(DataCommonsModel):
     is_amendment = models.BooleanField(default=False)
     
     # amount and date
-    amount = models.IntegerField(default=0)
-    # todo: switch to decimal once we're ready to test it
-    #amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
+    amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     date = models.DateField(null=True)
     
     # contributor fields
@@ -131,6 +129,7 @@ class Contribution(DataCommonsModel):
     recipient_entity = EntityRef('recipient_transactions')
     recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
     recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True, null=True)
+    recipient_state = USStateField(blank=True, null=True)
     
     recipient_category = models.CharField(max_length=8, blank=True, null=True)
     recipient_category_order = models.CharField(max_length=3, blank=True, null=True)

@@ -99,7 +99,8 @@ var Matchbox = {
             e.type = spec.type;
             e.name = spec.name;
             e.count = spec.count || 0;
-            e.total = spec.total || 0;
+            e.total_given = spec.total_given || 0;
+            e.total_received = spec.total_received || 0;
             e.aliases = spec.aliases || [];
             return e;
         }
@@ -226,7 +227,7 @@ var Matchbox = {
                 content += '</p>';
                 content += '<input class="selector" type="checkbox" name="entities" value="' + entity.id + '" id="entities_' + entity.id + '">';
                 content += '<a class="transactions_control ui-icon ui-icon-triangle-1-e" href="/entity/' + entity.id + '/transactions/">V</a>';
-                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">' + entity.count + ' transactions for a total of $' + entity.total + '</span>';
+                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">' + entity.count + ' transactions. $' + entity.total_given + ' given, $' + entity.total_received + ' received. </span>';
                 content += '<div class="details_container">';
                 content += '<div class="transactions_container"></div>';
                 content += '<div class="details_expander">';

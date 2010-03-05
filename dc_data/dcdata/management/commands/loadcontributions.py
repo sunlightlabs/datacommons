@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 
 
-from django.core.management.base import BaseCommand, CommandError
-from django.core.exceptions import ImproperlyConfigured
-from django.db import transaction
 from dcdata.contribution.models import Contribution
-from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, FloatFilter, IntFilter, ISODateFilter, EntityFilter
+from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
+    FloatFilter, IntFilter, ISODateFilter, EntityFilter
+from dcdata.processor import chain_filters, load_data
 from dcdata.utils.dryrub import CountEmitter, MD5Filter
+from decimal import Decimal
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+from optparse import make_option
 from saucebrush.emitters import DebugEmitter
-from saucebrush.filters import FieldRemover, FieldAdder, Filter
+from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier
 from saucebrush.sources import CSVSource
 from strings.normalizer import basic_normalizer
-import saucebrush
-from optparse import make_option
 import os
+import saucebrush
 import sys
 import traceback
-from dcdata.processor import chain_filters, load_data
 
 
 
@@ -127,10 +129,10 @@ class LoadContributions(BaseCommand):
                 FieldRemover('import_reference'),
                 FieldAdder('import_reference', import_session),
                 
+                FieldModifier('amount', lambda a: Decimal(str(a))),
                 IntFilter('cycle'),
                 ISODateFilter('date'),
                 BooleanFilter('is_amendment'),
-                FloatFilter('amount'),
                 UnicodeFilter(),
                 
                 ContributorFilter(),

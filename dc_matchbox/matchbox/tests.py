@@ -190,7 +190,7 @@ class TestQueries(unittest.TestCase):
         
         self.assertEqual(3, len(results))
         
-        ((_, first_name, first_count, _), (_, second_name, second_count, _), (_, third_name, third_count, _)) = results
+        ((_, first_name, first_count, _, _), (_, second_name, second_count, _, _), (_, third_name, third_count, _, _)) = results
         
         self.assertTrue(first_name in ['Apple', 'Apple Juice'])
         self.assertEqual(2, first_count)
@@ -211,7 +211,7 @@ class TestQueries(unittest.TestCase):
         
         result = search_entities_by_name(u'app', ['organization'])
         
-        (id, name, count, dollar_total) = result.__iter__().next()
+        (id, name, count, _, _) = result.__iter__().next()
         
         self.assertTrue(name in ['Apple', 'Apple Juice'])
         self.assertEqual(2, count)
@@ -475,25 +475,53 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertEqual(2, Contribution.objects.filter(parent_organization_entity=e.id).count())
         
     def test_entity_aggregates(self):
-        self.create_contribution(contributor_name='FooBar', amount=100)
+        self.create_contribution(transaction_id='1', contributor_name='FooBar', amount=100)
         self.create_contribution(organization_name='FooBar Corp')
         self.create_contribution(organization_name='ZapWow', amount=100)
         self.create_contribution(parent_organization_name='ZapWow', amount=200)
-        self.create_contribution(committee_name='ZapWow', amount=400)
+        self.create_contribution(transaction_id='2', committee_name='ZapWow', amount=400)
         self.create_contribution(recipient_name='ZapWow', amount=800)
         
-        whitelist = ["0, 0, FooBar", "0, 0, ZapWow"]
+        whitelist = ["0, 0, FooBar", "0, 0, ZapWow", "0, 0, WhimWham"]
         
         normalize_contributions()
         build_big_hitters(whitelist)
         
         foobar = Entity.objects.get(name="FooBar")
         self.assertEqual(2, foobar.contribution_count)
-        self.assertEqual(100, foobar.contribution_amount)
+        self.assertEqual(100, foobar.contribution_total_given)
         
         zapwow = Entity.objects.get(name="ZapWow")
         self.assertEqual(4, zapwow.contribution_count)
-        self.assertEqual(1500, zapwow.contribution_amount)
+        self.assertEqual(300, zapwow.contribution_total_given)
+        self.assertEqual(1200, zapwow.contribution_total_received)
+        
+        merge_entities([foobar.id, zapwow.id], Entity(name=u'foowow'))
+        
+        foowow = Entity.objects.get(name='foowow')
+        self.assertEqual(6, foowow.contribution_count)
+        self.assertEqual(400, foowow.contribution_total_given)
+        self.assertEqual(1200, foowow.contribution_total_received)
+        
+        whimwham = Entity.objects.get(name='WhimWham')
+        self.assertEqual(0, whimwham.contribution_count)
+        self.assertEqual(0, whimwham.contribution_total_given)
+        self.assertEqual(0, whimwham.contribution_total_received)
+        
+        associate_transactions(whimwham.id, 'committee_entity', zip([UNITTEST_TRANSACTION_NAMESPACE] * 2, ('1', '2')))
+        
+        whimwham = Entity.objects.get(name='WhimWham')
+        self.assertEqual(2, whimwham.contribution_count)
+        self.assertEqual(0, whimwham.contribution_total_given)
+        self.assertEqual(500, whimwham.contribution_total_received)
+  
+        foowow = Entity.objects.get(name='foowow')
+        self.assertEqual(5, foowow.contribution_count)
+        self.assertEqual(400, foowow.contribution_total_given)
+        self.assertEqual(800, foowow.contribution_total_received)
+        
+       
+        
         
     def test_entity_aliases(self):
         self.create_contribution(contributor_name='Bob',
@@ -682,7 +710,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(2, e.contribution_count)
-        self.assertEqual(30, e.contribution_amount)
+        self.assertEqual(30, e.contribution_total_given)
         self.assertFilter(EntityAlias, {'entity': e.id}, [{'alias': 'Alice', 'verified': True}])
         self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
 
@@ -691,7 +719,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(3, e.contribution_count)
-        self.assertEqual(70, e.contribution_amount)
+        self.assertEqual(70, e.contribution_total_given)
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual('Alice', EntityAlias.objects.filter(entity=e.id)[0].alias)
  
@@ -700,7 +728,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(5, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(5, e.contribution_count)
-        self.assertEqual(310, e.contribution_amount)
+        self.assertEqual(310, e.contribution_total_given)
         self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
@@ -725,7 +753,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(3, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(8, e.contribution_count)
-        self.assertEqual(210, e.contribution_amount)
+        self.assertEqual(210, e.contribution_total_given)
         self.assertEqual(6, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
@@ -745,7 +773,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Mary J.")
         self.assertEqual(4, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(4, e.contribution_count)
-        self.assertEqual(30, e.contribution_amount)
+        self.assertEqual(30, e.contribution_total_given)
         self.assertEqual(4, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary J.").count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias="Mary").count())
@@ -755,7 +783,7 @@ class TestEntityAssociate(BaseEntityBuildTests):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(2, Contribution.objects.filter(contributor_entity=e.id).count())
         self.assertEqual(7, e.contribution_count)
-        self.assertEqual(200, e.contribution_amount)
+        self.assertEqual(200, e.contribution_total_given)
         self.assertEqual(6, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         

@@ -1,21 +1,77 @@
 
+
+from decimal import Decimal
 import os
 from unittest import TestCase
-from django.db import connection
 
-from updates import edits, update
-from dcdata.contribution.sources.crp import FILE_TYPES
-from dcdata.loading import model_fields
-from django.core.management import call_command
-from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
-from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 from dcdata.contribution.models import Contribution
+from dcdata.contribution.sources.crp import FILE_TYPES
+from dcdata.loading import model_fields, LoaderEmitter
+from dcdata.management.commands.crp_denormalize_individuals import \
+    CRPDenormalizeIndividual
+from dcdata.management.commands.loadcontributions import LoadContributions, \
+    ContributionLoader
+from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 from dcdata.processor import load_data, chain_filters, compose_one2many
-from saucebrush.filters import FieldAdder, ConditionalFilter, YieldFilter,\
-    FieldModifier
+from django.core.management import call_command
+from django.db import connection
+from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
 from scripts.nimsp.common import CSV_SQL_MAPPING
+from updates import edits, update
+from dcdata.management.commands.crp_denormalize import load_candidates,\
+    load_committees
+
 
 dataroot = 'dc_data/test_data'
+
+def assert_record_contains(tester, expected, actual):
+    for (name, value) in expected.iteritems():
+        tester.assertEqual(value, actual[name])
+
+
+
+class TestRecipientFilter(TestCase):
+    
+    def test(self):
+        processor = CRPDenormalizeIndividual.get_record_processor((),
+                                                                  load_candidates(dataroot),
+                                                                  load_committees(dataroot))
+        
+        input_row = ["2008","0000011","i3003166469 ","ADAMS, KENT","N00005985","Adams & Boswell","","K1000",
+                        "12/11/2006","1000","PO  12523","BEAUMONT","TX","77726","RN","15 ","C00257402","","M",
+                        "ADAMS & BOSWELL/ATTORNEY","27930036083","Attorney","Adams & Boswell","Rept "]
+        self.assertEqual(len(FILE_TYPES['indivs']), len(input_row))
+        input_record = dict(zip(FILE_TYPES['indivs'], input_row))
+        
+        (output_record,) = processor(input_record)
+        
+        assert_record_contains(self, {'recipient_name': 'Henry Bonilla (R)',
+                                      'recipient_party': 'R',
+                                      'recipient_type': 'politician',
+                                      'recipient_ext_id': 'N00005985',
+                                      'seat_status': ' ',
+                                      'seat_result': None,
+                                      'recipient_state': 'TX',
+                                      'seat': 'federal:house',
+                                      'district': 'TX-23'},
+                                       output_record)
+        
+        input_row = ["2008","0000880","j1001101935 ","AMBERSON, RAY","C00030718","","","F4200",
+                     "12/08/2006","300","PO  6","ALBERTVILLE","AL","35950","PB","15 ","C00030718",
+                     "","M","HENDERSON & SPURLIN REAL ESTAT/REAL","27930132133","Real Estate Broker",
+                     "Henderson & Spurlin Real Estat","P/PAC"]
+        self.assertEqual(len(FILE_TYPES['indivs']), len(input_row))
+        input_record = dict(zip(FILE_TYPES['indivs'], input_row))
+        
+        (output_record,) = processor(input_record)
+
+        assert_record_contains(self, {'recipient_name': 'National Assn of Realtors',
+                                      'recipient_party': '',
+                                      'recipient_type': 'committee',
+                                      'recipient_ext_id': 'C00030718',
+                                      'seat_result': None},
+                                       output_record)
+
 
 
 class TestNIMSPDenormalize(TestCase):
@@ -27,7 +83,7 @@ class TestNIMSPDenormalize(TestCase):
         input_values = ["2521050","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",
                         "0","2008-06-09 15:02:35","1160742","433907","0","1825","PAC 483","2006","\N","\N","\N","\N",
-                        "\N","\N","I","PAC 483","130"]
+                        "\N","\N","I","PAC 483","130", "WA"]
         self.assertEqual(len(CSV_SQL_MAPPING), len(input_values))
         input_record = dict(zip([name for (name, _, _) in CSV_SQL_MAPPING], input_values))
     
@@ -50,6 +106,20 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
         self.assertEqual(2, sum(1 for _ in open(self.output_paths[1], 'r')))
         self.assertEqual(2, sum(1 for _ in open(self.output_paths[2], 'r')))
+        
+        Contribution.objects.all().delete()
+        
+        for path in self.output_paths:
+            call_command('loadcontributions', path)
+        
+        self.assertEqual(10, Contribution.objects.all().count())
+    
+    
+    def test_recipient_state(self):
+        self.test_command()
+        
+        self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
+        self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
         
 
 class TestCRPDenormalizeAll(TestCase):
@@ -112,7 +182,6 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(5, len(output_records))
         
 
-
 class TestCRPDenormalizePac2Candidate(TestCase):
     output_path = 'dc_data/test_data/denormalized/denorm_pac2cand.csv'
     
@@ -151,8 +220,36 @@ class TestLoadContributions(TestCase):
         
         self.assertEqual(10, Contribution.objects.all().count())
         
-
-
+            
+    def test_decimal_amounts(self):
+        """ See ticket #177. """
+        
+        input_row = ["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","123.45","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"]
+        input_record = dict(zip(FILE_TYPES['indivs'], input_row))
+        denormalized_records = list()
+        denormalizer = CRPDenormalizeIndividual.get_record_processor({}, {}, {})
+        
+        load_data([input_record], denormalizer, denormalized_records.append)
+        
+        self.assertEqual(1, len(denormalized_records))
+        self.assertEqual(u'123.45', denormalized_records[0]['amount'])
+        
+        Contribution.objects.all().delete()
+        
+        loader = ContributionLoader(
+            source='unittest',
+            description='unittest',
+            imported_by='unittest'
+        )
+        output_func = LoaderEmitter(loader).process_record
+        processor = LoadContributions.get_record_processor(loader.import_session)
+        
+        load_data(denormalized_records, processor, output_func)
+        
+        self.assertEqual(1, Contribution.objects.all().count())
+        self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
+        
+        
 class TestProcessor(TestCase):
     
     def test_chain(self):

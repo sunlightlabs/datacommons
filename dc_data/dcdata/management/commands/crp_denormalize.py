@@ -16,11 +16,65 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
               'contributor_zipcode', 'contributor_category', 'contributor_category_order',
               'organization_name', 'organization_ext_id', 'organization_entity', 'parent_organization_name', 'parent_organization_ext_id',
               'parent_organization_entity', 'recipient_name', 'recipient_ext_id', 'recipient_entity',
-              'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order',
+              'recipient_party', 'recipient_type', 'recipient_state', 'recipient_category', 'recipient_category_order',
               'committee_name', 'committee_ext_id', 'committee_entity', 'committee_party', 'election_type',
               'district', 'seat', 'seat_status', 'seat_result']
 
 SPEC = dict(((fn, None) for fn in FIELDNAMES))
+
+
+class RecipientFilter(Filter):
+    def __init__(self, candidates, committees):
+        super(RecipientFilter, self).__init__()
+        self._candidates = candidates
+        self._committees = committees
+        
+    def process_record(self, record):
+        recip_id = record['recip_id'].strip().upper()
+        if recip_id:
+            if recip_id.startswith('N'):
+                candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
+                self.add_candidate_recipient(candidate, record)
+            elif recip_id.startswith('C'):
+                committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
+                self.add_committee_recipient(committee, record)
+        return record
+        
+    @staticmethod
+    def get_recip_code_result(recip_code):
+        recip_code = recip_code.strip().upper()
+        return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else None
+    
+    @staticmethod
+    def add_candidate_recipient(candidate, record):
+        if candidate:
+            record['recipient_name'] = candidate['first_last_p']
+            record['recipient_party'] = candidate['party']
+            record['recipient_type'] = 'politician'
+            record['recipient_ext_id'] = candidate['cid']
+            record['seat_status'] = candidate['crp_ico']
+            record['seat_result'] = RecipientFilter.get_recip_code_result(candidate['recip_code'])
+            seat = candidate['dist_id_run_for'].upper()
+            if len(seat) == 4:
+                if seat == 'PRES':
+                    record['recipient_state'] = ''
+                    record['seat'] = 'federal:president'
+                else:
+                    record['recipient_state'] = seat[0:2]
+                    if seat[2] == 'S':
+                        record['seat'] = 'federal:senate'
+                    else:
+                        record['seat'] = 'federal:house'
+                        record['district'] = "%s-%s" % (seat[:2], seat[2:])
+                        
+    @staticmethod                    
+    def add_committee_recipient(committee, record):
+        if committee:
+            record['recipient_name'] = committee['pac_short']
+            record['recipient_party'] = committee['party']
+            record['recipient_type'] = 'committee'
+            record['seat_result'] = RecipientFilter.get_recip_code_result(committee['recip_code'])
+            record['recipient_ext_id'] = committee['cmte_id']
 
 
 def load_catcodes(dataroot):
@@ -42,7 +96,7 @@ def load_candidates(dataroot):
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cands%s.csv' % cycle)
         reader = csv.DictReader(open(path), fieldnames=fields)
         for record in reader:
-            key = "%s:%s" % (record.pop('cycle'), record.pop('cid').upper())
+            key = "%s:%s" % (record.pop('cycle'), record['cid'].upper())
             del record['fec_cand_id']
             del record['dist_id_curr']
             del record['curr_cand']
@@ -59,7 +113,7 @@ def load_committees(dataroot):
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cmtes%s.csv' % cycle)
         reader = csv.DictReader(open(path), fieldnames=fields)
         for record in reader:
-            key = "%s:%s" % (record.pop('cycle'), record.pop('cmte_id').upper())
+            key = "%s:%s" % (record.pop('cycle'), record['cmte_id'].upper())
             del record['fec_cand_id']
             del record['source']
             del record['sensitive']
@@ -133,14 +187,14 @@ class CRPDenormalizeBase(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option("-c", "--cycles", dest="cycles", help="cycles to load ex: 90,92,08", metavar="CYCLES"),
         make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
-        make_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="noisy output"))
+        make_option("-b", "--verbose", action="store_true", dest="verbose", default=False, help="noisy output"))
 
     def handle(self, *args, **options):
         if 'dataroot' not in options:
             raise CommandError("path to dataroot is required")
     
         cycles = []
-        if 'cycles' in options:
+        if 'cycles' in options and options['cycles']:
             for cycle in options['cycles'].split(','):
                 if len(cycle) == 4:
                     cycle = cycle[2:4]
