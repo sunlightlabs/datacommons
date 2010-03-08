@@ -1,5 +1,6 @@
 
 import os
+from django.core.management.base import BaseCommand
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import traceback
@@ -74,7 +75,9 @@ def normalize_contributions():
     upload_normalizations(normalized_reader)
 
     print "Normalization successful..."
-    
-if __name__ == '__main__':
-    normalize_contributions()
+
+
+class Command(BaseCommand):
+    def handle(self, **args):
+        normalize_contributions()
 

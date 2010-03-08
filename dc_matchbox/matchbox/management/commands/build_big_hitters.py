@@ -2,6 +2,7 @@
 import os
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
 from matchbox.queries import recompute_aggregates
+from django.core.management.base import BaseCommand
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import sys
@@ -73,7 +74,8 @@ def build_big_hitters(csv_rows):
         sys.stdout.flush()
             
 
-if __name__ == "__main__":
-    build_big_hitters(open(sys.argv[1], 'r'))
+class Command(BaseCommand):
+    def handle(self, input_path, **args):
+        build_big_hitters(open(input_path, 'r'))
     
     

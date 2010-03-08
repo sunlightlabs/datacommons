@@ -1,7 +1,7 @@
 
 
 from datetime import datetime
-from matchbox_scripts.contribution.build_aggregates import build_aggregates
+from matchbox.management.commands.build_aggregates import build_aggregates
 import unittest
 
 from django.db import connection
@@ -11,10 +11,10 @@ from dcdata.contribution.models import Contribution,\
     CRP_TRANSACTION_NAMESPACE
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
-from matchbox_scripts.contribution.normalize import normalize_contributions
+from dcdata.management.commands.normalize_contributions import normalize_contributions
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
     associate_transactions, _pairs_to_dict, disassociate_transactions
-from matchbox_scripts.contribution.build_big_hitters import build_big_hitters,\
+from matchbox.management.commands.build_big_hitters import build_big_hitters,\
     build_entity
 from dcdata.utils.sql import dict_union
 
