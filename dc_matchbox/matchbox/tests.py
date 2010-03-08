@@ -1,19 +1,17 @@
 
 
 from datetime import datetime
-from uuid import uuid4
 from matchbox_scripts.contribution.build_aggregates import build_aggregates
 import unittest
 
 from django.db import connection
 
-from dcdata.contribution.models import Contribution, sql_names,\
+from dcdata.contribution.models import Contribution,\
     UNITTEST_TRANSACTION_NAMESPACE, NIMSP_TRANSACTION_NAMESPACE,\
     CRP_TRANSACTION_NAMESPACE
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
-from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
-from matchbox_scripts.support.build_entities import populate_entities, build_entity
+from matchbox_scripts.support.build_entities import build_entity
 from matchbox_scripts.contribution.normalize import normalize_contributions
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
     associate_transactions, _pairs_to_dict, disassociate_transactions
@@ -236,46 +234,7 @@ class TestQueries(BaseMatchboxTest):
         self.assertEqual(apricot_council, Contribution.objects.with_entity(applicot, ['committee_entity'])[0])
         self.assertTrue(apricot_picker in Contribution.objects.with_entity(applicot, ['organization_entity']))
         
-    def test_multiple_name_columns(self):
-        id = uuid4().hex
-        Contribution.objects.create(organization_name="one",
-                                                     contributor_employer="two",
-                                                    organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        Contribution.objects.create(organization_name="three",
-                                                    organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        Contribution.objects.create(contributor_employer="four",
-                                                    organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        Contribution.objects.create(organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        
-        populate_entities(sql_names['contribution'], 
-                          sql_names['contribution_organization_entity'], 
-                          [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                          sql_names['contribution_organization_ext_id'],
-                          'organization')
-        
-        aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity=id)]
-        
-        self.assertEqual(4, len(aliases))
-        self.assertTrue('one' in aliases)
-        self.assertTrue('two' in aliases)
-        self.assertTrue('three' in aliases)
-        self.assertTrue('four' in aliases)
+
     
     
 
