@@ -1,4 +1,4 @@
-
+import hashlib
 import inspect
 import logging
 import sys
@@ -13,7 +13,7 @@ from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
 
 
 import saucebrush
-from saucebrush.emitters import CSVEmitter
+from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.filters import *
 
@@ -43,8 +43,9 @@ from dcdata.loading import model_fields
 #              'committee_name', 'committee_ext_id', 'committee_entity', 'committee_party', 'election_type',
 #              'district', 'seat', 'seat_status', 'seat_result']
 
-FIELDNAMES = model_fields('contribution.Contribution')
+FIELDNAMES = model_fields('contribution.Contribution') + ['transaction_id_original','transaction_id_salt_key']
 
+SALT_KEY = 'smokehouse'
 
 zip5_re = re.compile("^\s*(?P<zip5>\d{5})(?:[- ]*\d{4})?(?!\d)")
 
@@ -300,7 +301,9 @@ class ZipCleaner(Filter):
 
 class AllocatedEmitter(CSVEmitter):
     def emit_record(self, record):
-        if record['contributor_category'] and not record['contributor_category'].startswith('Z2'):
+        if record['contributor_category'] and record['contributor_category'].startswith('Z2'):
+            pass # this is the condition we don't want!
+        else:
             super(AllocatedEmitter, self).emit_record(record)
 
 class UnallocatedEmitter(CSVEmitter):
@@ -310,14 +313,12 @@ class UnallocatedEmitter(CSVEmitter):
 
 class SaltedEmitter(CSVEmitter):
     def emit_record(self, record):
-        if 'salted' in record and record['salted']:
-            del(record['salted'])
+        if record.get('salted', False):
             super(SaltedEmitter, self).emit_record(record)
 
 class UnsaltedEmitter(CSVEmitter):
     def emit_record(self, record):
-        if 'salted' in record and not record['salted']:
-            del(record['salted'])
+        if not record.get('salted', False):
             super(UnsaltedEmitter, self).emit_record(record)
 
 
@@ -326,6 +327,8 @@ class NIMSPDenormalize(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option("-d", "--dataroot", dest="dataroot",
                       help="path to data directory", metavar="PATH"),
+        make_option("-s", "--saltsdb", dest="saltsdb",
+                    help="path to salts SQLite database", metavar="PATH"),
         make_option("-i", "--infile", dest="input_path",
                       help="path to input csv", metavar="FILE"))
 
@@ -338,36 +341,42 @@ class NIMSPDenormalize(BaseCommand):
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
             )
     
-    @staticmethod
-    def pg_connection():        
-        return psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-            OTHER_DATABASES['salts']['DATABASE_NAME'],
-            OTHER_DATABASES['salts']['DATABASE_USER'],
-            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
-            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
-            ))
+    # @staticmethod
+    # def pg_connection():        
+    #     return psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
+    #         OTHER_DATABASES['salts']['DATABASE_NAME'],
+    #         OTHER_DATABASES['salts']['DATABASE_USER'],
+    #         OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
+    #         OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
+    #         ))
                     
     def handle(self, *args, **options):
         if 'dataroot' not in options:
             CommandError("path to dataroot is required")
+        if 'saltsdb' not in options:
+            CommandError("path to saltsdb is required")
     
         dataroot = os.path.abspath(options['dataroot'])
+        assert dataroot
         if not os.path.exists(dataroot):
             print "No such directory %s" % dataroot
+            sys.exit(1)
+        saltsdb = os.path.abspath(options['saltsdb'])
+        assert saltsdb
+        if not os.path.exists(saltsdb):
+            print "No such database %s" % saltsdb
             sys.exit(1)
         denorm_path = os.path.join(dataroot, 'denormalized')
         if not os.path.exists(denorm_path):
             os.makedirs(denorm_path)
         
-        input_path = options.get('input_path', os.path.join(denorm_path, SQL_DUMP_FILE))
+        input_path = options.get('input_path', '') or os.path.join(dataroot, SQL_DUMP_FILE)
         
         con = self.mysql_connection() 
             
-        self.process_allocated(denorm_path, input_path, con)
-        
-        pcon = self.pg_connection()
+        #self.process_allocated(denorm_path, input_path, con)
             
-        self.process_unallocated(denorm_path, pcon, con)
+        self.process_unallocated(denorm_path, saltsdb, con)
 
     @staticmethod
     def get_allocated_record_processor(con):
@@ -393,13 +402,15 @@ class NIMSPDenormalize(BaseCommand):
     
     @staticmethod
     def process_allocated(denorm_path, input_path, con):
+        
+        # create allocated things
         allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
-        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-    
         allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
-        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
-    
         allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
+        
+        # create unallocated things
+        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
+        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
         unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
 
         input_file = open(input_path, 'r')
@@ -410,7 +421,7 @@ class NIMSPDenormalize(BaseCommand):
     
         output_func = chain_filters(
             unallocated_emitter,
-            DCIDFilter(),
+            DCIDFilter(SALT_KEY),
             allocated_emitter)
     
         load_data(source, NIMSPDenormalize.get_allocated_record_processor(con), output_func)
@@ -419,35 +430,36 @@ class NIMSPDenormalize(BaseCommand):
             o.close()
 
     @staticmethod
-    def get_unallocated_record_processor(pcon, con):
+    def get_unallocated_record_processor(salts_db, con):
+        dcid = DCIDFilter(SALT_KEY)
         return chain_filters(        
             IntFilter('contributionid'),
             FloatFilter('amount'),
-        
-            FieldAdder('salted',False),
-            SaltFilter(100,pcon,con),
-            DCIDFilter())
+            #FieldAdder('salted',False),
+            SaltFilter(100,salts_db,dcid,con),
+            dcid)
     
     @staticmethod        
-    def process_unallocated(denorm_path, pcon, con):
+    def process_unallocated(denorm_path, salts_db, con):
+        
         unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
+        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
     
         salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted.csv')
-        unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
-
-        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
         salted_csv = open(salted_csv_filename, 'w')
+        
+        unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
         unsalted_csv = open(unsalted_csv_filename, 'w')
 
         source = CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
 
-        salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES)
-        unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES)
+        salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES + ['salted'])
+        unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES + ['salted'])
         output_func = chain_filters(salted_emitter, unsalted_emitter)
   
-        load_data(source, NIMSPDenormalize.get_unallocated_record_processor(pcon, con), output_func)
+        load_data(source, NIMSPDenormalize.get_unallocated_record_processor(salts_db, con), output_func)
     
-        for f in [salted_csv,unsalted_csv,unallocated_csv, pcon, con]:
+        for f in [salted_csv,unsalted_csv,unallocated_csv, con]:
             f.close()
     
 
