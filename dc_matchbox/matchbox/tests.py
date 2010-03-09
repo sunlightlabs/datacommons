@@ -15,7 +15,7 @@ from dcdata.management.commands.normalize_contributions import normalize_contrib
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
     associate_transactions, _pairs_to_dict, disassociate_transactions
 from matchbox.management.commands.build_big_hitters import build_big_hitters,\
-    build_entity
+    build_org_entity
 from dcdata.utils.sql import dict_union
 
 
@@ -258,8 +258,8 @@ class TestEntityBuild(BaseMatchboxTest):
         self.assertEqual(2, Normalization.objects.filter(normalized='trailingwhitespace').count())
             
         
-    def test_build_entity(self):
-        build_entity(u'Apple', 'organization', '999', '999')
+    def test_build_org_entity(self):
+        build_org_entity(u'Apple', '999', '999')
         
         self.assertEqual(1, Entity.objects.count())
         self.assertEqual(1, Entity.objects.filter(name='Apple').count())
@@ -268,7 +268,7 @@ class TestEntityBuild(BaseMatchboxTest):
         self.create_contribution(contributor_name='Banana Bar')
 
         normalize_contributions()
-        build_entity(u'Banana Bar', 'organization', '999', '999')
+        build_org_entity(u'Banana Bar', '999', '999')
         
         self.assertEqual(2, Entity.objects.count())
         c = Contribution.objects.get(contributor_name='Banana Bar')
@@ -281,7 +281,7 @@ class TestEntityBuild(BaseMatchboxTest):
         self.create_contribution(transaction_namespace=CRP_TRANSACTION_NAMESPACE, organization_ext_id='1234')
 
         normalize_contributions()
-        build_entity(u'Coconut Lounge', 'organization', '999', '1234')
+        build_org_entity(u'Coconut Lounge', '999', '1234')
         
         e = Entity.objects.get(name='Coconut Lounge')
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
