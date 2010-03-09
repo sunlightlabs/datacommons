@@ -29,7 +29,6 @@ from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 from dcdata.loading import model_fields
 
-
 # to do: these should be pulled automatically from the model, as is done in loadcontributions.py,
 # not hard-coded here. The CSV_MAPPING should also check that it is consistent with the model-based list.
 #FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
@@ -261,7 +260,7 @@ class UrnFilter(Filter):
             return record
         elif record['candidate_id']:
             record['recipient_type'] = 'politician'
-            record['recipient_ext_id'] = record['candidate_id']
+            record['recipient_ext_id'] = record['unique_candidate_id'] if record['unique_candidate_id'] and record['unique_candidate_id'] not in ('', '0') else None
         elif record['committee_id']:
             record['recipient_type'] = 'committee'
             record['recipient_ext_id'] = record['committee_ext_id'] = record['committee_id']

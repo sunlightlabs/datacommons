@@ -92,6 +92,7 @@ def entity_associate(request, entity_id, model_name):
                 associate_transactions(entity_id, form.cleaned_data['column'], ids)
             elif form.cleaned_data['action'] == 'remove':
                 disassociate_transactions(form.cleaned_data['column'], ids)
+            return HttpResponseRedirect(reverse('matchbox_entity', args=(entity_id,)))
     else:
         form = AssociationForm(model, entity_id)
     return render_to_response('matchbox/entity_associate.html', {'form': form, 'entity': entity}, context_instance=RequestContext(request))

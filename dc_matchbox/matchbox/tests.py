@@ -1,49 +1,42 @@
 
 
 from datetime import datetime
-from uuid import uuid4
-from matchbox_scripts.contribution.build_aggregates import build_aggregates
+from matchbox.management.commands.build_aggregates import build_aggregates
 import unittest
 
-from django.db import connection, transaction
+from django.db import connection
 
-from dcdata.contribution.models import Contribution, sql_names,\
+from dcdata.contribution.models import Contribution,\
     UNITTEST_TRANSACTION_NAMESPACE, NIMSP_TRANSACTION_NAMESPACE,\
     CRP_TRANSACTION_NAMESPACE
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
-from matchbox_scripts.contribution.build_contribution_entities import get_recipient_type
-from matchbox_scripts.support.build_entities import populate_entities, build_entity
-from matchbox_scripts.contribution.normalize_contributions import run as run_normalization_script
-from matchbox_scripts.contribution.normalize import normalize_contributions
+from dcdata.management.commands.normalize_contributions import normalize_contributions
 from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
     associate_transactions, _pairs_to_dict, disassociate_transactions
-from matchbox_scripts.contribution.build_big_hitters import build_big_hitters
+from matchbox.management.commands.build_big_hitters import build_big_hitters,\
+    build_org_entity
 from dcdata.utils.sql import dict_union
 
 
 
-
-class TestQueries(unittest.TestCase):
-
-    def save_contribution(self, org_name, org_entity):
-        c = Contribution(organization_name=org_name, 
-                     organization_ext_id='urn:unittest:organization:' + org_name,
-                     organization_entity=org_entity,
-                     date=datetime.now(),
-                     cycle='09', 
-                     transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                     import_reference=self.import_)
+class BaseMatchboxTest(unittest.TestCase):
+    
+    def create_contribution(self, **kwargs):
+        c = Contribution(**kwargs)
+        if 'cycle' not in kwargs:
+            c.cycle='09'
+        if 'transaction_namespace' not in kwargs:
+            c.transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE
+        c.import_reference=self.import_
         c.save()
-        
-
+    
+    def assertFilter(self, model, primary, members):
+        self.assertEqual(len(members), model.objects.filter(**primary).count())
+        for member in members:
+            self.assertEqual(1, model.objects.filter(**dict_union(primary, member)).count())
+    
     def setUp(self):
-        """ 
-        to do: set up some basic transactions, the run the build_entities and normalize scripts.
-        
-        Also add an entity with no corresponding transactions.
-        """
-        
         print("Setting up database...")
         Import.objects.all().delete()
         Contribution.objects.all().delete()
@@ -55,128 +48,37 @@ class TestQueries(unittest.TestCase):
         self.import_ = Import()
         self.import_.save()
         
-        self.apple_id = uuid4().hex
-        self.apricot_id = uuid4().hex
-        self.avacado_id = uuid4().hex
         
-        for (org_name, org_entity) in [('Apple', self.apple_id), ('Apple Juice', self.apple_id), ('Apricot', self.apricot_id)]:
-            self.save_contribution(org_name, org_entity)
 
-        populate_entities(sql_names['contribution'], 
-                          sql_names['contribution_organization_entity'], 
-                          [sql_names['contribution_organization_name']],
-                          sql_names['contribution_organization_ext_id'],
-                          'organization')
+class TestQueries(BaseMatchboxTest):
+
+    def setUp(self):
+        """ 
+        to do: set up some basic transactions, the run the build_entities and normalize scripts.
         
-        orphan = Entity(id=self.avacado_id, name=u'Avacado', type='organization')
-        orphan.save()
+        Also add an entity with no corresponding transactions.
+        """
+        
+        super(TestQueries, self).setUp()
+        
+        
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, organization_name='Apple', organization_ext_id='1')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, organization_name='Apple Juice', organization_ext_id='1')
+        self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE, organization_name='Apricot', organization_ext_id='2')
+        
+        build_big_hitters(["0, 1, Apple", "0, 2, Apricot"])
+        
+        orphan = Entity.objects.create(name=u'Avacado', type='organization')
         orphan.aliases.create(alias=u'Avacado')
         
-        run_normalization_script()
-
+        self.apple_id = Entity.objects.get(name="Apple").id
+        self.apricot_id = Entity.objects.get(name="Apricot").id
+        self.avacado_id = orphan.id
         
-    def test_populate_entities(self):
-        self.assertEqual(3, Entity.objects.count())
-        
-        apple = Entity.objects.get(pk=self.apple_id)
-        self.assertTrue(apple.name in ("Apple", "Apple Juice"))
-        self.assertEqual(2, Contribution.objects.with_entity(apple, ['organization_entity']).count())
-        
-        apple_alias = EntityAlias.objects.get(alias="Apple")
-        self.assertEqual(apple.id, apple_alias.entity.id)
-        
-        self.assertEqual(3, apple.attributes.count())
-        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
-        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple Juice').count())
-        self.assertEqual(1, apple.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apple.id).count())
-
-
-        apricot = Entity.objects.get(name="Apricot")
-        self.assertEqual(1, Contribution.objects.with_entity(apricot, ['organization_entity']).count())
-        
-        apricot_alias = EntityAlias.objects.get(alias="Apricot")
-        self.assertEqual(apricot.id, apricot_alias.entity.id)
-        
-        self.assertEqual(2, apricot.attributes.count())
-        self.assertEqual(1, apricot.attributes.filter(namespace='urn:unittest:organization', value='Apricot').count())
-        self.assertEqual(1, apricot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apricot.id).count())
-
-        
-        avacado = Entity.objects.get(name='Avacado')
-        self.assertEqual(0, Contribution.objects.with_entity(avacado, ['organization_entity']).count())
-        
-    def test_populate_entities_cross_column_duplication(self):
-        Contribution.objects.create(recipient_name="Apple Sauce",
-                                    recipient_entity=self.apple_id,
-                                    recipient_ext_id="urn:unittest:recipient:" + "Apple Sauce",
-                                    date=datetime.now(),
-                                    cycle='09', 
-                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                    import_reference=self.import_)
-        
-        Contribution.objects.create(recipient_name="Apple",
-                                    recipient_entity=self.apple_id,
-                                    recipient_ext_id="urn:unittest:recipient:" + "Apple",
-                                    date=datetime.now(),
-                                    cycle='09', 
-                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                    import_reference=self.import_)
-        
-        populate_entities(sql_names['contribution'],
-                  sql_names['contribution_recipient_entity'],
-                  [sql_names['contribution_recipient_name']],
-                  sql_names['contribution_recipient_ext_id'],
-                  'fruits')
-        
-        self.assertEqual(3, Entity.objects.count())
-        
-        apple = Entity.objects.get(id=self.apple_id)
-        self.assertEqual(2, Contribution.objects.with_entity(apple, ['organization_entity']).count())
-        self.assertEqual(2, Contribution.objects.with_entity(apple, ['recipient_entity']).count())
-        self.assertEqual(4, Contribution.objects.with_entity(apple).count())
-        
-        self.assertEqual(3, apple.aliases.count())
-        self.assertEqual(1, apple.aliases.filter(alias='Apple').count())
-        self.assertEqual(1, apple.aliases.filter(alias='Apple Juice').count())
-        self.assertEqual(1, apple.aliases.filter(alias='Apple Sauce').count())
-        
-        self.assertEqual(5, apple.attributes.count())
-        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
-        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:organization', value='Apple Juice').count())
-        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:recipient', value='Apple Sauce').count())
-        self.assertEqual(1, apple.attributes.filter(namespace='urn:unittest:recipient', value='Apple').count())
-        self.assertEqual(1, apple.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=apple.id).count())
+        normalize_contributions()
+        Normalization.objects.create(original='Avacado', normalized='avacado')
         
         
-    def test_populate_entities_recipient_type(self):
-        Contribution.objects.create(recipient_name="Apple Council",
-                                    recipient_entity=uuid4().hex,
-                                    recipient_type='C',
-                                    date=datetime.now(),
-                                    cycle='09', 
-                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                    import_reference=self.import_)
-        
-        Contribution.objects.create(recipient_name="Apple Smith",
-                                    recipient_entity=uuid4().hex,
-                                    recipient_type='P',
-                                    date=datetime.now(),
-                                    cycle='09', 
-                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                    import_reference=self.import_)
-        
-        populate_entities(sql_names['contribution'],
-                          sql_names['contribution_recipient_entity'],
-                          [sql_names['contribution_recipient_name']],
-                          sql_names['contribution_recipient_ext_id'],
-                          get_recipient_type,
-                          sql_names['contribution_recipient_type'])
-        
-        self.assertEqual(1, Entity.objects.filter(type='committee').count())
-        self.assertEqual(1, Entity.objects.filter(type='committee', name='Apple Council').count())
-        
-        self.assertEqual(1, Entity.objects.filter(type='politician').count())
-        self.assertEqual(1, Entity.objects.filter(type='politician', name='Apple Smith').count())
 
     def test_search_entities_by_name(self):
         cursor = connection.cursor()
@@ -282,9 +184,9 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=self.apple_id).count())
         self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=self.apricot_id).count())
         self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=applicot.id).count())
-        self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apricot').count())
-        self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apple Juice').count())
-        self.assertEqual(1, applicot.attributes.filter(namespace='urn:unittest:organization', value='Apple').count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='urn:nimsp:organization', value='1').count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='urn:nimsp:organization', value='2').count())
+        self.assertEqual(1, applicot.attributes.filter(namespace='urn:crp:organization', value='0').count())
 #        
     def test_merge_entities_and_with_entity(self):
         self.assertEqual(2, Contribution.objects.with_entity(Entity.objects.get(pk=self.apple_id)).count())
@@ -332,81 +234,11 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(apricot_council, Contribution.objects.with_entity(applicot, ['committee_entity'])[0])
         self.assertTrue(apricot_picker in Contribution.objects.with_entity(applicot, ['organization_entity']))
         
-    def test_multiple_name_columns(self):
-        id = uuid4().hex
-        Contribution.objects.create(organization_name="one",
-                                                     contributor_employer="two",
-                                                    organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        Contribution.objects.create(organization_name="three",
-                                                    organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        Contribution.objects.create(contributor_employer="four",
-                                                    organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        Contribution.objects.create(organization_entity=id,
-                                                    date=datetime.now(),
-                                                    cycle='09', 
-                                                    transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE,
-                                                    import_reference=self.import_)
-        
-        populate_entities(sql_names['contribution'], 
-                          sql_names['contribution_organization_entity'], 
-                          [sql_names['contribution_organization_name'], sql_names['contribution_contributor_employer']],
-                          sql_names['contribution_organization_ext_id'],
-                          'organization')
-        
-        aliases = [entity_alias.alias for entity_alias in EntityAlias.objects.filter(entity=id)]
-        
-        self.assertEqual(4, len(aliases))
-        self.assertTrue('one' in aliases)
-        self.assertTrue('two' in aliases)
-        self.assertTrue('three' in aliases)
-        self.assertTrue('four' in aliases)
+
     
     
 
-
-class BaseEntityBuildTests(unittest.TestCase):
-    
-    def create_contribution(self, **kwargs):
-        c = Contribution(**kwargs)
-        if 'cycle' not in kwargs:
-            c.cycle='09'
-        if 'transaction_namespace' not in kwargs:
-            c.transaction_namespace=UNITTEST_TRANSACTION_NAMESPACE
-        c.import_reference=self.import_
-        c.save()
-    
-    def assertFilter(self, model, primary, members):
-        self.assertEqual(len(members), model.objects.filter(**primary).count())
-        for member in members:
-            self.assertEqual(1, model.objects.filter(**dict_union(primary, member)).count())
-    
-    def setUp(self):
-        print("Setting up database...")
-        Import.objects.all().delete()
-        Contribution.objects.all().delete()
-        Entity.objects.all().delete()
-        EntityAlias.objects.all().delete()
-        EntityAttribute.objects.all().delete()
-        Normalization.objects.all().delete()
-        
-        self.import_ = Import()
-        self.import_.save()
-        
-        
-        
-class TestEntityBuild(BaseEntityBuildTests):        
+class TestEntityBuild(BaseMatchboxTest):        
     def test_normalize(self):
         self.create_contribution(contributor_name='contributor duplicate')
         self.create_contribution(contributor_name='contributor duplicate')
@@ -426,8 +258,8 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertEqual(2, Normalization.objects.filter(normalized='trailingwhitespace').count())
             
         
-    def test_build_entity(self):
-        build_entity(u'Apple', 'organization', '999', '999')
+    def test_build_org_entity(self):
+        build_org_entity(u'Apple', '999', '999')
         
         self.assertEqual(1, Entity.objects.count())
         self.assertEqual(1, Entity.objects.filter(name='Apple').count())
@@ -436,7 +268,7 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.create_contribution(contributor_name='Banana Bar')
 
         normalize_contributions()
-        build_entity(u'Banana Bar', 'organization', '999', '999')
+        build_org_entity(u'Banana Bar', '999', '999')
         
         self.assertEqual(2, Entity.objects.count())
         c = Contribution.objects.get(contributor_name='Banana Bar')
@@ -449,7 +281,7 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.create_contribution(transaction_namespace=CRP_TRANSACTION_NAMESPACE, organization_ext_id='1234')
 
         normalize_contributions()
-        build_entity(u'Coconut Lounge', 'organization', '999', '1234')
+        build_org_entity(u'Coconut Lounge', '999', '1234')
         
         e = Entity.objects.get(name='Coconut Lounge')
         self.assertEqual(2, Contribution.objects.filter(organization_entity=e.id).count())
@@ -685,7 +517,7 @@ class TestEntityBuild(BaseEntityBuildTests):
         self.assertFilter(EntityAttribute, {'entity': spaz_id}, [])
         
             
-class TestEntityAssociate(BaseEntityBuildTests):
+class TestEntityAssociate(BaseMatchboxTest):
     
     def test_associate_transactions(self):
         self.create_contribution(transaction_id='a', contributor_name='Alice', amount=10)
