@@ -1,4 +1,7 @@
 
+from django.db import connection
+
+
 create_tops_stmt = """
     create table tmp_tops as
         select case when contributor_entity = '' then contributor_name
@@ -26,15 +29,16 @@ top_contributors_stmt = """
     from tmp_tops t
     left outer join matchbox_entity e on e.id = t.contributor
     where
-        recipient = 'GREGOIRE, CHRISTINE O'
+        recipient = %s
     order by amount desc
     limit 20;
 """
 
 
 
-
-
-
-
+def get_top_contributors(entity_id):
+    cursor = connection.cursor()
+    
+    cursor.execute(top_contributors_stmt, [entity_id])
+    return list(cursor)
 

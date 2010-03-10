@@ -77,3 +77,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
 )
+
+
+from local_settings import *
