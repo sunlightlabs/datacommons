@@ -35,6 +35,17 @@ top_contributors_stmt = """
 """
 
 
+top_recipients_stmt = """
+    select coalesce(e.name, t.recipient), e.id, count, amount
+    from tmp_tops t
+    left outer join matchbox_entity e on e.id = t.recipient
+    where
+        contributor = %s
+    order by amount desc
+    limit 20;
+"""
+
+
 
 def get_top_contributors(entity_id):
     cursor = connection.cursor()
@@ -42,3 +53,8 @@ def get_top_contributors(entity_id):
     cursor.execute(top_contributors_stmt, [entity_id])
     return list(cursor)
 
+def get_top_recipients(entity_id):
+    cursor = connection.cursor()
+    
+    cursor.execute(top_recipients_stmt, [entity_id])
+    return list(cursor)
