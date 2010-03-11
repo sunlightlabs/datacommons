@@ -3,6 +3,8 @@ import logging
 import os
 from optparse import make_option
 from django.core.management.base import CommandError
+from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier,\
+    VerifiedCSVSource
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer,\
@@ -71,8 +73,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
     @staticmethod
     def get_record_processor(catcodes, candidates, committees):
         return chain_filters(
-                # broken at the moment--can't use anything deriving from YieldFilter
-                #FieldCountValidator(len(FILE_TYPES['indivs'])),
+                CSVFieldVerifier(),
         
                 # transaction filters
                 FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
@@ -131,7 +132,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
     
             sys.stdout.write('Reading from %s, writing to %s...\n' % (in_path, out_path))
     
-            input_source = CSVSource(infile, fieldnames=FILE_TYPES['indivs'])
+            input_source = VerifiedCSVSource(infile, fieldnames=FILE_TYPES['indivs'])
             output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
     
             load_data(input_source, record_processor, output_func)

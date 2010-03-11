@@ -9,6 +9,8 @@ import saucebrush
 from crp_denormalize import *
 from dcdata.processor import chain_filters, load_data
 from optparse import make_option
+from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier,\
+    VerifiedCSVSource
 
 
 
@@ -41,6 +43,8 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
     @staticmethod
     def get_record_processor(catcodes, candidates, committees):
         return chain_filters(
+            CSVFieldVerifier(),
+                             
             # transaction filters
             FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
             FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
@@ -71,7 +75,7 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
         input_files = Files(*[os.path.join(data_path, 'raw', 'crp', 'pacs%s.csv' % cycle) for cycle in cycles])
         outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2cand.csv'), 'w')
         
-        source = CSVSource(input_files, fieldnames=FILE_TYPES['pacs'])
+        source = VerifiedCSVSource(input_files, fieldnames=FILE_TYPES['pacs'])
         output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
         
         processor_func = self.get_record_processor(catcodes, candidates, committees)

@@ -2,21 +2,47 @@ import sys
 from saucebrush import utils
 from saucebrush.filters import Filter, ConditionalFilter
 from saucebrush.emitters import Emitter
+from dcdata.processor import SkipRecordException
+from saucebrush.sources import CSVSource
 #
 # filters
 #
 
-class FieldCountValidator(ConditionalFilter):
+class FieldCountValidator(Filter):
     
     def __init__(self, field_count):
         super(FieldCountValidator, self).__init__()
         self.field_count = field_count
         
-    def test_record(self, record):
-        if len(record) != self.field_count:
-            self.reject_record(record, "Expected %i columns, found %i" % (self.field_count, len(record)))
-            return False
-        return True
+    def process_record(self, record):
+        if len(record) == self.field_count:
+            return record
+        else:
+            raise SkipRecordException('Expected %d fields, found %d.' % (self.field_count, len(record)))
+        
+        
+class VerifiedCSVSource(CSVSource):
+    EXTRA_FIELDS = object()
+    MISSING_VALUE = object()
+    
+    def __init__(self, csvfile, fieldnames=None, skiprows=0, **kwargs):
+        super(VerifiedCSVSource, self).__init__(csvfile, fieldnames, skiprows, 
+                                                restkey=VerifiedCSVSource.EXTRA_FIELDS, 
+                                                restval=VerifiedCSVSource.MISSING_VALUE,
+                                                **kwargs)
+
+class CSVFieldVerifier(Filter):
+    def __init__(self):
+        super(CSVFieldVerifier, self).__init__()
+        
+    def process_record(self, record):
+        if VerifiedCSVSource.EXTRA_FIELDS in record:
+            raise SkipRecordException('Extra fields found in record: %s' % record[VerifiedCSVSource.EXTRA_FIELDS])
+        if VerifiedCSVSource.MISSING_VALUE in record.values():
+            raise SkipRecordException('Missing fields found in record: %s' % ([key for (key, value) in record.items() if value == VerifiedCSVSource.MISSING_VALUE]))
+
+        return record
+    
         
 class FieldKeeper(Filter):
     """ Filter that keeps a given set of fields and removes all others.
