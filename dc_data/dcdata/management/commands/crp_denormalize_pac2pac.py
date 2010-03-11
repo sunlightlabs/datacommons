@@ -9,6 +9,8 @@ import saucebrush
 
 from crp_denormalize import *
 from dcdata.processor import chain_filters, load_data
+from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier,\
+    VerifiedCSVSource
 
 
 class CommitteeFilter(Filter):
@@ -63,6 +65,8 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
                 return catcodes[s]['catorder'].upper()        
         
         return chain_filters(
+            CSVFieldVerifier(),
+
             ContribRecipFilter(),
             CommitteeFilter(committees),
             RecipientFilter(candidates, committees),
@@ -105,8 +109,8 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
         infiles = Files(*[os.path.join(data_path, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
         outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2pac.csv'), 'w')
         
-        source = CSVSource(infiles, fieldnames=FILE_TYPES['pac_other'])
         output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
+        source = VerifiedCSVSource(infiles, fieldnames=FILE_TYPES['pac_other'])
 
         record_processor = self.get_record_processor(catcodes, candidates, committees)
 
