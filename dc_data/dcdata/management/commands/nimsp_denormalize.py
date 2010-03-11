@@ -373,7 +373,7 @@ class NIMSPDenormalize(BaseCommand):
         
         con = self.mysql_connection() 
             
-        #self.process_allocated(denorm_path, input_path, con)
+        self.process_allocated(denorm_path, input_path, con)
             
         self.process_unallocated(denorm_path, saltsdb, con)
 
