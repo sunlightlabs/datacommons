@@ -49,12 +49,6 @@ build_aliases_stmt = """
             and organization_name != ''
         group by organization_entity, organization_name
     union
-        select organization_entity, contributor_employer, FALSE
-        from contribution_contribution
-        where organization_entity != ''
-            and contributor_employer != ''
-        group by organization_entity, contributor_employer
-    union
         select parent_organization_entity, parent_organization_name, FALSE
         from contribution_contribution
         where parent_organization_entity != ''

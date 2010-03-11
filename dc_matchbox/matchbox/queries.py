@@ -184,12 +184,6 @@ def _recompute_aliases(entity_id):
                     and organization_name != ''
                 group by organization_entity, organization_name
             union
-                select organization_entity, contributor_employer, FALSE
-                from contribution_contribution
-                where organization_entity = %s
-                    and contributor_employer != ''
-                group by organization_entity, contributor_employer
-            union
                 select parent_organization_entity, parent_organization_name, FALSE
                 from contribution_contribution
                 where parent_organization_entity = %s
@@ -214,7 +208,7 @@ def _recompute_aliases(entity_id):
                 a.entity_id = inserts.id
             and a.alias = inserts.alias)
     """  
-    cursor.execute(aggregate_aliases_stmt, [entity_id] * 6)
+    cursor.execute(aggregate_aliases_stmt, [entity_id] * 5)
     
     
 def _recompute_attributes(entity_id):    
