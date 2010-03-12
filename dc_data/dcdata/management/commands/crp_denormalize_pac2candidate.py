@@ -34,7 +34,6 @@ class ContributorFilter(Filter):
         if committee:
             record['contributor_name'] = committee['pac_short']
             record['contributor_party'] = committee['party']
-            record['contributor_type'] = 'committee'
         return record
 
 
