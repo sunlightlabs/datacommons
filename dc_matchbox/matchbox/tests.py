@@ -378,10 +378,10 @@ class TestEntityBuild(BaseMatchboxTest):
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Wazzo Intl').count())
 
         e = Entity.objects.get(name='Waz Corp')
-        self.assertEqual(3, EntityAlias.objects.filter(entity=e.id).count())
+        self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Corp').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz Co').count())
-        self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
+        self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Waz').count())
         
     def test_entity_attributes(self):
         self.create_contribution(transaction_namespace=NIMSP_TRANSACTION_NAMESPACE,
@@ -525,7 +525,7 @@ class TestEntityAssociate(BaseMatchboxTest):
         self.create_contribution(transaction_id=1, amount=40)
         self.create_contribution(transaction_id=2, amount=80, contributor_name='Bob')
         self.create_contribution(transaction_id=3, amount=160, contributor_ext_id='BobID')
-        self.create_contribution(transaction_id=4, contributor_employer="Carl")
+        self.create_contribution(transaction_id=4, organization_name="Carl")
         self.create_contribution(transaction_id=5, organization_name="Dave")
         self.create_contribution(transaction_id=6, parent_organization_name="Ethan")
         self.create_contribution(transaction_id=7, committee_name="Frank")
