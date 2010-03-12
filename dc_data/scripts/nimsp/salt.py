@@ -2,7 +2,6 @@ import hashlib
 import random
 import sys
 
-import MySQLdb
 import sqlite3
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -40,21 +39,15 @@ class DCIDFilter(Filter):
         return record
 
 class SaltFilter(YieldFilter):    
-    def __init__(self, rando, salt_db, dcid_filter, mcon):
+    def __init__(self, rando, salt_db, dcid_filter):
         super(SaltFilter, self).__init__()
         self._saltcon = sqlite3.connect(salt_db)
         self._saltcon.row_factory = sqlite_dict_factory
         self._dcid_filter = dcid_filter
-        self._mcon = mcon
         try:
             self._saltcur = self._saltcon.cursor()
         except Exception, e:
             print "Error: %s" % (e)
-            sys.exit(1)
-        try:
-            self._mcur = self._mcon.cursor()
-        except MySQLdb.Error, e:
-            print "Error %d: %s" % (e.args[0], e.args[1])
             sys.exit(1)
         self._rando = rando
     

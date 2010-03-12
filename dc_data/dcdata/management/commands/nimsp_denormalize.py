@@ -8,9 +8,7 @@ import re
 import MySQLdb
 import psycopg2
 
-
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
-
 
 import saucebrush
 from saucebrush.emitters import CSVEmitter, DebugEmitter
@@ -29,18 +27,6 @@ from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 from dcdata.loading import model_fields
 
-# to do: these should be pulled automatically from the model, as is done in loadcontributions.py,
-# not hard-coded here. The CSV_MAPPING should also check that it is consistent with the model-based list.
-#FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
-#              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
-#              'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
-#              'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
-#              'contributor_zipcode', 'contributor_category', 'contributor_category_order',
-#              'organization_name', 'organization_ext_id', 'organization_entity', 'parent_organization_name', 'parent_organization_ext_id',
-#              'parent_organization_entity', 'recipient_name', 'recipient_ext_id', 'recipient_entity',
-#              'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order',
-#              'committee_name', 'committee_ext_id', 'committee_entity', 'committee_party', 'election_type',
-#              'district', 'seat', 'seat_status', 'seat_result']
 
 FIELDNAMES = model_fields('contribution.Contribution') + ['transaction_id_original','transaction_id_salt_key']
 
@@ -241,7 +227,6 @@ class UrnFilter(Filter):
 
     def __init__(self,con):
         super(UrnFilter, self).__init__()
-        self.committee_names = {}
         self.committee_ids = {}
         cur = con.cursor()
         cur.execute("SELECT CommitteeName, CommitteeID FROM Committees;")
@@ -250,7 +235,6 @@ class UrnFilter(Filter):
             if row == None:
                 break
             self.committee_ids[row[1]] = row[0]
-            self.committee_names[row[0]] = row[1]
         cur.close()
 
     def process_record(self,record):
@@ -340,14 +324,6 @@ class NIMSPDenormalize(BaseCommand):
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
             )
     
-    # @staticmethod
-    # def pg_connection():        
-    #     return psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-    #         OTHER_DATABASES['salts']['DATABASE_NAME'],
-    #         OTHER_DATABASES['salts']['DATABASE_USER'],
-    #         OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
-    #         OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
-    #         ))
                     
     def handle(self, *args, **options):
         if 'dataroot' not in options:
@@ -375,7 +351,7 @@ class NIMSPDenormalize(BaseCommand):
             
         self.process_allocated(denorm_path, input_path, con)
             
-        self.process_unallocated(denorm_path, saltsdb, con)
+        self.process_unallocated(denorm_path, saltsdb)
 
     @staticmethod
     def get_allocated_record_processor(con):
@@ -429,17 +405,16 @@ class NIMSPDenormalize(BaseCommand):
             o.close()
 
     @staticmethod
-    def get_unallocated_record_processor(salts_db, con):
+    def get_unallocated_record_processor(salts_db):
         dcid = DCIDFilter(SALT_KEY)
         return chain_filters(        
             IntFilter('contributionid'),
             FloatFilter('amount'),
-            #FieldAdder('salted',False),
-            SaltFilter(100,salts_db,dcid,con),
+            SaltFilter(100,salts_db,dcid),
             dcid)
     
     @staticmethod        
-    def process_unallocated(denorm_path, salts_db, con):
+    def process_unallocated(denorm_path, salts_db):
         
         unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
         unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
@@ -456,9 +431,9 @@ class NIMSPDenormalize(BaseCommand):
         unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES + ['salted'])
         output_func = chain_filters(salted_emitter, unsalted_emitter)
   
-        load_data(source, NIMSPDenormalize.get_unallocated_record_processor(salts_db, con), output_func)
+        load_data(source, NIMSPDenormalize.get_unallocated_record_processor(salts_db), output_func)
     
-        for f in [salted_csv,unsalted_csv,unallocated_csv, con]:
+        for f in [salted_csv,unsalted_csv,unallocated_csv]:
             f.close()
     
 
