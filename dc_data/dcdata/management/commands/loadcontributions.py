@@ -5,7 +5,8 @@ from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
     FloatFilter, IntFilter, ISODateFilter, EntityFilter
 from dcdata.processor import chain_filters, load_data
-from dcdata.utils.dryrub import CountEmitter, MD5Filter
+from dcdata.utils.dryrub import CountEmitter, MD5Filter, CSVFieldVerifier,\
+    VerifiedCSVSource
 from decimal import Decimal
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import BaseCommand, CommandError
@@ -125,7 +126,10 @@ class LoadContributions(BaseCommand):
     
     @staticmethod
     def get_record_processor(import_session):
-        return chain_filters(FieldRemover('id'),
+        return chain_filters(
+                CSVFieldVerifier(),
+                
+                FieldRemover('id'),
                 FieldRemover('import_reference'),
                 FieldAdder('import_reference', import_session),
                 
@@ -153,7 +157,7 @@ class LoadContributions(BaseCommand):
         )
         
         try:
-            input_iterator = CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1)
+            input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1)
             output_func = LoaderEmitter(loader).process_record
             record_processor = self.get_record_processor(loader.import_session)
 
