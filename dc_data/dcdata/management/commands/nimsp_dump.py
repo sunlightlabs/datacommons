@@ -22,7 +22,7 @@ class NIMSPDump2CSV(BaseCommand):
     
     def handle(self, **options):
         
-        outfile = os.path.abspath(options.outfile) if options.outfile else  os.path.abspath(SQL_DUMP_FILE)
+        outfile = os.path.abspath(options['outfile']) if 'outfile' in options else  os.path.abspath(SQL_DUMP_FILE)
     
         select_fields = ",".join([sql_field for (name, sql_field, conversion_func) in CSV_SQL_MAPPING])
     
@@ -45,8 +45,8 @@ class NIMSPDump2CSV(BaseCommand):
                     fields terminated by ',' enclosed by '"'
                     lines terminated by '\\n'
             """ % (select_fields,
-                   ("where syr.Yearcode = %s" % options.cycle) if options.cycle else "",
-                   ("limit %s" % options.n) if options.n else "",
+                   ("where syr.Yearcode = %s" % options['cycle']) if 'cycle' in options else "",
+                   ("limit %s" % options['n']) if 'n' in options else "",
                    outfile)
        
         connection = MySQLdb.connect(
