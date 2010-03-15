@@ -29,7 +29,7 @@ from optparse import make_option
 from dcdata.loading import model_fields
 
 
-FIELDNAMES = model_fields('contribution.Contribution') + ['transaction_id_original','transaction_id_salt_key']
+FIELDNAMES = model_fields('contribution.Contribution')
 
 SALT_KEY = 'smokehouse'
 
@@ -226,17 +226,17 @@ class MultiFieldConversionFilter(Filter):
 
 class UrnFilter(Filter):
 
-    def __init__(self,con):
+    def __init__(self):
         super(UrnFilter, self).__init__()
-        self.committee_ids = {}
-        cur = con.cursor()
-        cur.execute("SELECT CommitteeName, CommitteeID FROM Committees;")
-        while (True):
-            row = cur.fetchone ()
-            if row == None:
-                break
-            self.committee_ids[row[1]] = row[0]
-        cur.close()
+#        self.committee_ids = {}
+#        cur = con.cursor()
+#        cur.execute("SELECT CommitteeName, CommitteeID FROM Committees;")
+#        while (True):
+#            row = cur.fetchone ()
+#            if row == None:
+#                break
+#            self.committee_ids[row[1]] = row[0]
+#        cur.close()
 
     def process_record(self,record):
         # Recipient
@@ -254,9 +254,10 @@ class UrnFilter(Filter):
         if record['contributor_id']:
             record['contributor_ext_id'] = record['contributor_id']
             record['contributor_type'] = None
-            if self.committee_ids.has_key(record['contributor_name']): 
-                # contributor is a committee (by name match in committees table).
-                record['contributor_type'] = 'committee'
+        # to do: fix this
+#            if self.committee_ids.has_key(record['contributor_name']): 
+#                # contributor is a committee (by name match in committees table).
+#                record['contributor_type'] = 'committee'
         if record['newemployerid']:
             record['organization_ext_id'] = record['newemployerid']
         if record['parentcompanyid']:
@@ -275,11 +276,8 @@ class ZipCleaner(Filter):
                 if m:
                     record['contributor_zipcode'] = m.group('zip5')
                 else:
-                    #debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                     record['contributor_zipcode'] = None 
             else:
-                #if record['contributor_zipcode'] not in ('-','N/A','N.A.','NONE','UNK','UNKNOWN'):
-                #    debug(record, "Bad zipcode: %s (%s)" % (record['contributor_zipcode'], record['contributor_state'] or 'NONE'))
                 record['contributor_zipcode'] = None
         return record
 
@@ -295,17 +293,6 @@ class UnallocatedEmitter(CSVEmitter):
         if record['contributor_category'] and record['contributor_category'].startswith('Z2'):
             super(UnallocatedEmitter, self).emit_record(record)
 
-class SaltedEmitter(CSVEmitter):
-    def emit_record(self, record):
-        if record.get('salted', False):
-            super(SaltedEmitter, self).emit_record(record)
-
-class UnsaltedEmitter(CSVEmitter):
-    def emit_record(self, record):
-        if not record.get('salted', False):
-            super(UnsaltedEmitter, self).emit_record(record)
-
-
 
 class NIMSPDenormalize(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -316,14 +303,14 @@ class NIMSPDenormalize(BaseCommand):
         make_option("-i", "--infile", dest="input_path",
                       help="path to input csv", metavar="FILE"))
 
-    @staticmethod
-    def mysql_connection():
-        return MySQLdb.connect(
-            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
-            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
-            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
-            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
-            )
+#    @staticmethod
+#    def mysql_connection():
+#        return MySQLdb.connect(
+#            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+#            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
+#            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
+#            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+#            )
     
     def handle(self, *args, **options):
         if 'dataroot' not in options:
@@ -345,16 +332,16 @@ class NIMSPDenormalize(BaseCommand):
         if not os.path.exists(denorm_path):
             os.makedirs(denorm_path)
         
-        input_path = options.get('input_path', '') or os.path.join(dataroot, SQL_DUMP_FILE)
+        input_path = options.get('input_path', '') or os.path.join(denorm_path, SQL_DUMP_FILE)
         
-        con = self.mysql_connection() 
+#        con = self.mysql_connection() 
             
-        self.process_allocated(denorm_path, input_path, con)
+        self.process_allocated(denorm_path, input_path)
             
         self.process_unallocated(denorm_path, saltsdb)
 
     @staticmethod
-    def get_allocated_record_processor(con):
+    def get_allocated_record_processor():
         input_type_conversions = dict([(field, conversion_func) for (field, _, conversion_func) in CSV_SQL_MAPPING if conversion_func])
         
         return chain_filters(
@@ -366,7 +353,7 @@ class NIMSPDenormalize(BaseCommand):
             EmployerOccupationFilter(),
             RecipientFilter(),
             SeatFilter(),
-            UrnFilter(con),
+            UrnFilter(),
             FieldModifier('date', lambda x: str(x) if x else None),
             ZipCleaner(),
            
@@ -377,7 +364,7 @@ class NIMSPDenormalize(BaseCommand):
             FieldListFilter(FIELDNAMES + ['contributionid']))
     
     @staticmethod
-    def process_allocated(denorm_path, input_path, con):
+    def process_allocated(denorm_path, input_path):
         
         # create allocated things
         allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
@@ -400,7 +387,7 @@ class NIMSPDenormalize(BaseCommand):
             DCIDFilter(SALT_KEY),
             allocated_emitter)
     
-        load_data(source, NIMSPDenormalize.get_allocated_record_processor(con), output_func)
+        load_data(source, NIMSPDenormalize.get_allocated_record_processor(), output_func)
     
         for o in [allocated_csv,unallocated_csv]:
             o.close()
@@ -421,21 +408,16 @@ class NIMSPDenormalize(BaseCommand):
         unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
         unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
     
-        salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_salted.csv')
+        salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv')
         salted_csv = open(salted_csv_filename, 'w')
-        
-        unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
-        unsalted_csv = open(unsalted_csv_filename, 'w')
 
         source = VerifiedCSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
 
-        salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES + ['salted'])
-        unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES + ['salted'])
-        output_func = chain_filters(salted_emitter, unsalted_emitter)
+        output_func = CSVEmitter(salted_csv, FIELDNAMES).process_record
   
         load_data(source, NIMSPDenormalize.get_unallocated_record_processor(salts_db), output_func)
     
-        for f in [salted_csv,unsalted_csv,unallocated_csv]:
+        for f in [salted_csv,unallocated_csv]:
             f.close()
     
 

@@ -25,6 +25,7 @@ import csv
 from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource,\
     CSVFieldVerifier
 from dcdata import processor
+from saucebrush.sources import CSVSource
 
 
 dataroot = 'dc_data/test_data'
@@ -78,55 +79,50 @@ class TestRecipientFilter(TestCase):
                                        output_record)
 
 
-# Need to make tests work with new salting...
 
-#class TestNIMSPDenormalize(TestCase):
-#    output_paths = ['dc_data/test_data/denormalized/nimsp_allocated_contributions.csv', 
-#                    'dc_data/test_data/denormalized/nimsp_unallocated_contributions_salted.csv',
-#                    'dc_data/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv']
-#    
-#    def test_salting(self):
-#        input_values = ["2521050","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",
-#                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",
-#                        "0","2008-06-09 15:02:35","1160742","433907","0","1825","PAC 483","2006","\N","\N","\N","\N",
-#                        "\N","\N","I","PAC 483","130", "WA"]
-#        self.assertEqual(len(CSV_SQL_MAPPING), len(input_values))
-#        input_record = dict(zip([name for (name, _, _) in CSV_SQL_MAPPING], input_values))
-#    
-#        processor = NIMSPDenormalize.get_unallocated_record_processor(
-#                    NIMSPDenormalize.pg_connection(),
-#                    NIMSPDenormalize.mysql_connection())
-#        
-#        outputs = processor(input_record)            
-#                    
-#        self.assertEqual(2, len(outputs))
-#      
-#    
-#    def test_command(self):
-#        for path in self.output_paths:
-#            if os.path.exists(path):
-#                os.remove(path)     
-#
-#        call_command('nimsp_denormalize', dataroot=dataroot)
-#        
-#        self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
-#        self.assertEqual(2, sum(1 for _ in open(self.output_paths[1], 'r')))
-#        self.assertEqual(2, sum(1 for _ in open(self.output_paths[2], 'r')))
-#        
-#        Contribution.objects.all().delete()
-#        
-#        for path in self.output_paths:
-#            call_command('loadcontributions', path)
-#        
-#        self.assertEqual(10, Contribution.objects.all().count())
-#    
-#    
-#    def test_recipient_state(self):
-#        self.test_command()
-#        
-#        self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
-#        self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
-#        
+class TestNIMSPDenormalize(TestCase):
+    salts_db_path = 'dc_data/test_data/denormalized/salts.db'
+    output_paths = ['dc_data/test_data/denormalized/nimsp_allocated_contributions.csv', 
+                    'dc_data/test_data/denormalized/nimsp_unallocated_contributions.csv']
+    
+    def test_salting(self):
+        input_string = '"3429235","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
+                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
+                        "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+        source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
+        output = list()
+    
+        processor = NIMSPDenormalize.get_unallocated_record_processor(self.salts_db_path)
+
+        load_data(source, processor, output.append)
+                    
+        self.assertEqual(2, len(output))
+        self.assertAlmostEqual(341.66, output[0]['amount'] + output[1]['amount'])
+    
+    def test_command(self):
+        for path in self.output_paths:
+            if os.path.exists(path):
+                os.remove(path)     
+
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path)
+        
+        self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
+        self.assertEqual(4, sum(1 for _ in open(self.output_paths[1], 'r')))
+        
+        Contribution.objects.all().delete()
+        
+        for path in self.output_paths:
+            call_command('loadcontributions', path)
+        
+        self.assertEqual(11, Contribution.objects.all().count())
+    
+    
+    def test_recipient_state(self):
+        self.test_command()
+        
+        self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
+        self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
+        
 
 class TestCRPDenormalizeAll(TestCase):
     

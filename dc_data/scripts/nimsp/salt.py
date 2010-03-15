@@ -32,8 +32,6 @@ class DCIDFilter(Filter):
         return hashlib.md5(str(id) + self._salt_key).hexdigest()
 
     def process_record(self, record):
-        record['transaction_id_original'] = record['contributionid']
-        record['transaction_id_salt_key'] = self._salt_key
         record['transaction_id'] = self.encode(record['contributionid'])
         del(record['contributionid'])
         return record
@@ -73,7 +71,6 @@ class SaltFilter(YieldFilter):
                 salt['amount'] = float(row['amount'])
                 if salt['date']:
                     salt['date'] = str(row['date'])
-                salt['salted'] = True
                 return salt
         else:
             print "No contributionid making salt: %s" % record
@@ -130,22 +127,17 @@ class SaltFilter(YieldFilter):
         self._saltcur.execute(stmt, (record['contributionid'], self._dcid_filter._salt_key, record_hash, salt_hash, salt['amount'],  salt['date'], salt['contributor_category'], row['id']))
         self._saltcon.commit()
         
-        salt['salted'] = True
-        
         return salt
     
     def process_record(self, record):
-        record['salted'] = False
         salt = self.get_salt(record)
         if salt is not None:
             record['amount'] -= salt['amount']
-            record['salted'] = True
             yield salt
         elif record['amount'] > 500.0:
             if random.randint(0, self._rando) == 0:
                 salt = self.make_salt(record)
                 if salt is not None:
-                    record['salted'] = True
                     yield salt
                 else:
                     print "Didn't make salt: %s" % record
