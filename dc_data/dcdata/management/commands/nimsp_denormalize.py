@@ -15,7 +15,8 @@ from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.filters import *
 
-from dcdata.utils.dryrub import CountEmitter
+from dcdata.utils.dryrub import CountEmitter, VerifiedCSVSource,\
+    CSVFieldVerifier
 
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
 
@@ -324,7 +325,6 @@ class NIMSPDenormalize(BaseCommand):
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
             )
     
-                    
     def handle(self, *args, **options):
         if 'dataroot' not in options:
             CommandError("path to dataroot is required")
@@ -358,6 +358,7 @@ class NIMSPDenormalize(BaseCommand):
         input_type_conversions = dict([(field, conversion_func) for (field, _, conversion_func) in CSV_SQL_MAPPING if conversion_func])
         
         return chain_filters(
+            CSVFieldVerifier(),
             MultiFieldConversionFilter(input_type_conversions),
 
             # munge fields
@@ -389,10 +390,10 @@ class NIMSPDenormalize(BaseCommand):
         unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
 
         input_file = open(input_path, 'r')
-    
-        input_fields = [name for (name, _, conversion_func) in CSV_SQL_MAPPING]
-    
-        source = CSVSource(input_file, input_fields)
+        
+        input_fields = [name for (name, _, _) in CSV_SQL_MAPPING]
+ 
+        source = VerifiedCSVSource(input_file, input_fields)
     
         output_func = chain_filters(
             unallocated_emitter,
@@ -408,6 +409,7 @@ class NIMSPDenormalize(BaseCommand):
     def get_unallocated_record_processor(salts_db):
         dcid = DCIDFilter(SALT_KEY)
         return chain_filters(        
+            CSVFieldVerifier(),
             IntFilter('contributionid'),
             FloatFilter('amount'),
             SaltFilter(100,salts_db,dcid),
@@ -425,7 +427,7 @@ class NIMSPDenormalize(BaseCommand):
         unsalted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions_unsalted.csv')
         unsalted_csv = open(unsalted_csv_filename, 'w')
 
-        source = CSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
+        source = VerifiedCSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
 
         salted_emitter = SaltedEmitter(salted_csv, FIELDNAMES + ['salted'])
         unsalted_emitter = UnsaltedEmitter(unsalted_csv, FIELDNAMES + ['salted'])
