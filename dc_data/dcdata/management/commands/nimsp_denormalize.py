@@ -54,44 +54,6 @@ def warn(record, message):
     except:
         logging.warn("%s:%s:%s" % (inspect.stack()[1][3], message, record))
 
-class ChunkedSqlSource(object):
-    """ Saucebrush source for reading from a database DictCursor.
-
-        The data is fetched in chunks for memory management.
-        
-        For postgres, use psycopg2.extras.RealDictCursor.
-    """
-    def make_stmt(self,offset):
-        return self.stmt + " limit %d offset %d" % (self.chunk, offset)
-        
-    def __init__(self, dict_cur, stmt, chunk=10000, limit=None):
-        self.cur = dict_cur
-        self.chunk = int(chunk)
-        if limit:
-            self.limit = int(limit)
-        else:
-            self.limit = None
-        self.offset = 0
-        self.stmt = stmt
-
-    def fetchsome(self):
-        done = False       
-        while not done:
-            self.cur.execute(self.make_stmt(self.offset))
-            results = self.cur.fetchall()
-            if results == []:
-                done = True
-            elif len(results) < self.chunk:
-                done = True
-            for result in results:
-                self.offset += 1
-                if self.limit and (self.offset > self.limit):
-                    done = True
-                    break
-                yield result
-
-    def __iter__(self):
-        return self.fetchsome()
 
 
 class FieldListFilter(Filter):
@@ -127,14 +89,6 @@ class BestAvailableFilter(Filter):
 
         return record
 
-class EmployerOccupationFilter(Filter):
-        
-    def process_record(self, record):
-        for f in ('contributor_occupation','contributor_employer'):
-            if record[f]:
-                if len(record[f]) > 64:
-                    record[f] = record[f][:63]
-        return record
 
 class RecipientFilter(Filter):
     incumbent_map = {
@@ -206,19 +160,10 @@ class MultiFieldConversionFilter(Filter):
         return record
 
 
-class UrnFilter(Filter):
+class IdsFilter(Filter):
 
     def __init__(self):
-        super(UrnFilter, self).__init__()
-#        self.committee_ids = {}
-#        cur = con.cursor()
-#        cur.execute("SELECT CommitteeName, CommitteeID FROM Committees;")
-#        while (True):
-#            row = cur.fetchone ()
-#            if row == None:
-#                break
-#            self.committee_ids[row[1]] = row[0]
-#        cur.close()
+        super(IdsFilter, self).__init__()
 
     def process_record(self,record):
         # Recipient
@@ -236,10 +181,6 @@ class UrnFilter(Filter):
         if record['contributor_id']:
             record['contributor_ext_id'] = record['contributor_id']
             record['contributor_type'] = None
-        # to do: fix this
-#            if self.committee_ids.has_key(record['contributor_name']): 
-#                # contributor is a committee (by name match in committees table).
-#                record['contributor_type'] = 'committee'
         if record['newemployerid']:
             record['organization_ext_id'] = record['newemployerid']
         if record['parentcompanyid']:
@@ -277,6 +218,7 @@ class UnallocatedEmitter(CSVEmitter):
 
 
 class NIMSPDenormalize(BaseCommand):
+    
     option_list = BaseCommand.option_list + (
         make_option("-d", "--dataroot", dest="dataroot",
                       help="path to data directory", metavar="PATH"),
@@ -284,15 +226,6 @@ class NIMSPDenormalize(BaseCommand):
                     help="path to salts SQLite database", metavar="PATH"),
         make_option("-i", "--infile", dest="input_path",
                       help="path to input csv", metavar="FILE"))
-
-#    @staticmethod
-#    def mysql_connection():
-#        return MySQLdb.connect(
-#            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
-#            user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
-#            host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
-#            passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
-#            )
     
     def handle(self, *args, **options):
         if 'dataroot' not in options:
@@ -332,10 +265,9 @@ class NIMSPDenormalize(BaseCommand):
 
             # munge fields
             BestAvailableFilter(),
-            EmployerOccupationFilter(),
             RecipientFilter(),
             SeatFilter(),
-            UrnFilter(),
+            IdsFilter(),
             FieldModifier('date', lambda x: str(x) if x else None),
             ZipCleaner(),
            
