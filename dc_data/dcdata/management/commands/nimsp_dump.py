@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-
+import MySQLdb
 
 from settings import OTHER_DATABASES
 
