@@ -1,7 +1,6 @@
 
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import  CSVEmitter, DebugEmitter
-from saucebrush.sources import CSVSource
 from saucebrush.utils import Files
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 

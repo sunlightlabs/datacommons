@@ -10,7 +10,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer,\
     Filter
 from saucebrush.emitters import CSVEmitter, DebugEmitter
-from saucebrush.sources import CSVSource
 
 from dcdata.processor import chain_filters, load_data
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES

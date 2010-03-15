@@ -14,7 +14,6 @@ from django.db import transaction
 from optparse import make_option
 from saucebrush.emitters import DebugEmitter
 from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier
-from saucebrush.sources import CSVSource
 from strings.normalizer import basic_normalizer
 import os
 import saucebrush
