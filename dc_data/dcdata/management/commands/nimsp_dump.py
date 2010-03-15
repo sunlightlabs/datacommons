@@ -17,7 +17,7 @@ class NIMSPDump2CSV(BaseCommand):
                           help="cycle to process (default all)"),
         make_option("-n", "--number", dest="n", metavar='ROWS',
                           help="number of rows to process"),
-        make_option("-v", "--verbose", action='store_true', dest="verbose", 
+        make_option("-b", "--verbose", action='store_true', dest="verbose", 
                           help="noisy output"))
     
     def handle(self, **options):
