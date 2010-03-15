@@ -4,7 +4,7 @@ from dcdata.utils.sql import *
 SQL_DUMP_FILE = 'nimsp_partial_denormalization.csv'
 
 CSV_SQL_MAPPING = [('contributionid', 'c.ContributionID', parse_int), 
-                ('amount', 'c.Amount', parse_float), 
+                ('amount', 'c.Amount', parse_decimal), 
                 ('date', 'c.Date', parse_date), 
                 ('contributor', 'c.Contributor', parse_char), 
                 ('newcontributor', 'c.NewContributor', parse_char), 

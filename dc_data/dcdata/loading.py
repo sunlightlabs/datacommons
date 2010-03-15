@@ -19,32 +19,6 @@ class EntityFilter(FieldFilter):
         if item and isinstance(item, basestring):
             return Entity.objects.get(pk=item)
 
-class ISODateFilter(FieldFilter):
-    def process_field(self, item):
-        if item:
-            (y, m, d) = item.split('-')
-            return datetime.date(int(y), int(m), int(d))
-
-class FloatFilter(FieldFilter):
-    def __init__(self, field, on_error=None):
-        super(FloatFilter, self).__init__(field)
-        self._on_error = on_error
-    def process_field(self, item):
-        try:
-            return float(item)
-        except ValueError:
-            return self._on_error
-
-class IntFilter(FieldFilter):
-    def __init__(self, field, on_error=None):
-        super(IntFilter, self).__init__(field)
-        self._on_error = on_error
-    def process_field(self, item):
-        try:
-            return int(item)
-        except ValueError:
-            return self._on_error
-
 #
 # utility method to get field names from Django models
 #

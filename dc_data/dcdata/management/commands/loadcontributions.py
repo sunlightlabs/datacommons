@@ -3,7 +3,7 @@
 
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
-    FloatFilter, IntFilter, ISODateFilter, EntityFilter
+    EntityFilter
 from dcdata.processor import chain_filters, load_data
 from dcdata.utils.dryrub import CountEmitter, MD5Filter, CSVFieldVerifier,\
     VerifiedCSVSource
@@ -19,6 +19,7 @@ import os
 import saucebrush
 import sys
 import traceback
+from dcdata.utils.sql import parse_int, parse_date
 
 
 
@@ -47,23 +48,6 @@ class RecipientFilter(Filter):
 
 class CommitteeFilter(Filter):    
     def process_record(self, record):
-        return record
-    
-
-class AbortFilter(Filter):
-    def __init__(self, threshold=0.1):
-        self._record_count = 0
-        self._threshold = threshold
-    def process_record(self, record):
-        self._record_count += 1
-        if self._record_count > 50:
-            reject_count = len(self._recipe.rejected)
-            ratio = float(reject_count) / float(self._record_count)
-            if ratio > self._threshold:
-                for reject in self._recipe.rejected:
-                    sys.stderr.write(repr(reject) + '\n')
-                    sys.stderr.flush()
-                raise Exception('Abort: %s of %s records contained errors' % (reject_count, self._record_count))
         return record
     
     
@@ -133,8 +117,8 @@ class LoadContributions(BaseCommand):
                 FieldAdder('import_reference', import_session),
                 
                 FieldModifier('amount', lambda a: Decimal(str(a))),
-                IntFilter('cycle'),
-                ISODateFilter('date'),
+                FieldModifier(['cycle'], parse_int),
+                FieldModifier(['date'], parse_date),
                 BooleanFilter('is_amendment'),
                 UnicodeFilter(),
                 

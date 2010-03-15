@@ -97,7 +97,7 @@ class TestNIMSPDenormalize(TestCase):
         load_data(source, processor, output.append)
                     
         self.assertEqual(2, len(output))
-        self.assertAlmostEqual(341.66, output[0]['amount'] + output[1]['amount'])
+        self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
     
     def test_command(self):
         for path in self.output_paths:

@@ -7,6 +7,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from saucebrush.filters import Filter, YieldFilter
+from decimal import Decimal
 
 def ensure(value, min_value, max_value):
     if value < min_value:
@@ -68,7 +69,7 @@ class SaltFilter(YieldFilter):
                 salt['contributor_state'] = row['contributor_state']
                 salt['contributor_zipcode'] = row['contributor_zipcode']
                 salt['contributor_category'] = row['contributor_category']
-                salt['amount'] = float(row['amount'])
+                salt['amount'] = Decimal(row['amount'])
                 if salt['date']:
                     salt['date'] = str(row['date'])
                 return salt

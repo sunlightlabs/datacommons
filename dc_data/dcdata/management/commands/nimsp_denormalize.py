@@ -27,6 +27,7 @@ from dcdata.processor import chain_filters, load_data
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 from dcdata.loading import model_fields
+from dcdata.utils.sql import parse_decimal, parse_int
 
 
 FIELDNAMES = model_fields('contribution.Contribution')
@@ -92,25 +93,6 @@ class ChunkedSqlSource(object):
     def __iter__(self):
         return self.fetchsome()
 
-class FloatFilter(FieldFilter):
-    def __init__(self, field, on_error=None):
-        super(FloatFilter, self).__init__(field)
-        self._on_error = on_error
-    def process_field(self, item):
-        try:
-            return float(item)
-        except ValueError:
-            return self._on_error
-
-class IntFilter(FieldFilter):
-    def __init__(self, field, on_error=None):
-        super(IntFilter, self).__init__(field)
-        self._on_error = on_error
-    def process_field(self, item):
-        try:
-            return int(item)
-        except ValueError:
-            return self._on_error
 
 class FieldListFilter(Filter):
     """ A filter to limit fields to those in a list, and add empty values for missing fields. """
@@ -397,8 +379,8 @@ class NIMSPDenormalize(BaseCommand):
         dcid = DCIDFilter(SALT_KEY)
         return chain_filters(        
             CSVFieldVerifier(),
-            IntFilter('contributionid'),
-            FloatFilter('amount'),
+            FieldModifier(['contributionid'], parse_int),
+            FieldModifier(['amount'], parse_decimal),
             SaltFilter(100,salts_db,dcid),
             dcid)
     
