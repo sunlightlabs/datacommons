@@ -70,7 +70,7 @@ class SaltFilter(YieldFilter):
                 salt['contributor_zipcode'] = row['contributor_zipcode']
                 salt['contributor_category'] = row['contributor_category']
                 salt['amount'] = Decimal(row['amount'])
-                if salt['date']:
+                if row['date']:
                     salt['date'] = str(row['date'])
                 return salt
         else:
@@ -99,7 +99,7 @@ class SaltFilter(YieldFilter):
         salt['contributionid'] = 0 - record['contributionid']
     
         # calculate amount alloted to the new salt
-        portion = ensure(round(record['amount'] / 100.00), 10.00, 500.00)
+        portion = ensure(round(record['amount'] / 100), 10, 500)
         record['amount'] -= portion
         salt['amount'] = portion
             

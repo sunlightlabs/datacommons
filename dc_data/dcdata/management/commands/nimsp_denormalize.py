@@ -225,8 +225,12 @@ class NIMSPDenormalize(BaseCommand):
         make_option("-s", "--saltsdb", dest="saltsdb",
                     help="path to salts SQLite database", metavar="PATH"),
         make_option("-i", "--infile", dest="input_path",
-                      help="path to input csv", metavar="FILE"))
-    
+                      help="path to input csv", metavar="FILE"),
+        make_option("-a", "--allocated", dest="run_allocated", default=True,
+                    help="generate the allocated contributions"),
+        make_option("-u", "--unallocated", dest="run_unallocated", default=True,
+                    help="generate the salted unallocated contributions"))
+        
     def handle(self, *args, **options):
         if 'dataroot' not in options:
             CommandError("path to dataroot is required")
@@ -251,9 +255,11 @@ class NIMSPDenormalize(BaseCommand):
         
 #        con = self.mysql_connection() 
             
-        self.process_allocated(denorm_path, input_path)
-            
-        self.process_unallocated(denorm_path, saltsdb)
+        if options['run_allocated']:
+            self.process_allocated(denorm_path, input_path)
+        
+        if options['run_unallocated']:    
+            self.process_unallocated(denorm_path, saltsdb)
 
     @staticmethod
     def get_allocated_record_processor():

@@ -85,6 +85,19 @@ class TestNIMSPDenormalize(TestCase):
     output_paths = ['dc_data/test_data/denormalized/nimsp_allocated_contributions.csv', 
                     'dc_data/test_data/denormalized/nimsp_unallocated_contributions.csv']
     
+    def test_dump(self):
+        self.fail("Not running unit test because of temporary firewall issues with MySQL on Smokehouse.")
+        
+        partial_path = '/tmp/test_nimsp_dump.csv'
+        
+        if os.path.exists(partial_path):
+            os.remove(partial_path)
+            
+        call_command('nimsp_dump', outfile=partial_path, number=10)
+        
+        self.assertEqual(10, sum(1 for _ in open(partial_path, 'r')))    
+        
+    
     def test_salting(self):
         input_string = '"3429235","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
