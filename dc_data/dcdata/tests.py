@@ -99,7 +99,7 @@ class TestNIMSPDenormalize(TestCase):
         
     
     def test_salting(self):
-        input_string = '"3429235","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
+        input_string = '"3327568","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
                         "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
         source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
@@ -163,14 +163,16 @@ class TestNIMSPDenormalize(TestCase):
         
     def test_salt_filter(self):
         
-        cursor = sqlite3.connect(self.salts_db_path).cursor()
-        cursor.execute('delete from salts where nimsp_id = 9999')
+        connection = sqlite3.connect(self.salts_db_path)
+        connection.cursor().execute('delete from salts where nimsp_id = 9999')
+        connection.commit()
+        connection.close()
         
         filter = SaltFilter(0, self.salts_db_path, DCIDFilter())
         
         r = {'contributionid': 9999,
             'amount': Decimal('1234.56'),
-            'contributor_state': 'OR',
+            'contributor_state': 'MI',
             'date': '2010-03-16'}
         
         output = list(filter.process_record(r))
