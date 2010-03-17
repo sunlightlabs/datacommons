@@ -225,7 +225,9 @@ class NIMSPDenormalize(BaseCommand):
         make_option("-s", "--saltsdb", dest="saltsdb",
                     help="path to salts SQLite database", metavar="PATH"),
         make_option("-i", "--infile", dest="input_path",
-                      help="path to input csv", metavar="FILE"))
+                      help="path to input csv", metavar="FILE"),
+        make_option("-o", "--output_type", dest="output_types", choices=['allocated', 'unallocated', 'both'],
+                    default='both', help="which output files to generate"))
         
     def handle(self, *args, **options):
         if 'dataroot' not in options:
@@ -249,9 +251,11 @@ class NIMSPDenormalize(BaseCommand):
         
         input_path = options.get('input_path', '') or os.path.join(denorm_path, SQL_DUMP_FILE)
         
-        self.process_allocated(denorm_path, input_path)
+        if options['output_types'] in ('allocated', 'both'):
+            self.process_allocated(denorm_path, input_path)
     
-        self.process_unallocated(denorm_path, saltsdb)
+        if options['output_types'] in ('unallocated', 'both'):
+            self.process_unallocated(denorm_path, saltsdb)
 
     @staticmethod
     def get_allocated_record_processor():

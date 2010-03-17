@@ -3,6 +3,7 @@
 from decimal import Decimal
 import os
 from unittest import TestCase
+import shutil
 
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
@@ -26,6 +27,9 @@ from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource,\
     CSVFieldVerifier
 from dcdata import processor
 from saucebrush.sources import CSVSource
+from scripts.nimsp.salt import DCIDFilter, SaltFilter
+import sqlite3
+
 
 
 dataroot = 'dc_data/test_data'
@@ -81,21 +85,17 @@ class TestRecipientFilter(TestCase):
 
 
 class TestNIMSPDenormalize(TestCase):
+    original_salts_db_path = 'dc_data/test_data/denormalized/original_salts.db'    
     salts_db_path = 'dc_data/test_data/denormalized/salts.db'
     output_paths = ['dc_data/test_data/denormalized/nimsp_allocated_contributions.csv', 
                     'dc_data/test_data/denormalized/nimsp_unallocated_contributions.csv']
     
-    def test_dump(self):
-        self.fail("Not running unit test because of temporary firewall issues with MySQL on Smokehouse.")
+    def setUp(self):
+        for path in self.output_paths + [self.salts_db_path]:
+            if os.path.exists(path):
+                os.remove(path)      
         
-        partial_path = '/tmp/test_nimsp_dump.csv'
-        
-        if os.path.exists(partial_path):
-            os.remove(partial_path)
-            
-        call_command('nimsp_dump', outfile=partial_path, number=10)
-        
-        self.assertEqual(10, sum(1 for _ in open(partial_path, 'r')))    
+        shutil.copy(self.original_salts_db_path, self.salts_db_path)
         
     
     def test_salting(self):
@@ -111,11 +111,36 @@ class TestNIMSPDenormalize(TestCase):
                     
         self.assertEqual(2, len(output))
         self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
+        
     
+    def test_output_switch(self):
+        self.assertFalse(os.path.exists(self.output_paths[0]))
+        self.assertFalse(os.path.exists(self.output_paths[1]))
+    
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path)
+  
+        self.assertTrue(os.path.exists(self.output_paths[0]))
+        self.assertTrue(os.path.exists(self.output_paths[1]))
+      
+        os.remove(self.output_paths[1])
+        self.assertFalse(os.path.exists(self.output_paths[1]))
+
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='unallocated')
+      
+        self.assertTrue(os.path.exists(self.output_paths[1]))
+        
+        os.remove(self.output_paths[0])
+        os.remove(self.output_paths[1])
+        self.assertFalse(os.path.exists(self.output_paths[0]))
+        self.assertFalse(os.path.exists(self.output_paths[1]))
+
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='allocated')
+      
+        self.assertTrue(os.path.exists(self.output_paths[0]))
+        self.assertFalse(os.path.exists(self.output_paths[1]))
+
+     
     def test_command(self):
-        for path in self.output_paths:
-            if os.path.exists(path):
-                os.remove(path)     
 
         call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path)
         
@@ -136,6 +161,22 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
         self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
         
+    def test_salt_filter(self):
+        
+        cursor = sqlite3.connect(self.salts_db_path).cursor()
+        cursor.execute('delete from salts where nimsp_id = 9999')
+        
+        filter = SaltFilter(0, self.salts_db_path, DCIDFilter())
+        
+        r = {'contributionid': 9999,
+            'amount': Decimal('1234.56'),
+            'contributor_state': 'OR',
+            'date': '2010-03-16'}
+        
+        output = list(filter.process_record(r))
+        
+        self.assertEqual(2, len(output))
+
 
 class TestCRPDenormalizeAll(TestCase):
     
