@@ -1,6 +1,7 @@
 import hashlib
 import random
 import sys
+from datetime import timedelta
 
 import sqlite3
 import psycopg2
@@ -8,6 +9,7 @@ from psycopg2.extras import RealDictCursor
 
 from saucebrush.filters import Filter, YieldFilter
 from decimal import Decimal
+from dcdata.utils.sql import parse_date
 
 def ensure(value, min_value, max_value):
     if value < min_value:
@@ -99,24 +101,14 @@ class SaltFilter(YieldFilter):
         salt['contributionid'] = 0 - record['contributionid']
     
         # calculate amount alloted to the new salt
-        portion = ensure(round(record['amount'] / 100), 10, 500)
+        portion = ensure(Decimal(str(round(record['amount'] / 100))), 10, 500)
         record['amount'] -= portion
         salt['amount'] = portion
             
-        #get date from an average for this report bundle of contributions
-        if record['date'] and record['date'] != "":
-            salt['date'] = record['date']
+        if 'date' in record and record['date'] != "":
+            salt['date'] = str(parse_date(record['date']) - timedelta(random.randint(15, 45)))
         else:
             salt['date'] = None
-        stmt = """SELECT date(from_unixtime(AVG(unix_timestamp(date)))) FROM Contributions WHERE date IS NOT NULL AND RecipientReportsBundleID = (SELECT RecipientReportsBundleID FROM Contributions WHERE ContributionID = %s)""";
-        try:
-            self._mcur.execute(stmt, (record['contributionid'],))
-            d = (self._mcur.fetchone())[0]
-            if d and (str(d) != '1969-12-31'):
-                salt['date'] = d
-        except Exception, e:
-            print e
-            sys.exit(1)
         
         #assign catcode
         salt['contributor_category'] = 'Y0000' #uncoded
@@ -125,7 +117,7 @@ class SaltFilter(YieldFilter):
         salt_hash = self._dcid_filter.encode(salt['contributionid'])
 
         stmt = """UPDATE salts SET nimsp_id = ?, salt_key = ?, record_hash = ?, salt_hash = ?, amount = ?, date = ?, catcode = ? WHERE id = ?"""
-        self._saltcur.execute(stmt, (record['contributionid'], self._dcid_filter._salt_key, record_hash, salt_hash, salt['amount'],  salt['date'], salt['contributor_category'], row['id']))
+        self._saltcur.execute(stmt, (record['contributionid'], self._dcid_filter._salt_key, record_hash, salt_hash, str(salt['amount']),  salt['date'], salt['contributor_category'], row['id']))
         self._saltcon.commit()
         
         return salt
