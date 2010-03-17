@@ -9,13 +9,13 @@ def null_check(func):
     return (lambda x: None if x == '\\N' else func(x))
 
 def _parse_date(date_str):
-    if date_str == "0000-00-00":
+    if not date_str or date_str == "0000-00-00":
         return None
     
     return date(*(strptime(date_str, "%Y-%m-%d")[0:3]))
 
 def _parse_datetime(datetime_str):
-    if datetime_str == "0000-00-00 00:00:00":
+    if not datetime_str or datetime_str == "0000-00-00 00:00:00":
         return None
 
     return datetime(*(strptime(datetime_str, "%Y-%m-%d %H:%M:%S")[0:6]))
