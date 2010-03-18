@@ -1,6 +1,7 @@
 import operator
 import sys
 import traceback
+from datetime import datetime
 
 
 
@@ -40,6 +41,7 @@ def load_data(input_iterator, record_processor, output_func):
             sys.stderr.write('Message: %s\n' % e.message)
             if e.traceback:
                 traceback.print_tb(e.traceback)
+            sys.stderr.flush()
             if TERMINATE_ON_ERROR:
                 return
             
@@ -48,8 +50,29 @@ def load_data(input_iterator, record_processor, output_func):
             sys.stderr.write('Message: %s\n' % e.message)
             if e.traceback:
                 traceback.print_tb(e.traceback)
+            sys.stderr.flush()
             return
 
+
+
+class Every(object):
+    def __init__(self, n, func):
+        self.i = 0
+        self.n = n
+        self.func = func
+        
+    def __call__(self, ignored, records):
+        self.i += 1
+        if self.i % self.n == 0:
+            self.func(self.i)
+        
+        return records
+
+
+def progress_tick(i):
+    sys.stdout.write("%s: Output %d records.\n" % (datetime.now(), i))
+    sys.stdout.flush()
+    
 
 def chain_filters(*filters):
     return compose_one2many(*map(lambda filter: lambda x: filter(None, [x]), filters))
