@@ -20,6 +20,7 @@ import saucebrush
 import sys
 import traceback
 from dcdata.utils.sql import parse_int, parse_date
+from django.db.models.fields import CharField
 
 
 
@@ -69,6 +70,16 @@ class UnicodeFilter(Filter):
         return record
 
 
+class StringLengthFilter(Filter):
+    def __init__(self, model):
+        self.model = model
+        
+    def process_record(self, record):
+        for field in self.model._meta.fields:
+            if isinstance(field, CharField) and field.name in record and record[field.name]:
+                record[field.name] = record[field.name][:field.max_length]
+        return record
+    
 #
 # model loader
 #
@@ -128,7 +139,9 @@ class LoadContributions(BaseCommand):
                 OrganizationFilter(),
                 ParentOrganizationFilter(),
                 RecipientFilter(),
-                CommitteeFilter())
+                CommitteeFilter(),
+                
+                StringLengthFilter(Contribution))
     
     @transaction.commit_manually
     def handle(self, csvpath, *args, **options):

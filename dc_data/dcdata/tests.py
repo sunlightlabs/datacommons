@@ -11,7 +11,7 @@ from dcdata.loading import model_fields, LoaderEmitter
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
 from dcdata.management.commands.loadcontributions import LoadContributions, \
-    ContributionLoader
+    ContributionLoader, StringLengthFilter
 from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 from dcdata.processor import load_data, chain_filters, compose_one2many,\
     SkipRecordException
@@ -393,6 +393,18 @@ class TestProcessor(TestCase):
         load_data(source, f, output.append)
         self.assertEqual([{'a': '1', 'b': '2', 'c': '3'}], output)
         
+    def test_string_length(self):
+        original = {'contributor_zipcode': '123456',\
+                    'contributor_employer': '1111111111222222222233333333334444444444555555555566666666667777777777',\
+                    'contributor_occupation': 'too short'}
+                         
+        filter = StringLengthFilter(Contribution)
+        
+        result = filter.process_record(original)
+        
+        self.assertEqual('12345', result['contributor_zipcode'])
+        self.assertEqual('1111111111222222222233333333334444444444555555555566666666667777', result['contributor_employer'])
+        self.assertEqual('too short', result['contributor_occupation'])
 
 
 # tests the experimental 'updates' module
