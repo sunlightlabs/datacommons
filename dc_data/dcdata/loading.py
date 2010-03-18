@@ -135,19 +135,14 @@ class Loader(object):
 # saucebrush emitter
 #
 
+# to do: no need for this class to exist
 class LoaderEmitter(Emitter):
     def __init__(self, loader):
         super(LoaderEmitter, self).__init__()
         self._loader = loader
     def process_record(self, record):
         self.emit_record(record)
-        if not record.get('__rejected__', False):
-            if '__rejected__' in record:
-                del record['__rejected__']
-            return record
+        return record
     def emit_record(self, record):
-        try:
-            self._loader.load_record(record)
-        except:
-            self.reject_record(record, '%s' % sys.exc_info()[1])
-            record['__rejected__'] = True
+        self._loader.load_record(record)
+            

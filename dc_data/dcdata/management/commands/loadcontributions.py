@@ -4,7 +4,7 @@
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
     EntityFilter
-from dcdata.processor import chain_filters, load_data
+from dcdata.processor import chain_filters, load_data, Every, progress_tick
 from dcdata.utils.dryrub import CountEmitter, MD5Filter, CSVFieldVerifier,\
     VerifiedCSVSource
 from decimal import Decimal
@@ -97,6 +97,8 @@ class ContributionLoader(Loader):
 
 class LoadContributions(BaseCommand):
 
+    COMMIT_FREQUENCY = 100000
+
     help = "load contributions from csv"
     args = ""
 
@@ -128,7 +130,7 @@ class LoadContributions(BaseCommand):
                 RecipientFilter(),
                 CommitteeFilter())
     
-    @transaction.commit_on_success
+    @transaction.commit_manually
     def handle(self, csvpath, *args, **options):
         
         fieldnames = model_fields('contribution.Contribution')
@@ -141,11 +143,17 @@ class LoadContributions(BaseCommand):
         
         try:
             input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1)
-            output_func = LoaderEmitter(loader).process_record
+            
+            output_func = chain_filters(
+                LoaderEmitter(loader),
+                Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
+                Every(self.COMMIT_FREQUENCY, progress_tick))
+            
             record_processor = self.get_record_processor(loader.import_session)
 
             load_data(input_iterator, record_processor, output_func)
 
+            transaction.commit()
         except:
             traceback.print_exception(*sys.exc_info())
             raise
