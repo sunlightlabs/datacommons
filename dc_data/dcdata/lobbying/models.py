@@ -16,7 +16,7 @@ class Agency(models.Model):
     agency_ext_id = models.CharField(max_length=128, blank=True, null=True)
     
     class Meta:
-        ordering = ('year','agency_name')
+        ordering = ('agency_name',)
     
     def __unicode__(self):
         return self.agency_name
@@ -27,8 +27,10 @@ class Lobbyist(models.Model):
     lobbyist_name = models.CharField(max_length=255, blank=True, null=True)
     lobbyist_entity = EntityRef('lobbyist_transactions')
     lobbyist_ext_id = models.CharField(max_length=128, blank=True, null=True)
+    candidate_entity = EntityRef('candidate_transactions')
+    candidate_ext_id = models.CharField(max_length=128, blank=True, null=True)
     government_position = models.CharField(max_length=100, blank=True, null=True)
-    member_of_congres = models.BooleanField(default=False)
+    member_of_congress = models.BooleanField(default=False)
     
     class Meta:
         ordering = ('year','member_of_congress','lobbyist_name')
