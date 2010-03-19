@@ -99,7 +99,7 @@ class TerminateProcessingException(Exception):
     """ An exception that tells the data loader to skip all output records from the current input record. """
     
     def __init__(self, message, traceback=None):    
-        super(SkipRecordException, self).__init__()
+        super(TerminateProcessingException, self).__init__()
         self.message = message
         self.traceback = traceback    
 

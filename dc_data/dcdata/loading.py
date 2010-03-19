@@ -98,8 +98,10 @@ class Loader(object):
         
         try:
             obj.save()
+        except ValueError:
+            raise SkipRecordException('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])            
         except:
-            raise TerminateProcessingException('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
+            raise TerminateProcessingException('Fatal error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
     
     def copy_fields(self, record, obj):    
         """ Copy fields from a record to an instance of a model.
