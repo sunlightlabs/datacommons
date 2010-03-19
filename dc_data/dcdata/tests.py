@@ -29,6 +29,7 @@ from dcdata import processor
 from saucebrush.sources import CSVSource
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
 import sqlite3
+import sys
 
 
 
@@ -273,6 +274,7 @@ class TestCRPDenormalizePac2Pac(TestCase):
         
 
 class TestLoadContributions(TestCase):
+   
         
     def test_command(self):
         Contribution.objects.all().delete()
@@ -299,10 +301,10 @@ class TestLoadContributions(TestCase):
         Contribution.objects.all().delete()
         
         loader = ContributionLoader(
-            source='unittest',
-            description='unittest',
-            imported_by='unittest'
-        )
+                source='unittest',
+                description='unittest',
+                imported_by='unittest'
+            ) 
         output_func = LoaderEmitter(loader).process_record
         processor = LoadContributions.get_record_processor(loader.import_session)
         
@@ -311,6 +313,26 @@ class TestLoadContributions(TestCase):
         self.assertEqual(1, Contribution.objects.all().count())
         self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
         
+    def test_bad_value(self):
+        # the second record has an out-of-range date
+        input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,"BOTTGER, ANTHONY",,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
+                      ',,1998,urn:nimsp:transaction,227059e3c32af276f5b37642922e415c,,,False,200,0922-09-08,"TRICK, BILL",,,,,,,BOX 2730,TUSCALOOSA,AL,35403,B1500,,,,,,,,"BENTLEY, ROBERT J",3188,,R,politician,AL,,,,,,,G,AL-21,state:upper,,L',
+                      ',,2006,urn:nimsp:transaction,dd0af37dca3bf26b2aa602e4d8756c19,,,False,8,2006-11-07,"BRAKE, PATRICK",,,,UTILITY WORKER,CITY OF PORTLAND,,73728 SOLD RD,RAINIER,OR,97048,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,']
+        
+        loader = ContributionLoader(
+                source='unittest',
+                description='unittest',
+                imported_by='unittest'
+            )
+        source = CSVSource(input_rows, model_fields('contribution.Contribution'))
+        processor = LoadContributions.get_record_processor(loader.import_session)
+        output = LoaderEmitter(loader).process_record
+        
+        sys.stderr.write("Error expected:\n")
+        
+        load_data(source, processor, output)
+        
+        self.assertEqual(2, Contribution.objects.count())
         
 class TestProcessor(TestCase):
     

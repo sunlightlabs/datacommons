@@ -5,7 +5,7 @@ from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter
 import datetime
 import sys
-from dcdata.processor import TerminateProcessingException
+from dcdata.processor import TerminateProcessingException, SkipRecordException
 
 #
 # saucebrush loading filters
