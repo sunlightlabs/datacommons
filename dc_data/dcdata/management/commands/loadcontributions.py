@@ -20,6 +20,7 @@ import saucebrush
 import sys
 import traceback
 from dcdata.utils.sql import parse_int, parse_date
+from django.db.models.fields import CharField
 
 
 
@@ -69,6 +70,16 @@ class UnicodeFilter(Filter):
         return record
 
 
+class StringLengthFilter(Filter):
+    def __init__(self, model):
+        self.model = model
+        
+    def process_record(self, record):
+        for field in self.model._meta.fields:
+            if isinstance(field, CharField) and field.name in record and record[field.name]:
+                record[field.name] = record[field.name][:field.max_length]
+        return record
+    
 #
 # model loader
 #
@@ -128,9 +139,12 @@ class LoadContributions(BaseCommand):
                 OrganizationFilter(),
                 ParentOrganizationFilter(),
                 RecipientFilter(),
-                CommitteeFilter())
+                CommitteeFilter(),
+                
+                StringLengthFilter(Contribution))
     
-    @transaction.commit_manually
+    #@transaction.commit_manually
+    @transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
         
         fieldnames = model_fields('contribution.Contribution')
@@ -146,14 +160,14 @@ class LoadContributions(BaseCommand):
             
             output_func = chain_filters(
                 LoaderEmitter(loader),
-                Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
+                #Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
                 Every(self.COMMIT_FREQUENCY, progress_tick))
             
             record_processor = self.get_record_processor(loader.import_session)
 
             load_data(input_iterator, record_processor, output_func)
 
-            transaction.commit()
+            #transaction.commit()
         except:
             traceback.print_exception(*sys.exc_info())
             raise
