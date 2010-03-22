@@ -95,6 +95,7 @@ INSTALLED_APPS = (
     'mediasync',
     'matchbox',
     'dcdata.contribution',
+    'dcdata.lobbying',
     'dcdata',
     'search'
 )
