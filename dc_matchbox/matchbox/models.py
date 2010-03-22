@@ -17,6 +17,11 @@ class EntityRefCache(dict):
         if not model in self:
             self[model] = []
         self[model].append(field)
+    def for_model_name(self, name):
+        name = name.lower()
+        for key, value in self.iteritems():
+            if key._meta.object_name.lower() == name:
+                return (key, self[key])
        
 entityref_cache = EntityRefCache()
 
@@ -72,8 +77,11 @@ class Entity(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
-    reviewer = models.CharField(max_length=255, default="")    
-    
+    reviewer = models.CharField(max_length=255, default="")
+    contribution_count = models.IntegerField(null=True, blank=True)
+    contribution_total_given = models.DecimalField(null=True, blank=True, default=0, max_digits=15, decimal_places=2)    
+    contribution_total_received = models.DecimalField(null=True, blank=True, default=0, max_digits=15, decimal_places=2)    
+
     def __unicode__(self):
         return self.name
     
@@ -94,6 +102,7 @@ class EntityNote(models.Model):
 class EntityAlias(models.Model):
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
     alias = models.CharField(max_length=255, null=False)
+    verified = models.BooleanField(default=False)
     
     class Meta:
         ordering = ('alias',)
@@ -107,6 +116,8 @@ class EntityAttribute(models.Model):
     entity = models.ForeignKey(Entity, related_name='attributes', null=False)
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
+    verified = models.BooleanField(default=False)
+    
     
     ENTITY_ID_NAMESPACE = 'urn:matchbox:entity_id'
     

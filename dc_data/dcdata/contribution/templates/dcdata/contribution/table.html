@@ -16,7 +16,7 @@
     	<tr class="{% cycle "even" "odd" %}">
     		<td>{% ifequal contrib.transaction_namespace "urn:fec:transaction" %}Federal{% else %}State{% endifequal %}
     		</td>
-    		<td>{{ contrib.datestamp|date:"M d, Y" }}</td>
+    		<td>{{ contrib.date|date:"M d, Y" }}</td>
     		<td>${{ contrib.amount }}</td>
     		<td>
     		    {% if contrib.contributor_entity %}

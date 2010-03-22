@@ -4,6 +4,12 @@ from dcdata.models import DataCommonsModel
 from matchbox.models import EntityRef
 from dcdata.utils.sql import django2sql_names
 
+
+NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
+CRP_TRANSACTION_NAMESPACE = 'urn:fec:transaction'
+UNITTEST_TRANSACTION_NAMESPACE = 'urn:unittest:transaction'
+
+
 SEATS = (
     ('federal:senate', 'US Senate'),
     ('federal:house', 'US House of Representatives'),
@@ -86,13 +92,13 @@ class Contribution(DataCommonsModel):
     filing_id = models.CharField(max_length=128, blank=True, null=True)
     is_amendment = models.BooleanField(default=False)
     
-    # amount and datestamp
-    amount = models.IntegerField(default=0)
-    datestamp = models.DateField(null=True)
+    # amount and date
+    amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
+    date = models.DateField(null=True)
     
     # contributor fields
     contributor_name = models.CharField(max_length=255, blank=True, null=True)
-    contributor_urn = models.CharField(max_length=128, blank=True, null=True)
+    contributor_ext_id = models.CharField(max_length=128, blank=True, null=True)
     contributor_entity = EntityRef('contributor_transactions')
     contributor_type = models.CharField(max_length=1, choices=CONTRIBUTOR_TYPES, blank=True, null=True)
     contributor_occupation = models.CharField(max_length=64, blank=True, null=True)
@@ -109,27 +115,28 @@ class Contribution(DataCommonsModel):
     
     # organization
     organization_name = models.CharField(max_length=255, blank=True, null=True)
-    organization_urn = models.CharField(max_length=128, blank=True, null=True)
+    organization_ext_id = models.CharField(max_length=128, blank=True, null=True)
     organization_entity = EntityRef('organization_transactions')
     
     # parent organization
     parent_organization_name = models.CharField(max_length=255, blank=True, null=True)
-    parent_organization_urn =  models.CharField(max_length=128, blank=True, null=True)
+    parent_organization_ext_id =  models.CharField(max_length=128, blank=True, null=True)
     parent_organization_entity = EntityRef('parent_organization_transactions')
     
     # recipient fields
     recipient_name = models.CharField(max_length=255, blank=True, null=True)
-    recipient_urn = models.CharField(max_length=128, blank=True, null=True)
+    recipient_ext_id = models.CharField(max_length=128, blank=True, null=True)
     recipient_entity = EntityRef('recipient_transactions')
     recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
     recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True, null=True)
+    recipient_state = USStateField(blank=True, null=True)
     
     recipient_category = models.CharField(max_length=8, blank=True, null=True)
     recipient_category_order = models.CharField(max_length=3, blank=True, null=True)
     
     # committee fields
-    committee_name = models.CharField(max_length=255)
-    committee_urn = models.CharField(max_length=128, blank=True, null=True)
+    committee_name = models.CharField(max_length=255, blank=True, null=True)
+    committee_ext_id = models.CharField(max_length=128, blank=True, null=True)
     committee_entity = EntityRef('committee_transactions')
     committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
         
@@ -148,21 +155,17 @@ class Contribution(DataCommonsModel):
 
     def save(self, **kwargs):
 
-        if self.transaction_namespace == 'urn:nimsp:transaction':
+        if self.transaction_namespace == NIMSP_TRANSACTION_NAMESPACE:
             pass
-        elif self.transaction_namespace == 'urn:unittest:transaction':
+        elif self.transaction_namespace == UNITTEST_TRANSACTION_NAMESPACE:
             pass
-        elif self.transaction_namespace == 'urn:fec:transaction':        
+        elif self.transaction_namespace == CRP_TRANSACTION_NAMESPACE:        
             # check transaction type
-            if self.datestamp:
-                if self.datestamp.year < 2004 and self.transaction_type == '10levin':
+            if self.date:
+                if self.date.year < 2004 and self.transaction_type == '10levin':
                     raise ValueError, "Levin funds may only occur on or after 2004"
                 elif self.transaction_type == '10soft':
                     raise ValueError, "Soft funds may only occur before 2004"
-        
-            # check employer/occupation rules
-            if self.contributor_employer and not self.contributor_occupation:
-                raise ValueError, "Joint employer/occupations should be saved in the contributor_occupation field"
         else: 
             raise ValueError, "Unhandled transaction_namespace (%s)" % (self.transaction_namespace or 'None')
 
@@ -172,8 +175,8 @@ class Contribution(DataCommonsModel):
         if self.contributor_state and len(self.contributor_state) > 2:
             raise ValueError, "State '%s' is not a valid state." % self.contributor_state
         
-        if self.datestamp and self.datestamp.year < 1900:
-            raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.datestamp.year 
+        if self.date and self.date.year < 1900:
+            raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.date.year 
         
         # save if all checks passed
         super(Contribution, self).save(**kwargs)

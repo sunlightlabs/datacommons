@@ -4,8 +4,8 @@ from dcdata.utils.sql import *
 SQL_DUMP_FILE = 'nimsp_partial_denormalization.csv'
 
 CSV_SQL_MAPPING = [('contributionid', 'c.ContributionID', parse_int), 
-                ('amount', 'c.Amount', parse_float), 
-                ('datestamp', 'c.Date', parse_date), 
+                ('amount', 'c.Amount', parse_decimal), 
+                ('date', 'c.Date', parse_date), 
                 ('contributor', 'c.Contributor', parse_char), 
                 ('newcontributor', 'c.NewContributor', parse_char), 
                 ('first', 'c.First', parse_char), 
@@ -25,9 +25,7 @@ CSV_SQL_MAPPING = [('contributionid', 'c.ContributionID', parse_int),
                 ('contributor_id', 'c.NewContributorID', parse_int), 
                 ('newemployerid', 'c.NewEmployerID', parse_int), 
                 ('parentcompanyid', 'c.ParentCompanyID', parse_int), 
-                ('contributionstimestamp', 'c.ContributionsTimestamp', parse_datetime), # should this field be here? I don't think we use it. -epg
-                ('recipientreportsbundleid', 'c.RecipientReportsBundleID', parse_int), 
-                ('recipientid', 'r.RecipientID', parse_int), 
+                ('unique_candidate_id', 'cand.UniqueCandidateID', parse_int),
                 ('candidate_id', 'r.CandidateID', parse_int), 
                 ('committee_id', 'r.CommitteeID', parse_int), 
                 ('recipient_name', 'r.RecipientName', parse_char), 
@@ -40,4 +38,6 @@ CSV_SQL_MAPPING = [('contributionid', 'c.ContributionID', parse_int),
                 ('recipient_party', 'p_cand.PartyType', parse_char), 
                 ('committee_party', 'p_comm.PartyType', parse_char), 
                 ('committee_name', 'comm.CommitteeName', parse_char), 
-                ('contributor_industry', 'cc.IndustryCode', parse_char)]
+                ('contributor_industry', 'cc.IndustryCode', parse_char),
+                ('recipient_state', 'r.StateCode', parse_char)]
+

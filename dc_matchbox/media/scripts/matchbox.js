@@ -99,7 +99,8 @@ var Matchbox = {
             e.type = spec.type;
             e.name = spec.name;
             e.count = spec.count || 0;
-            e.notes = spec.notes || 0;
+            e.total_given = spec.total_given || 0;
+            e.total_received = spec.total_received || 0;
             e.aliases = spec.aliases || [];
             return e;
         }
@@ -186,7 +187,7 @@ var Matchbox = {
             var message = Matchbox.StatusBar.notify("Loading query '" + query + "'");
             $.ajax({
                 type: 'GET',
-                url: '/search/?type_filter=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query),
+                url: '/merge/search/?type_filter=' + Matchbox.typeFilter + '&q=' + encodeURIComponent(query),
                 dataType: 'json',
                 success: function(results) {
                     $('#search_terms').append($('<li>' + query + ' (' + results.length + ')</li>'));
@@ -205,7 +206,7 @@ var Matchbox = {
         },
         
         loadQueue: function(queueId) {
-            $.getJSON('/queue/' + queueId + '/', Matchbox.MergeManager.loadEntities);
+            $.getJSON('/merge/queue/' + queueId + '/', Matchbox.MergeManager.loadEntities);
             Matchbox.MergeManager.loadedQueues.push(queueId)
             //$('<input type="hidden" name="queue" value="' + queueId + '">').appendTo('#merge_form')
         },
@@ -217,12 +218,31 @@ var Matchbox = {
                 var entity = Matchbox.createEntity(entitySpec);
                 Matchbox.MergeManager.entities[entity['id']] = entity;
                 Matchbox.entities.push(entity);
-                var row = $(entitySpec['html']);
+                
+                var content = '';
+                content += '<li id="' + entity.id + '">';
+                content += '<p class="actions">';
+                content += '<a href="/merge/search/google/?q=' + encodeURIComponent(entity.name) + '" class="google">Google</a>';
+                content += '<a href="/entity/' + entity.id + '/" class="detail">Details</a>';
+                content += '</p>';
+                content += '<input class="selector" type="checkbox" name="entities" value="' + entity.id + '" id="entities_' + entity.id + '">';
+                content += '<a class="transactions_control ui-icon ui-icon-triangle-1-e" href="/entity/' + entity.id + '/transactions/">V</a>';
+                content += '<label for="entities_' + entity.id + '">' + entity.name + '</label> <span class="note">' + entity.count + ' transactions. $' + entity.total_given + ' given, $' + entity.total_received + ' received. </span>';
+                content += '<div class="details_container">';
+                content += '<div class="transactions_container"></div>';
+                content += '<div class="details_expander">';
+                content += '<a href="#">=</a>';
+                content += '</div>';
+                content += '</div>';
+                content += '</li>';
+                
+                var row = $(content);
                 // row.find('input[type=checkbox]').click(function() {
                 //     Matchbox.MergeManager.entities[$(this).val()].selected = this.checked;
                 // });
                 $('#entities').append(row);
                 entity.bind();
+                
             }
         },
         

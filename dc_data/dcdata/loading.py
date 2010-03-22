@@ -5,6 +5,7 @@ from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter
 import datetime
 import sys
+from dcdata.processor import TerminateProcessingException, SkipRecordException
 
 #
 # saucebrush loading filters
@@ -19,39 +20,12 @@ class EntityFilter(FieldFilter):
         if item and isinstance(item, basestring):
             return Entity.objects.get(pk=item)
 
-class ISODateFilter(FieldFilter):
-    def process_field(self, item):
-        if item:
-            (y, m, d) = item.split('-')
-            return datetime.date(int(y), int(m), int(d))
-
-class FloatFilter(FieldFilter):
-    def __init__(self, field, on_error=None):
-        super(FloatFilter, self).__init__(field)
-        self._on_error = on_error
-    def process_field(self, item):
-        try:
-            return float(item)
-        except ValueError:
-            return self._on_error
-
-class IntFilter(FieldFilter):
-    def __init__(self, field, on_error=None):
-        super(IntFilter, self).__init__(field)
-        self._on_error = on_error
-    def process_field(self, item):
-        try:
-            return int(item)
-        except ValueError:
-            return self._on_error
-
 #
 # utility method to get field names from Django models
 #
 
 def model_fields(label):
     (app_label, model_label) = label.split('.')
-    app = get_app(app_label)
     model = get_model(app_label, model_label)
     model_fields = [field.name for field in model._meta.fields]
     return model_fields
@@ -121,7 +95,13 @@ class Loader(object):
     
         # assign Import reference and save
         obj.import_reference = self.import_session
-        obj.save()
+        
+        try:
+            obj.save()
+        except ValueError:
+            raise SkipRecordException('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])            
+        except:
+            raise TerminateProcessingException('Fatal error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
     
     def copy_fields(self, record, obj):    
         """ Copy fields from a record to an instance of a model.
@@ -162,19 +142,14 @@ class Loader(object):
 # saucebrush emitter
 #
 
+# to do: no need for this class to exist
 class LoaderEmitter(Emitter):
     def __init__(self, loader):
         super(LoaderEmitter, self).__init__()
         self._loader = loader
     def process_record(self, record):
         self.emit_record(record)
-        if not record.get('__rejected__', False):
-            if '__rejected__' in record:
-                del record['__rejected__']
-            return record
+        return record
     def emit_record(self, record):
-        try:
-            self._loader.load_record(record)
-        except:
-            self.reject_record(record, '%s' % sys.exc_info()[1])
-            record['__rejected__'] = True
+        self._loader.load_record(record)
+            

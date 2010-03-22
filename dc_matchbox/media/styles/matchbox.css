@@ -206,6 +206,14 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 #content table.transactions tr th { background-color: #F2F1F0; border: 1px solid #CBCCCB; padding: 2px 0 2px 3px; }
 #content table.transactions tr td { border: 1px solid #CBCCCB; padding: 2px 0 2px 3px; }
 
+#content #association_form ul { margin: 0; padding: 0; }
+#content #association_form ul li { clear: both; list-style: none; }
+#content #association_form ul ul { margin: 0 0 0 20px; padding: 0; }
+#content #association_form > ul > li { margin-bottom: 25px; }
+#content #association_form label { display: block; float: left; width: 170px; }
+#content #association_form label[for=id_transactions] { float: none; }
+#content #association_form textarea { margin: 10px 0 0 25px; width: 500px; }
+
 footer {
     background-color: #F2F1F0;
     border-top: 2px solid #CBCCCB;

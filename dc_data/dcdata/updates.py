@@ -2,6 +2,10 @@
 
 from django.db import connection
 
+# an experiment to see how we might discover the chnages between two versions of the database.
+# not used, but keeping around as documentation of an approach we might someday take
+# - epg
+
 def edits(old_table, new_table, key_column, value_columns):
     """
     Compute the insert, update and delete operations needed to transform the old table into the new table.

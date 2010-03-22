@@ -1,6 +1,7 @@
 
 from datetime import datetime, date
 from time import strptime
+from decimal import Decimal
 
 
 
@@ -8,13 +9,13 @@ def null_check(func):
     return (lambda x: None if x == '\\N' else func(x))
 
 def _parse_date(date_str):
-    if date_str == "0000-00-00":
+    if not date_str or date_str == "0000-00-00":
         return None
     
     return date(*(strptime(date_str, "%Y-%m-%d")[0:3]))
 
 def _parse_datetime(datetime_str):
-    if datetime_str == "0000-00-00 00:00:00":
+    if not datetime_str or datetime_str == "0000-00-00 00:00:00":
         return None
 
     return datetime(*(strptime(datetime_str, "%Y-%m-%d %H:%M:%S")[0:6]))
@@ -24,6 +25,7 @@ parse_int = null_check(int)
 parse_date = null_check(_parse_date)
 parse_datetime = null_check(_parse_datetime)
 parse_char = null_check(lambda x: x)
+parse_decimal = null_check(Decimal)
 
 
 

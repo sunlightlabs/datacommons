@@ -1,0 +1,39 @@
+{% extends "matchbox/merge/base.html" %}
+
+{% block content %}
+
+    <span id="entity_name_container">
+        <h2>{{ entity.name }}</h2>
+        <form action="{% url matchbox_entity entity.id %}" method='post'>
+            <input type="text" name="name">
+            <input type="submit" value="Save"> or <button>Cancel</button>
+        </form>
+    </span>
+    <p class="entity_type">{{ entity.type }}</p>
+    <div class="clear"></div>
+
+    <form action="." method="post" id="association_form">
+        {% csrf_token %}
+        {% for field in form.hidden_fields %}
+            {{ field.errors }}
+            {{ field }}
+        {% endfor %}
+        <ul>
+            {% for field in form.visible_fields %}
+                <li>
+                    {{ field.errors }}
+                    {{ field.label_tag }} {{ field }}
+                    <div class="clear"></div>
+                </li>
+            {% endfor %}
+            <li>
+                <input type="submit" value="Execute">
+                or <a href="{% url matchbox_entity entity.pk %}">Return to entity detail</a>
+            </li>
+        </ul>
+    </form>
+    
+{% endblock %}
+
+{% block sidebar %}
+{% endblock %}

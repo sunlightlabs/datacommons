@@ -1,70 +1,30 @@
 # -*- coding: utf-8 -*-
 
 
-from django.core.management.base import BaseCommand, CommandError
-from django.core.exceptions import ImproperlyConfigured
-from django.db import transaction
 from dcdata.contribution.models import Contribution
-from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, FloatFilter, IntFilter, ISODateFilter, EntityFilter
-from dcdata.utils.dryrub import CountEmitter, MD5Filter
-from saucebrush.emitters import DebugEmitter
-from saucebrush.filters import FieldRemover, FieldAdder, Filter
-from saucebrush.sources import CSVSource
-from strings.normalizer import basic_normalizer
-import saucebrush
+from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
+    EntityFilter
+from dcdata.processor import chain_filters, load_data, Every, progress_tick
+from dcdata.utils.dryrub import CountEmitter, MD5Filter, CSVFieldVerifier,\
+    VerifiedCSVSource
+from decimal import Decimal
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 from optparse import make_option
+from saucebrush.emitters import DebugEmitter
+from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier
+from strings.normalizer import basic_normalizer
 import os
+import saucebrush
 import sys
-
-MATCHBOX_ORG_NAMESPACE = 'urn:matchbox:organization:'
-
-
-#
-# entity filters
-#
+import traceback
+from dcdata.utils.sql import parse_int, parse_date
+from django.db.models.fields import CharField
 
 
-def get_with_name_fallback(preferred_field, fallback_field, urn_prefix):
-    def source(record):
-        if record.get(preferred_field, False):
-            return record[preferred_field]
-        name = record.get(fallback_field, None)
-        if name:
-            return urn_prefix + basic_normalizer(name.decode('utf-8', 'ignore'))
-        return None
-    
-    return source
 
-def get_with_contributor_fallback():
-    def source(record):
-        if record.get('contributor_urn', False):
-            return record['contributor_urn']
-        name = record.get('contributor_name', None)
-        if name:
-            city = record.get('contributor_city', None)
-            if not city:
-                city = 'unknown'
-            state = record.get('contributor_state', None)
-            if not state:
-                state = 'unknown'
-            (name, city, state) = (name.decode('utf-8', 'ignore'), city.decode('utf-8', 'ignore'), state.decode('utf-8', 'ignore'))
-            normalized_name = basic_normalizer(name)
-            return "%s%s, %s, %s" % (MATCHBOX_NAME_PREFIX, normalized_name, city, state)
-        return None
-    
-    return source    
-    
-
-MATCHBOX_NAME_PREFIX = 'urn:matchbox:name:'
-MATCHBOX_COMMITTEE_NAME_PREFIX = 'urn:matchbox:committee_name:'
-
-CONTRIBUTOR_ENTITY_FILTER = MD5Filter(get_with_contributor_fallback(), 'contributor_entity')
-RECIPIENT_ENTITY_FILTER = MD5Filter(get_with_name_fallback('recipient_urn', 'recipient_name', MATCHBOX_NAME_PREFIX), 'recipient_entity')
-COMMITTEE_ENTITY_FILTER = MD5Filter(get_with_name_fallback('committee_urn', 'committee_name', MATCHBOX_COMMITTEE_NAME_PREFIX), 'committee_entity')
-ORGANIZATION_ENTITY_FILTER = MD5Filter(get_with_name_fallback('organization_urn', 'organization_name', MATCHBOX_NAME_PREFIX), 'organization_entity')
-PARENT_ORGANIZATION_ENTITY_FILTER = MD5Filter(get_with_name_fallback('parent_organization_urn', 'parent_organization_name', MATCHBOX_NAME_PREFIX), 'parent_organization_entity')
-
-
+# todo: we should just change the denormalize scripts to put the proper value in these fields
 class ContributorFilter(Filter):
     type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
     def process_record(self, record):
@@ -80,6 +40,7 @@ class ParentOrganizationFilter(Filter):
     def process_record(self, record):
         return record
 
+# todo: we should just change the denormalize scripts to put the proper value in these fields
 class RecipientFilter(Filter):
     type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
@@ -88,23 +49,6 @@ class RecipientFilter(Filter):
 
 class CommitteeFilter(Filter):    
     def process_record(self, record):
-        return record
-    
-
-class AbortFilter(Filter):
-    def __init__(self, threshold=0.1):
-        self._record_count = 0
-        self._threshold = threshold
-    def process_record(self, record):
-        self._record_count += 1
-        if self._record_count > 50:
-            reject_count = len(self._recipe.rejected)
-            ratio = float(reject_count) / float(self._record_count)
-            if ratio > self._threshold:
-                for reject in self._recipe.rejected:
-                    sys.stderr.write(repr(reject) + '\n')
-                    sys.stderr.flush()
-                raise Exception('Abort: %s of %s records contained errors' % (reject_count, self._record_count))
         return record
     
     
@@ -124,8 +68,18 @@ class UnicodeFilter(Filter):
                 # or that I'm misunderstanding something.
                 record[key] = value.decode('utf8', self._method).encode('utf8')
         return record
-    
 
+
+class StringLengthFilter(Filter):
+    def __init__(self, model):
+        self.model = model
+        
+    def process_record(self, record):
+        for field in self.model._meta.fields:
+            if isinstance(field, CharField) and field.name in record and record[field.name]:
+                record[field.name] = record[field.name][:field.max_length]
+        return record
+    
 #
 # model loader
 #
@@ -152,7 +106,9 @@ class ContributionLoader(Loader):
         self.copy_fields(record, obj)
         
 
-class Command(BaseCommand):
+class LoadContributions(BaseCommand):
+
+    COMMIT_FREQUENCY = 100000
 
     help = "load contributions from csv"
     args = ""
@@ -164,6 +120,30 @@ class Command(BaseCommand):
             help='Data source'),
     )
     
+    @staticmethod
+    def get_record_processor(import_session):
+        return chain_filters(
+                CSVFieldVerifier(),
+                
+                FieldRemover('id'),
+                FieldRemover('import_reference'),
+                FieldAdder('import_reference', import_session),
+                
+                FieldModifier('amount', lambda a: Decimal(str(a))),
+                FieldModifier(['cycle'], parse_int),
+                FieldModifier(['date'], parse_date),
+                BooleanFilter('is_amendment'),
+                UnicodeFilter(),
+                
+                ContributorFilter(),
+                OrganizationFilter(),
+                ParentOrganizationFilter(),
+                RecipientFilter(),
+                CommitteeFilter(),
+                
+                StringLengthFilter(Contribution))
+    
+    #@transaction.commit_manually
     @transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
         
@@ -176,40 +156,24 @@ class Command(BaseCommand):
         )
         
         try:
-            saucebrush.run_recipe(
+            input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1)
             
-                CSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1),
-                CountEmitter(every=1000),
-                
-                FieldRemover('id'),
-                FieldRemover('import_reference'),
-                FieldAdder('import_reference', loader.import_session),
-                
-                IntFilter('cycle'),
-                ISODateFilter('datestamp'),
-                BooleanFilter('is_amendment'),
-                FloatFilter('amount'),
-                UnicodeFilter(),
-                
-                ContributorFilter(),
-                OrganizationFilter(),
-                ParentOrganizationFilter(),
-                RecipientFilter(),
-                CommitteeFilter(),
-                
-                CONTRIBUTOR_ENTITY_FILTER,
-                RECIPIENT_ENTITY_FILTER,
-                COMMITTEE_ENTITY_FILTER,
-                ORGANIZATION_ENTITY_FILTER,
-                PARENT_ORGANIZATION_ENTITY_FILTER,
-                
-                #DebugEmitter(),
-                AbortFilter(0.001), # fail if over 1 in 1000 records is bad
+            output_func = chain_filters(
                 LoaderEmitter(loader),
-                
-            )
+                #Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
+                Every(self.COMMIT_FREQUENCY, progress_tick))
+            
+            record_processor = self.get_record_processor(loader.import_session)
+
+            load_data(input_iterator, record_processor, output_func)
+
+            #transaction.commit()
         except:
-            sys.stderr.write("Fatal exception: %s\n" % repr(sys.exc_info()))
+            traceback.print_exception(*sys.exc_info())
+            raise
         finally:
             sys.stdout.flush()
             sys.stderr.flush()
+ 
+            
+Command = LoadContributions
