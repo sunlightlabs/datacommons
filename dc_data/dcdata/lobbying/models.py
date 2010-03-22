@@ -10,7 +10,7 @@ FILE_TYPES = {
 """
 
 class Agency(models.Model):
-    transaction_id = models.CharField(max_length=32)
+    transaction_id = models.CharField(max_length=64)
     agency_name = models.CharField(max_length=255, blank=True, null=True)
     agency_entity = EntityRef('agency_transactions')
     agency_ext_id = models.CharField(max_length=128, blank=True, null=True)
@@ -23,7 +23,7 @@ class Agency(models.Model):
 
 class Lobbyist(models.Model):
     year = models.IntegerField()
-    transaction_id = models.CharField(max_length=32)
+    transaction_id = models.CharField(max_length=64)
     lobbyist_name = models.CharField(max_length=255, blank=True, null=True)
     lobbyist_entity = EntityRef('lobbyist_transactions')
     lobbyist_ext_id = models.CharField(max_length=128, blank=True, null=True)
@@ -41,7 +41,7 @@ class Lobbyist(models.Model):
 
 class Lobbying(models.Model):
     year = models.IntegerField()
-    transaction_id = models.CharField(max_length=32)
+    transaction_id = models.CharField(max_length=64)
     transaction_type = models.CharField(max_length=8)
     transaction_type_desc = models.CharField(max_length=128) # or do this in a lookup?
     
