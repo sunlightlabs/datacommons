@@ -1,8 +1,8 @@
 from django.conf.urls.defaults import *
 from piston.emitters import Emitter
 from piston.resource import Resource
-from dc_web.api.handlers import ContributionFilterHandler, EntityHandler, EntityFilterHandler
-from dc_web.api.emitters import StreamingLoggingCSVEmitter, StreamingLoggingJSONEmitter
+from dcapi.handlers import ContributionFilterHandler, EntityHandler, EntityFilterHandler
+from dcapi.emitters import StreamingLoggingCSVEmitter, StreamingLoggingJSONEmitter
 from locksmith.auth.authentication import PistonKeyAuthentication
 
 Emitter.register('csv', StreamingLoggingCSVEmitter, 'text/csv')
