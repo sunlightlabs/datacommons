@@ -10,7 +10,7 @@ from matchbox.models import sql_names as matchbox_names, Normalization, EntityAl
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
 
-from strings.normalizer import basic_normalizer
+from dcdata.utils.strings.normalizer import basic_normalizer
 
 # todo use the global logger and debug settings
 DEBUG_SEARCH = True

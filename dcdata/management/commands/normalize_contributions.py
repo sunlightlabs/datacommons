@@ -9,7 +9,7 @@ import csv
 
 from django.db import connection, transaction
 
-from strings.normalizer import basic_normalizer
+from dcdata.utils.strings.normalizer import basic_normalizer
 
 
 def normalize_file(originals, out):
