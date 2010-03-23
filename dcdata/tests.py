@@ -32,8 +32,7 @@ import sqlite3
 import sys
 
 
-
-dataroot = 'dc_data/test_data'
+dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dc_data', 'test_data'))
 
 def assert_record_contains(tester, expected, actual):
     for (name, value) in expected.iteritems():
@@ -86,10 +85,10 @@ class TestRecipientFilter(TestCase):
 
 
 class TestNIMSPDenormalize(TestCase):
-    original_salts_db_path = 'dc_data/test_data/denormalized/original_salts.db'    
-    salts_db_path = 'dc_data/test_data/denormalized/salts.db'
-    output_paths = ['dc_data/test_data/denormalized/nimsp_allocated_contributions.csv', 
-                    'dc_data/test_data/denormalized/nimsp_unallocated_contributions.csv']
+    original_salts_db_path = os.path.join(dataroot, 'denormalized/original_salts.db')
+    salts_db_path = os.path.join(dataroot, 'denormalized/salts.db')
+    output_paths = [os.path.join(dataroot, 'denormalized/nimsp_allocated_contributions.csv'),
+                    os.path.join(dataroot, 'denormalized/nimsp_unallocated_contributions.csv')]
     
     def setUp(self):
         for path in self.output_paths + [self.salts_db_path]:
@@ -202,16 +201,17 @@ class TestCRPDenormalizeAll(TestCase):
         
 
 class TestCRPIndividualDenormalization(TestCase):
-    output_path = 'dc_data/test_data/denormalized/denorm_indivs.08.csv'
+    output_path = os.path.join(dataroot, 'denormalized/denorm_indivs.08.csv')
     
     def test_command(self):
         
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         
-        call_command('crp_denormalize_individuals', cycles='08', dataroot='dc_data/test_data')
+        call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
         
-        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/indivs08.csv', 'r')))
+        input_path = os.path.join(dataroot, 'raw/crp/indivs08.csv')
+        self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
 
     def test_process_record(self):
@@ -246,30 +246,32 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(set(model_fields('contribution.Contribution')), set(output_records[0].keys()))
 
 class TestCRPDenormalizePac2Candidate(TestCase):
-    output_path = 'dc_data/test_data/denormalized/denorm_pac2cand.csv'
+    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2cand.csv')
     
     def test_command(self):
         
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         
-        call_command('crp_denormalize_pac2candidate', cycles='08', dataroot='dc_data/test_data')
+        call_command('crp_denormalize_pac2candidate', cycles='08', dataroot=dataroot)
         
-        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/pacs08.csv', 'r')))
+        input_path = os.path.join(dataroot, 'raw/crp/pacs08.csv')
+        self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
                 
 
 class TestCRPDenormalizePac2Pac(TestCase):
-    output_path = 'dc_data/test_data/denormalized/denorm_pac2pac.csv'
+    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2pac.csv')
     
     def test_command(self):
         
         if os.path.exists(self.output_path):
             os.remove(self.output_path)
         
-        call_command('crp_denormalize_pac2pac', cycles='08', dataroot='dc_data/test_data')
+        call_command('crp_denormalize_pac2pac', cycles='08', dataroot=dataroot)
         
-        self.assertEqual(10, sum(1 for _ in open('dc_data/test_data/raw/crp/pac_other08.csv', 'r')))
+        input_path = os.path.join(dataroot, 'raw/crp/pac_other08.csv')
+        self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
         
 
@@ -279,8 +281,8 @@ class TestLoadContributions(TestCase):
     def test_command(self):
         Contribution.objects.all().delete()
         
-        call_command('crp_denormalize_individuals', cycles='08', dataroot='dc_data/test_data')
-        call_command('loadcontributions', 'dc_data/test_data/denormalized/denorm_indivs.08.csv')
+        call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
+        call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.csv'))
         
         self.assertEqual(10, Contribution.objects.all().count())
         
