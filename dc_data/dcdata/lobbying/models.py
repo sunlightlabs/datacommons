@@ -10,7 +10,7 @@ FILE_TYPES = {
 """
 
 class Agency(models.Model):
-    transaction_id = models.CharField(max_length=64)
+    transaction_id = models.CharField(max_length=64, db_index=True)
     agency_name = models.CharField(max_length=255, blank=True, null=True)
     agency_entity = EntityRef('agency_transactions')
     agency_ext_id = models.CharField(max_length=128, blank=True, null=True)
@@ -23,10 +23,10 @@ class Agency(models.Model):
 
 class Lobbyist(models.Model):
     year = models.IntegerField()
-    transaction_id = models.CharField(max_length=64)
+    transaction_id = models.CharField(max_length=64, db_index=True)
     lobbyist_name = models.CharField(max_length=255, blank=True, null=True)
     lobbyist_entity = EntityRef('lobbyist_transactions')
-    lobbyist_ext_id = models.CharField(max_length=128, blank=True, null=True)
+    lobbyist_ext_id = models.CharField(max_length=128, blank=True, null=True, db_index=True)
     candidate_entity = EntityRef('candidate_transactions')
     candidate_ext_id = models.CharField(max_length=128, blank=True, null=True)
     government_position = models.CharField(max_length=100, blank=True, null=True)
@@ -41,11 +41,11 @@ class Lobbyist(models.Model):
 
 class Lobbying(models.Model):
     year = models.IntegerField()
-    transaction_id = models.CharField(max_length=64)
+    transaction_id = models.CharField(max_length=64, db_index=True)
     transaction_type = models.CharField(max_length=8)
-    transaction_type_desc = models.CharField(max_length=128) # or do this in a lookup?
+    transaction_type_desc = models.CharField(max_length=128, blank=True, null=True) # or do this in a lookup?
     
-    filing_type = models.CharField(max_length=1)
+    filing_type = models.CharField(max_length=1, blank=True, null=True)
     filing_included_nsfs = models.BooleanField(default=False)
     
     amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)

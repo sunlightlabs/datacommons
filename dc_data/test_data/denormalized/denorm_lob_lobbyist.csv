@@ -1,0 +1,20 @@
+id,year,transaction_id,lobbyist_name,lobbyist_entity,lobbyist_ext_id,candidate_entity,candidate_ext_id,government_position,member_of_congress
+,,1998/01/000/041/000041625-2,"Testing null year",,Y00000007650,,,,False
+,1998,,"Testing null transaction_id",,Y00000122770,,,,False
+,1998,1998/01/000/041/000041642-2,"Testing Unicode character Ξ",,Y00000007650,,,,False
+,1998,1998/01/000/041/000041645-1,"Garland, Sara G",,Y00000290590,,,,False
+,1998,1998/01/000/041/000041718-2,"Miller, Julie Simon",,Y00000081870,,,,False
+,1998,1998/01/000/041/000041718-2,"Levy, Susan Nestor",,Y00000071040,,,,False
+,1998,1998/01/000/041/000041725-2,"Magliocchetti, Paul",,U00000027291,,,,False
+,1998,1998/01/000/041/000041740-2,"Swink, Philip E",,Y00000067780,,,,False
+,1998,1998/01/000/041/000041742-2,"Herzfeld, Shannon SS",,Y00000134530,,,,False
+,1998,1998/01/000/041/000041774-2,"Kulish, Carol",,Y00000029070,,,,False
+,1998,1998/01/000/041/000041802-2,"Bosch, Kevin",,Y00000201500,,,,False
+,1998,1998/01/000/041/000041802-2,"Campbell, Marilyn",,Y00000266730,,,,False
+,1998,1998/01/000/041/000041846-2,"Cohen, Daniel",,Y00000037230,,,,False
+,1998,1998/01/000/041/000041888-2,"Whittinghill, James R",,Y00000349390,,,,False
+,1998,1998/01/000/041/000041892-2,"Plebani, Jon",,Y00000133320,,,,False
+,1998,1998/01/000/041/000041902-2,"Garland, Sara G",,Y00000290590,,,,False
+,1998,1998/01/000/043/000043856-2,"Otero, Joaquin F",,Y00000298010,,,,False
+,1998,1998/01/000/043/000043872-2,"Regan, David",,Y00000354490,,,,False
+,1998,1998/01/000/044/000044908-3,"Bickley, Sharla",,Y00000219120,,,,False

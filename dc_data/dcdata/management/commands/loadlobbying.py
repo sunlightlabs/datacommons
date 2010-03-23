@@ -66,7 +66,7 @@ def lobbying_handler(inpath):
         NoneFilter(),
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=1000),
+        CountEmitter(every=10000),
         LoaderEmitter(LobbyingLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -76,13 +76,13 @@ def lobbying_handler(inpath):
 
 def lobbyist_handler(inpath):
     run_recipe(
-        CSVSource(open(inpath), skiprows=50000),
+        CSVSource(open(inpath)),
         FieldModifier('year', lambda x: int(x) if x else None),
         FieldModifier('member_of_congress', lambda x: x == 'True'),
         NoneFilter(),
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=1000),
+        CountEmitter(every=10000),
         LoaderEmitter(LobbyistLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -92,7 +92,7 @@ def lobbyist_handler(inpath):
 
 HANDLERS = {
     "lob_lobbying": lobbying_handler,
-    "lob_lobbyist": lobbyist_handler,
+    #"lob_lobbyist": lobbyist_handler,
 }
 
 # main management command

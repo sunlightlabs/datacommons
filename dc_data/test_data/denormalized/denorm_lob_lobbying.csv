@@ -1,0 +1,20 @@
+id,year,transaction_id,transaction_type,transaction_type_desc,filing_type,filing_included_nsfs,amount,registrant_name,registrant_entity,registrant_is_firm,client_name,client_entity,client_category,client_ext_id,client_parent_name,client_parent_entity,include_in_industry_totals,use,affiliate
+,1998,1998/01/000/043/000043969-6,m,,n,False,0.0,Testing null transaction_type_desc,,True,Ottumwa Regional Health Center,,H2100,,Ottumwa Regional Health Center,,False,False,False
+,1998,1998/01/000/045/000045315-2,m,MID-YEAR REPORT,p,False,0.0,Ivan Research Management,,False,Ivan Research Management,,G5200,,Ivan Research Management,,False,False,False
+,1998,1998/01/000/045/000045424-2,m,MID-YEAR REPORT,p,False,0.0,University of Virginia,,False,University of Virginia,,H5100,,University of Virginia,,False,True,False
+,1998,1998/01/000/045/000045664-1,MTL,MID-YEAR TERMINATION LETTER,n,False,0.0,"Olsson, Frank & Weeda",,True,Ergo Science,,H4300,,Ergo Science,,False,False,False
+,1998,1998/01/000/045/000045834-4,m,MID-YEAR REPORT,p,False,20000.0,National Marrow Donor Program,,False,National Marrow Donor Program,,H2000,,National Marrow Donor Program,,True,True,False
+,1998,1998/01/000/046/000046029-2,mt,MID-YEAR TERMINATION,n,False,20000.0,Rhoads Group,,True,PHH Mortgage Services,,F4600,,PHH Mortgage Services,,True,True,False
+,1998,1998/01/000/046/000046035-2,m,MID-YEAR REPORT,n,False,16087.0,Albertine Enterprises,,True,Carlson Companies,,T9000,,Carlson Companies,,True,True,False
+,1998,1998/01/000/046/000046049-2,mt,MID-YEAR TERMINATION,i,False,0.0,Albertine Enterprises,,True,Travel Industry Assn of America,,T9400,,Travel Industry Assn of America,,False,False,False
+,1998,1998/01/000/046/000046083-2,m,MID-YEAR REPORT,x,False,25000.0,"Diefenderfer, William M III",,True,Marriott International,,T9100,,Host Marriott Corp,,False,False,False
+,1998,1998/01/000/046/000046105-2,mn,MID-YEAR (NO ACTIVITY),n,False,0.0,Sense Inc,,True,Sauk-Suiattle Indian Tribe,,J7500,,Sauk-Suiattle Indian Tribe,,False,False,False
+,1998,1998/01/000/046/000046119-2,mn,MID-YEAR (NO ACTIVITY),n,False,0.0,Sense Inc,,True,Suquamish Indian Tribe,,G6550,,Suquamish Indian Tribe,,False,False,False
+,1998,1998/01/000/046/000046125-2,mn,MID-YEAR (NO ACTIVITY),n,False,0.0,Sense Inc,,True,Lummi Indian Nation,,G6550,,Lummi Indian Nation,,False,False,False
+,1998,1998/01/000/046/000046151-2,m,MID-YEAR REPORT,n,False,40000.0,DC Legislative & Regulatory Services,,True,Responsible Industry for a Sound Enviro,,A4100,,Responsible Industry for a Sound Enviro,,True,True,False
+,1998,1998/01/000/046/000046169-2,m,MID-YEAR REPORT,i,False,20000.0,DC Legislative & Regulatory Services,,True,Farmland Industries,,A4000,,Farmland Industries,,False,True,False
+,1998,1998/01/000/046/000046175-2,mt,MID-YEAR TERMINATION,e,False,20000.0,"Zeferetti, Leo C",,True,AFL-CIO Bldg/Construction Trades Dept,,LB100,D000000088,AFL-CIO,,False,True,False
+,1998,1998/01/000/046/000046185-2,m,MID-YEAR REPORT,p,False,0.0,Mid-West Electric Consumers Assn,,False,Mid-West Electric Consumers Assn,,J3000,,Mid-West Electric Consumers Assn,,True,True,False
+,1998,1998/01/000/046/000046211-2,m,MID-YEAR REPORT,i,False,45000.0,Thompson & Naughton,,True,General Motors,,T2100,D000000155,General Motors,,False,True,False
+,1998,1998/01/000/046/000046223-2,m,MID-YEAR REPORT,n,False,29000.0,"Shaw, Daniel F",,True,National Grain Sorghum Producers,,A1400,,National Grain Sorghum Producers,,True,True,False
+,1998,1998/01/000/046/000046285-3,m,MID-YEAR REPORT,n,False,0.0,"Caldwell, Alan",,True,International Assn of Fire Chiefs,,L1400,,International Assn of Fire Chiefs,,False,False,False
