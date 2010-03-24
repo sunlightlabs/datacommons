@@ -1,5 +1,5 @@
 from django.contrib import admin
-from matchbox.models import Entity, EntityAlias, EntityAttribute, Normalization, MergeCandidate, EntityNote
+from dcentity.models import Entity, EntityAlias, EntityAttribute, Normalization, MergeCandidate, EntityNote
 
 class AliasInline(admin.TabularInline):
     model = EntityAlias

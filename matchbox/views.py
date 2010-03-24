@@ -5,8 +5,8 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db import transaction
 from matchbox.forms import AssociationForm
-from matchbox.models import entityref_cache, Entity, EntityNote
-from matchbox.queries import associate_transactions, disassociate_transactions
+from dcentity.models import entityref_cache, Entity, EntityNote
+from dcentity.queries import associate_transactions, disassociate_transactions
 import base64
 import re
 

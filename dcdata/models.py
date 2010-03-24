@@ -1,5 +1,5 @@
 from django.db import models
-from matchbox.models import entityref_cache
+from dcentity.models import entityref_cache
 from django.db.models import Q
 
 class Import(models.Model):

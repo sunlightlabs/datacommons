@@ -1,5 +1,5 @@
 from dcdata.models import Import
-from matchbox.models import Entity
+from dcentity.models import Entity
 from django.db.models import get_app, get_model, get_models
 from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter

@@ -4,10 +4,10 @@ import sys
 from urllib import unquote_plus
 from django.db.models import Q
 from piston.handler import BaseHandler
-from matchbox.models import Entity, Normalization
+from dcentity.models import Entity, Normalization
 from dcdata.contribution.models import Contribution
-from dc_web.search.contributions import filter_contributions
-from matchbox.queries import search_entities_by_name
+from dcapi.contributions import filter_contributions
+from dcentity.queries import search_entities_by_name
 # aggregates imports
 from aggregates.queries import get_top_contributors, get_top_recipients
 

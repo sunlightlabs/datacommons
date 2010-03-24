@@ -1,7 +1,7 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from dcdata.models import DataCommonsModel
-from matchbox.models import EntityRef
+from dcentity.models import EntityRef
 from dcdata.utils.sql import django2sql_names
 
 

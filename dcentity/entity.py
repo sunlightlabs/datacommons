@@ -2,12 +2,12 @@
 
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE,\
     CRP_TRANSACTION_NAMESPACE
-from matchbox.queries import recompute_aggregates
+from dcentity.queries import recompute_aggregates
 
 
 from django.db import transaction, connection
 
-from matchbox.models import *
+from dcentity.models import *
 
 
 @transaction.commit_on_success
@@ -40,7 +40,7 @@ def build_org_entity(name, crp_id, nimsp_id):
     
     e = Entity.objects.create(name=name, type='organization')
     
-    if has_crp_id:
+    if has_nimsp_id:
         _associate_ids(cursor, e.id, NIMSP_TRANSACTION_NAMESPACE, nimsp_id, ['contributor', 'organization', 'parent_organization'])
     _associate_names(cursor, e.id, name, ['contributor', 'organization', 'parent_organization', 'committee', 'recipient'])
         

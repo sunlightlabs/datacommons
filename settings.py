@@ -44,6 +44,7 @@ INSTALLED_APPS = (
     'dcdata.contribution',
     'dcdata.lobbying',
     'dcapi',
+    'dcapi.contributions'
 )
 
 try:

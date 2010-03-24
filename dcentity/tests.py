@@ -1,7 +1,7 @@
 
 
 from datetime import datetime
-from matchbox.management.commands.build_aggregates import build_aggregates
+from dcentity.management.commands.build_aggregates import build_aggregates
 import unittest
 
 from django.db import connection
@@ -12,9 +12,9 @@ from dcdata.contribution.models import Contribution,\
 from dcdata.models import Import
 from models import Entity, EntityAlias, EntityAttribute, Normalization
 from dcdata.management.commands.normalize_contributions import normalize_contributions
-from matchbox.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
+from dcentity.queries import search_entities_by_name, merge_entities, _prepend_pluses,\
     associate_transactions, _pairs_to_dict, disassociate_transactions
-from matchbox.management.commands.build_big_hitters import build_big_hitters,\
+from dcentity.management.commands.build_big_hitters import build_big_hitters,\
     build_org_entity
 from dcdata.utils.sql import dict_union
 
@@ -82,7 +82,7 @@ class TestQueries(BaseMatchboxTest):
 
     def test_search_entities_by_name(self):
         cursor = connection.cursor()
-        for command in open( '../dc_data/scripts/contribution_name_indexes.sql', 'r'):
+        for command in open( 'dcdata/scripts/contribution_name_indexes.sql', 'r'):
             if command.strip() and not command.startswith('--'):
                 cursor.execute(command)
   
@@ -180,13 +180,12 @@ class TestQueries(BaseMatchboxTest):
         merge_entities((self.apple_id, self.apricot_id), Entity(name=u'Applicot'))
         applicot = Entity.objects.get(name="Applicot")
 
-        self.assertEqual(6, applicot.attributes.count())
+        self.assertEqual(5, applicot.attributes.count())
         self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=self.apple_id).count())
         self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=self.apricot_id).count())
         self.assertEqual(1, applicot.attributes.filter(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=applicot.id).count())
         self.assertEqual(1, applicot.attributes.filter(namespace='urn:nimsp:organization', value='1').count())
         self.assertEqual(1, applicot.attributes.filter(namespace='urn:nimsp:organization', value='2').count())
-        self.assertEqual(1, applicot.attributes.filter(namespace='urn:crp:organization', value='0').count())
 #        
     def test_merge_entities_and_with_entity(self):
         self.assertEqual(2, Contribution.objects.with_entity(Entity.objects.get(pk=self.apple_id)).count())
@@ -429,7 +428,6 @@ class TestEntityBuild(BaseMatchboxTest):
                                                                {'alias': 'FooBar Corp', 'verified': False}])
         self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': 'urn:nimsp:organization', 'value': '1', 'verified': True},
                                                                   {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified': True},
-                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False}])
         
@@ -438,7 +436,6 @@ class TestEntityBuild(BaseMatchboxTest):
                                                              {'alias': 'Spaz Ltd', 'verified': False},
                                                              {'alias': 'Spaz Limited', 'verified': False}])
         self.assertFilter(EntityAttribute, {'entity':spaz_id}, [{'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': spaz_id, 'verified':True},
-                                                                {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
                                                                 {'namespace': 'urn:nimsp:organization', 'value': '100', 'verified':True},
                                                                 {'namespace': 'urn:nimsp:contributor', 'value': '100', 'verified': False},
                                                                 {'namespace': 'urn:nimsp:contributor', 'value': '101', 'verified': False},
@@ -457,7 +454,6 @@ class TestEntityBuild(BaseMatchboxTest):
                                                                {'alias': 'Food Bar', 'verified': False}])
         self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': 'urn:nimsp:organization', 'value': '1', 'verified': True},
                                                                   {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified': True},
-                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '4', 'verified': False}])
@@ -470,7 +466,6 @@ class TestEntityBuild(BaseMatchboxTest):
                                                                {'alias': 'FooBar Corp', 'verified': False}])
         self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': 'urn:nimsp:organization', 'value': '1', 'verified': True},
                                                                   {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified': True},
-                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '1', 'verified': False},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '2', 'verified': False}])
                         
@@ -482,7 +477,6 @@ class TestEntityBuild(BaseMatchboxTest):
                                                              {'alias': 'Food Bar', 'verified': False}])
        
         self.assertFilter(EntityAttribute, {'entity':spaz_id}, [{'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': spaz_id, 'verified':True},
-                                                                {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
                                                                 {'namespace': 'urn:nimsp:organization', 'value': '100', 'verified':True},
                                                                 {'namespace': 'urn:nimsp:contributor', 'value': '100', 'verified': False},
                                                                 {'namespace': 'urn:nimsp:contributor', 'value': '101', 'verified': False},
@@ -503,7 +497,6 @@ class TestEntityBuild(BaseMatchboxTest):
                                                                {'alias': 'Food Bar', 'verified': False}])        
         self.assertFilter(EntityAttribute, {'entity':foobar_id}, [{'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': spaz_id, 'verified':True},
                                                                   {'namespace': EntityAttribute.ENTITY_ID_NAMESPACE, 'value': foobar_id, 'verified':True},
-                                                                  {'namespace': 'urn:crp:organization', 'value': '0', 'verified':True},
                                                                   {'namespace': 'urn:nimsp:organization', 'value': '100', 'verified':True},
                                                                   {'namespace': 'urn:nimsp:organization', 'value': '1', 'verified':True},
                                                                   {'namespace': 'urn:nimsp:contributor', 'value': '100', 'verified': False},
@@ -544,7 +537,7 @@ class TestEntityAssociate(BaseMatchboxTest):
         self.assertEqual(2, e.contribution_count)
         self.assertEqual(30, e.contribution_total_given)
         self.assertFilter(EntityAlias, {'entity': e.id}, [{'alias': 'Alice', 'verified': True}])
-        self.assertEqual(3, EntityAttribute.objects.filter(entity=e.id).count())
+        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id).count())
 
         associate_transactions(e.id, 'contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '1')])
         
@@ -564,10 +557,8 @@ class TestEntityAssociate(BaseMatchboxTest):
         self.assertEqual(2, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
-        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())
+        self.assertEqual(2, EntityAttribute.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=e.id).count())
-        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:organization', value='0').count())
-        self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:nimsp:organization', value='0').count())
         self.assertEqual(1, EntityAttribute.objects.filter(entity=e.id, namespace='urn:unittest:contributor', value='BobID').count())        
   
         associate_transactions(e.id, 'organization_entity', [(UNITTEST_TRANSACTION_NAMESPACE, '4'), (UNITTEST_TRANSACTION_NAMESPACE, '5')])
@@ -578,7 +569,7 @@ class TestEntityAssociate(BaseMatchboxTest):
         e = Entity.objects.get(name="Alice")
         self.assertEqual(10, e.contribution_count)
         self.assertEqual(7, EntityAlias.objects.filter(entity=e.id).count())
-        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())        
+        self.assertEqual(2, EntityAttribute.objects.filter(entity=e.id).count())        
         
         disassociate_transactions('contributor_entity', [(UNITTEST_TRANSACTION_NAMESPACE, 'b'), (UNITTEST_TRANSACTION_NAMESPACE, '2')])
 
@@ -589,7 +580,7 @@ class TestEntityAssociate(BaseMatchboxTest):
         self.assertEqual(6, EntityAlias.objects.filter(entity=e.id).count())
         self.assertEqual(1, EntityAlias.objects.filter(entity=e.id, alias='Alice').count())
         self.assertEqual(0, EntityAlias.objects.filter(entity=e.id, alias='Bob').count())
-        self.assertEqual(4, EntityAttribute.objects.filter(entity=e.id).count())
+        self.assertEqual(2, EntityAttribute.objects.filter(entity=e.id).count())
         self.assertEqual(0, EntityAttribute.objects.filter(entity=e.id, namespace='urn:crp:contributor', value='BobID').count())
 
         e = Entity.objects.get(name="Mary J.")
