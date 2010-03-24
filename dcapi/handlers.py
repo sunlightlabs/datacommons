@@ -8,6 +8,8 @@ from matchbox.models import Entity, Normalization
 from dcdata.contribution.models import Contribution
 from dc_web.search.contributions import filter_contributions
 from matchbox.queries import search_entities_by_name
+# aggregates imports
+from aggregates.queries import get_top_contributors, get_top_recipients
 
 RESERVED_PARAMS = ('apikey','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 1000
@@ -85,3 +87,58 @@ class EntityFilterHandler(BaseHandler):
         if 'type' in request.GET:
             qs = qs.filter(type=request.GET['type'])
         return qs[:100]
+
+
+# aggregates API Handlers
+
+class EntityMetadataHandler(BaseHandler):
+    allowed_methods=('GET',)
+    
+    def read(self, request, entity_id):
+        return {"response": "Not Implemented"}
+
+class TopContributionsHandler(BaseHandler):
+    allowed_methods=('GET',)    
+    def read(self, request, entity_id):        
+        n = request.GET.get('top', None)
+
+        # 'breakdown' returns information about the percentage of
+        # contributions from members of different categories.
+        breakdown = request.GET.get('breakdown', None)    
+        print 'breakdown: %s' % breakdown
+        if not breakdown:
+            # get_top_contributors is hard coded to return 20 records
+            # right now. eventually pass in n as a parameter. 
+            return get_top_contributors(entity_id)        
+
+        elif (breakdown == 'party' or breakdown == 'instate' 
+              or breakdown == 'level' or breakdown == 'source'):
+            return {"response": "Not Implemented"}
+
+        else:
+            # this should be a 404?
+            return {'response': 'Error: Invalid API Call'}
+
+class TopRecipientsHandler(BaseHandler):
+    allowed_methods=('GET',)    
+    def read(self, request, entity_id):        
+
+        # 'breakdown' returns information about the percentage of
+        # contributions from members of different categories.
+        breakdown = request.GET.get('breakdown', None)    
+        if not breakdown:
+            # get_top_contributors is hard coded to return 20 records
+            # right now. eventually pass in n as a parameter. 
+            return get_top_recipients(entity_id)        
+
+        elif (breakdown == 'party' or breakdown == 'instate' 
+              or breakdown == 'level' or breakdown == 'source'):
+            return {"response": "Not Implemented"}
+
+        else:
+            # this should be a 404?
+            return {'response': 'Error: Invalid API Call'}
+
+
+
+
