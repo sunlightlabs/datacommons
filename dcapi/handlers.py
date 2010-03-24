@@ -76,69 +76,18 @@ class EntityHandler(BaseHandler):
 
 class EntityFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
-    fields = ('id','name','type','timestamp','reviewer',('attributes',('namespace','value')),('aliases',('alias',)))
+#    fields = ('id','name','type','timestamp','reviewer',('attributes',('namespace','value')),('aliases',('alias',)))
+    fields = ('id','name','type','timestamp','reviewer')
     model = Entity
 
     def read(self, request):
-        qs = Entity.objects.all().select_related()
-        if 'name' in request.GET:
-            #print search_entities_by_name(request.GET['name'])
-            pass
-        if 'type' in request.GET:
-            qs = qs.filter(type=request.GET['type'])
-        return qs[:100]
+        search_string = request.GET.get('search', None)
+        if not search_string:
+            return {'response' : "It doesn't make any sense to do a search without a search string"}
 
-
-# aggregates API Handlers
-
-class EntityMetadataHandler(BaseHandler):
-    allowed_methods=('GET',)
-    
-    def read(self, request, entity_id):
-        return {"response": "Not Implemented"}
-
-class TopContributionsHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    def read(self, request, entity_id):        
-        n = request.GET.get('top', None)
-
-        # 'breakdown' returns information about the percentage of
-        # contributions from members of different categories.
-        breakdown = request.GET.get('breakdown', None)    
-        print 'breakdown: %s' % breakdown
-        if not breakdown:
-            # get_top_contributors is hard coded to return 20 records
-            # right now. eventually pass in n as a parameter. 
-            return get_top_contributors(entity_id)        
-
-        elif (breakdown == 'party' or breakdown == 'instate' 
-              or breakdown == 'level' or breakdown == 'source'):
-            return {"response": "Not Implemented"}
-
-        else:
-            # this should be a 404?
-            return {'response': 'Error: Invalid API Call'}
-
-class TopRecipientsHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    def read(self, request, entity_id):        
-
-        # 'breakdown' returns information about the percentage of
-        # contributions from members of different categories.
-        breakdown = request.GET.get('breakdown', None)    
-        if not breakdown:
-            # get_top_contributors is hard coded to return 20 records
-            # right now. eventually pass in n as a parameter. 
-            return get_top_recipients(entity_id)        
-
-        elif (breakdown == 'party' or breakdown == 'instate' 
-              or breakdown == 'level' or breakdown == 'source'):
-            return {"response": "Not Implemented"}
-
-        else:
-            # this should be a 404?
-            return {'response': 'Error: Invalid API Call'}
-
-
+        entity_type = request.GET.get('type', None)
+        if 'search' in request.GET:
+            return search_entities_by_name(unicode(request.GET['search']), entity_type)
+        
 
 
