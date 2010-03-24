@@ -1,7 +1,7 @@
 
 import unittest
 
-from transformers import *
+from dcdata.utils.strings.transformers import *
 
 class Test(unittest.TestCase):
         

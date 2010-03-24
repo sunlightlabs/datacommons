@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q, Sum
 from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
-from strings.normalizer import basic_normalizer
+from dcdata.utils.strings.normalizer import basic_normalizer
 import datetime
 
 #

@@ -18,11 +18,11 @@ from saucebrush.filters import *
 from dcdata.utils.dryrub import CountEmitter, VerifiedCSVSource,\
     CSVFieldVerifier
 
-from scripts.nimsp.salt import DCIDFilter, SaltFilter
+from dcdata.scripts.nimsp.salt import DCIDFilter, SaltFilter
 
 from settings import OTHER_DATABASES
 
-from scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
+from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from dcdata.processor import chain_filters, load_data
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option

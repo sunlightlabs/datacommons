@@ -66,7 +66,7 @@ def lobbying_handler(inpath):
         NoneFilter(),
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=10000),
+        CountEmitter(every=5000),
         LoaderEmitter(LobbyingLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -82,7 +82,7 @@ def lobbyist_handler(inpath):
         NoneFilter(),
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=10000),
+        CountEmitter(every=5000),
         LoaderEmitter(LobbyistLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -92,7 +92,7 @@ def lobbyist_handler(inpath):
 
 HANDLERS = {
     "lob_lobbying": lobbying_handler,
-    #"lob_lobbyist": lobbyist_handler,
+    "lob_lobbyist": lobbyist_handler,
 }
 
 # main management command

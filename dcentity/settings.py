@@ -97,7 +97,7 @@ INSTALLED_APPS = (
     'dcdata.contribution',
     'dcdata.lobbying',
     'dcdata',
-    'search'
+    'dc_web.search',
 )
 
 LOGIN_URL = '/auth/login/'
