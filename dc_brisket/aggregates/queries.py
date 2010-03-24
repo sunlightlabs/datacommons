@@ -14,9 +14,6 @@ create_tops_stmt = """
                count(*) as count,
                sum(amount) as amount
         from contribution_contribution
-        where 
-            cycle = '2006'
-            and contributor_state = 'WA'
         group by case when contributor_entity = '' then contributor_name
                         else contributor_entity end,
                  case when recipient_entity = '' then recipient_name
