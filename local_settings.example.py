@@ -37,3 +37,24 @@ ADMIN_MEDIA_PREFIX = '/media/admin/'
 TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT, 'templates'),
 )
+
+OTHER_DATABASES = { 
+    'nimsp': { 
+        'DATABASE_HOST': '',
+        'DATABASE_NAME': '',
+        'DATABASE_USER': '',
+        'DATABASE_PASSWORD': ''
+    },
+    'salts': {
+        # 'DATABASE_HOST': '',
+        # 'DATABASE_NAME': '',
+        # 'DATABASE_USER': '',
+        # 'DATABASE_PASSWORD': ''
+    },
+   'util': {  
+        'DATABASE_HOST': '',
+        'DATABASE_NAME': '',
+        'DATABASE_USER': '',
+        'DATABASE_PASSWORD': ''
+    }
+}
