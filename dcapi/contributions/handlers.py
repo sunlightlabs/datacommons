@@ -48,9 +48,6 @@ def load_contributions(params, nolimit=False, ordering=True):
           
     return result
 
-#
-# contribution filter
-#
 
 class ContributionFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
@@ -61,31 +58,6 @@ class ContributionFilterHandler(BaseHandler):
         params = request.GET.copy()
         return load_contributions(params)
 
-#
-# entity handlers
-#
-
-class EntityHandler(BaseHandler):
-    allowed_methods = ('GET',)
-    model = Entity
-    
-    def read(self, request, entity_id):
-        return Entity.objects.get(pk=entity_id)
-
-class EntityFilterHandler(BaseHandler):
-    allowed_methods = ('GET',)
-#    fields = ('id','name','type','timestamp','reviewer',('attributes',('namespace','value')),('aliases',('alias',)))
-    fields = ('id','name','type','timestamp','reviewer')
-    model = Entity
-
-    def read(self, request):
-        search_string = request.GET.get('search', None)
-        if not search_string:
-            return {'response' : "It doesn't make any sense to do a search without a search string"}
-
-        entity_type = request.GET.get('type', None)
-        if 'search' in request.GET:
-            return search_entities_by_name(unicode(request.GET['search']), entity_type)
         
 
 

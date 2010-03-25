@@ -1,0 +1,4 @@
+this folder contains class and function definitions of use to any data
+set in the datacommons API, for example custom emitters for specific
+data formats or utility functions.
+
