@@ -67,7 +67,11 @@ def _amount_between_generator(query, lower, upper):
     return query.filter(amount__range=(int(lower), int(upper)))
 
 def _cycle_in_generator(query, *cycles):
-    return query.filter(cycle__in=[int(cycle) for cycle in cycles])
+    def dual_cycles(cycles):
+        for cycle in cycles:
+            yield int(cycle) - 1
+            yield int(cycle)
+    return query.filter(cycle__in=[cycle for cycle in dual_cycles(cycles)])
 
 def _jurisdiction_in_generator(query, *jurisdiction):
     return query.filter(transaction_namespace__in=jurisdiction)
