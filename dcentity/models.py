@@ -91,7 +91,7 @@ class Entity(models.Model):
 
 class EntityNote(models.Model):
     entity = models.ForeignKey(Entity, related_name='notes')
-    user = models.ForeignKey(User, related_name="entity_notes")
+    user = models.ForeignKey(User, related_name="notes")
     timestamp = models.DateTimeField(auto_now_add=True)
     content = models.TextField()
     
@@ -160,10 +160,10 @@ class MergeCandidate(models.Model):
     objects = MergeCandidateManager()
     
     name = models.CharField(max_length=255)
-    entity = models.ForeignKey(Entity, blank=True, null=True)
+    entity = models.ForeignKey(Entity, related_name="merge_candidates", blank=True, null=True)
     priority = models.IntegerField(default=0)
     timestamp = models.DateTimeField(auto_now_add=True)
-    owner = models.ForeignKey(User, blank=True, null=True)
+    owner = models.ForeignKey(User, related_name="merge_candidates", blank=True, null=True)
     owner_timestamp = models.DateTimeField(blank=True, null=True)
     
     class Meta:
