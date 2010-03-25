@@ -79,7 +79,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
 )
 
-ROOT_URLCONF = 'dc_matchbox.urls'
+ROOT_URLCONF = 'matchbox.urls'
 
 TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT, 'templates'),
@@ -97,7 +97,7 @@ INSTALLED_APPS = (
     'dcdata.contribution',
     'dcdata.lobbying',
     'dcdata',
-    'dc_web.search',
+    'dcapi.contributions',
 )
 
 LOGIN_URL = '/auth/login/'

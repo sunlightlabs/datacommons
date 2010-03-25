@@ -1,5 +1,5 @@
 from django.db import models
-from matchbox.models import EntityRef
+from dcentity.models import EntityRef
 
 
 """

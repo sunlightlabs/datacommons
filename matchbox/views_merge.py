@@ -8,9 +8,9 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils import simplejson as json
-from matchbox.models import Entity, entityref_cache, MergeCandidate, EntityNote
+from dcentity.models import Entity, entityref_cache, MergeCandidate, EntityNote
 from matchbox.utils import decode_htmlentities
-from queries import search_entities_by_name, merge_entities
+from dcentity.queries import search_entities_by_name, merge_entities
 import urllib
 
 ENTITY_TYPES = getattr(settings, 'ENTITY_TYPES', ())
@@ -36,8 +36,8 @@ def _search(query, type_filter):
             'type': 'organization',
             'name': name,
             'count': count,
-            'total_given': total_given,
-            'total_received': total_received
+            'total_given': float(total_given),
+            'total_received': float(total_received)
         })
     content = json.dumps(results)
     

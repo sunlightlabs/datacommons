@@ -3,7 +3,7 @@ from django.utils import simplejson
 from piston.emitters import Emitter
 from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
-from matchbox.models import entityref_cache
+from dcentity.models import entityref_cache
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE,\
     CRP_TRANSACTION_NAMESPACE
 from time import time

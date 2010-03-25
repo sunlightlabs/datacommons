@@ -32,7 +32,7 @@ import sqlite3
 import sys
 
 
-dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dc_data', 'test_data'))
+dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
 
 def assert_record_contains(tester, expected, actual):
     for (name, value) in expected.iteritems():
@@ -316,6 +316,8 @@ class TestLoadContributions(TestCase):
         self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
         
     def test_bad_value(self):
+        Contribution.objects.all().delete()
+        
         # the second record has an out-of-range date
         input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,"BOTTGER, ANTHONY",,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
                       ',,1998,urn:nimsp:transaction,227059e3c32af276f5b37642922e415c,,,False,200,0922-09-08,"TRICK, BILL",,,,,,,BOX 2730,TUSCALOOSA,AL,35403,B1500,,,,,,,,"BENTLEY, ROBERT J",3188,,R,politician,AL,,,,,,,G,AL-21,state:upper,,L',

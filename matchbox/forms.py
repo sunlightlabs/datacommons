@@ -1,5 +1,5 @@
 from django import forms
-from matchbox.models import entityref_cache
+from dcentity.models import entityref_cache
 
 class AssociationForm(forms.Form):
     

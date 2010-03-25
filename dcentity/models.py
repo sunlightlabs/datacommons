@@ -85,6 +85,9 @@ class Entity(models.Model):
     def __unicode__(self):
         return self.name
     
+    class Meta:
+        db_table = 'matchbox_entity'
+    
 
 class EntityNote(models.Model):
     entity = models.ForeignKey(Entity, related_name='notes')
@@ -94,9 +97,11 @@ class EntityNote(models.Model):
     
     class Meta:
         ordering = ('-timestamp',)
+        db_table = 'matchbox_entitynote'
     
     def __unicode__(self):
         return self.content
+    
     
     
 class EntityAlias(models.Model):
@@ -106,6 +111,7 @@ class EntityAlias(models.Model):
     
     class Meta:
         ordering = ('alias',)
+        db_table = 'matchbox_entityalias'
     
     def __unicode__(self):
         return self.alias
@@ -123,6 +129,7 @@ class EntityAttribute(models.Model):
     
     class Meta:
         ordering = ('namespace',)
+        db_table = 'matchbox_entityattribute'
     
     def __unicode__(self):
         return u"%s:%s" % (self.namespace, self.value)
@@ -134,6 +141,7 @@ class Normalization(models.Model):
     
     class Meta:
         ordering = ('original',)
+        db_table = 'matchbox_normalization'
     
     def __unicode__(self):
         return self.original
@@ -160,6 +168,7 @@ class MergeCandidate(models.Model):
     
     class Meta:
         ordering = ('-priority','timestamp')
+        db_table = 'matchbox_mergecandidate'
     
     def __unicode__(self):
         return self.name
