@@ -31,7 +31,7 @@ create index contribution_contribution_recipient_ext_id on contribution_contribu
 -- name indexes
 
 drop index if exists contribution_contribution_contributor_name;
-drop index if exists contribution_contribution_contributor_employer
+drop index if exists contribution_contribution_contributor_employer;
 drop index if exists contribution_contribution_organization_name;
 drop index if exists contribution_contribution_parent_organization_name;
 drop index if exists contribution_contribution_committee_name;
