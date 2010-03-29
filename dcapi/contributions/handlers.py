@@ -8,8 +8,6 @@ from dcentity.models import Entity, Normalization
 from dcdata.contribution.models import Contribution
 from dcapi.contributions import filter_contributions
 from dcentity.queries import search_entities_by_name
-# aggregates imports
-from dcapi.aggregates.queries import get_top_contributors, get_top_recipients
 
 RESERVED_PARAMS = ('apikey','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 1000

@@ -1,6 +1,6 @@
 from piston.handler import BaseHandler
 from dcapi.aggregates.queries import get_top_contributors, get_top_recipients
-from matchbox.queries import search_entities_by_name
+from dcentity.queries import search_entities_by_name
 try:
     import json
 except:
@@ -18,7 +18,15 @@ class TopContributorsHandler(BaseHandler):
         if not breakdown:
             # get_top_contributors is hard coded to return 20 records
             # right now. eventually pass in n as a parameter. 
-            return get_top_contributors(entity_id)        
+            results = []
+            for (name, id_, count, amount) in get_top_contributors(entity_id):
+                results.append({
+                        'name': name,
+                        'id': id_,
+                        'count': count,
+                        'amount': float(amount)
+                        })
+            return results
 
         elif (breakdown == 'party' or breakdown == 'instate' 
               or breakdown == 'level' or breakdown == 'source'):
@@ -38,7 +46,16 @@ class TopRecipientsHandler(BaseHandler):
         if not breakdown:
             # get_top_contributors is hard coded to return 20 records
             # right now. eventually pass in n as a parameter. 
-            return get_top_recipients(entity_id)        
+            results = []
+            for (name, id_, count, amount) in get_top_recipients(entity_id):
+                results.append({
+                        'name': name,
+                        'id': id_,
+                        'count': count,
+                        'amount': float(amount)
+                        })
+            return results
+
 
         elif (breakdown == 'party' or breakdown == 'instate' 
               or breakdown == 'level' or breakdown == 'source'):
