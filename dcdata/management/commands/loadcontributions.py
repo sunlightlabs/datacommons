@@ -77,7 +77,7 @@ class StringLengthFilter(Filter):
     def process_record(self, record):
         for field in self.model._meta.fields:
             if isinstance(field, CharField) and field.name in record and record[field.name]:
-                record[field.name] = record[field.name][:field.max_length]
+                record[field.name] = record[field.name].strip()[:field.max_length]
         return record
     
 #
