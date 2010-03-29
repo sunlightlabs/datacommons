@@ -68,4 +68,6 @@ create index contribution_contribution_recipient_name_ft on contribution_contrib
 
 -- other indexes
 
+drop index if exists contribution_contribution_transaction_id;
+
 create index contribution_contribution_transaction_id on contribution_contribution (transaction_id);

@@ -1,10 +1,13 @@
 *.db
 *.pyc
+*.out
 pip-log.txt
 local_settings.py
+screenlog*
 data/
 tmp/
 *~
+._*
 .settings/org.eclipse.core.resources.prefs
 dc_data/test_data/denormalized/denorm_indivs.08.csv
 dc_data/test_data/denormalized/denorm_pac2cand.csv
