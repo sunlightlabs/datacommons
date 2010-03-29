@@ -1,11 +1,7 @@
-* install pip, virtualenv
-  - pip is a tarball you can download online
-  - then for virtualenv:
-    $ sudo easy_install virtualenv
-
-* install dependencies in requirements.txt files for dc_web and
-  dc_matchbox
-  $ pip install -E datacommons/ <package name>
+* install pip and virtualenv
+  - sudo apt-get install python-pip
+  - sudo apt-get install python-setuptools (if you don't already have easy_install)
+  - sudo easy_install virtualenv
 
 * install and configure virtualenvwrapper:
   $ [sudo] pip install virtualenvwrapper
@@ -18,6 +14,10 @@
 
 * if you need activate the datacommons virtualenv later, use:
   $ workon datacommons
+
+* install dependencies in requirements.txt files for dc_web and
+  dc_matchbox
+  $ pip install -E datacommons/ <package name>
    
 * add dc_data, dc_matcchbox, dc_web to the virtual env python path
   $ add2virtualenv [dir]
