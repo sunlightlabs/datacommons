@@ -4,13 +4,13 @@
   - sudo easy_install virtualenv
 
 * install and configure virtualenvwrapper:
-  $ [sudo] pip install virtualenvwrapper
+  $ sudo pip install virtualenvwrapper
   $ echo 'export WORKON_HOME="path/to/virtualenvs"' >> ~/.bashrc
   $ echo "source /usr/local/bin/virtualenvwrapper_bashrc" >> ~/.bashrc
 
-* create a new virtual env for datacommons. this will also activate
-  it:
+* create a new virtual env for datacommons. this will also activate it:
   $ mkvirtualenv datacommons
+  note that the 'datacommons' dir can already exist or not. this command will create bin/ include/ and lib/ directories inside the datacommons directory.  
 
 * if you need activate the datacommons virtualenv later, use:
   $ workon datacommons
