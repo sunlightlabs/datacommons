@@ -43,8 +43,6 @@ def load_contributions(params, nolimit=False, ordering=True):
         result = result.order_by('-cycle','-amount')
     if not nolimit:
         result = result[offset:limit]
-        
-    #print("load_contributions(%s) returned %s results in %s seconds." % (unquoted_params, len(result), time() - start_time))
           
     return result
 
@@ -57,7 +55,3 @@ class ContributionFilterHandler(BaseHandler):
     def read(self, request):
         params = request.GET.copy()
         return load_contributions(params)
-
-        
-
-

@@ -56,8 +56,8 @@ class StreamingLoggingEmitter(Emitter):
         
         for chunk in self.stream(request, final_fields, stats):
             yield chunk
-
-        print("emitter returned %s results in %s seconds." % (stats.stats['total'], time() - start_time))
+            
+        end_time = time()
             
         Invocation.objects.create(
             caller_key=request.apikey.key,
@@ -66,7 +66,7 @@ class StreamingLoggingEmitter(Emitter):
             total_records=stats.stats['total'],
             crp_records=stats.stats.get(CRP_TRANSACTION_NAMESPACE, 0),
             nimsp_records=stats.stats.get(NIMSP_TRANSACTION_NAMESPACE, 0),
-            execution_time=0, # fill this out!!!
+            execution_time=(end_time - start_time) * 1000,
         )
         
             

@@ -16,8 +16,6 @@ from schema import Operator, Schema, InclusionField, OperatorField
 # Generator functions
 
 def _for_against_generator(query, for_against):
-    print for_against
-    print type(for_against)
     if for_against == 'for':
         query = query.exclude(transaction_type__in=('24a','24n'))
     elif for_against == 'against':

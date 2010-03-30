@@ -10,7 +10,7 @@ class Invocation(models.Model):
     total_records = models.IntegerField()
     crp_records = models.IntegerField()
     nimsp_records = models.IntegerField()
-    execution_time = models.IntegerField()
+    execution_time = models.IntegerField(help_text="milliseconds")
     
     class Meta:
         ordering = ('-timestamp',)
