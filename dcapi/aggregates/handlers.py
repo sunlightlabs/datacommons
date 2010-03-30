@@ -1,19 +1,33 @@
 from piston.handler import BaseHandler
-from dcapi.aggregates.queries import get_top_contributors, get_top_recipients
-from dcentity.queries import search_entities_by_name
-try:
-    import json
-except:
-    import simplejson as json
+from dcapi.aggregates.queries import get_top_indivs_to_cand,\
+    get_top_cats_to_cand, get_top_cmtes_to_cand, get_top_cmtes_from_indiv,\
+    get_top_cands_from_indiv
+
 
 class TopContributorsHandler(BaseHandler):
     allowed_methods=('GET',)    
+    # why is StreamingLoggingEmitter being used? Shouldn't be necessary to list fields.
+    fields = ['name', 'id', 'count', 'amount']
     def read(self, request, entity_id):        
-        n = request.GET.get('top', None)
-        # get_top_contributors is hard coded to return 20 records
-        # right now. eventually pass in n as a parameter. 
+        n = request.GET.get('top', 10)
+        
+        print "reached handler."
+        
+        type = request.GET.get('type', None)
+        if type == 'individual':
+            query = get_top_indivs_to_cand
+        # not implemented yet: industry search returns different result type
+        #elif type = 'industry':
+        #    query = get_top_cats_to_cand
+        elif type == 'pac':
+            query = get_top_cmtes_to_cand
+        else:
+            return {'Error': "Unrecognized or missing type: '%s'" % type} 
+
+        print "Query function is %s" % query
+
         results = []
-        for (name, id_, count, amount) in get_top_contributors(entity_id):
+        for (name, id_, count, amount) in query(entity_id, limit=n):
             results.append({
                     'name': name,
                     'id': id_,
@@ -24,11 +38,20 @@ class TopContributorsHandler(BaseHandler):
 
 class TopRecipientsHandler(BaseHandler):
     allowed_methods=('GET',)    
+    fields = ['name', 'id', 'count', 'amount']    
     def read(self, request, entity_id):        
-        # get_top_contributors is hard coded to return 20 records
-        # right now. eventually pass in n as a parameter. 
+        n = request.GET.get('top', 10)
+
+        type = request.GET.get('type', None)
+        if type == 'pac':
+            query = get_top_cmtes_from_indiv
+        elif type == 'politician':
+            query = get_top_cands_from_indiv
+        else:
+            return {'Error': "Unrecognized or missing type: '%s'" % type} 
+
         results = []
-        for (name, id_, count, amount) in get_top_recipients(entity_id):
+        for (name, id_, count, amount) in query(entity_id, limit=10):
             results.append({
                     'name': name,
                     'id': id_,
