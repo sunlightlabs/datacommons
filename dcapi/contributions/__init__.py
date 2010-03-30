@@ -32,6 +32,9 @@ def _transaction_type_in_generator(query, *transaction_types):
 
 def _contributor_state_in_generator(query, *states):
     return query.filter(contributor_state__in=[state.upper() for state in states])
+    
+def _recipient_state_in_generator(query, *states):
+    return query.filter(recipient_state__in=[state.upper() for state in states])
 
 def _date_before_generator(query, date):
     return query.filter(date__lte=parse_date(date))
@@ -128,6 +131,7 @@ BETWEEN_OP = '><'
 
 SEAT_FIELD = 'seat'
 CONTRIBUTOR_STATE_FIELD = 'contributor_state'
+RECIPIENT_STATE_FIELD = 'recipient_state'
 DATE_FIELD = 'date'
 ORGANIZATION_FIELD ='organization'
 COMMITTEE_FIELD ='committee'
@@ -153,6 +157,7 @@ EMPLOYER_FT_FIELD = 'employer_ft'
 CONTRIBUTION_SCHEMA = Schema(
                              InclusionField(SEAT_FIELD, _seat_in_generator),
                              InclusionField(CONTRIBUTOR_STATE_FIELD, _contributor_state_in_generator),
+                             InclusionField(RECIPIENT_STATE_FIELD, _recipient_state_in_generator),
                              InclusionField(CYCLE_FIELD, _cycle_in_generator),
                              InclusionField(COMMITTEE_FIELD, _committee_in_generator),
                              InclusionField(CONTRIBUTOR_FIELD, _contributor_in_generator),
