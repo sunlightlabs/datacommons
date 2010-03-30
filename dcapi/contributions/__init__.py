@@ -77,7 +77,7 @@ def _cycle_in_generator(query, *cycles):
 def _jurisdiction_in_generator(query, *jurisdiction):
     return query.filter(transaction_namespace__in=jurisdiction)
     
-def _industry_in_generator(query, *industry):
+def _contributor_industry_in_generator(query, *industry):
     ors = Q()
     for ind in industry:
         (catorder, catcode) = ind.split(',')
@@ -141,7 +141,7 @@ CYCLE_FIELD = 'cycle'
 JURISDICTION_FIELD = 'transaction_namespace'
 TRANSACTION_TYPE_FIELD = 'transaction_type'
 FOR_AGAINST_FIELD = 'for_against'
-INDUSTRY_FIELD = 'industry'
+CONTRIBUTOR_INDUSTRY_FIELD = 'contributor_industry'
 
 CONTRIBUTOR_FT_FIELD = 'contributor_ft'
 ORGANIZATION_FT_FIELD = 'organization_ft'
@@ -170,7 +170,7 @@ CONTRIBUTION_SCHEMA = Schema(
                              InclusionField(EMPLOYER_FT_FIELD, _employer_ft_generator),
                              InclusionField(TRANSACTION_TYPE_FIELD, _transaction_type_in_generator),
                              InclusionField(FOR_AGAINST_FIELD, _for_against_generator),
-                             InclusionField(INDUSTRY_FIELD, _industry_in_generator),
+                             InclusionField(CONTRIBUTOR_INDUSTRY_FIELD, _contributor_industry_in_generator),
                              OperatorField(DATE_FIELD,
                                    Operator(LESS_THAN_OP, _date_before_generator),
                                    Operator(GREATER_THAN_OP, _date_after_generator),
