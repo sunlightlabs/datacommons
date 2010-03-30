@@ -10,7 +10,7 @@ from django.db import transaction, connection
 from dcentity.models import *
 
 
-@transaction.commit_on_success
+#@transaction.commit_on_success
 def build_recipient_entity(name, namespace, id):
     cursor = connection.cursor()
     
