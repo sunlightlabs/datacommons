@@ -6,6 +6,7 @@ urlpatterns = patterns('',
     # aggregates has also been de-coupled from the contributions API. 
     url(r'^entities', include('dcapi.entities.urls')), 
     url(r'^contributions', include('dcapi.contributions.urls')), 
+    url(r'^lobbying', include('dcapi.lobbying.urls')),
     url(r'^aggregates/', include('dcapi.aggregates.urls')), 
 
 )
