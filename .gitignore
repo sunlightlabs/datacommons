@@ -16,4 +16,6 @@ dc_data/test_data/denormalized/nimsp_allocated_contributions.csv
 dc_data/test_data/denormalized/nimsp_unallocated_contributions.csv.TMP
 dc_data/test_data/denormalized/nimsp_unallocated_contributions_salted.csv
 dc_data/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv
+.project
+.pydevproject
 
