@@ -5,7 +5,7 @@ from urllib import unquote_plus
 from django.db.models import Q
 from piston.handler import BaseHandler
 from dcentity.models import Entity
-from dcentity.queries import search_entities_by_name
+from dcapi.aggregates.queries import search_names
 
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
@@ -25,6 +25,10 @@ class EntityFilterHandler(BaseHandler):
         if not search_string:
             return {'response' : "It doesn't make any sense to do a search without a search string"}
 
+        
+        # entity_types is currently not supported but we'll probably
+        # build it in at some point.
+        entity_types = request.GET.get('type', None)        
         return search_names(search_string, entity_types)
 
 
