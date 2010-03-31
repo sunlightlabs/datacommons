@@ -156,6 +156,7 @@ get_top_cmtes_from_indiv_stmt = """
     limit %%s
 """
 
+#
 
 search_stmt = """
     (select coalesce(c.name, r.name) as name, '' as entity_id, coalesce(c.count, 0) + coalesce(r.count, 0) as count, coalesce(c.given, 0) as given, coalesce(r.received, 0) as received
@@ -177,13 +178,27 @@ union
 """
 
 
-def search_names(query):
+def search_names(query, entity_types):
+    # entity_types is not currently used but we'll build it in at some
+    # point...
+
     cursor = connection.cursor()
     
     parsed_query = ' & '.join(query.split(' '))
     
     cursor.execute(search_stmt, [parsed_query, parsed_query, parsed_query])
-    return list(cursor)
+    results = list(cursor)
+    results_annotated = []
+    for (name, id_, count, total_given, total_received) in results:
+        results_annotated.append({
+                'id': id_,
+                'name': name,
+                'count': count,
+                'total_given': float(total_given),
+                'total_received': float(total_received)
+                })
+    return results_annotated
+   
 
 
 def _cycle_clause(cycles):
