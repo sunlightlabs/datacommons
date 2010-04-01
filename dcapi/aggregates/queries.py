@@ -157,6 +157,7 @@ get_top_cmtes_from_indiv_stmt = """
 #
 
 search_stmt = """
+
     (select coalesce(c.name, r.name) as name, '' as entity_id, coalesce(c.count, 0) as count_given, coalesce(r.count, 0) as count_received, coalesce(c.given, 0) as given, coalesce(r.received, 0) as received
     from
         (select contributor as name, '' as entity_id, sum(count) as count, sum(amount) as given, 0 as received
@@ -172,19 +173,26 @@ search_stmt = """
         having sum(count) > 0) as r
     on c.name = r.name)
 union
-    (select e.name, e.id, count(c), count(r), sum(ct.amount), sum(rt.amount)
-    from matchbox_entity e
-    left outer join contributor_associations c
-        on e.id = c.entity_id
-    left outer join contribution_contribution ct
-        on c.transaction_id = ct.transaction_id
-    left outer join recipient_associations r
-        on e.id = r.entity_id
-    left outer join contribution_contribution rt
-        on r.transaction_id = rt.transaction_id
-    where to_tsvector('datacommons', name) @@ to_tsquery('datacommons', %s)
-    group by e.name, e.id
-    having count(c) > 0 or count(r) > 0)
+    (select e.name, e.id, coalesce(contrib_aggs.count, 0), coalesce(recip_aggs.count, 0), coalesce(contrib_aggs.sum, 0), coalesce(recip_aggs.sum, 0)
+    from 
+		matchbox_entity e
+	left join
+		(select a.entity_id, count(transaction), sum(transaction.amount)
+		from contributor_associations a
+		inner join contribution_contribution transaction
+			on a.transaction_id = transaction.transaction_id
+		group by a.entity_id) as contrib_aggs
+		on contrib_aggs.entity_id = e.id
+	left join
+		(select a.entity_id, count(transaction), sum(transaction.amount)
+		from recipient_associations a
+		inner join contribution_contribution transaction
+			on a.transaction_id = transaction.transaction_id
+		group by a.entity_id) as recip_aggs
+		on recip_aggs.entity_id = e.id
+    where 
+		to_tsvector('datacommons', name) @@ to_tsquery('datacommons', %s)
+		and (contrib_aggs.count > 0 or recip_aggs.count > 0))
 """
 
 
