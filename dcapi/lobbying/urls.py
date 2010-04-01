@@ -17,5 +17,5 @@ ad = { 'authentication': PistonKeyAuthentication() }
 lobbyingfilter_handler = Resource(LobbyingFilterHandler, **ad)
 
 urlpatterns = patterns('',
-    url(r'^.(?P<emitter_format>.+)$', lobbyingfilter_handler, name='api_lobbying_filter'),
+    url(r'^.(?P<emitter_format>json)$', lobbyingfilter_handler, name='api_lobbying_filter'),
 )
