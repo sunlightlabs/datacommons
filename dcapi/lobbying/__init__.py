@@ -8,6 +8,9 @@ LESS_THAN_OP = '<'
 GREATER_THAN_OP = '>'
 BETWEEN_OP = '><'
 
+TRANSACTION_ID_FIELD = 'transaction_id'
+TRANSACTION_TYPE_FIELD = 'transaction_type'
+
 CLIENT_FT_FIELD = 'client_name_ft'
 CLIENT_PARENT_FT_FIELD = 'client_parent_name_ft'
 LOBBYIST_FT_FIELD = 'lobbyist_name_ft'
@@ -18,6 +21,7 @@ FILING_TYPE_FIELD = 'filing_type'
 YEAR_FIELD = 'year'
 
 # utility generators
+
 def _ft_generator(query, column, *searches):
     return query.extra(where=[_ft_clause(column)], params=[_ft_terms(*searches)])
 
@@ -28,11 +32,16 @@ def _ft_terms(*searches):
     return ' | '.join("(%s)" % ' & '.join(search.split()) for search in cleaned_searches)
 
 def _ft_clause(column):
-    return "to_tsvector('datacommons', %s) @@ to_tsquery('datacommons', %%s)" % column
+    return """to_tsvector('datacommons', %s) @@ to_tsquery('datacommons', %%s)""" % column
 
 #
 # generators
-#
+
+def _transaction_id_in_generator(query, *transaction_ids):
+    return query.filter(transaction_id__in=transaction_ids)
+
+def _transaction_type_in_generator(query, *transaction_types):
+    return query.filter(transaction_type__in=transaction_types)
 
 def _year_in_generator(query, *years):
     return query.filter(year__in=years)
@@ -65,6 +74,8 @@ def _registrant_ft_generator(query, *searches):
 
     
 LOBBYING_SCHEMA = Schema(
+    InclusionField(TRANSACTION_ID_FIELD, _transaction_id_in_generator),
+    InclusionField(TRANSACTION_TYPE_FIELD, _transaction_type_in_generator),
     InclusionField(FILING_TYPE_FIELD, _filing_type_in_generator),
     InclusionField(YEAR_FIELD, _year_in_generator),
     # full text fields
@@ -78,5 +89,8 @@ LOBBYING_SCHEMA = Schema(
         Operator(GREATER_THAN_OP, _amount_greater_than_generator),
         Operator(BETWEEN_OP, _amount_between_generator)))
 
-def filter_lobbying(request):    
-    return LOBBYING_SCHEMA.build_filter(Lobbying.objects, request).order_by()
+def filter_lobbying(request):
+    q = LOBBYING_SCHEMA.build_filter(Lobbying.objects, request).order_by()
+    if 'lobbyist_name_ft' in request:
+        q = q.filter(lobbyists__lobbyist_name__isnull=False)
+    return q

@@ -23,11 +23,11 @@ class Agency(models.Model):
     
 
 class Lobbying(models.Model):
-    year = models.IntegerField()
-    transaction_id = models.CharField(max_length=64, unique=True, db_index=True)
+    transaction_id = models.CharField(max_length=64, primary_key=True, db_index=True)
     transaction_type = models.CharField(max_length=8)
     transaction_type_desc = models.CharField(max_length=128, blank=True, null=True) # or do this in a lookup?
     
+    year = models.IntegerField()
     filing_type = models.CharField(max_length=1, blank=True, null=True)
     filing_included_nsfs = models.BooleanField(default=False)
     
@@ -57,8 +57,8 @@ class Lobbying(models.Model):
 
 class Lobbyist(models.Model):
     year = models.IntegerField()
-    transaction_id = models.CharField(max_length=64, db_index=True)
-    #transaction_id = models.ForeignKey(Lobbying, to_field='transaction_id')
+    #transaction_id = models.CharField(max_length=64, db_index=True)
+    transaction = models.ForeignKey(Lobbying, related_name='lobbyists')
     lobbyist_name = models.CharField(max_length=255, blank=True, null=True)
     lobbyist_entity = EntityRef('lobbyist_transactions')
     lobbyist_ext_id = models.CharField(max_length=128, blank=True, null=True, db_index=True)
