@@ -18,11 +18,11 @@ def build_recipient_entity(name, namespace, id):
 
     EntityAlias.objects.create(entity=e, alias=name, verified=True)
     EntityAttribute.objects.create(entity=e, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value = e.id, verified=True)
-    if namespace == NIMSP_TRANSACTION_NAMESPACE:
-        attr_namespace = 'urn:nimsp:recipient'
-    elif namespace == CRP_TRANSACTION_NAMESPACE:
-        attr_namespace = 'urn:crp:recipient'
     if id:
+        if namespace == NIMSP_TRANSACTION_NAMESPACE:
+            attr_namespace = 'urn:nimsp:recipient'
+        elif namespace == CRP_TRANSACTION_NAMESPACE:
+            attr_namespace = 'urn:crp:recipient'
         EntityAttribute.objects.create(entity=e, namespace=attr_namespace, value=id, verified=True)
     
 
