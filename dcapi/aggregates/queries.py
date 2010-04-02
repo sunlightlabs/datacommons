@@ -1,10 +1,54 @@
 
-from django.db import connection
+from django.db import connection, transaction
+
+
+create_contributor_assoc_stmt = """
+    create view contributor_associations as
+        select a.entity_id, c.transaction_id
+        from contribution_contribution c
+        inner join matchbox_entityalias a
+            on c.contributor_name = a.alias
+        where
+            a.verified = 't'
+        union    
+        select a.entity_id, c.transaction_id
+        from contribution_contribution c
+        inner join matchbox_entityattribute a
+            on c.contributor_ext_id = a.value
+        where
+            a.verified = 't'
+            -- to do: and we'll need individual namespaces?
+            and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
+                or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'))
+"""
+
+
+create_recipient_assoc_stmt = """
+    create view recipient_associations as
+        select a.entity_id, c.transaction_id
+        from contribution_contribution c
+        inner join matchbox_entityalias a
+            on c.recipient_name = a.alias
+        where
+            a.verified = 't'
+        union    
+        select a.entity_id, c.transaction_id
+        from contribution_contribution c
+        inner join matchbox_entityattribute a
+            on c.recipient_ext_id = a.value
+        where
+            a.verified = 't'
+            and ((a.namespace = 'urn:crp:recipient' and c.transaction_namespace = 'urn:fec:transaction')
+                or (a.namespace = 'urn:nimsp:recipient' and c.transaction_namespace = 'urn:nimsp:transaction'))
+"""
+
 
 create_top_stmt = """
     create view agg_contributions as
-        select coalesce(c.entity_id, t.contributor_name) as contributor,
-               coalesce(r.entity_id, t.recipient_name) as recipient,
+        select coalesce(ce.name, c.contributor_name) as contributor_name,
+               ce.id as contributor_entity,
+               coalesce(re.name, c.recipient_name) as recipient_name,
+               re.id as recipient_entity,
                contributor_type,
                recipient_type,
                transaction_type,
@@ -13,13 +57,15 @@ create_top_stmt = """
                cycle,
                count(*) as count,
                sum(amount) as amount
-        from contribution_contribution t
-        left outer join contributor_associations c
-            on c.transaction_id = t.transaction_id
-        left outer join recipient_associations r
-            on r.transaction_id = t.transaction_id
-        group by coalesce(c.entity_id, t.contributor_name),
-                 coalesce(r.entity_id, t.recipient_name),
+        from contribution_contribution c
+        left join contributor_associations ca using (transaction_id)
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        left join recipient_associations ra using (transaction_id)
+        left join matchbox_entity re on re.id = ra.entity_id
+        group by coalesce(ce.name, c.contributor_name),
+                 ce.id,
+                 coalesce(re.name, c.recipient_name),
+                 re.id,
                  contributor_type,
                  recipient_type,
                  transaction_type,
@@ -29,9 +75,29 @@ create_top_stmt = """
 """
 
 
+create_agg_entities_stmt = """
+    create view agg_entities as
+        select e.name, e.id, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
+        from 
+            matchbox_entity e
+        left join
+            (select a.entity_id, count(transaction), sum(transaction.amount)
+            from contributor_associations a
+            inner join contribution_contribution transaction using (transaction_id)
+            group by a.entity_id) as contrib_aggs
+            on contrib_aggs.entity_id = e.id
+        left join
+            (select a.entity_id, count(transaction), sum(transaction.amount)
+            from recipient_associations a
+            inner join contribution_contribution transaction using (transaction_id)
+            group by a.entity_id) as recip_aggs
+            on recip_aggs.entity_id = e.id
+"""
+
+
 create_top_cat_to_cand_stmt = """
     create view agg_cat_to_cand as
-        select contributor_category, contributor_category_order, recipient, cycle, count, amount
+        select contributor_category, contributor_category_order, recipient_name, recipient_entity, cycle, count, amount
         from agg_contributions
         where
             (contributor_type = 'C'
@@ -45,7 +111,7 @@ create_top_cat_to_cand_stmt = """
 
 create_top_cmtes_to_cand_stmt = """
     create view agg_cmte_to_cand as
-        select contributor, recipient, cycle, count, amount
+        select contributor_name, contibutor_entity, recipient_name, recipient_entity, cycle, count, amount
         from agg_contributions
         where
             contributor_type = 'C'
@@ -56,7 +122,7 @@ create_top_cmtes_to_cand_stmt = """
 
 create_top_indiv_to_cand_stmt = """
     create view agg_indiv_to_cand as
-        select contributor, recipient, cycle, count, amount
+        select contributor_name, contibutor_entity, recipient_name, recipient_entity, cycle, count, amount
         from agg_contributions
         where
             contributor_type = 'I'
@@ -66,7 +132,7 @@ create_top_indiv_to_cand_stmt = """
 
 create_top_indiv_to_cmte_stmt = """
     create view agg_indiv_to_cmte as
-        select contributor, recipient, cycle, count, amount
+        select contributor_name, contibutor_entity, recipient_name, recipient_entity, cycle, count, amount
         from agg_contributions
         where
             contributor_type = 'I'
@@ -76,30 +142,28 @@ create_top_indiv_to_cmte_stmt = """
             
             
 get_top_cmtes_to_cand_stmt = """
-    select coalesce(e.name, contributor), coalesce(e.id, ''), count, amount
+    select contributor_name, contributor_entity, sum(count), sum(amount)
     from agg_cmte_to_cand
-    left outer join matchbox_entity e
-        on e.id = contributor
     where
         recipient = %%s
         -- possible cycle restriction:
         %s
-    order by amount desc
+    group by contributor_name, contributor_entity
+    order by sum(amount) desc
     limit %%s
 """
 
 
 get_top_indivs_to_cand_stmt = """
-    select coalesce(e.name, contributor), coalesce(e.id, ''), count, amount
+    select contributor_name, contributor_entity, sum(count), sum(amount)
     from agg_indiv_to_cand
-    left outer join matchbox_entity e
-        on e.id = contributor
     where
         recipient = %%s
         -- possible cycle restriction:        
         %s
-    order by amount desc
-    limit %%s
+    group by contributor_name, contributor_entity
+    order by sum(amount) desc
+        limit %%s
 """
     
     
@@ -116,83 +180,65 @@ get_top_cats_to_cand_stmt = """
 """    
 
 get_top_catorders_to_cand_stmt = """
-    select contributor_category_order, count, amount
+    select contributor_category_order, sum(count), sum(amount)
     from agg_cat_to_cand
     where
         recipient = %%s
         and contributor_category = %%s
         -- possible cycle restriction:        
         %s
-    order by amount desc
+    group by contributor_name, contributor_entity
+    order by sum(amount) descc
     limit %%s
 """    
     
     
 get_top_cands_from_indiv_stmt = """
-    select coalesce(e.name, recipient), coalesce(e.id, ''), count, amount
+    select recipient_name, recipient_entity, sum(count), sum(amount)
     from agg_indiv_to_cand
-    left outer join matchbox_entity e
-        on e.id = recipient
     where
         contributor = %%s
         -- possible cycle restriction:
         %s
-    order by amount desc
+    group by recipient_name, recipient_entity
+    order by sum(amount) desc
     limit %%s
 """    
 
 get_top_cmtes_from_indiv_stmt = """
-    select coalesce(e.name, recipient), coalesce(e.id, ''), count, amount
-    from agg_indiv_to_cmte
-    left outer join matchbox_entity e
-        on e.id = recipient   
+    select recipient_name, recipient_entity, sum(count), sum(amount)
+    from agg_indiv_to_cmte   
     where
         contributor = %%s
         -- possible cycle restriction:
         %s
-    order by amount desc
+    group by recipient_name, recipient_entity
+    order by sum(amount) desc
     limit %%s
 """
 
-#
 
 search_stmt = """
-
     (select coalesce(c.name, r.name) as name, '' as entity_id, coalesce(c.count, 0) as count_given, coalesce(r.count, 0) as count_received, coalesce(c.given, 0) as given, coalesce(r.received, 0) as received
     from
-        (select contributor as name, '' as entity_id, sum(count) as count, sum(amount) as given, 0 as received
+        (select contributor as name, '' as entity_id, sum(count) as count, sum(amount) as given
         from agg_contributions
         where to_tsvector('datacommons', contributor) @@ to_tsquery('datacommons', %s)
         group by contributor
         having sum(count) > 0) as c    
     full join    
-        (select recipient as name, '' as entity_id, sum(count) as count, 0 as given, sum(amount) as received
+        (select recipient as name, '' as entity_id, sum(count) as count, sum(amount) as received
         from agg_contributions
         where to_tsvector('datacommons', recipient) @@ to_tsquery('datacommons', %s)
         group by recipient
         having sum(count) > 0) as r
     on c.name = r.name)
 union
-    (select e.name, e.id, coalesce(contrib_aggs.count, 0), coalesce(recip_aggs.count, 0), coalesce(contrib_aggs.sum, 0), coalesce(recip_aggs.sum, 0)
-    from 
-		matchbox_entity e
-	left join
-		(select a.entity_id, count(transaction), sum(transaction.amount)
-		from contributor_associations a
-		inner join contribution_contribution transaction
-			on a.transaction_id = transaction.transaction_id
-		group by a.entity_id) as contrib_aggs
-		on contrib_aggs.entity_id = e.id
-	left join
-		(select a.entity_id, count(transaction), sum(transaction.amount)
-		from recipient_associations a
-		inner join contribution_contribution transaction
-			on a.transaction_id = transaction.transaction_id
-		group by a.entity_id) as recip_aggs
-		on recip_aggs.entity_id = e.id
+    (select *
+    from agg_entities
     where 
 		to_tsvector('datacommons', name) @@ to_tsquery('datacommons', %s)
-		and (contrib_aggs.count > 0 or recip_aggs.count > 0))
+		and (contributor_count > 0 or recipient_count > 0))
 """
 
 
@@ -256,8 +302,13 @@ def get_top_cmtes_from_indiv(individual, cycles=DEFAULT_CYCLES, limit=DEFAULT_LI
 
 
 # just for use at the command line when setting up database
+@transaction.commit_on_success
 def setup_aggregates():
+    transaction.set_dirty()
     cursor = connection.cursor()
+    cursor.execute(create_contributor_assoc_stmt)
+    cursor.execute(create_recipient_assoc_stmt)
+    cursor.execute(create_agg_entities_stmt)
     cursor.execute(create_top_stmt)
     cursor.execute(create_top_cat_to_cand_stmt)
     cursor.execute(create_top_cmtes_to_cand_stmt)
