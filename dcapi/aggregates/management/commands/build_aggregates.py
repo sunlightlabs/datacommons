@@ -64,6 +64,46 @@ create_agg_entities_stmt = """
 """
 
 
+
+create_indivs_to_cand_by_cycle_stmt = """    
+    create table agg_indivs_to_cand_by_cycle as
+        select top.recipient_entity, top.contributor_name, top.contributor_entity, top.cycle, top.count, top.amount
+        from (select ra.entity_id as recipient_entity, c.contributor_name, coalesce(ca.entity_id, '') as contributor_entity, cycle, count(*), sum(c.amount) as amount, 
+                rank() over (partition by ra.recipient_entity order by sum(amount) desc) as rank
+            from contribution_contribution c
+            inner join recipient_associations ra using (transaction_id)
+            left join contributor_associations ca using (transaction_id)
+            where
+                c.contributor_type in ('', 'I')
+                and c.recipient_type = 'P'
+                and c.transaction_type in ('11', '15', '15e', '15j', '22y')
+            group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
+        where
+            rank <= 10
+"""
+
+create_cmtes_to_cand_by_cycle_stmt = """
+    create table agg_cmtes_to_cand_by_cycle as
+        select top.recipient_entity, top.contributor_name, top.contributor_entity, top.cycle, top.count, top.amount
+        from (select ra.entity_id as recipient_entity, c.contributor_name, coalesce(ca.entity_id, '') as contributor_entity, cycle, count(*), sum(c.amount) as amount, 
+                rank() over (partition by ra.recipient_entity order by sum(amount) desc) as rank
+            from contribution_contribution c
+            inner join recipient_associations ra using (transaction_id)
+            left join contributor_associations ca using (transaction_id)
+            where
+                contributor_type = 'C'
+                and recipient_type = 'P'
+                and transaction_type in ('24k', '24r', '24z')
+            group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
+        where
+            rank <= 10        
+"""
+        
+
+        
+
+# to do: the views are not going to be used. Instead populate table.
+
 create_top_cat_to_cand_stmt = """
     create view agg_cat_to_cand as
         select contributor_category, contributor_category_order, recipient_name, recipient_entity, cycle, count, amount
@@ -76,16 +116,6 @@ create_top_cat_to_cand_stmt = """
             (contributor_type = 'I'
             and recipient_type = 'P'
             and transaction_type in ('11', '15', '15e', '15j', '22y'))        
-"""
-
-create_top_cmtes_to_cand_stmt = """
-    create view agg_cmte_to_cand as
-        select contributor_name, contibutor_entity, recipient_name, recipient_entity, cycle, count, amount
-        from agg_contributions
-        where
-            contributor_type = 'C'
-            and recipient_type = 'P'
-            and transaction_type in ('24k', '24r', '24z')
 """
 
 
@@ -110,7 +140,7 @@ create_top_indiv_to_cmte_stmt = """
 """
  
  
- # just for use at the command line when setting up database
+# just for use at the command line when setting up database
 @transaction.commit_on_success
 def setup_aggregates():
     transaction.set_dirty()
