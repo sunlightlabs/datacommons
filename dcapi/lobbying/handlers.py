@@ -13,10 +13,9 @@ DEFAULT_PER_PAGE = 1000
 MAX_PER_PAGE = 100000
 
 LOBBYING_FIELDS = ['year', 'transaction_id', 'transaction_type', 'transaction_type_desc',
-    'filing_type', 'filing_included_nsfs', 'amount', 'registrant_name', 'registrant_is_firm',
+    'filing_type', 'amount', 'registrant_name', 'registrant_is_firm',
     'client_name', 'client_category', 'client_ext_id', 'client_parent_name',
-    'include_in_industry_totals', 'use', 'affiliate',
-    ('lobbyists', ('year','lobbyist_name','lobbyist_ext_id','candidate_ext_id','government_position','member_of_congress'))]
+    ('lobbyists', ('lobbyist_name','lobbyist_ext_id','candidate_ext_id','government_position','member_of_congress'))]
 
 def load_lobbying(params, nolimit=False, ordering=True):
     
