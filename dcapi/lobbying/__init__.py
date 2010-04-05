@@ -91,6 +91,6 @@ LOBBYING_SCHEMA = Schema(
 
 def filter_lobbying(request):
     q = LOBBYING_SCHEMA.build_filter(Lobbying.objects, request).order_by()
-    if 'lobbyist_name_ft' in request:
+    if 'lobbyist_ft' in request:
         q = q.filter(lobbyists__lobbyist_name__isnull=False)
-    return q
+    return q.select_related()

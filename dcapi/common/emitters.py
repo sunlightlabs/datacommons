@@ -72,6 +72,7 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
         yield "["
         count = 0
         for record in self.data.values():
+            print record
             out_record = { }
             for f in fields:
                 if f in record:
