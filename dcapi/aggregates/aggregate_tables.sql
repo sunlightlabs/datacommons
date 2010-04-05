@@ -56,7 +56,7 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 drop table if exists agg_entities;
 
 create table agg_entities as
-    select e.name, e.id, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, 
+    select e.id as entity_id, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, 
         coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
     from 
         matchbox_entity e
@@ -73,7 +73,7 @@ create table agg_entities as
         group by a.entity_id) as recip_aggs
         on recip_aggs.entity_id = e.id;
 
-create index agg_entities_id on agg_entities (id);
+create index agg_entities_entity_id on agg_entities (entity_id);
     
 
 -- Individuals to Candidate

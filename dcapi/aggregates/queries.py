@@ -1,119 +1,109 @@
 
-from django.db import connection, transaction
-
+from django.db import connection
          
             
-get_top_cmtes_to_cand_stmt = """
-    select contributor_name, contributor_entity, sum(count), sum(amount)
-    from agg_cmte_to_cand
-    where
-        recipient = %%s
-        -- possible cycle restriction:
-        %s
-    group by contributor_name, contributor_entity
-    order by sum(amount) desc
-    limit %%s
-"""
-
-
 get_top_indivs_to_cand_stmt = """
-    select contributor_name, contributor_entity, sum(count), sum(amount)
-    from agg_indiv_to_cand
+    select contributor_name, contributor_entity, count, amount
+    from agg_indivs_to_cand_by_cycle
     where
-        recipient = %%s
-        -- possible cycle restriction:        
-        %s
-    group by contributor_name, contributor_entity
-    order by sum(amount) desc
-        limit %%s
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+        limit %s
 """
     
+get_top_cmtes_to_cand_stmt = """
+    select contributor_name, contributor_entity, count, amount
+    from agg_cmtes_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+        limit %s
+"""
     
 get_top_cats_to_cand_stmt = """
-    select contributor_category, sum(count) as count, sum(amount) as amount
-    from agg_cat_to_cand
+    select contributor_category, count, amount
+    from agg_cats_to_cand_by_cycle
     where
-        recipient = %%s
-        -- possible cycle restriction:        
-        %s
-    group by contributor_category
-    order by sum(amount) desc
-    limit %%s
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
 """    
 
 get_top_catorders_to_cand_stmt = """
-    select contributor_category_order, sum(count), sum(amount)
-    from agg_cat_to_cand
+    select contributor_category_order, count, amount
+    from agg_cat_orders_to_cand_by_cycle
     where
-        recipient = %%s
-        and contributor_category = %%s
-        -- possible cycle restriction:        
-        %s
-    group by contributor_name, contributor_entity
-    order by sum(amount) descc
-    limit %%s
+        recipient_entity = %s
+        and contributor_category = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
 """    
     
     
 get_top_cands_from_indiv_stmt = """
-    select recipient_name, recipient_entity, sum(count), sum(amount)
-    from agg_indiv_to_cand
+    select recipient_name, recipient_entity, count, amount
+    from agg_cands_from_indiv_by_cycle
     where
-        contributor = %%s
-        -- possible cycle restriction:
-        %s
-    group by recipient_name, recipient_entity
-    order by sum(amount) desc
-    limit %%s
+        contributor_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
 """    
 
 get_top_cmtes_from_indiv_stmt = """
-    select recipient_name, recipient_entity, sum(count), sum(amount)
-    from agg_indiv_to_cmte   
+    select recipient_name, recipient_entity, count, amount
+    from agg_cmtes_from_indiv_by_cycle
     where
-        contributor = %%s
-        -- possible cycle restriction:
-        %s
-    group by recipient_name, recipient_entity
-    order by sum(amount) desc
-    limit %%s
+        contributor_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
 """
+
+get_top_cands_from_cmte_stmt = """
+    select recipient_name, recipient_entity, count, amount
+    from agg_cands_from_cmte_by_cycle
+    where
+        contributor_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""
+
+get_top_indivs_to_cmte_stmt = """
+    select contributor_name, contributor_entity, count, amount
+    from agg_indivs_to_cmte_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""
+
 
 
 search_stmt = """
-    (select coalesce(c.name, r.name) as name, '' as entity_id, coalesce(c.count, 0) as count_given, coalesce(r.count, 0) as count_received, coalesce(c.given, 0) as given, coalesce(r.received, 0) as received
-    from
-        (select contributor as name, '' as entity_id, sum(count) as count, sum(amount) as given
-        from agg_contributions
-        where to_tsvector('datacommons', contributor) @@ to_tsquery('datacommons', %s)
-        group by contributor
-        having sum(count) > 0) as c    
-    full join    
-        (select recipient as name, '' as entity_id, sum(count) as count, sum(amount) as received
-        from agg_contributions
-        where to_tsvector('datacommons', recipient) @@ to_tsquery('datacommons', %s)
-        group by recipient
-        having sum(count) > 0) as r
-    on c.name = r.name)
-union
-    (select *
-    from agg_entities
+    select e.id, e.name, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
+    from matchbox_entity e
+    join agg_entities a 
+        on e.id = a.entity_id
     where 
-		to_tsvector('datacommons', name) @@ to_tsquery('datacommons', %s)
-		and (contributor_count > 0 or recipient_count > 0))
+		to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
+		and (a.contributor_count > 0 or a.recipient_count > 0)
 """
 
 
-def search_names(query, entity_types):
+def search_names(query, entity_types=[]):
     # entity_types is not currently used but we'll build it in at some
     # point...
-
-    cursor = connection.cursor()
     
     parsed_query = ' & '.join(query.split(' '))
     
-    cursor.execute(search_stmt, [parsed_query, parsed_query, parsed_query])
-    return list(cursor)
+    return _execute(search_stmt, parsed_query)
     
 #    
 #    results_annotated = []
@@ -130,50 +120,36 @@ def search_names(query, entity_types):
 #   
 
 
-def _cycle_clause(cycles):
-    return "cycle in (%s)" % (", ".join(["'%d'" % int(cycle) for cycle in cycles])) if cycles else ""
 
-def _generic_top(stmt, entity, cycles, limit):
+def _execute(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt % (_cycle_clause(cycles)), [entity, int(limit)])
+    cursor.execute(stmt, args)
     return list(cursor)
 
-DEFAULT_CYCLES = None
-DEFAULT_LIMIT = 10
 
-def get_top_cmtes_to_cand(candidate, cycles=DEFAULT_CYCLES, limit=DEFAULT_LIMIT):
-    return _generic_top(get_top_cmtes_to_cand_stmt, candidate, cycles, limit)
+def get_top_cmtes_to_cand(candidate, cycle, limit):
+    return _execute(get_top_cmtes_to_cand_stmt, candidate, cycle, limit)
 
-def get_top_indivs_to_cand(candidate, cycles=DEFAULT_CYCLES, limit=DEFAULT_LIMIT):
-    return _generic_top(get_top_indivs_to_cand_stmt, candidate, cycles, limit)
+def get_top_indivs_to_cand(candidate, cycle, limit):
+    return _execute(get_top_indivs_to_cand_stmt, candidate, cycle, limit)
 
-def get_top_cats_to_cand(candidate, cycles=DEFAULT_CYCLES, limit=DEFAULT_LIMIT):
-    return _generic_top(get_top_cats_to_cand_stmt, candidate, cycles, limit)
+def get_top_cats_to_cand(candidate, cycle, limit):
+    return _execute(get_top_cats_to_cand_stmt, candidate, cycle, limit)
 
-def get_top_catorders_to_cand(candidate, category, cycles=DEFAULT_CYCLES, limit=DEFAULT_LIMIT):
-    cursor = connection.cursor()
-    cursor.execute(get_top_catorders_to_cand_stmt % (_cycle_clause(cycles)), [candidate, category, int(limit)])
-    return list(cursor)    
+def get_top_catorders_to_cand(candidate, category, cycle, limit):
+    return _execute(get_top_catorders_to_cand_stmt, candidate, category, cycle, limit)
 
-def get_top_cands_from_indiv(individual, cycles=DEFAULT_CYCLES, limit=DEFAULT_LIMIT):
-    return _generic_top(get_top_cands_from_indiv_stmt, individual, cycles, limit)
+def get_top_cands_from_indiv(individual, cycle, limit):
+    return _execute(get_top_cands_from_indiv_stmt, individual, cycle, limit)
     
-def get_top_cmtes_from_indiv(individual, cycles=DEFAULT_CYCLES, limit=DEFAULT_LIMIT):
-    return _generic_top(get_top_cmtes_from_indiv_stmt, individual, cycles, limit)
+def get_top_cmtes_from_indiv(individual, cycle, limit):
+    return _execute(get_top_cmtes_from_indiv_stmt, individual, cycle, limit)
+
+def get_top_cands_from_cmte(org, cycle, limit):
+    return _execute(get_top_cands_from_cmte_stmt, org, cycle, limit)
+
+def get_top_indivs_to_cmte(org, cycle, limit):
+    return _execute(get_top_indivs_to_cmte_stmt, org, cycle, limit)
 
 
 
-# just for use at the command line when setting up database
-@transaction.commit_on_success
-def setup_aggregates():
-    transaction.set_dirty()
-    cursor = connection.cursor()
-    cursor.execute(create_contributor_assoc_stmt)
-    cursor.execute(create_recipient_assoc_stmt)
-    cursor.execute(create_agg_entities_stmt)
-    cursor.execute(create_top_stmt)
-    cursor.execute(create_top_cat_to_cand_stmt)
-    cursor.execute(create_top_cmtes_to_cand_stmt)
-    cursor.execute(create_top_indiv_to_cand_stmt)
-    cursor.execute(create_top_indiv_to_cmte_stmt)
-    
