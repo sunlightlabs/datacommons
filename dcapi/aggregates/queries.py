@@ -104,21 +104,6 @@ def search_names(query, entity_types=[]):
     parsed_query = ' & '.join(query.split(' '))
     
     return _execute(search_stmt, parsed_query)
-    
-#    
-#    results_annotated = []
-#    for (name, id_, count_given, count_received, total_given, total_received) in results:
-#        results_annotated.append({
-#                'id': id_,
-#                'name': name,
-#                'count_given': count_given,
-#                'count_received': count_received,
-#                'total_given': float(total_given),
-#                'total_received': float(total_received)
-#                })
-#    return results_annotated
-#   
-
 
 
 def _execute(stmt, *args):
