@@ -1,5 +1,6 @@
 from django.core.serializers.json import DateTimeAwareJSONEncoder
 from django.utils import simplejson
+from django.db.models import Model
 from piston.emitters import Emitter
 from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
@@ -74,21 +75,26 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
         cb = request.GET.get('callback', None)
         cb = cb if cb and is_valid_jsonp_callback_value(cb) else None
         
-        yield '%s([' % cb if cb else '['
-        
         qs = self.data
-        for record in qs:
-            self.data = record
+        if isinstance(qs, Model):
             seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
-            if stats.stats['total'] == 0:
-                yield seria
-            else:
-                yield ',%s' % seria
-            stats.log(record)
+            yield seria
+
+        else:
+            yield '%s([' % cb if cb else '['
+
+            for record in qs:
+                self.data = record
+                seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
+                if stats.stats['total'] == 0:
+                    yield seria
+                else:
+                    yield ',%s' % seria
+                stats.log(record)
             
-        self.data = qs
+            self.data = qs
         
-        yield ']);' if cb else ']';
+            yield ']);' if cb else ']';
 
 class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
     
