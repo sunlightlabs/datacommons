@@ -13,7 +13,7 @@ import csv
 
 
 def build_recipients(csv_rows):
-    for (name,namespace,id) in csv.reader(csv_rows):
+    for (name,id,namespace) in csv.reader(csv_rows):
         try:
             print 'Generating entity for %s, %s, %s' % (name, namespace, id)
             clean_name = name.strip().decode('utf8', 'replace')

@@ -15,19 +15,16 @@ def build_recipient_entity(name, namespace, id):
     cursor = connection.cursor()
     
     e = Entity.objects.create(name=name, type='politician')
-    
-    _associate_ids(cursor, e.id, namespace, id, ['recipient'])
-    _associate_names(cursor, e.id, name, ['recipient'])
 
     EntityAlias.objects.create(entity=e, alias=name, verified=True)
     EntityAttribute.objects.create(entity=e, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value = e.id, verified=True)
-    if namespace == NIMSP_TRANSACTION_NAMESPACE:
-        attr_namespace = 'urn:nimsp:recipient'
-    elif namespace == CRP_TRANSACTION_NAMESPACE:
-        attr_namespace = 'urn:crp:recipient'
-    EntityAttribute.objects.create(entity=e, namespace=attr_namespace, value=id, verified=True)
+    if id:
+        if namespace == NIMSP_TRANSACTION_NAMESPACE:
+            attr_namespace = 'urn:nimsp:recipient'
+        elif namespace == CRP_TRANSACTION_NAMESPACE:
+            attr_namespace = 'urn:crp:recipient'
+        EntityAttribute.objects.create(entity=e, namespace=attr_namespace, value=id, verified=True)
     
-    recompute_aggregates(e.id)
 
 
 
@@ -35,23 +32,15 @@ def build_recipient_entity(name, namespace, id):
 def build_org_entity(name, crp_id, nimsp_id):
     cursor = connection.cursor()
     
-    has_nimsp_id = nimsp_id and nimsp_id not in ('', '0')
-    has_crp_id = crp_id and crp_id not in ('', '0')
-    
     e = Entity.objects.create(name=name, type='organization')
-    
-    if has_nimsp_id:
-        _associate_ids(cursor, e.id, NIMSP_TRANSACTION_NAMESPACE, nimsp_id, ['contributor', 'organization', 'parent_organization'])
-    _associate_names(cursor, e.id, name, ['contributor', 'organization', 'parent_organization', 'committee', 'recipient'])
         
     EntityAlias.objects.create(entity=e, alias=name, verified=True)
     EntityAttribute.objects.create(entity=e, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value = e.id, verified=True)
-    if has_crp_id:
+    if crp_id:
         EntityAttribute.objects.create(entity=e, namespace='urn:crp:organization', value=crp_id, verified=True)
-    if has_nimsp_id:
+    if nimsp_id:
         EntityAttribute.objects.create(entity=e, namespace='urn:nimsp:organization', value=nimsp_id, verified=True)    
     
-    recompute_aggregates(e.id)
         
 
 def _execute(cursor, stmt, args):     
