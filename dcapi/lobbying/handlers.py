@@ -5,6 +5,7 @@ from urllib import unquote_plus
 from django.db.models import Q
 from piston.handler import BaseHandler
 from dcentity.models import Entity, Normalization
+from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from dcdata.lobbying.models import Lobbying
 from dcapi.lobbying import filter_lobbying
 
@@ -40,11 +41,19 @@ def load_lobbying(params, nolimit=False, ordering=True):
           
     return result
 
+class LobbyingStatsLogger(object):
+    def __init__(self):
+        self.stats = { 'total': 0 }
+        self.stats[CRP_TRANSACTION_NAMESPACE] = 0
+    def log(self, record):
+        self.stats[CRP_TRANSACTION_NAMESPACE] += 1
+        self.stats['total'] += 1
 
 class LobbyingFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = LOBBYING_FIELDS
     model = Lobbying
+    statslogger = LobbyingStatsLogger
     
     def read(self, request):
         params = request.GET.copy()

@@ -4,8 +4,7 @@ from piston.emitters import Emitter
 from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
 from dcentity.models import entityref_cache
-from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE,\
-    CRP_TRANSACTION_NAMESPACE
+from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE, CRP_TRANSACTION_NAMESPACE
 from time import time
 import csv
 import datetime
@@ -24,19 +23,16 @@ class StatsLogger(object):
     def __init__(self):
         self.stats = { 'total': 0 }
     def log(self, record):
-        #ns = record['transaction_namespace']
-        ns = record.get('transaction_namespace', 'unknown')
-        self.stats[ns] = self.stats.get(ns, 0) + 1
         self.stats['total'] += 1
 
 class StreamingLoggingEmitter(Emitter):
-    
+            
     def stream(self, request, stats):
         raise NotImplementedError('please implement this method')
     
     def stream_render(self, request):
         
-        stats = StatsLogger()
+        stats = self.handler.statslogger() if hasattr(self.handler, 'statslogger') else StatsLogger()
         
         if self.handler.fields:
             fields = self.handler.fields
@@ -78,7 +74,8 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
         for record in self.data.values():
             out_record = { }
             for f in fields:
-                out_record[f] = record[f]
+                if f in record:
+                    out_record[f] = record[f]
             stats.log(out_record)
             seria = simplejson.dumps(out_record, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
             if count == 0:

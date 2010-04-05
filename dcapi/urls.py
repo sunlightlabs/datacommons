@@ -1,4 +1,13 @@
 from django.conf.urls.defaults import *
+from dcapi.common.emitters import StreamingLoggingCSVEmitter, StreamingLoggingJSONEmitter
+from piston.emitters import Emitter
+
+Emitter.register('json', StreamingLoggingJSONEmitter, 'application/json; charset=utf-8')
+Emitter.register('csv', StreamingLoggingCSVEmitter, 'text/csv; charset=utf-8')
+Emitter.unregister('django')
+Emitter.unregister('pickle')
+Emitter.unregister('xml')
+Emitter.unregister('yaml')
 
 urlpatterns = patterns('',
     # each data set has its own area of the API and has its own
