@@ -11,6 +11,8 @@ class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
     model = Entity
     
+    fields = Entity._meta.get_all_field_names()
+    
     def read(self, request, entity_id):
         return Entity.objects.get(pk=entity_id)
 
@@ -18,8 +20,8 @@ class EntityHandler(BaseHandler):
 class EntityFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
 
+    # todo: these are not the fields actually returned
     fields = ('id','name','type','timestamp','reviewer')
-    model = Entity
 
     def read(self, request):
         search_string = request.GET.get('search', None)
@@ -33,7 +35,7 @@ class EntityFilterHandler(BaseHandler):
         result = search_names(search_string, entity_types)
         
         results_annotated = []
-        for (name, id_, type, count_given, count_received, total_given, total_received) in result:
+        for (id_, name, type, count_given, count_received, total_given, total_received) in result:
             results_annotated.append({
                     'id': id_,
                     'name': name,
