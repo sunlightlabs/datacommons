@@ -3,9 +3,9 @@ from django.utils import simplejson
 from piston.emitters import Emitter
 from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
+from dcapi.validate_jsonp import is_valid_jsonp_callback_value
 from dcentity.models import entityref_cache
-from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE,\
-    CRP_TRANSACTION_NAMESPACE
+from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE, CRP_TRANSACTION_NAMESPACE
 from time import time
 import csv
 import datetime
@@ -24,19 +24,16 @@ class StatsLogger(object):
     def __init__(self):
         self.stats = { 'total': 0 }
     def log(self, record):
-        #ns = record['transaction_namespace']
-        ns = record.get('transaction_namespace', 'unknown')
-        self.stats[ns] = self.stats.get(ns, 0) + 1
         self.stats['total'] += 1
 
 class StreamingLoggingEmitter(Emitter):
-    
+            
     def stream(self, request, stats):
         raise NotImplementedError('please implement this method')
     
     def stream_render(self, request):
         
-        stats = StatsLogger()
+        stats = self.handler.statslogger() if hasattr(self.handler, 'statslogger') else StatsLogger()
         
         if self.handler.fields:
             fields = self.handler.fields
@@ -70,23 +67,28 @@ class StreamingLoggingEmitter(Emitter):
         )
         
             
-class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):    
+class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
     
     def stream(self, request, fields, stats):
-        yield "["
-        count = 0
-        for record in self.data.values():
-            out_record = { }
-            for f in fields:
-                out_record[f] = record[f]
-            stats.log(out_record)
-            seria = simplejson.dumps(out_record, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
-            if count == 0:
+        
+        cb = request.GET.get('callback', None)
+        cb = cb if cb and is_valid_jsonp_callback_value(cb) else None
+        
+        yield '%s([' % cb if cb else '['
+        
+        qs = self.data
+        for record in qs:
+            self.data = record
+            seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
+            if stats.stats['total'] == 0:
                 yield seria
             else:
-                yield "," + seria
-            count += 1
-        yield "]"
+                yield ',%s' % seria
+            stats.log(record)
+            
+        self.data = qs
+        
+        yield ']);' if cb else ']';
 
 class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
     
