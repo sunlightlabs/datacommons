@@ -87,7 +87,7 @@ get_top_indivs_to_cmte_stmt = """
 
 
 search_stmt = """
-    select e.id, e.name, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
+    select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
     from matchbox_entity e
     join agg_entities a 
         on e.id = a.entity_id
