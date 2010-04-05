@@ -89,7 +89,7 @@ create table agg_indivs_to_cand_by_cycle as
         inner join recipient_associations ra using (transaction_id)
         left join contributor_associations ca using (transaction_id)
         where
-            c.contributor_type in ('', 'I')
+            (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
             and c.transaction_type in ('11', '15', '15e', '15j', '22y')
             --and cycle in ('2007', '2008', '2009', '2010')
@@ -139,7 +139,7 @@ create table agg_cats_to_cand_by_cycle as
             and recipient_type = 'P'
             and transaction_type in ('24k', '24r', '24z'))
         or
-            (contributor_type = 'I'
+            ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
             and transaction_type in ('11', '15', '15e', '15j', '22y'))
         --and cycle in ('2007', '2008', '2009', '2010')
@@ -166,7 +166,7 @@ create table agg_cat_orders_to_cand_by_cycle as
             and recipient_type = 'P'
             and transaction_type in ('24k', '24r', '24z'))
         or
-            (contributor_type = 'I'
+            ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
             and transaction_type in ('11', '15', '15e', '15j', '22y'))
         --and cycle in ('2007', '2008', '2009', '2010')
@@ -190,7 +190,7 @@ create table agg_cands_from_indiv_by_cycle as
         inner join contributor_associations ca using (transaction_id)
         left join recipient_associations ra using (transaction_id)
         where
-            c.contributor_type in ('', 'I')
+            (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
             and c.transaction_type in ('11', '15', '15e', '15j', '22y')
             --and cycle in ('2007', '2008', '2009', '2010')
@@ -214,7 +214,7 @@ create table agg_cmtes_from_indiv_by_cycle as
         inner join contributor_associations ca using(transaction_id)
         left join recipient_associations ra using (transaction_id)
         where
-            c.contributor_type in ('', 'I')
+            (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'C'
             -- should there by type restrictions?
             -- and cycle in ('2007', '2008', '2009', '2010')
@@ -262,7 +262,7 @@ create table agg_indivs_to_cmte_by_cycle as
         inner join recipient_associations ra using (transaction_id)
         left join contributor_associations ca using (transaction_id)
         where
-            c.contributor_type in ('', 'I')
+            (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'C'
             -- any type restrictions?
             --and cycle in ('2007', '2008', '2009', '2010')
