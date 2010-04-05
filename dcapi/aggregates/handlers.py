@@ -1,4 +1,5 @@
 from piston.handler import BaseHandler
+from piston.utils import rc
 from dcapi.aggregates.queries import get_top_indivs_to_cand,\
     get_top_cats_to_cand, get_top_cmtes_to_cand, get_top_cmtes_from_indiv,\
     get_top_cands_from_indiv
@@ -7,58 +8,80 @@ from dcapi.aggregates.queries import get_top_indivs_to_cand,\
 class TopContributorsHandler(BaseHandler):
     allowed_methods=('GET',)    
     # why is StreamingLoggingEmitter being used? Shouldn't be necessary to list fields.
-    fields = ['name', 'id', 'count', 'amount']
+    fields = ['name', 'id', 'count', 'amount', 'type']
     def read(self, request, entity_id):        
-        n = request.GET.get('top', 10)
+        n = request.GET.get('top', 10)        
         
-        print "reached handler."
-        
-        type = request.GET.get('type', None)
-        if type == 'individual':
-            query = get_top_indivs_to_cand
-        # not implemented yet: industry search returns different result type
-        #elif type = 'industry':
-        #    query = get_top_cats_to_cand
-        elif type == 'pac':
-            query = get_top_cmtes_to_cand
-        else:
-            return {'Error': "Unrecognized or missing type: '%s'" % type} 
-
-        print "Query function is %s" % query
-
+        # if one or more specific entity_types were not specified,
+        # then search them all. otherwise they should be passed in as
+        # a comma-separated list.
+        entity_types = request.GET.get('type', 'pac, individual')
+        types_list = [entity.strip() for entity in entity_types.split(',')]
         results = []
-        for (name, id_, count, amount) in query(entity_id, limit=n):
-            results.append({
+        for _type in types_list:
+            if _type == 'individual':
+                query = get_top_indivs_to_cand
+            # not implemented yet: industry search returns different result type
+            #elif type = 'industry':
+            #    query = get_top_cats_to_cand
+            elif _type == 'pac':
+                query = get_top_cmtes_to_cand
+            else:
+                response = rc.BAD_REQUEST
+                response.write("Invalid API Call Parameters: %s" % entity_types)
+                return response
+            # add the entity_type to the information returned
+            query_results = [item+(_type,) for item in list(query(entity_id, limit=n))]        
+            results.extend(query_results)
+
+        annotated = []
+        for (name, id_, count, amount, _type) in results:
+            annotated.append({
                     'name': name,
                     'id': id_,
                     'count': count,
-                    'amount': float(amount)
+                    'amount': float(amount),
+                    'type': _type
                     })
-        return results
+        return annotated
 
 class TopRecipientsHandler(BaseHandler):
     allowed_methods=('GET',)    
-    fields = ['name', 'id', 'count', 'amount']    
+    fields = ['name', 'id', 'count', 'amount', 'type']    
     def read(self, request, entity_id):        
         n = request.GET.get('top', 10)
 
-        type = request.GET.get('type', None)
-        if type == 'pac':
-            query = get_top_cmtes_from_indiv
-        elif type == 'politician':
-            query = get_top_cands_from_indiv
-        else:
-            return {'Error': "Unrecognized or missing type: '%s'" % type} 
-
+        # if one or more specific entity_types were not specified,
+        # then search them all. otherwise they should be passed in as
+        # a comma-separated list.
+        entity_types = request.GET.get('type', 'pac, politician')
+        types_list = [entity.strip() for entity in entity_types.split(',')]
         results = []
-        for (name, id_, count, amount) in query(entity_id, limit=10):
+        for _type in types_list:
+            print _type
+            if _type == 'pac':
+                query = get_top_cmtes_from_indiv
+            elif _type == 'politician':
+                query = get_top_cands_from_indiv
+            else:                
+                response = rc.BAD_REQUEST
+                response.write("Invalid API Call Parameters: %s" % entity_types)
+                return response
+            
+            # add the entity_type to the information returned
+            query_results = [item+(_type,) for item in list(query(entity_id, limit=n))]        
+            results.extend(query_results)
+
+        annotated = []
+        for (name, id_, count, amount, _type) in query(entity_id, limit=10):
             results.append({
                     'name': name,
                     'id': id_,
                     'count': count,
-                    'amount': float(amount)
-                    })
-        return results
+                    'amount': float(amount),
+                    'type': _type,
+                    }) 
+        return annotated
 
 
 class ContributionsBreakdownHandler(BaseHandler):
