@@ -5,13 +5,6 @@ from dcapi.lobbying.handlers import LobbyingFilterHandler
 from dcapi.common.emitters import StreamingLoggingCSVEmitter, StreamingLoggingJSONEmitter
 from locksmith.auth.authentication import PistonKeyAuthentication
 
-# Emitter.register('json', StreamingLoggingJSONEmitter, 'application/json')
-# Emitter.register('csv', StreamingLoggingCSVEmitter, 'text/csv')
-# Emitter.unregister('django')
-# Emitter.unregister('pickle')
-# Emitter.unregister('xml')
-# Emitter.unregister('yaml')
-
 ad = { 'authentication': PistonKeyAuthentication() }
 
 lobbyingfilter_handler = Resource(LobbyingFilterHandler, **ad)

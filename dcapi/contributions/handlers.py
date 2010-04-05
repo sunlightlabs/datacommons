@@ -9,7 +9,7 @@ from dcdata.contribution.models import Contribution
 from dcapi.contributions import filter_contributions
 from dcentity.queries import search_entities_by_name
 
-RESERVED_PARAMS = ('apikey','limit','format','page','per_page','return_entities')
+RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 1000
 MAX_PER_PAGE = 100000
 
@@ -50,7 +50,10 @@ class ContributionStatsLogger(object):
     def __init__(self):
         self.stats = { 'total': 0 }
     def log(self, record):
-        ns = record.get('transaction_namespace', 'unknown')
+        if isinstance(record, dict):
+            ns = record.get('transaction_namespace', 'unknown')
+        else:
+            ns = getattr(record, 'transaction_namespace', 'unknown')
         self.stats[ns] = self.stats.get(ns, 0) + 1
         self.stats['total'] += 1
 

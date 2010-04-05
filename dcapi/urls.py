@@ -17,6 +17,5 @@ urlpatterns = patterns('',
     url(r'^contributions', include('dcapi.contributions.urls')), 
     url(r'^lobbying', include('dcapi.lobbying.urls')),
     url(r'^aggregates/', include('dcapi.aggregates.urls')), 
-
 )
 

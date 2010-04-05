@@ -9,7 +9,7 @@ from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from dcdata.lobbying.models import Lobbying
 from dcapi.lobbying import filter_lobbying
 
-RESERVED_PARAMS = ('apikey','limit','format','page','per_page','return_entities')
+RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 1000
 MAX_PER_PAGE = 100000
 
