@@ -65,7 +65,7 @@ def lobbying_handler(inpath):
             'registrant_is_firm','use'), lambda x: x == 'True'),
         NoneFilter(),
         UnicodeFilter(),
-        DebugEmitter(),
+        #DebugEmitter(),
         CountEmitter(every=5000),
         LoaderEmitter(LobbyingLoader(
             source=inpath,
