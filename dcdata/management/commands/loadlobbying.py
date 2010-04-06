@@ -49,9 +49,9 @@ class LobbyistLoader(Loader):
         
     def get_instance(self, record):
         try:
-            return self.model.objects.get(transaction_id=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model.objects.get(transaction=Lobbying.objects.get(pk=record['transaction_id']), lobbyist_ext_id=record['lobbyist_ext_id'])
         except Lobbyist.DoesNotExist:
-            return self.model(transaction_id=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model(transaction__pk=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
 
 # handlers
 
@@ -95,6 +95,8 @@ HANDLERS = {
     "lob_lobbyist": lobbyist_handler,
 }
 
+TABLES = ('lob_lobbying','lob_lobbyist')
+
 # main management command
 
 class Command(BaseCommand):
@@ -108,8 +110,9 @@ class Command(BaseCommand):
 
         dataroot = os.path.abspath(options['dataroot'])
 
-        for table, infields in FILE_TYPES.iteritems():
-
+        for table in TABLES:
+            
+            infields = FILE_TYPES[table]
             inpath = os.path.join(dataroot, "denorm_%s.csv" % table)
 
             if os.path.exists(inpath):
