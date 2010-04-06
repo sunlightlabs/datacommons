@@ -243,6 +243,7 @@ button{
 	text-indent: -9999em;
 	border: none;
 }
+.ui-dialog-buttonpane button { text-indent: 0; }
 
 button.searchBtn{
 	background: url(../images/search-button.png) top left no-repeat;
@@ -659,7 +660,6 @@ dt.term, .docutils dt {
 	float: left;
 	display: block;
 	margin-right: .25em;
-	text-transform: capitalize;
 }
 
 .docs dt {
@@ -681,6 +681,12 @@ dd {
 .docutils tt, .section tt {
 	font-size: 150%;
 }
+
+.download-list {
+    float: left;
+    width: 33%;
+}
+p.download { display: block; margin: 1em 0; }
 
 span.pre {
 	font-size: 90%;

@@ -68,22 +68,25 @@ var TD = {
                     var qs = TD.Utils.toQueryString(TD.DataFilter.values());
                     var hash = window.btoa(qs);
                     window.location.replace("/filter/#" + hash);
-                } else {
+                } else if ($(this).hasClass('enabled')) {
                     TD.DataFilter.preview();
                 }
                 return false;
             });
             
             $('a#downloadData').bind('click', function() {
-                $('a#downloadData').removeClass('enabled');
-                $('#downloading').dialog('open');
-                var qs = TD.Utils.toQueryString(TD.DataFilter.values());
-                window.location.replace("/data/contributions/download/?" + qs);
+                if ($(this).hasClass('enabled')) {
+                    $('a#downloadData').removeClass('enabled');
+                    $('#downloading').dialog('open');
+                    var qs = TD.Utils.toQueryString(TD.DataFilter.values());
+                    window.location.replace("/data/contributions/download/?" + qs);
+                }
                 return false;
             });
             
             $('#downloading').dialog({
                 autoOpen: false,
+                buttons: { "Ok": function() { $(this).dialog("close"); } },
                 draggable: false,
                 modal: true,
                 resizable: false,
@@ -299,13 +302,3 @@ var TD = {
     }
     
 };
-
-setInterval(function() {
-        TD.HashMonitor.check(function(hash) {
-            if (hash) {
-                TD.DataFilter.reset();
-                TD.DataFilter.loadHash();
-                TD.DataFilter.preview();
-            }
-        });
-    }, 200);

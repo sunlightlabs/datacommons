@@ -10,14 +10,12 @@ from django.db.models.query_utils import Q
 from dcdata.utils.sql import parse_date
 from dcdata.utils.strings.transformers import build_remove_substrings
 from dcdata.contribution.models import Contribution
-from schema import Operator, Schema, InclusionField, OperatorField
+from dcapi.schema import Operator, Schema, InclusionField, OperatorField
 
 
 # Generator functions
 
 def _for_against_generator(query, for_against):
-    print for_against
-    print type(for_against)
     if for_against == 'for':
         query = query.exclude(transaction_type__in=('24a','24n'))
     elif for_against == 'against':
@@ -32,6 +30,9 @@ def _transaction_type_in_generator(query, *transaction_types):
 
 def _contributor_state_in_generator(query, *states):
     return query.filter(contributor_state__in=[state.upper() for state in states])
+    
+def _recipient_state_in_generator(query, *states):
+    return query.filter(recipient_state__in=[state.upper() for state in states])
 
 def _date_before_generator(query, date):
     return query.filter(date__lte=parse_date(date))
@@ -76,14 +77,19 @@ def _cycle_in_generator(query, *cycles):
 def _jurisdiction_in_generator(query, *jurisdiction):
     return query.filter(transaction_namespace__in=jurisdiction)
     
-def _industry_in_generator(query, *industry):
+def _contributor_industry_in_generator(query, *industry):
     ors = Q()
     for ind in industry:
-        (catorder, catcode) = ind.split(',')
-        if catcode:
-            ors = ors | Q(contributor_category=catcode)
+        if len(ind) == 5:
+            ors = ors | Q(contributor_category=ind)
+        elif len(ind) == 3:
+            ors = ors | Q(contributor_category_order=ind)
         else:
-            ors = ors | Q(contributor_category_order=catorder)
+            (catorder, catcode) = ind.split(',')
+            if catcode:
+                ors = ors | Q(contributor_category=catcode)
+            else:
+                ors = ors | Q(contributor_category_order=catorder)
     return query.filter(ors)
 
 
@@ -128,6 +134,7 @@ BETWEEN_OP = '><'
 
 SEAT_FIELD = 'seat'
 CONTRIBUTOR_STATE_FIELD = 'contributor_state'
+RECIPIENT_STATE_FIELD = 'recipient_state'
 DATE_FIELD = 'date'
 ORGANIZATION_FIELD ='organization'
 COMMITTEE_FIELD ='committee'
@@ -139,7 +146,7 @@ CYCLE_FIELD = 'cycle'
 JURISDICTION_FIELD = 'transaction_namespace'
 TRANSACTION_TYPE_FIELD = 'transaction_type'
 FOR_AGAINST_FIELD = 'for_against'
-INDUSTRY_FIELD = 'industry'
+CONTRIBUTOR_INDUSTRY_FIELD = 'contributor_industry'
 
 CONTRIBUTOR_FT_FIELD = 'contributor_ft'
 ORGANIZATION_FT_FIELD = 'organization_ft'
@@ -153,6 +160,7 @@ EMPLOYER_FT_FIELD = 'employer_ft'
 CONTRIBUTION_SCHEMA = Schema(
                              InclusionField(SEAT_FIELD, _seat_in_generator),
                              InclusionField(CONTRIBUTOR_STATE_FIELD, _contributor_state_in_generator),
+                             InclusionField(RECIPIENT_STATE_FIELD, _recipient_state_in_generator),
                              InclusionField(CYCLE_FIELD, _cycle_in_generator),
                              InclusionField(COMMITTEE_FIELD, _committee_in_generator),
                              InclusionField(CONTRIBUTOR_FIELD, _contributor_in_generator),
@@ -167,7 +175,7 @@ CONTRIBUTION_SCHEMA = Schema(
                              InclusionField(EMPLOYER_FT_FIELD, _employer_ft_generator),
                              InclusionField(TRANSACTION_TYPE_FIELD, _transaction_type_in_generator),
                              InclusionField(FOR_AGAINST_FIELD, _for_against_generator),
-                             InclusionField(INDUSTRY_FIELD, _industry_in_generator),
+                             InclusionField(CONTRIBUTOR_INDUSTRY_FIELD, _contributor_industry_in_generator),
                              OperatorField(DATE_FIELD,
                                    Operator(LESS_THAN_OP, _date_before_generator),
                                    Operator(GREATER_THAN_OP, _date_after_generator),

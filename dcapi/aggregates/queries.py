@@ -1,60 +1,140 @@
 
 from django.db import connection
-
-
-create_tops_stmt = """
-    create table tmp_tops as
-        select case when contributor_entity = '' then contributor_name
-                    else contributor_entity
-               end as contributor,
-               case when recipient_entity = '' then recipient_name
-                    else recipient_entity
-               end as recipient,
-               cycle,
-               count(*) as count,
-               sum(amount) as amount
-        from contribution_contribution
-        where 
-            cycle = '2006'
-            and contributor_state = 'WA'
-        group by case when contributor_entity = '' then contributor_name
-                        else contributor_entity end,
-                 case when recipient_entity = '' then recipient_name
-                         else recipient_entity end,
-                 cycle;
-"""
-             
-top_contributors_stmt = """             
-    select coalesce(e.name, t.contributor), e.id, count, amount
-    from tmp_tops t
-    left outer join matchbox_entity e on e.id = t.contributor
+         
+            
+get_top_indivs_to_cand_stmt = """
+    select contributor_name, contributor_entity, count, amount
+    from agg_indivs_to_cand_by_cycle
     where
-        recipient = %s
+        recipient_entity = %s
+        and cycle = %s
     order by amount desc
-    limit 20;
+        limit %s
 """
-
-
-top_recipients_stmt = """
-    select coalesce(e.name, t.recipient), e.id, count, amount
-    from tmp_tops t
-    left outer join matchbox_entity e on e.id = t.recipient
-    where
-        contributor = %s
-    order by amount desc
-    limit 20;
-"""
-
-
-
-def get_top_contributors(entity_id):
-    cursor = connection.cursor()
     
-    cursor.execute(top_contributors_stmt, [entity_id])
+get_top_cmtes_to_cand_stmt = """
+    select contributor_name, contributor_entity, count, amount
+    from agg_cmtes_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+        limit %s
+"""
+    
+get_top_cats_to_cand_stmt = """
+    select contributor_category, count, amount
+    from agg_cats_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""    
+
+get_top_catorders_to_cand_stmt = """
+    select contributor_category_order, count, amount
+    from agg_cat_orders_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and contributor_category = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""    
+    
+    
+get_top_cands_from_indiv_stmt = """
+    select recipient_name, recipient_entity, count, amount
+    from agg_cands_from_indiv_by_cycle
+    where
+        contributor_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""    
+
+get_top_cmtes_from_indiv_stmt = """
+    select recipient_name, recipient_entity, count, amount
+    from agg_cmtes_from_indiv_by_cycle
+    where
+        contributor_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""
+
+get_top_cands_from_cmte_stmt = """
+    select recipient_name, recipient_entity, count, amount
+    from agg_cands_from_cmte_by_cycle
+    where
+        contributor_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""
+
+get_top_indivs_to_cmte_stmt = """
+    select contributor_name, contributor_entity, count, amount
+    from agg_indivs_to_cmte_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+    limit %s
+"""
+
+
+
+search_stmt = """
+    select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
+    from matchbox_entity e
+    join agg_entities a 
+        on e.id = a.entity_id
+    where 
+		to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
+		and (a.contributor_count > 0 or a.recipient_count > 0)
+"""
+
+
+def search_names(query, entity_types=[]):
+    # entity_types is not currently used but we'll build it in at some
+    # point...
+    
+    parsed_query = ' & '.join(query.split(' '))
+    
+    return _execute(search_stmt, parsed_query)
+
+
+def _execute(stmt, *args):
+    cursor = connection.cursor()
+    cursor.execute(stmt, args)
     return list(cursor)
 
-def get_top_recipients(entity_id):
-    cursor = connection.cursor()
+
+def get_top_cmtes_to_cand(candidate, cycle, limit):
+    return _execute(get_top_cmtes_to_cand_stmt, candidate, cycle, limit)
+
+def get_top_indivs_to_cand(candidate, cycle, limit):
+    return _execute(get_top_indivs_to_cand_stmt, candidate, cycle, limit)
+
+def get_top_cats_to_cand(candidate, cycle, limit):
+    return _execute(get_top_cats_to_cand_stmt, candidate, cycle, limit)
+
+def get_top_catorders_to_cand(candidate, category, cycle, limit):
+    return _execute(get_top_catorders_to_cand_stmt, candidate, category, cycle, limit)
+
+def get_top_cands_from_indiv(individual, cycle, limit):
+    return _execute(get_top_cands_from_indiv_stmt, individual, cycle, limit)
     
-    cursor.execute(top_recipients_stmt, [entity_id])
-    return list(cursor)
+def get_top_cmtes_from_indiv(individual, cycle, limit):
+    return _execute(get_top_cmtes_from_indiv_stmt, individual, cycle, limit)
+
+def get_top_cands_from_cmte(org, cycle, limit):
+    return _execute(get_top_cands_from_cmte_stmt, org, cycle, limit)
+
+def get_top_indivs_to_cmte(org, cycle, limit):
+    return _execute(get_top_indivs_to_cmte_stmt, org, cycle, limit)
+
+
+

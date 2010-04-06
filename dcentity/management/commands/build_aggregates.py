@@ -1,6 +1,4 @@
-import os
 from django.core.management.base import BaseCommand
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from django.db import connection, transaction
 
@@ -79,7 +77,7 @@ def build_aggregates():
     cursor.execute(aggregate_count_stmt)
     cursor.execute(aggregate_amount_given_stmt)
     cursor.execute(aggregate_amount_received_stmt)
-    cursor.execute(build_aliases_stmt)
+    #cursor.execute(build_aliases_stmt)
 
 
 class Command(BaseCommand):

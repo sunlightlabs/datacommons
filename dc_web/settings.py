@@ -34,7 +34,7 @@ MEDIA_URL = '/media/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/admin/media/'
+ADMIN_MEDIA_PREFIX = 'http://assets.sunlightfoundation.com/admin/1.2/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'elpwzaiemq!xd11c*qj2gqc2%j19*(2-@2bz__=vdpc4td&9(='
@@ -67,7 +67,9 @@ INSTALLED_APPS = (
     'registration',
     'locksmith.auth',
     'matchbox',
+    'dcdata',
     'dcdata.contribution',
+    'dcdata.lobbying',
     'dcapi',
     'dcapi.aggregates', 
     'dcapi.entities', 
@@ -86,8 +88,9 @@ PISTON_DISPLAY_ERRORS = True
 PISTON_EMAIL_ERRORS = False
 PISTON_STREAM_OUTPUT = True
 
-LOCKSMITH_STATS_APP = "api"
+LOCKSMITH_STATS_APP = "dcapi"
 LOCKSMITH_STATS_MODEL = "Invocation"
+LOCKSMITH_HUB_URL = "http://services.sunlightlabs.com/analytics/"
 
 INTERNAL_IPS = ('127.0.0.1','209.190.229.199')
 DEBUG_TOOLBAR_CONFIG = {

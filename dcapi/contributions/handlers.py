@@ -9,7 +9,7 @@ from dcdata.contribution.models import Contribution
 from dcapi.contributions import filter_contributions
 from dcentity.queries import search_entities_by_name
 
-RESERVED_PARAMS = ('apikey','limit','format','page','per_page','return_entities')
+RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 1000
 MAX_PER_PAGE = 100000
 
@@ -18,7 +18,7 @@ CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'tran
               'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 
               'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id', 'recipient_name',
-              'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order',
+              'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state', 'recipient_category', 'recipient_category_order',
               'committee_name', 'committee_ext_id', 'committee_party', 'election_type', 'district', 'seat', 'seat_status',
               'seat_result']
 
@@ -39,25 +39,30 @@ def load_contributions(params, nolimit=False, ordering=True):
     unquoted_params = dict([(param, unquote_plus(quoted_value)) for (param, quoted_value) in params.iteritems()])
     result = filter_contributions(unquoted_params)
     if ordering:
-        #result = result.order_by('-contributor_city','contributor_state')
         result = result.order_by('-cycle','-amount')
     if not nolimit:
         result = result[offset:limit]
-        
-    #print("load_contributions(%s) returned %s results in %s seconds." % (unquoted_params, len(result), time() - start_time))
           
     return result
 
+
+class ContributionStatsLogger(object):
+    def __init__(self):
+        self.stats = { 'total': 0 }
+    def log(self, record):
+        if isinstance(record, dict):
+            ns = record.get('transaction_namespace', 'unknown')
+        else:
+            ns = getattr(record, 'transaction_namespace', 'unknown')
+        self.stats[ns] = self.stats.get(ns, 0) + 1
+        self.stats['total'] += 1
 
 class ContributionFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = CONTRIBUTION_FIELDS
     model = Contribution
+    statslogger = ContributionStatsLogger
     
     def read(self, request):
         params = request.GET.copy()
         return load_contributions(params)
-
-        
-
-

@@ -1,7 +1,6 @@
 
 import os
 from django.core.management.base import BaseCommand
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import traceback
 import sys

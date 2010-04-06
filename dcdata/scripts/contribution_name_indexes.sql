@@ -39,7 +39,7 @@ create index contribution_contribution_recipient_ext_id on contribution_contribu
 -- name indexes
 
 drop index if exists contribution_contribution_contributor_name;
-drop index if exists contribution_contribution_contributor_employer
+drop index if exists contribution_contribution_contributor_employer;
 drop index if exists contribution_contribution_organization_name;
 drop index if exists contribution_contribution_parent_organization_name;
 drop index if exists contribution_contribution_committee_name;
@@ -76,4 +76,10 @@ create index contribution_contribution_recipient_name_ft on contribution_contrib
 
 -- other indexes
 
+drop index if exists contribution_contribution_transaction_id;
+drop index if exists contribution_contribution_transaction_type;
+drop index if exists contribution_contribution_recipient_state;
+
 create index contribution_contribution_transaction_id on contribution_contribution (transaction_id);
+create index contribution_contribution_transaction_type on contribution_contribution (transaction_type);
+create index contribution_contribution_recipient_state on contribution_contribution (recipient_state);
