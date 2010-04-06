@@ -18,7 +18,7 @@ CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'tran
               'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name', 
               'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id', 'recipient_name',
-              'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_category', 'recipient_category_order',
+              'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state', 'recipient_category', 'recipient_category_order',
               'committee_name', 'committee_ext_id', 'committee_party', 'election_type', 'district', 'seat', 'seat_status',
               'seat_result']
 
