@@ -1,4 +1,12 @@
 
+-- catcodes
+
+drop index if exists contribution_contribution_contributor_category;
+drop index if exists contribution_contribution_contributor_category_order;
+
+create index contribution_contribution_contributor_category on contribution_contribution (contributor_category);
+create index contribution_contribution_contributor_category_order on contribution_contribution (contributor_category_order);
+
 -- entity foreign key indexes
 
 drop index if exists contribution_contribution_contributor_entity;
