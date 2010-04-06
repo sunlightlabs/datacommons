@@ -49,9 +49,9 @@ class LobbyistLoader(Loader):
         
     def get_instance(self, record):
         try:
-            return self.model.objects.get(transaction_id=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model.objects.get(transaction=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
         except Lobbyist.DoesNotExist:
-            return self.model(transaction_id=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model(transaction=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
 
 # handlers
 
@@ -94,6 +94,8 @@ HANDLERS = {
     "lob_lobbying": lobbying_handler,
     "lob_lobbyist": lobbyist_handler,
 }
+
+TABLES = ('lob_lobbying','lob_lobbyist')
 
 # main management command
 
