@@ -86,6 +86,9 @@ class Loader(object):
         # get a new or existing instance of model
         obj = self.get_instance(record)
         
+        if obj is None:
+            return
+        
         if obj.pk:
             # object already exists, resolve issue of "conflicting" data
             self.resolve(record, obj)

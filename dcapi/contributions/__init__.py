@@ -80,11 +80,16 @@ def _jurisdiction_in_generator(query, *jurisdiction):
 def _contributor_industry_in_generator(query, *industry):
     ors = Q()
     for ind in industry:
-        (catorder, catcode) = ind.split(',')
-        if catcode:
-            ors = ors | Q(contributor_category=catcode)
+        if len(ind) == 5:
+            ors = ors | Q(contributor_category=ind)
+        elif len(ind) == 3:
+            ors = ors | Q(contributor_category_order=ind)
         else:
-            ors = ors | Q(contributor_category_order=catorder)
+            (catorder, catcode) = ind.split(',')
+            if catcode:
+                ors = ors | Q(contributor_category=catcode)
+            else:
+                ors = ors | Q(contributor_category_order=catorder)
     return query.filter(ors)
 
 
