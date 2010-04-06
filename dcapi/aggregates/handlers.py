@@ -2,18 +2,55 @@ import traceback
 
 from piston.handler import BaseHandler
 from piston.utils import rc
-from dcapi.aggregates.queries import get_top_indivs_to_cand,\
-    get_top_cats_to_cand, get_top_cmtes_to_cand, get_top_cmtes_from_indiv,\
-    get_top_cands_from_indiv
+from dcapi.aggregates.queries import (get_top_indivs_to_cand,
+                                      get_top_cats_to_cand, 
+                                      get_top_catorders_to_cand, 
+                                      get_top_cmtes_to_cand, 
+                                      get_top_cmtes_from_indiv,
+                                      get_top_cands_from_indiv)
+
+class IndustriesHandler(BaseHandler):
+    allowed_methods=('GET',)    
+    fields = ['category_name', 'contributions_count', 'amount']
+    def read(self, request, entity_id):
+        cycle = request.GET.get('cycle', '2010')
+        limit = request.GET.get('limit', '10')
+        results = get_top_cats_to_cand(entity_id, cycle, limit)
+        annotated = []
+        for (name, count, amount) in results:
+            annotated.append({
+                    'category_name': name,
+                    'contributions_count': count,
+                    'amount': float(amount),
+                    })
+        return annotated
+
+
+class IndustriesBySectorHandler(BaseHandler):
+    allowed_methods=('GET',)    
+    fields = ['category_name', 'contributions_count', 'amount']
+    def read(self, request, entity_id, industry_id):
+        cycle = request.GET.get('cycle', '2010')
+        limit = request.GET.get('limit', '10')
+        results = get_top_catorders_to_cand(entity_id, industry_id, cycle, limit)
+        annotated = []
+        for (name, count, amount) in results:
+            annotated.append({
+                    'sector_name': name,
+                    'contributions_count': count,
+                    'amount': float(amount),
+                    })
+        return annotated
 
 
 class TopContributorsHandler(BaseHandler):
     allowed_methods=('GET',)    
-    # why is StreamingLoggingEmitter being used? Shouldn't be necessary to list fields.
     fields = ['name', 'id', 'count', 'amount', 'type']
     def read(self, request, entity_id):        
-        n = request.GET.get('top', 10)        
-        cycle = '2006'
+        n = request.GET.get('limit', 10)        
+        # the user should pass in a cycle, but if not, default to the
+        # most recent cycle.
+        cycle = request.GET.get('cycle', '2010')
         
         # if one or more specific entity_types were not specified,
         # then search them all. otherwise they should be passed in as
@@ -35,9 +72,8 @@ class TopContributorsHandler(BaseHandler):
                     response.write("Invalid API Call Parameters: %s" % entity_types)
                     return response
                     # add the entity_type to the information returned
-                
-                
-                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]        
+                                
+                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]
                 results.extend(query_results)
     
             annotated = []
@@ -48,8 +84,7 @@ class TopContributorsHandler(BaseHandler):
                         'count': count,
                         'amount': float(amount),
                         'type': _type
-                        })
-                
+                        })                
             return annotated
         
         except:
@@ -60,7 +95,7 @@ class TopRecipientsHandler(BaseHandler):
     allowed_methods=('GET',)    
     fields = ['name', 'id', 'count', 'amount', 'type']    
     def read(self, request, entity_id):        
-        n = request.GET.get('top', 10)
+        n = request.GET.get('limit', 10)        
         cycle = '2006'
 
         # if one or more specific entity_types were not specified,
@@ -81,7 +116,7 @@ class TopRecipientsHandler(BaseHandler):
                     return response
                 
                 # add the entity_type to the information returned
-                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]        
+                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]
                 results.extend(query_results)
                 
             annotated = []

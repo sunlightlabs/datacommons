@@ -46,12 +46,33 @@ class LobbyistLoader(Loader):
     model = Lobbyist
     def __init__(self, *args, **kwargs):
         super(LobbyistLoader, self).__init__(*args, **kwargs)
+        self._cache = {}
+        self._goodcount = 0
+        self._badcount = 0
         
     def get_instance(self, record):
+        
+        transaction_id = record['transaction_id']
+        
+        transaction = self._cache.get(transaction_id, None)
+        if transaction is None:
+            try:
+                transaction = Lobbying.objects.get(pk=transaction_id)
+                self._cache[transaction_id] = transaction
+            except Lobbying.DoesNotExist:
+                transaction = None
+        
+        self._goodcount += 1
+        
+        if transaction is None:
+            self._badcount += 1
+            print "--- %s of %s" % (self._badcount, self._goodcount)
+            return
+        
         try:
-            return self.model.objects.get(transaction=Lobbying.objects.get(pk=record['transaction_id']), lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model.objects.get(transaction=transaction, lobbyist_ext_id=record['lobbyist_ext_id'])
         except Lobbyist.DoesNotExist:
-            return self.model(transaction__pk=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model(transaction=transaction, lobbyist_ext_id=record['lobbyist_ext_id'])
 
 # handlers
 
@@ -95,7 +116,8 @@ HANDLERS = {
     "lob_lobbyist": lobbyist_handler,
 }
 
-TABLES = ('lob_lobbying','lob_lobbyist')
+#TABLES = ('lob_lobbying','lob_lobbyist')
+TABLES = ('lob_lobbyist',)
 
 # main management command
 
