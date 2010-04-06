@@ -1,11 +1,11 @@
-from time import time
-import sys
-
-from urllib import unquote_plus
+from dcapi.aggregates.queries import search_names
+from dcentity.models import Entity, EntityAttribute
 from django.db.models import Q
 from piston.handler import BaseHandler
-from dcentity.models import Entity
-from dcapi.aggregates.queries import search_names
+from time import time
+from urllib import unquote_plus
+import sys
+
 
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
@@ -16,6 +16,23 @@ class EntityHandler(BaseHandler):
     def read(self, request, entity_id):
         return Entity.objects.get(pk=entity_id)
 
+
+class EntityAttributeHandler(BaseHandler):
+    allowed_methods = ('GET',)
+    fields = ['id']
+    
+    def read(self, request):
+        namespace = request.GET.get('namespace', None)
+        id = request.GET.get('id', None)
+        
+        if not id or not namespace:
+            # to do: what's the proper way to do error handling in a handler?
+            return {'response': 'Must provide a namespace and id.'}
+
+        attributes = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
+        
+        return [a.entity_id for a in attributes]
+    
 
 class EntityFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
