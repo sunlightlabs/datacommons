@@ -10,16 +10,15 @@ create table contributor_associations as
         on c.contributor_name = a.alias
     where
         a.verified = 't'
-    union    
+union    
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
         on c.contributor_ext_id = a.value
     where
         a.verified = 't'
-        -- to do: and we'll need individual namespaces?
-        and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
-            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'));
+        and ((a.namespace in ('urn:crp:individual', 'urn:crp:organization') and c.transaction_namespace = 'urn:fec:transaction')
+            or (a.namespace in ('urn:nimsp:individual', 'urn:nimsp:organization') and c.transaction_namespace = 'urn:nimsp:transaction'));
 
 create index contributor_associations_entity_id on contributor_associations (entity_id);
 create index contributor_associations_transaction_id on contributor_associations (transaction_id);  
@@ -36,7 +35,7 @@ create table recipient_associations as
         on c.recipient_name = a.alias
     where
         a.verified = 't'
-    union    
+union    
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
@@ -92,7 +91,7 @@ create table agg_indivs_to_cand_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
             and c.transaction_type in ('11', '15', '15e', '15j', '22y')
-            --and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
         rank <= 10;
@@ -115,7 +114,7 @@ create table agg_cmtes_to_cand_by_cycle as
             contributor_type = 'C'
             and recipient_type = 'P'
             and transaction_type in ('24k', '24r', '24z')
-            --and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
         rank <= 10;
@@ -142,7 +141,7 @@ create table agg_cats_to_cand_by_cycle as
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
             and transaction_type in ('11', '15', '15e', '15j', '22y'))
-        --and cycle in ('2007', '2008', '2009', '2010')
+        and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_category, c.cycle) top
     where
         rank <= 10;
@@ -169,7 +168,7 @@ create table agg_cat_orders_to_cand_by_cycle as
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
             and transaction_type in ('11', '15', '15e', '15j', '22y'))
-        --and cycle in ('2007', '2008', '2009', '2010')
+        and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_category, c.contributor_category_order, c.cycle) top
     where
         rank <= 10;
@@ -193,7 +192,7 @@ create table agg_cands_from_indiv_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
             and c.transaction_type in ('11', '15', '15e', '15j', '22y')
-            --and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in ('2007', '2008', '2009', '2010')
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
         rank <= 10;
@@ -217,7 +216,7 @@ create table agg_cmtes_from_indiv_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'C'
             -- should there by type restrictions?
-            -- and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in ('2007', '2008', '2009', '2010')
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
         rank <= 10;
@@ -241,7 +240,7 @@ create table agg_cands_from_cmte_by_cycle as
             contributor_type = 'C'
             and recipient_type = 'P'
             and transaction_type in ('24k', '24r', '24z')
-            --and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in ('2007', '2008', '2009', '2010')
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
         rank <= 10;
@@ -265,7 +264,7 @@ create table agg_indivs_to_cmte_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'C'
             -- any type restrictions?
-            --and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
         rank <= 10;
