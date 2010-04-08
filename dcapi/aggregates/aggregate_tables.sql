@@ -102,7 +102,7 @@ create table agg_entities as
         matchbox_entity e
     left join
         (select a.entity_id, count(transaction), sum(transaction.amount)
-        from contributor_associations a
+        from (select * from contributor_associations union select * from organization_associations) a
         inner join contribution_contribution transaction using (transaction_id)
         group by a.entity_id) as contrib_aggs
         on contrib_aggs.entity_id = e.id
@@ -131,7 +131,7 @@ create table agg_indivs_to_cand_by_cycle as
         where
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
-            and c.transaction_type in ('11', '15', '15e', '15j', '22y')
+            and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
             and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
@@ -154,7 +154,7 @@ create table agg_cmtes_to_cand_by_cycle as
         where
             contributor_type = 'C'
             and recipient_type = 'P'
-            and transaction_type in ('24k', '24r', '24z')
+            and transaction_type in ('', '24k', '24r', '24z')
             and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
@@ -182,8 +182,8 @@ create table agg_employees_to_cand_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and (organization_name != '' or parent_organization_name != '')
             and c.recipient_type = 'P'
-            and c.transaction_type in ('11', '15', '15e', '15j', '22y')
-            --and cycle in ('2007', '2008', '2009', '2010')
+            and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
+            and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id,
             case when parent_organization_name != '' then parent_organization_name
                 else organization_name end,
@@ -208,11 +208,11 @@ create table agg_cats_to_cand_by_cycle as
         where
             (contributor_type = 'C'
             and recipient_type = 'P'
-            and transaction_type in ('24k', '24r', '24z'))
+            and transaction_type in ('', '24k', '24r', '24z'))
         or
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
-            and transaction_type in ('11', '15', '15e', '15j', '22y'))
+            and transaction_type in ('', '11', '15', '15e', '15j', '22y'))
         and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_category, c.cycle) top
     where
@@ -235,11 +235,11 @@ create table agg_cat_orders_to_cand_by_cycle as
         where
             (contributor_type = 'C'
             and recipient_type = 'P'
-            and transaction_type in ('24k', '24r', '24z'))
+            and transaction_type in ('', '24k', '24r', '24z'))
         or
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
-            and transaction_type in ('11', '15', '15e', '15j', '22y'))
+            and transaction_type in ('', '11', '15', '15e', '15j', '22y'))
         and cycle in ('2007', '2008', '2009', '2010')
         group by ra.entity_id, c.contributor_category, c.contributor_category_order, c.cycle) top
     where
@@ -263,7 +263,7 @@ create table agg_cands_from_indiv_by_cycle as
         where
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
-            and c.transaction_type in ('11', '15', '15e', '15j', '22y')
+            and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
             and cycle in ('2007', '2008', '2009', '2010')
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
@@ -311,7 +311,7 @@ create table agg_cands_from_cmte_by_cycle as
         where
             contributor_type = 'C'
             and recipient_type = 'P'
-            and transaction_type in ('24k', '24r', '24z')
+            and transaction_type in ('', '24k', '24r', '24z')
             and cycle in ('2007', '2008', '2009', '2010')
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
@@ -344,3 +344,52 @@ create table agg_indivs_to_cmte_by_cycle as
 create index agg_indivs_to_cmte_by_cycle_recipient_entity on agg_indivs_to_cmte_by_cycle (recipient_entity);
 
 
+-- Organizations to Candidate
+
+drop table if exists agg_orgs_to_cand_by_cycle;
+
+create table agg_orgs_to_cand_by_cycle as
+    select  top.recipient_entity, top.organization_name, top.organization_entity, top.cycle, 
+            top.total_count, top.pacs_count, top.indivs_count, top.total_amount, top.pacs_amount, top.indivs_amount
+    from   
+        (select recipient_entity, organization_name, organization_entity, cycle,
+            coalesce(top_pacs.count, 0) + coalesce(top_indivs.count, 0) as total_count, coalesce(top_pacs.count, 0) as pacs_count, coalesce(top_indivs.count, 0) as indivs_count,
+            coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0) as total_amount, coalesce(top_pacs.amount, 0) as pacs_amount, coalesce(top_indivs.amount, 0) as indivs_amount,
+            rank() over (partition by recipient_entity, cycle order by (coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
+        from
+                (select ra.entity_id as recipient_entity, c.contributor_name as organization_name, coalesce(ca.entity_id, '') as organization_entity, 
+                    cycle, count(*), sum(c.amount) as amount 
+                from contribution_contribution c
+                inner join recipient_associations ra using (transaction_id)
+                left join contributor_associations ca using (transaction_id)
+                where
+                    contributor_type = 'C'
+                    and recipient_type = 'P'
+                    and transaction_type in ('', '24k', '24r', '24z')
+                    and cycle in ('2007', '2008', '2009', '2010')
+                group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top_pacs
+            full outer join
+                (select ra.entity_id as recipient_entity, 
+                    case when parent_organization_name != '' then parent_organization_name
+                        else organization_name end as organization_name,
+                    coalesce(oa.entity_id, '') as organization_entity,
+                    cycle, count(*) as count, sum(amount) as amount
+                from contribution_contribution c
+                inner join recipient_associations ra using (transaction_id)
+                left join organization_associations oa using (transaction_id)
+                where
+                    (c.contributor_type is null or c.contributor_type in ('', 'I'))
+                    and (organization_name != '' or parent_organization_name != '')
+                    and c.recipient_type = 'P'
+                    and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
+                    and cycle in ('2007', '2008', '2009', '2010')
+                group by ra.entity_id,
+                    case when parent_organization_name != '' then parent_organization_name
+                        else organization_name end,
+                    coalesce(oa.entity_id, ''), cycle) top_indivs
+        using (recipient_entity, organization_name, organization_entity, cycle)) top
+    where
+        rank <= 10;
+        
+create index agg_orgs_to_cand_by_cycle_recipient_entity on agg_orgs_to_cand_by_cycle (recipient_entity);
+    
