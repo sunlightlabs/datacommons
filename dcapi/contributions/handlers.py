@@ -11,7 +11,7 @@ from dcentity.queries import search_entities_by_name
 
 RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 100
-MAX_PER_PAGE = 1000
+MAX_PER_PAGE = 100000
 
 CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment',
               'amount', 'date', 'contributor_name', 'contributor_ext_id', 'contributor_type', 'contributor_occupation', 
