@@ -22,6 +22,16 @@ get_top_cmtes_to_cand_stmt = """
         limit %s
 """
     
+get_top_employees_to_cand_stmt = """
+    select organization_name, organization_entity, count, amount
+    from agg_employees_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+        limit %s
+"""    
+    
 get_top_cats_to_cand_stmt = """
     select contributor_category, count, amount
     from agg_cats_to_cand_by_cycle
@@ -117,6 +127,9 @@ def get_top_cmtes_to_cand(candidate, cycle, limit):
 
 def get_top_indivs_to_cand(candidate, cycle, limit):
     return _execute(get_top_indivs_to_cand_stmt, candidate, cycle, limit)
+
+def get_top_employees_to_cand(candidate, cycle, limit):
+    return _execute(get_top_employees_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_cats_to_cand(candidate, cycle, limit):
     return _execute(get_top_cats_to_cand_stmt, candidate, cycle, limit)
