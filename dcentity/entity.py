@@ -9,11 +9,8 @@ from django.db import transaction, connection
 
 from dcentity.models import *
 
-
-#@transaction.commit_on_success
+# to do: delete, only used in unit tests.
 def build_recipient_entity(name, namespace, id):
-    cursor = connection.cursor()
-    
     e = Entity.objects.create(name=name, type='politician')
 
     EntityAlias.objects.create(entity=e, alias=name, verified=True)
@@ -25,13 +22,11 @@ def build_recipient_entity(name, namespace, id):
             attr_namespace = 'urn:crp:recipient'
         EntityAttribute.objects.create(entity=e, namespace=attr_namespace, value=id, verified=True)
     
+    build_entity()
 
 
-
-@transaction.commit_on_success
+# to do: delete, only used in unit tests.
 def build_org_entity(name, crp_id, nimsp_id):
-    cursor = connection.cursor()
-    
     e = Entity.objects.create(name=name, type='organization')
         
     EntityAlias.objects.create(entity=e, alias=name, verified=True)
@@ -41,7 +36,17 @@ def build_org_entity(name, crp_id, nimsp_id):
     if nimsp_id:
         EntityAttribute.objects.create(entity=e, namespace='urn:nimsp:organization', value=nimsp_id, verified=True)    
     
-        
+
+def build_entity(name, type, attributes):
+    e = Entity.objects.create(name=name, type=type)
+    
+    EntityAlias.objects.create(entity=e, alias=name, verified=True)
+    
+    for (namespace, value) in attributes:
+        EntityAttribute.objects.create(entity=e, namespace=namespace, value=value, verified=True)
+    
+    
+# currently unused
 
 def _execute(cursor, stmt, args):     
     try:
