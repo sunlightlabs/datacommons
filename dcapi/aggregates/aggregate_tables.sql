@@ -24,6 +24,47 @@ create index contributor_associations_entity_id on contributor_associations (ent
 create index contributor_associations_transaction_id on contributor_associations (transaction_id);  
 
 
+-- Organization Associations
+
+drop table if exists organization_associations;
+
+create table organization_associations as
+    select a.entity_id, c.transaction_id
+    from contribution_contribution c
+    inner join matchbox_entityalias a
+        on c.organization_name = a.alias
+    where
+        a.verified = 't'
+union
+    select a.entity_id, c.transaction_id
+        from contribution_contribution c
+        inner join matchbox_entityalias a
+            on c.parent_organization_name = a.alias
+        where
+            a.verified = 't'
+union
+    select a.entity_id, c.transaction_id
+    from contribution_contribution c
+    inner join matchbox_entityattribute a
+        on c.organization_ext_id = a.value
+    where
+        a.verified = 't'
+        and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
+            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'))
+union
+    select a.entity_id, c.transaction_id
+    from contribution_contribution c
+    inner join matchbox_entityattribute a
+        on c.parent_organization_ext_id = a.value
+    where
+        a.verified = 't'
+        and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
+            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'));
+            
+create index organization_associations_entity_id on organization_associations (entity_id);
+create index organization_associations_transaction_id on organization_associations (transaction_id);
+    
+
 -- Recipient Associations
 
 drop table if exists recipient_associations;
@@ -121,6 +162,37 @@ create table agg_cmtes_to_cand_by_cycle as
 
 create index agg_cmtes_to_cand_by_cycle_recipient_entity on agg_cmtes_to_cand_by_cycle (recipient_entity); 
 
+
+-- Employees to Candidate
+
+drop table if exists agg_employees_to_cand_by_cycle;
+
+create table agg_employees_to_cand_by_cycle as
+    select top.recipient_entity, top.organization_name, top.organization_entity, top.cycle, top.count, top.amount
+    from (select ra.entity_id as recipient_entity, 
+            case when parent_organization_name != '' then parent_organization_name
+                else organization_name end as organization_name,
+            coalesce(oa.entity_id, '') as organization_entity,
+            cycle, count(*) as count, sum(amount) as amount,
+            rank() over (partition by ra.entity_id, cycle order by sum(amount) desc) as rank
+        from contribution_contribution c
+        inner join recipient_associations ra using (transaction_id)
+        left join organization_associations oa using (transaction_id)
+        where
+            (c.contributor_type is null or c.contributor_type in ('', 'I'))
+            and (organization_name != '' or parent_organization_name != '')
+            and c.recipient_type = 'P'
+            and c.transaction_type in ('11', '15', '15e', '15j', '22y')
+            --and cycle in ('2007', '2008', '2009', '2010')
+        group by ra.entity_id,
+            case when parent_organization_name != '' then parent_organization_name
+                else organization_name end,
+            coalesce(oa.entity_id, ''), cycle) top
+    where
+        rank <= 10;
+
+create index agg_employees_to_cand_by_cycle_recipient_entity on agg_employees_to_cand_by_cycle (recipient_entity);
+    
 
 -- Industry Categories to Candidate
 
