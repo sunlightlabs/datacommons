@@ -405,7 +405,7 @@ create table agg_cands_from_org_by_cycle as
         (select organization_entity, recipient_name, recipient_entity, cycle,
             coalesce(top_direct.count, 0) + coalesce(top_indivs.count, 0) as total_count, coalesce(top_direct.count, 0) as pacs_count, coalesce(top_indivs.count, 0) as indivs_count,
             coalesce(top_direct.amount, 0) + coalesce(top_indivs.amount, 0) as total_amount, coalesce(top_direct.amount, 0) as pacs_amount, coalesce(top_indivs.amount, 0) as indivs_amount,
-            rank() over (partition by recipient_entity, cycle order by (coalesce(top_direct.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
+            rank() over (partition by organization_entity, cycle order by (coalesce(top_direct.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
         from
                 (select ca.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity, 
                     cycle, count(*), sum(c.amount) as amount 
@@ -420,7 +420,7 @@ create table agg_cands_from_org_by_cycle as
                 group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top_direct
             full outer join
                 (select oa.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
-                    cycle, count(*) as count, sum(amount) as amount
+                    cycle, count(*), sum(amount) as amount
                 from contribution_contribution c
                 inner join organization_associations oa using (transaction_id)
                 left join recipient_associations ra using (transaction_id)
