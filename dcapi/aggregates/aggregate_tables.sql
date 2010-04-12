@@ -1,3 +1,17 @@
+-- Cycles: controls the cycles for which aggregates are computed
+-- Mainly of using during development, when it helps to be able to regenerate the aggregates quickly.
+
+drop table if exists agg_cycles;
+
+create table agg_cycles as
+    values (2007), (2008), (2009), (2010);
+
+
+-- Top N: the number of rows to generate for each aggregate
+
+
+\set agg_top_n 10
+
 
 -- Contributor Associations
 
@@ -132,10 +146,10 @@ create table agg_indivs_to_cand_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
             and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
-            and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in (select * from agg_cycles)
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_indivs_to_cand_by_cycle_recipient_entity on agg_indivs_to_cand_by_cycle (recipient_entity);
 
@@ -155,10 +169,10 @@ create table agg_cmtes_to_cand_by_cycle as
             contributor_type = 'C'
             and recipient_type = 'P'
             and transaction_type in ('', '24k', '24r', '24z')
-            and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in (select * from agg_cycles)
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_cmtes_to_cand_by_cycle_recipient_entity on agg_cmtes_to_cand_by_cycle (recipient_entity); 
 
@@ -183,13 +197,13 @@ create table agg_employees_to_cand_by_cycle as
             and (organization_name != '' or parent_organization_name != '')
             and c.recipient_type = 'P'
             and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
-            and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in (select * from agg_cycles)
         group by ra.entity_id,
             case when parent_organization_name != '' then parent_organization_name
                 else organization_name end,
             coalesce(oa.entity_id, ''), cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_employees_to_cand_by_cycle_recipient_entity on agg_employees_to_cand_by_cycle (recipient_entity);
     
@@ -213,10 +227,10 @@ create table agg_cats_to_cand_by_cycle as
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
             and transaction_type in ('', '11', '15', '15e', '15j', '22y'))
-        and cycle in ('2007', '2008', '2009', '2010')
+        and cycle in (select * from agg_cycles)
         group by ra.entity_id, c.contributor_category, c.cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
         
 create index agg_cats_to_cand_by_cycle_recipient_entity on agg_cats_to_cand_by_cycle (recipient_entity);
        
@@ -240,10 +254,10 @@ create table agg_cat_orders_to_cand_by_cycle as
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
             and transaction_type in ('', '11', '15', '15e', '15j', '22y'))
-        and cycle in ('2007', '2008', '2009', '2010')
+        and cycle in (select * from agg_cycles)
         group by ra.entity_id, c.contributor_category, c.contributor_category_order, c.cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_cat_orders_to_cand_by_cycle_recipient_entity on agg_cat_orders_to_cand_by_cycle (recipient_entity);
         
@@ -264,10 +278,10 @@ create table agg_cands_from_indiv_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'P'
             and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
-            and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in (select * from agg_cycles)
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_cands_from_indiv_by_cycle_contributor_entity on agg_cands_from_indiv_by_cycle (contributor_entity);
     
@@ -288,10 +302,10 @@ create table agg_cmtes_from_indiv_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'C'
             and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
-            and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in (select * from agg_cycles)
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
         
 create index agg_cmtes_from_indiv_by_cycle_contributor_entity on agg_cmtes_from_indiv_by_cycle (contributor_entity);
     
@@ -312,10 +326,10 @@ create table agg_cands_from_cmte_by_cycle as
             contributor_type = 'C'
             and recipient_type = 'P'
             and transaction_type in ('', '24k', '24r', '24z')
-            and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in (select * from agg_cycles)
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_cands_from_cmte_by_cycle_contributor_entity on agg_cands_from_cmte_by_cycle (contributor_entity);
 
@@ -336,10 +350,10 @@ create table agg_indivs_to_cmte_by_cycle as
             (c.contributor_type is null or c.contributor_type in ('', 'I'))
             and c.recipient_type = 'C'
             -- any type restrictions?
-            and cycle in ('2007', '2008', '2009', '2010')
+            and cycle in (select * from agg_cycles)
         group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_indivs_to_cmte_by_cycle_recipient_entity on agg_indivs_to_cmte_by_cycle (recipient_entity);
 
@@ -366,7 +380,7 @@ create table agg_orgs_to_cand_by_cycle as
                     contributor_type = 'C'
                     and recipient_type = 'P'
                     and transaction_type in ('', '24k', '24r', '24z')
-                    and cycle in ('2007', '2008', '2009', '2010')
+                    and cycle in (select * from agg_cycles)
                 group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top_pacs
             full outer join
                 (select ra.entity_id as recipient_entity, 
@@ -382,14 +396,14 @@ create table agg_orgs_to_cand_by_cycle as
                     and (organization_name != '' or parent_organization_name != '')
                     and c.recipient_type = 'P'
                     and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
-                    and cycle in ('2007', '2008', '2009', '2010')
+                    and cycle in (select * from agg_cycles)
                 group by ra.entity_id,
                     case when parent_organization_name != '' then parent_organization_name
                         else organization_name end,
                     coalesce(oa.entity_id, ''), cycle) top_indivs
         using (recipient_entity, organization_name, organization_entity, cycle)) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
         
 create index agg_orgs_to_cand_by_cycle_recipient_entity on agg_orgs_to_cand_by_cycle (recipient_entity);
     
@@ -416,7 +430,7 @@ create table agg_cands_from_org_by_cycle as
                     contributor_type = 'C'
                     and recipient_type = 'P'
                     and transaction_type in ('', '24k', '24r', '24z')
-                    and cycle in ('2007', '2008', '2009', '2010')
+                    and cycle in (select * from agg_cycles)
                 group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top_direct
             full outer join
                 (select oa.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
@@ -428,11 +442,11 @@ create table agg_cands_from_org_by_cycle as
                     (c.contributor_type is null or c.contributor_type in ('', 'I'))
                     and c.recipient_type = 'P'
                     and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
-                    and cycle in ('2007', '2008', '2009', '2010')
+                    and cycle in (select * from agg_cycles)
                 group by oa.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top_indivs
         using (organization_entity, recipient_name, recipient_entity, cycle)) top
     where
-        rank <= 10;
+        rank <= :agg_top_n;
 
 create index agg_cands_from_org_by_cycle_recipient_entity on agg_cands_from_org_by_cycle (organization_entity);
     
