@@ -7,7 +7,10 @@ from dcapi.aggregates.queries import (get_top_indivs_to_cand,
                                       get_top_catorders_to_cand, 
                                       get_top_cmtes_to_cand, 
                                       get_top_cmtes_from_indiv,
-                                      get_top_cands_from_indiv)
+                                      get_top_cands_from_indiv,
+                                      get_top_cands_from_cmte,
+                                      get_top_indivs_to_cmte,
+                                      )
 
 class IndustriesHandler(BaseHandler):
     allowed_methods=('GET',)    
@@ -188,6 +191,51 @@ class TimelineHandler(BaseHandler):
         
         return {"Unfortunately": "timeline API method not yet implemented"}
 
+
+
+################################### NEW HANDLERS #########################
+
+class OrgRecipientsHandler(BaseHandler):
+    allowed_methods = ('GET',)
+    fields = ['name', 'id', 'count', 'amount', 'type']    
+    def read(self, request, entity_id):        
+        n = request.GET.get('limit', 10)        
+        cycle = '2010'
+
+        # if one or more specific recipient types were not specified,
+        # then search them all. otherwise they should be passed in as
+        # a comma-separated list.
+        try:
+            entity_types = request.GET.get('type', 'politician')
+            types_list = [entity.strip() for entity in entity_types.split(',')]
+            results = []
+            for _type in types_list:
+                if _type == 'politician':
+                    query = get_top_cands_from_cmte
+                elif _type == 'pac':
+                    raise Exception, "Org recipients to other orgs not yet implemented"
+                else:                
+                    response = rc.BAD_REQUEST
+                    response.write("Invalid API Call Parameters: %s" % entity_types)
+                    return response
+                
+                # add the entity_type to the information returned
+                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]
+                results.extend(query_results)                
+            annotated = []
+            for (name, id_, count, amount, _type) in results:
+                annotated.append({
+                        'name': name,
+                        'id': id_,
+                        'count': count,
+                        'amount': float(amount),
+                        'type': _type,
+                        }) 
+            return annotated
+        
+        except:
+            traceback.print_exc() 
+            raise
 
 
 
