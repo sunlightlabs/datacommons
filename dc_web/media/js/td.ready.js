@@ -28,7 +28,7 @@ $().ready(function() {
             label: 'Contributor',
             help: 'Name of individual, employer, or organization that made contribution',
             field: TD.DataFilter.TextField,
-            allowMultipleFields: true,
+            allowMultipleFields: true
         });
     
         TD.DataFilter.registerFilter({
@@ -382,13 +382,6 @@ $().ready(function() {
         });
 
         TD.DataFilter.registerFilter({
-            name: 'employer_ft',
-            label: 'Employer',
-            help: 'Name of employer or organization associated with contribution',
-            field: TD.DataFilter.TextField,
-        });
-
-        TD.DataFilter.registerFilter({
             name: 'transaction_namespace',
             label: 'Federal/State',
             help: 'State or federal office',
@@ -426,6 +419,13 @@ $().ready(function() {
                 ['state:governor', 'State Governor']
             ]
         });
+
+        TD.DataFilter.registerFilter({
+            name: 'employer_ft',
+            label: 'Organization',
+            help: 'Name of employer or pass-through organization associated with contribution',
+            field: TD.DataFilter.TextField
+        });
     
         // TD.DataFilter.registerFilter({
         //     name: 'organization_ft',
@@ -440,7 +440,7 @@ $().ready(function() {
             label: 'Recipient',
             help: 'Name of candidate or PAC that received contribution',
             field: TD.DataFilter.TextField,
-            allowMultipleFields: true,
+            allowMultipleFields: true
         });
 
         TD.DataFilter.registerFilter({

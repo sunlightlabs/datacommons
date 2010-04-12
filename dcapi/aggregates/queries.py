@@ -22,6 +22,16 @@ get_top_cmtes_to_cand_stmt = """
         limit %s
 """
     
+get_top_employees_to_cand_stmt = """
+    select organization_name, organization_entity, count, amount
+    from agg_employees_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by amount desc
+        limit %s
+"""    
+    
 get_top_cats_to_cand_stmt = """
     select contributor_category, count, amount
     from agg_cats_to_cand_by_cycle
@@ -84,6 +94,26 @@ get_top_indivs_to_cmte_stmt = """
     limit %s
 """
 
+get_top_orgs_to_cand_stmt = """
+    select organization_name, organization_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+    from agg_orgs_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by total_amount desc
+    limit %s
+"""
+
+get_top_cands_from_org_stmt = """
+    select recipient_name, recipient_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+    from agg_cands_from_org_by_cycle
+    where
+        organization_entity = %s
+        and cycle = %s
+    order by total_amount desc
+    limit %s
+"""
+
 
 
 search_stmt = """
@@ -118,6 +148,9 @@ def get_top_cmtes_to_cand(candidate, cycle, limit):
 def get_top_indivs_to_cand(candidate, cycle, limit):
     return _execute(get_top_indivs_to_cand_stmt, candidate, cycle, limit)
 
+def get_top_employees_to_cand(candidate, cycle, limit):
+    return _execute(get_top_employees_to_cand_stmt, candidate, cycle, limit)
+
 def get_top_cats_to_cand(candidate, cycle, limit):
     return _execute(get_top_cats_to_cand_stmt, candidate, cycle, limit)
 
@@ -136,5 +169,8 @@ def get_top_cands_from_cmte(org, cycle, limit):
 def get_top_indivs_to_cmte(org, cycle, limit):
     return _execute(get_top_indivs_to_cmte_stmt, org, cycle, limit)
 
+def get_top_orgs_to_cand(candidate, cycle, limit):
+    return _execute(get_top_orgs_to_cand_stmt, candidate, cycle, limit)
 
-
+def get_top_cands_from_org(organization, cycle, limit):
+    return _execute(get_top_cands_from_org_stmt, organization, cycle, limit)

@@ -6,17 +6,24 @@
         <meta name="description" content="" />
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>{% block title %}Transparency Data{% endblock %}</title>
+
+		<!-- icons --> 
+	    <link rel="shortcut icon" href="http://assets.transparencydata.org.s3.amazonaws.com/1.0/images/favicon.ico" type="image/x-icon"> 
+	    <link rel="icon" href="http://assets.transparencydata.org.s3.amazonaws.com/1.0/images/favicon.ico" type="image/x-icon">
+				
+		<!-- stylesheets -->
         {% css "css/ui-lightness/jquery-ui-1.7.2.custom.css" %}
         {% css "css/jquery.autocomplete.css" %}
         {% css "css/main.css" %}
         <!--[if IE 6]>{% css "css/buggy.css" %}<![endif]-->
         <!--[if IE 7]>{% css "css/buggy7.css" %}<![endif]-->
+
+		<!-- scripts -->
         {% js "js/jquery-1.3.2.min.js" %}
         {% js "js/jquery-ui-1.7.2.custom.min.js" %}
         {% comment %}{% js "js/jquery.autocomplete.custom.js" %}{% endcomment %}
         {% js "js/jquery.currency.js" %}
         {% js "js/underscore-min.js" %}
-        {% js "transparencydata.js" %}
 		<script src="http://services.sunlightlabs.com/brandingbar/hat_js/transparencydata/" type="text/javascript"></script> 
     </head>
     <body class="{% block bodyclass %}{% endblock %}">
@@ -53,6 +60,7 @@
                 </div>
             </div>
         </div>
+        {% js "transparencydata.js" %}
 		<script type="text/javascript">
 			var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
 			document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));

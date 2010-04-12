@@ -104,6 +104,7 @@ div.introbox {
 	display: block;
 	float: left;
 }
+div.introbox h4 { margin-top: 1em; }
 
 #leftIntro {
 	width: 258px;
@@ -987,6 +988,10 @@ p#bottomText {
     display: none;
 }
 
-.dialog#nofilters {
+.dialog#suggestbulk {
     display: none;
+}
+
+.license p {
+    margin: 1em 0;
 }
