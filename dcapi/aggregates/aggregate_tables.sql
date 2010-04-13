@@ -9,7 +9,6 @@ create table agg_cycles as
 
 -- Top N: the number of rows to generate for each aggregate
 
-
 \set agg_top_n 10
 
 
@@ -208,31 +207,31 @@ create table agg_employees_to_cand_by_cycle as
 create index agg_employees_to_cand_by_cycle_recipient_entity on agg_employees_to_cand_by_cycle (recipient_entity);
     
 
--- Industry Categories to Candidate
+-- Industry Sector to Candidate
 
-drop table if exists agg_cats_to_cand_by_cycle;
+drop table if exists agg_sectors_to_cand_by_cycle;
 
-create table agg_cats_to_cand_by_cycle as
-    select top.recipient_entity, top.contributor_category, top.cycle, top.count, top.amount 
+create table agg_sectors_to_cand_by_cycle as
+    select top.recipient_entity, top.sector, top.cycle, top.count, top.amount 
     from
-        (select ra.entity_id as recipient_entity, c.contributor_category, c.cycle, count(*), sum(amount) as amount,
+        (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, c.cycle, count(*), sum(amount) as amount,
             rank() over (partition by ra.entity_id, cycle order by sum(amount) desc) as rank
         from contribution_contribution c
         inner join recipient_associations ra using (transaction_id)
         where
-            (contributor_type = 'C'
+            ((contributor_type = 'C'
             and recipient_type = 'P'
             and transaction_type in ('', '24k', '24r', '24z'))
         or
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
-            and transaction_type in ('', '11', '15', '15e', '15j', '22y'))
+            and transaction_type in ('', '11', '15', '15e', '15j', '22y')))
         and cycle in (select * from agg_cycles)
-        group by ra.entity_id, c.contributor_category, c.cycle) top
+        group by ra.entity_id, substring(c.contributor_category_order for 1), c.cycle) top
     where
         rank <= :agg_top_n;
         
-create index agg_cats_to_cand_by_cycle_recipient_entity on agg_cats_to_cand_by_cycle (recipient_entity);
+create index agg_sectors_to_cand_by_cycle_recipient_entity on agg_sectors_to_cand_by_cycle (recipient_entity);
        
        
 -- Industry Category Orders to Candidate
@@ -240,22 +239,22 @@ create index agg_cats_to_cand_by_cycle_recipient_entity on agg_cats_to_cand_by_c
 drop table if exists agg_cat_orders_to_cand_by_cycle;
 
 create table agg_cat_orders_to_cand_by_cycle as
-    select top.recipient_entity, top.contributor_category, top.contributor_category_order, top.cycle, top.count, top.amount 
+    select top.recipient_entity, top.sector, top.contributor_category_order, top.cycle, top.count, top.amount 
     from
-        (select ra.entity_id as recipient_entity, c.contributor_category, c.contributor_category_order, c.cycle, count(*), sum(amount) as amount,
-            rank() over (partition by ra.entity_id, c.contributor_category, c.cycle order by sum(amount) desc) as rank
+        (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, c.contributor_category_order, c.cycle, count(*), sum(amount) as amount,
+            rank() over (partition by ra.entity_id, substring(c.contributor_category_order for 1), c.cycle order by sum(amount) desc) as rank
         from contribution_contribution c
         inner join recipient_associations ra using (transaction_id)
         where
-            (contributor_type = 'C'
+            ((contributor_type = 'C'
             and recipient_type = 'P'
             and transaction_type in ('', '24k', '24r', '24z'))
         or
             ((c.contributor_type is null or c.contributor_type in ('', 'I'))
             and recipient_type = 'P'
-            and transaction_type in ('', '11', '15', '15e', '15j', '22y'))
+            and transaction_type in ('', '11', '15', '15e', '15j', '22y')))
         and cycle in (select * from agg_cycles)
-        group by ra.entity_id, c.contributor_category, c.contributor_category_order, c.cycle) top
+        group by ra.entity_id, substring(c.contributor_category_order for 1), c.contributor_category_order, c.cycle) top
     where
         rank <= :agg_top_n;
 
