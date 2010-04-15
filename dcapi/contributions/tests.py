@@ -186,6 +186,29 @@ class SimpleTest(TestCase):
         self.assert_num_results(2, {'contributor_ft': 'billy bob|marry'})
         self.assert_num_results(2, {'contributor_ft': 'billy bob|marry sue'})
         
+    def test_punctuation_ft(self):
+        self.create_contribution(recipient_name='PG&E Corp')
+        self.create_contribution(recipient_name='PGE Corp')
+        self.create_contribution(recipient_name='PG & E Corp')
+        self.create_contribution(recipient_name='PG and E Corp')
+        
+        self.assert_num_results(3, {'recipient_ft': 'pg&e'})
+        
+        # in a perfect world this would be found by the searches above,
+        # but Postgres unfortunately treats the ones above as two tokens and this as one.
+        self.assert_num_results(1, {'recipient_ft': 'pge'})
+
+        # test parentheses
+        self.create_contribution(recipient_name='John Doe (R)')
+        self.create_contribution(recipient_name='John R James')
+
+        self.assert_num_results(2, {'recipient_ft': 'John (R)'})
+        self.assert_num_results(2, {'recipient_ft': 'John R'})
+
+        # failing right now: 'and' should be a stop word, but isn't
+        self.assert_num_results(3, {'recipient_ft': 'pg and e'})
+
+        
 # not an actual test case because there are no Contribution records in the test database.
 # instead, copy this code to a Django shell and run it there.
 

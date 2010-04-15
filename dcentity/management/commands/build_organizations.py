@@ -12,7 +12,7 @@ from dcentity.entity import build_entity
 
 
 @transaction.commit_on_success
-def build_big_hitters(csv_rows):
+def build_organizations(csv_rows):
     for (crp_id, nimsp_id, name) in csv.reader(csv_rows):
         try:
             name = name.strip().decode('utf8', 'replace')
@@ -35,6 +35,6 @@ def build_big_hitters(csv_rows):
 
 class Command(BaseCommand):
     def handle(self, input_path, **args):
-        build_big_hitters(open(input_path, 'r'))
+        build_organizations(open(input_path, 'r'))
     
     

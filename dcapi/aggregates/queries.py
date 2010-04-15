@@ -32,9 +32,9 @@ get_top_employees_to_cand_stmt = """
         limit %s
 """    
     
-get_top_cats_to_cand_stmt = """
-    select contributor_category, count, amount
-    from agg_cats_to_cand_by_cycle
+get_top_sectors_to_cand_stmt = """
+    select sector, count, amount
+    from agg_sectors_to_cand_by_cycle
     where
         recipient_entity = %s
         and cycle = %s
@@ -47,7 +47,7 @@ get_top_catorders_to_cand_stmt = """
     from agg_cat_orders_to_cand_by_cycle
     where
         recipient_entity = %s
-        and contributor_category = %s
+        and sector = %s
         and cycle = %s
     order by amount desc
     limit %s
@@ -151,8 +151,8 @@ def get_top_indivs_to_cand(candidate, cycle, limit):
 def get_top_employees_to_cand(candidate, cycle, limit):
     return _execute(get_top_employees_to_cand_stmt, candidate, cycle, limit)
 
-def get_top_cats_to_cand(candidate, cycle, limit):
-    return _execute(get_top_cats_to_cand_stmt, candidate, cycle, limit)
+def get_top_sectors_to_cand(candidate, cycle, limit):
+    return _execute(get_top_sectors_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_catorders_to_cand(candidate, category, cycle, limit):
     return _execute(get_top_catorders_to_cand_stmt, candidate, category, cycle, limit)

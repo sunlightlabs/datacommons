@@ -3,14 +3,13 @@ import traceback
 from piston.handler import BaseHandler
 from piston.utils import rc
 from dcapi.aggregates.queries import (get_top_indivs_to_cand,
-                                      get_top_cats_to_cand, 
                                       get_top_catorders_to_cand, 
                                       get_top_cmtes_to_cand, 
                                       get_top_cmtes_from_indiv,
                                       get_top_cands_from_indiv,
                                       get_top_cands_from_cmte,
                                       get_top_indivs_to_cmte,
-                                      )
+                                      get_top_sectors_to_cand)
 
 class IndustriesHandler(BaseHandler):
     allowed_methods=('GET',)    
@@ -18,7 +17,7 @@ class IndustriesHandler(BaseHandler):
     def read(self, request, entity_id):
         cycle = request.GET.get('cycle', '2010')
         limit = request.GET.get('limit', '10')
-        results = get_top_cats_to_cand(entity_id, cycle, limit)
+        results = get_top_sectors_to_cand(entity_id, cycle, limit)
         annotated = []
         for (name, count, amount) in results:
             annotated.append({

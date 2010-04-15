@@ -5,12 +5,13 @@ Defines the syntax of HTTP requests and how the requests are mapped into Django 
 """
 
 
+from dcapi.schema import Operator, Schema, InclusionField, OperatorField
+from dcdata.contribution.models import Contribution
+from dcdata.utils.sql import parse_date
+from dcdata.utils.strings.transformers import build_remove_substrings, \
+    build_map_substrings
 from django.db.models.query_utils import Q
 
-from dcdata.utils.sql import parse_date
-from dcdata.utils.strings.transformers import build_remove_substrings
-from dcdata.contribution.models import Contribution
-from dcapi.schema import Operator, Schema, InclusionField, OperatorField
 
 
 # Generator functions
@@ -117,7 +118,10 @@ def _recipient_ft_generator(query, *searches):
 def _ft_generator(query, column, *searches):
     return query.extra(where=[_ft_clause(column)], params=[_ft_terms(*searches)])
 
-_strip_postgres_ft_operators = build_remove_substrings("&|!():*")
+# convert all punctuation to simple whitespace
+
+_ft_special_chars = "&|!():*"
+_strip_postgres_ft_operators = build_map_substrings(dict(zip(_ft_special_chars, ' ' * len(_ft_special_chars))))
 
 def _ft_terms(*searches):
     cleaned_searches = map(_strip_postgres_ft_operators, searches)

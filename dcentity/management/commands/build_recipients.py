@@ -4,15 +4,12 @@ from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE, \
 from dcentity.entity import build_entity
 from django.core.management.base import BaseCommand
 import csv
-import os
 import sys
 import traceback
-
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
+from django.db import transaction
 
 
-
+@transaction.commit_on_success
 def build_recipients(csv_rows):
     for (name,id,namespace) in csv.reader(csv_rows):
         try:
