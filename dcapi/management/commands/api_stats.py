@@ -18,7 +18,7 @@ class ShowAPIStats(BaseCommand):
 
         invocations = Invocation.objects.using('production').filter(timestamp__gt=datetime.utcnow() - timedelta(days=1)).order_by('execution_time')
         
-        print "API Statistics for the last 24 hours:"
+        print "API Statistics for the last 24 hours before %s:" % datetime.now()
         
         print "--- All CALLS ---"
         print_stats([i.execution_time for i in invocations])
