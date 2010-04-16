@@ -437,3 +437,47 @@ create table agg_party_from_org_by_cycle as
     group by oa.entity_id, c.cycle, c.recipient_party;
 
 create index agg_party_from_org_by_cycle_organization_entity on agg_party_from_org_by_cycle (organization_entity);
+    
+    
+-- State/Fed from Organization
+
+drop table if exists agg_namespace_from_org_by_cycle;
+
+create table agg_namespace_from_org_by_cycle as
+    select oa.entity_id as organization_entity, c.cycle, c.transaction_namespace, count(*), sum(amount) as amount
+    from (select * from contributions_individual union select * from contributions_organization) c
+    inner join organization_associations oa using (transaction_id)
+    group by oa.entity_id, c.cycle, c.transaction_namespace;
+    
+create index agg_namespace_from_org_by_cycle_organization_entity on agg_namespace_from_org_by_cycle (organization_entity);
+    
+    
+-- In-state/Out-of-state to Politician
+
+drop table if exists agg_local_to_politician_by_cycle;
+
+create table agg_local_to_politician_by_cycle as
+    select ra.entity_id as recipient_entity, c.cycle, 
+        case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
+        count(*), sum(amount) as amount
+    from (select * from contributions_individual union select * from contributions_organization) c
+    inner join recipient_associations ra using (transaction_id)
+    group by ra.entity_id, c.cycle, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end;
+    
+create index agg_local_to_politician_by_cycle_recipient_entity on agg_local_to_politician_by_cycle (recipient_entity);
+    
+    
+-- Indiv/PAC to Politician
+
+drop table if exists agg_contributor_type_to_politician_by_cycle;
+
+create table agg_contributor_type_to_politician_by_cycle as
+    select ra.entity_id as recipient_entity, c.cycle, coalesce(c.contributor_type, '') as contributor_type, count(*), sum(amount) as amount
+    from (select * from contributions_individual union select * from contributions_organization) c
+    inner join recipient_associations ra using (transaction_id)
+    group by ra.entity_id, c.cycle, coalesce(c.contributor_type, '');
+    
+create index agg_contributor_type_to_politician_by_cycle_recipient_entity on agg_contributor_type_to_politician_by_cycle (recipient_entity);
+
+
+    

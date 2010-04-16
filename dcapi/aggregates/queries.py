@@ -132,6 +132,34 @@ get_party_from_org_stmt = """
         and cycle = %s
 """
 
+
+get_namespace_from_org_stmt = """
+    select transaction_namespace, count, amount
+    from agg_namespace_from_org_by_cycle
+    where
+        organization_entity = %s
+        and cycle = %s
+"""
+
+
+get_local_to_politician_stmt = """
+    select local, count, amount
+    from agg_local_to_politician_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+"""
+
+
+get_contributor_type_to_politician_stmt = """
+    select contributor_type, count, amount
+    from agg_contributor_type_to_politician_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+"""
+
+
 search_stmt = """
     select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
     from matchbox_entity e
@@ -201,6 +229,15 @@ def get_party_from_indiv(individual, cycle):
 
 def get_party_from_org(organization, cycle):
     return _execute_pie(get_party_from_org_stmt, organization, cycle)
+
+def get_namespace_from_org(organization, cycle):
+    return _execute_pie(get_namespace_from_org_stmt, organization, cycle)
+
+def get_local_to_cand(candidate, cycle):
+    return _execute_pie(get_local_to_politician_stmt, candidate, cycle)
+
+def get_contributor_type_to_cand(candidate, cycle):
+    return _execute_pie(get_contributor_type_to_politician_stmt, candidate, cycle)
 
 
 
