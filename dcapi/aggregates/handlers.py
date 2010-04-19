@@ -339,19 +339,24 @@ class OrgRecipientsHandler(BaseHandler):
     def read(self, request, entity_id):        
         n = request.GET.get('limit', 10)        
         cycle = request.GET.get('cycle', '2010')
-
+        limit = request.GET.get('limit', '10')
         # if one or more specific recipient types were not specified,
         # then search them all. otherwise they should be passed in as
         # a comma-separated list.
         try:
-            results = get_top_cands_from_org        
+            results = get_top_cands_from_org(entity_id, cycle, limit)
             annotated = []
-            for (name, id_, count, amount, _type) in results:
+            for (name, id_, total_count, pacs_count, indivs_count, total_amount, 
+                 pacs_amount, indivs_amount) in results:
                 annotated.append({
                         'name': name,
                         'id': id_,
-                        'count': count,
-                        'amount': float(amount),
+                        'total_count': total_count,
+                        'pacs_count': pacs_count,
+                        'indivs_count': indivs_count,                        
+                        'total_amount': float(total_amount),
+                        'pacs_amount': float(pacs_amount),
+                        'indivs_amount': float(indivs_amount),
                         'type': 'politician',
                         }) 
             return annotated
