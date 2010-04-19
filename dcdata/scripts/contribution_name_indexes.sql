@@ -77,11 +77,5 @@ create index contribution_contribution_recipient_name_ft on contribution_contrib
 -- other indexes
 
 drop index if exists contribution_contribution_transaction_id;
-drop index if exists contribution_contribution_transaction_type;
-drop index if exists contribution_contribution_recipient_state;
-drop index if exists contribution_contribution_seat;
 
 create index contribution_contribution_transaction_id on contribution_contribution (transaction_id);
-create index contribution_contribution_transaction_type on contribution_contribution (transaction_type);
-create index contribution_contribution_recipient_state on contribution_contribution (recipient_state);
-create index contribution_contribution_seat on contribution_contribution (seat);

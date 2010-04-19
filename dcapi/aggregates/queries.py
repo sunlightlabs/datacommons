@@ -115,6 +115,50 @@ get_top_cands_from_org_stmt = """
 """
 
 
+get_party_from_indiv_stmt = """
+    select recipient_party, count, amount
+    from agg_party_from_indiv_by_cycle
+    where
+        contributor_entity = %s
+        and cycle = %s
+"""
+
+
+get_party_from_org_stmt = """
+    select recipient_party, count, amount
+    from agg_party_from_org_by_cycle
+    where
+        organization_entity = %s
+        and cycle = %s
+"""
+
+
+get_namespace_from_org_stmt = """
+    select transaction_namespace, count, amount
+    from agg_namespace_from_org_by_cycle
+    where
+        organization_entity = %s
+        and cycle = %s
+"""
+
+
+get_local_to_politician_stmt = """
+    select local, count, amount
+    from agg_local_to_politician_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+"""
+
+
+get_contributor_type_to_politician_stmt = """
+    select contributor_type, count, amount
+    from agg_contributor_type_to_politician_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+"""
+
 
 search_stmt = """
     select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
@@ -133,44 +177,67 @@ def search_names(query, entity_types=[]):
     
     parsed_query = ' & '.join(query.split(' '))
     
-    return _execute(search_stmt, parsed_query)
+    return _execute_top(search_stmt, parsed_query)
 
 
-def _execute(stmt, *args):
+def _execute_top(stmt, *args):
     cursor = connection.cursor()
     cursor.execute(stmt, args)
     return list(cursor)
 
+def _execute_pie(stmt, *args):
+    result_rows = _execute_top(stmt, *args)
+    return dict([(party, (count, amount)) for (party, count, amount) in result_rows])
+
 
 def get_top_cmtes_to_cand(candidate, cycle, limit):
-    return _execute(get_top_cmtes_to_cand_stmt, candidate, cycle, limit)
+    return _execute_top(get_top_cmtes_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_indivs_to_cand(candidate, cycle, limit):
-    return _execute(get_top_indivs_to_cand_stmt, candidate, cycle, limit)
+    return _execute_top(get_top_indivs_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_employees_to_cand(candidate, cycle, limit):
-    return _execute(get_top_employees_to_cand_stmt, candidate, cycle, limit)
+    return _execute_top(get_top_employees_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_sectors_to_cand(candidate, cycle, limit):
-    return _execute(get_top_sectors_to_cand_stmt, candidate, cycle, limit)
+    return _execute_top(get_top_sectors_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_catorders_to_cand(candidate, category, cycle, limit):
-    return _execute(get_top_catorders_to_cand_stmt, candidate, category, cycle, limit)
+    return _execute_top(get_top_catorders_to_cand_stmt, candidate, category, cycle, limit)
 
 def get_top_cands_from_indiv(individual, cycle, limit):
-    return _execute(get_top_cands_from_indiv_stmt, individual, cycle, limit)
+    return _execute_top(get_top_cands_from_indiv_stmt, individual, cycle, limit)
     
 def get_top_cmtes_from_indiv(individual, cycle, limit):
-    return _execute(get_top_cmtes_from_indiv_stmt, individual, cycle, limit)
+    return _execute_top(get_top_cmtes_from_indiv_stmt, individual, cycle, limit)
 
 def get_top_cands_from_cmte(org, cycle, limit):
-    return _execute(get_top_cands_from_cmte_stmt, org, cycle, limit)
+    return _execute_top(get_top_cands_from_cmte_stmt, org, cycle, limit)
 
 def get_top_indivs_to_cmte(org, cycle, limit):
-    return _execute(get_top_indivs_to_cmte_stmt, org, cycle, limit)
+    return _execute_top(get_top_indivs_to_cmte_stmt, org, cycle, limit)
 
 def get_top_orgs_to_cand(candidate, cycle, limit):
-    return _execute(get_top_orgs_to_cand_stmt, candidate, cycle, limit)
+    return _execute_top(get_top_orgs_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_cands_from_org(organization, cycle, limit):
-    return _execute(get_top_cands_from_org_stmt, organization, cycle, limit)
+    return _execute_top(get_top_cands_from_org_stmt, organization, cycle, limit)
+
+
+def get_party_from_indiv(individual, cycle):
+    return _execute_pie(get_party_from_indiv_stmt, individual, cycle)
+
+def get_party_from_org(organization, cycle):
+    return _execute_pie(get_party_from_org_stmt, organization, cycle)
+
+def get_namespace_from_org(organization, cycle):
+    return _execute_pie(get_namespace_from_org_stmt, organization, cycle)
+
+def get_local_to_cand(candidate, cycle):
+    return _execute_pie(get_local_to_politician_stmt, candidate, cycle)
+
+def get_contributor_type_to_cand(candidate, cycle):
+    return _execute_pie(get_contributor_type_to_politician_stmt, candidate, cycle)
+
+
+
