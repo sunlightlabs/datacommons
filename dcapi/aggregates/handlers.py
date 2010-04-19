@@ -7,43 +7,15 @@ from dcapi.aggregates.queries import (get_top_indivs_to_cand,
                                       get_top_cmtes_to_cand, 
                                       get_top_cmtes_from_indiv,
                                       get_top_cands_from_indiv,
-                                      get_top_cands_from_cmte,
+                                      get_top_cands_from_org,
                                       get_top_indivs_to_cmte,
-                                      get_top_sectors_to_cand)
-
-class IndustriesHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    fields = ['category_name', 'contributions_count', 'amount']
-    def read(self, request, entity_id):
-        cycle = request.GET.get('cycle', '2010')
-        limit = request.GET.get('limit', '10')
-        results = get_top_sectors_to_cand(entity_id, cycle, limit)
-        annotated = []
-        for (name, count, amount) in results:
-            annotated.append({
-                    'category_name': name,
-                    'contributions_count': count,
-                    'amount': float(amount),
-                    })
-        return annotated
-
-
-class IndustriesBySectorHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    fields = ['category_name', 'contributions_count', 'amount']
-    def read(self, request, entity_id, industry_id):
-        cycle = request.GET.get('cycle', '2010')
-        limit = request.GET.get('limit', '10')
-        results = get_top_catorders_to_cand(entity_id, industry_id, cycle, limit)
-        annotated = []
-        for (name, count, amount) in results:
-            annotated.append({
-                    'sector_name': name,
-                    'contributions_count': count,
-                    'amount': float(amount),
-                    })
-        return annotated
-
+                                      get_top_sectors_to_cand,
+                                      get_party_from_indiv,                                      
+                                      get_party_from_org,
+                                      get_namespace_from_org,
+                                      get_local_to_cand,
+                                      get_contributor_type_to_cand,
+                                      )
 
 class TopContributorsHandler(BaseHandler):
     allowed_methods=('GET',)    
@@ -171,28 +143,79 @@ class MetadataHandler(BaseHandler):
         return {"Unfortunately": "metadata API method not yet implemented"}
 
 
-class DetailHandler(BaseHandler):
-    allowed_methods = ('GET',)
-    def read(self, request, entity_id):
-        category = request.GET.get('category', None)
-        if category not in ['industry', 'recipients', 'organizations']:
-            return {'Error': 'Invalid API Call'}
-        return {"Unfortunately": "detail API method not yet implemented"}
-
-
-class TimelineHandler(BaseHandler):
-    allowed_methods = ('GET',)
-    def read(self, request, entity_id):
-        # timeline can be specified by start and stop date, or by one or more cycles
-        cycle = request.GET.get("cycle", None)
-        start = request.GET.get("start", None)
-        end = request.GET.get("end", None)
-        
-        return {"Unfortunately": "timeline API method not yet implemented"}
-
-
 
 ################################### NEW HANDLERS #########################
+
+class OrgRecipientsBreakdownHandler(BaseHandler):
+    ''' Breakdown of recipients from a single org'''
+    allowed_methods = ('GET',)
+    fields = ['name', 'id', 'count', 'amount', 'type']    
+    def read(self, request, entity_id):        
+        cycle = request.GET.get('cycle', '2010')
+
+        # a single type of breakdown must be specified
+        breakdown_type = request.GET.get('type', None)
+        if breakdown_type == 'party':
+            query = get_party_from_org
+        elif breakdown_type == 'level':
+            query = get_namespace_from_org
+        else:
+            response = rc.BAD_REQUEST
+            response.write("Invalid API Call Parameters to org recipients breakdown: valid breakdown type must be specified. ")
+            return response
+
+        try:
+            return query(entity_id, cycle)
+        except:
+            traceback.print_exc() 
+            raise
+
+class PolContributorsBreakdownHandler(BaseHandler):
+    ''' Breakdown of recipients from a single org'''
+    allowed_methods = ('GET',)
+    fields = ['name', 'id', 'count', 'amount', 'type']    
+    def read(self, request, entity_id):        
+        cycle = request.GET.get('cycle', '2010')
+
+        # a single type of breakdown must be specified
+        breakdown_type = request.GET.get('type', None)
+        if breakdown_type == 'local':
+            query = get_local_to_cand
+        elif breakdown_type == 'entity':
+            query = get_contributor_type_to_cand
+        else:
+            response = rc.BAD_REQUEST
+            response.write("Invalid API Call Parameters to org recipients breakdown: valid breakdown type must be specified. ")
+            return response
+
+        try:
+            return query(entity_id, cycle)
+        except:
+            traceback.print_exc() 
+            raise
+
+class IndivRecipientsBreakdownHandler(BaseHandler):
+    ''' Breakdown of recipients from a single individual'''
+    allowed_methods = ('GET',)
+    fields = ['name', 'id', 'count', 'amount', 'type']    
+    def read(self, request, entity_id):        
+        cycle = request.GET.get('cycle', '2010')
+
+        # a single type of breakdown must be specified
+        breakdown_type = request.GET.get('type', None)
+        if breakdown_type == 'party':
+            query = get_party_from_indiv
+        else:
+            response = rc.BAD_REQUEST
+            response.write("Invalid API Call Parameters to org recipients breakdown: valid breakdown type must be specified. ")
+            return response
+
+        try:
+            return query(entity_id, cycle)
+        except:
+            traceback.print_exc() 
+            raise
+        
 
 class OrgContributorsHandler(BaseHandler):
     ''' Contributors to a single org/pac '''
@@ -321,7 +344,7 @@ class OrgRecipientsHandler(BaseHandler):
         # then search them all. otherwise they should be passed in as
         # a comma-separated list.
         try:
-            results = get_top_cands_from_cmte        
+            results = get_top_cands_from_org        
             annotated = []
             for (name, id_, count, amount, _type) in results:
                 annotated.append({
@@ -337,6 +360,40 @@ class OrgRecipientsHandler(BaseHandler):
             traceback.print_exc() 
             raise
 
+
+class SectorsHandler(BaseHandler):
+    allowed_methods=('GET',)    
+    fields = ['sector_code', 'contributions_count', 'amount']
+    def read(self, request, entity_id):
+        cycle = request.GET.get('cycle', '2010')
+        limit = request.GET.get('limit', '10')
+        print 'sectors handler: entity id %s' % entity_id
+        results = get_top_sectors_to_cand(entity_id, cycle, limit)
+        annotated = []
+        for (name, count, amount) in results:
+            annotated.append({
+                    'sector_code': name,
+                    'contributions_count': count,
+                    'amount': float(amount),
+                    })
+        return annotated
+
+
+class IndustriesBySectorHandler(BaseHandler):
+    allowed_methods=('GET',)    
+    fields = ['industry_code', 'contributions_count', 'amount']
+    def read(self, request, entity_id, sector_id):
+        cycle = request.GET.get('cycle', '2010')
+        limit = request.GET.get('limit', '10')
+        results = get_top_catorders_to_cand(entity_id, sector_id, cycle, limit)
+        annotated = []
+        for (name, count, amount) in results:
+            annotated.append({
+                    'industry_code': name,
+                    'contributions_count': count,
+                    'amount': float(amount),
+                    })
+        return annotated
 
 
 
