@@ -14,6 +14,9 @@ from dcapi.aggregates.handlers import (TopContributorsHandler,
 
                                        # new handlers
                                        OrgRecipientsHandler,
+                                       OrgContributorsHandler,
+                                       PolContributorsHandler,
+                                       IndivRecipientsHandler,
                                        )
 
 # We are using the default JSONEmitter so no need to explicitly
@@ -34,7 +37,12 @@ detail_handler = Resource(DetailHandler, **ad)
 timeline_handler = Resource(TimelineHandler, **ad)
 industries_handler = Resource(IndustriesHandler, **ad)
 industries_sector_handler = Resource(IndustriesBySectorHandler, **ad)
+
+# new api calls
 org_recipients_handler = Resource(OrgRecipientsHandler, **ad)
+org_contributors_handler = Resource(OrgContributorsHandler, **ad)
+pol_contributors_handler = Resource(PolContributorsHandler, **ad)
+indiv_recipients_handler = Resource(IndivRecipientsHandler, **ad)
 
 urlpatterns = patterns('',
     # contributor breakdowns 
@@ -84,20 +92,20 @@ urlpatterns = patterns('',
     # new URLs
 
     # contributors to a single org/pac                       
-#    url(r'^org/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
-#        org_contributors_handler, name='org_contributors_handler'),
+    url(r'^org/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
+        org_contributors_handler, name='org_contributors_handler'),
 
     # contributors to a single politician 
-#    url(r'^pol/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
-#        pol_contributors_handler, name='pol_contributors_handler'),
+    url(r'^pol/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
+        pol_contributors_handler, name='pol_contributors_handler'),
 
     # recipients from a single org//pac 
     url(r'^org/(?P<entity_id>.+)/recipients.(?P<emitter_format>.+)$', 
         org_recipients_handler, name='org_recipients_handler'),
 
     # recipients from a single individual
-#    url(r'^indiv/(?P<entity_id>.+)/recipients.(?P<emitter_format>.+)$', 
-#        indiv_recipients_handler, name='indiv_recipients_handler'),
+    url(r'^indiv/(?P<entity_id>.+)/recipients.(?P<emitter_format>.+)$', 
+        indiv_recipients_handler, name='indiv_recipients_handler'),
 
     # contributions to a single org/pac, broken down by industry
 #    url(r'^org/(?P<entity_id>.+)/contributors/industry/(?P<industry_id>.+)\.(?P<emitter_format>.+)$', 

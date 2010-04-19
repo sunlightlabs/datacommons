@@ -194,32 +194,59 @@ class TimelineHandler(BaseHandler):
 
 ################################### NEW HANDLERS #########################
 
-class OrgRecipientsHandler(BaseHandler):
+class OrgContributorsHandler(BaseHandler):
+    ''' Contributors to a single org/pac '''
     allowed_methods = ('GET',)
     fields = ['name', 'id', 'count', 'amount', 'type']    
     def read(self, request, entity_id):        
-        n = request.GET.get('limit', 10)        
-        cycle = '2010'
+        limit = request.GET.get('limit', 10)        
+        cycle = request.GET.get('cycle', '2010')
+        try:
+            results = get_top_indivs_to_cmte(entity_id, cycle, limit)
+            annotated = []
+            for (name, id_, count, amount) in results:
+                annotated.append({
+                        'name': name,
+                        'id': id_,
+                        'count': count,
+                        'amount': float(amount),
+                        'type': 'individual',
+                        }) 
+            return annotated
+        
+        except:
+            traceback.print_exc() 
+            raise
+
+
+class PolContributorsHandler(BaseHandler):
+    ''' Contributors to a single politician'''
+
+    allowed_methods = ('GET',)
+    fields = ['name', 'id', 'count', 'amount', 'type']    
+    def read(self, request, entity_id):        
+        limit = request.GET.get('limit', 10)        
+        cycle = request.GET.get('cycle', '2010')
 
         # if one or more specific recipient types were not specified,
         # then search them all. otherwise they should be passed in as
         # a comma-separated list.
         try:
-            entity_types = request.GET.get('type', 'politician')
+            entity_types = request.GET.get('type', 'org, indiv')
             types_list = [entity.strip() for entity in entity_types.split(',')]
             results = []
             for _type in types_list:
-                if _type == 'politician':
-                    query = get_top_cands_from_cmte
-                elif _type == 'pac':
-                    raise Exception, "Org recipients to other orgs not yet implemented"
+                if _type == 'org':
+                    query = get_top_cmtes_to_cand
+                elif _type == 'indiv':
+                    query = get_top_indivs_to_cand
                 else:                
                     response = rc.BAD_REQUEST
                     response.write("Invalid API Call Parameters: %s" % entity_types)
                     return response
                 
                 # add the entity_type to the information returned
-                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]
+                query_results = [item+(_type,) for item in list(query(entity_id, cycle, limit))]
                 results.extend(query_results)                
             annotated = []
             for (name, id_, count, amount, _type) in results:
@@ -229,6 +256,80 @@ class OrgRecipientsHandler(BaseHandler):
                         'count': count,
                         'amount': float(amount),
                         'type': _type,
+                        }) 
+            return annotated
+        
+        except:
+            traceback.print_exc() 
+            raise
+
+class IndivRecipientsHandler(BaseHandler):
+    ''' Recipients from a single individual'''
+
+    allowed_methods = ('GET',)
+    fields = ['name', 'id', 'count', 'amount', 'type']    
+    def read(self, request, entity_id):        
+        limit = request.GET.get('limit', 10)        
+        cycle = request.GET.get('cycle', '2010')
+
+        # if one or more specific recipient types were not specified,
+        # then search them all. otherwise they should be passed in as
+        # a comma-separated list.
+        try:
+            entity_types = request.GET.get('type', 'org, pol')
+            types_list = [entity.strip() for entity in entity_types.split(',')]
+            results = []
+            for _type in types_list:
+                if _type == 'org':
+                    query = get_top_cmtes_from_indiv
+                elif _type == 'pol':
+                    query = get_top_cands_from_indiv
+                else:                
+                    response = rc.BAD_REQUEST
+                    response.write("Invalid API Call Parameters: %s" % entity_types)
+                    return response
+                
+                # add the entity_type to the information returned
+                query_results = [item+(_type,) for item in list(query(entity_id, cycle, limit))]
+                results.extend(query_results)                
+            annotated = []
+            for (name, id_, count, amount, _type) in results:
+                annotated.append({
+                        'name': name,
+                        'id': id_,
+                        'count': count,
+                        'amount': float(amount),
+                        'type': _type,
+                        }) 
+            return annotated
+        
+        except:
+            traceback.print_exc() 
+            raise
+
+
+class OrgRecipientsHandler(BaseHandler):
+    ''' Recipients from a single org'''
+
+    allowed_methods = ('GET',)
+    fields = ['name', 'id', 'count', 'amount', 'type']    
+    def read(self, request, entity_id):        
+        n = request.GET.get('limit', 10)        
+        cycle = request.GET.get('cycle', '2010')
+
+        # if one or more specific recipient types were not specified,
+        # then search them all. otherwise they should be passed in as
+        # a comma-separated list.
+        try:
+            results = get_top_cands_from_cmte        
+            annotated = []
+            for (name, id_, count, amount, _type) in results:
+                annotated.append({
+                        'name': name,
+                        'id': id_,
+                        'count': count,
+                        'amount': float(amount),
+                        'type': 'politician',
                         }) 
             return annotated
         
