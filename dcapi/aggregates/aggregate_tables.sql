@@ -5,12 +5,19 @@ drop table if exists agg_cycles cascade;
 
 create table agg_cycles as
     values (2005), (2006), (2007), (2008), (2009), (2010);
-
+--    select distinct cycle from contribution_contribution;
 
 -- Top N: the number of rows to generate for each aggregate
 
 \set agg_top_n 10
+-- \set agg_top_n 100
 
+
+-- CatCodes that should not be included in totals.
+-- Taken from the NIMSP column CatCodes.TopSuppress.
+
+create table agg_suppressed_catcodes as
+    values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'), ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
 
 
 -- Only contributions that should be included in totals from individuals
@@ -24,6 +31,7 @@ create view contributions_individual as
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'P'
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
+        and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
     
 
@@ -38,6 +46,7 @@ create view contributions_organization as
         contributor_type = 'C'
         and recipient_type = 'P'
         and transaction_type in ('', '24k', '24r', '24z')
+        and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
     
 
