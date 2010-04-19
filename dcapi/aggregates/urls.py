@@ -2,10 +2,22 @@ from django.conf.urls.defaults import *
 from piston.emitters import Emitter
 from piston.resource import Resource
 from locksmith.auth.authentication import PistonKeyAuthentication
-from dcapi.aggregates.handlers import (TopContributorsHandler, TopRecipientsHandler, 
-                                       ContributionsBreakdownHandler, RecipientsBreakdownHandler, 
-                                       MetadataHandler, DetailHandler, TimelineHandler,
-                                       IndustriesHandler, IndustriesBySectorHandler)
+from dcapi.aggregates.handlers import (TopContributorsHandler, 
+                                       TopRecipientsHandler, 
+                                       ContributionsBreakdownHandler, 
+                                       RecipientsBreakdownHandler, 
+                                       MetadataHandler, 
+                                       DetailHandler, 
+                                       TimelineHandler,
+                                       IndustriesHandler, 
+                                       IndustriesBySectorHandler,
+
+                                       # new handlers
+                                       OrgRecipientsHandler,
+                                       OrgContributorsHandler,
+                                       PolContributorsHandler,
+                                       IndivRecipientsHandler,
+                                       )
 
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need. 
@@ -25,6 +37,12 @@ detail_handler = Resource(DetailHandler, **ad)
 timeline_handler = Resource(TimelineHandler, **ad)
 industries_handler = Resource(IndustriesHandler, **ad)
 industries_sector_handler = Resource(IndustriesBySectorHandler, **ad)
+
+# new api calls
+org_recipients_handler = Resource(OrgRecipientsHandler, **ad)
+org_contributors_handler = Resource(OrgContributorsHandler, **ad)
+pol_contributors_handler = Resource(PolContributorsHandler, **ad)
+indiv_recipients_handler = Resource(IndivRecipientsHandler, **ad)
 
 urlpatterns = patterns('',
     # contributor breakdowns 
@@ -48,11 +66,6 @@ urlpatterns = patterns('',
     url(r'^entity/(?P<entity_id>.+)/recipients\.(?P<emitter_format>.+)$', 
         toprecipients_handler, name='api_toprecipients_handler'),
 
-    # entity metadata
-    # eg. /aggregates/entity/<entity_id>/metadata.json?field=<specific field>
-    url(r'^entity/(?P<entity_id>.+)/metadata\.(?P<emitter_format>.+)$', 
-        metadata_handler, name='metadata_handler'),
-
     # detail
     # eg. /aggregates/entity/<entity_id>/detail.json?category=<type>&count=<n>
     url(r'^entity/(?P<entity_id>.+)/detail\.(?P<emitter_format>.+)$', 
@@ -75,4 +88,50 @@ urlpatterns = patterns('',
     url(r'^entity/(?P<entity_id>.+)/contributors/industry/(?P<industry_id>.+)/sectors\.(?P<emitter_format>.+)$', 
         industries_sector_handler, name='industries_sector_handler'),
 
+
+    # new URLs
+
+    # contributors to a single org/pac                       
+    url(r'^org/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
+        org_contributors_handler, name='org_contributors_handler'),
+
+    # contributors to a single politician 
+    url(r'^pol/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
+        pol_contributors_handler, name='pol_contributors_handler'),
+
+    # recipients from a single org//pac 
+    url(r'^org/(?P<entity_id>.+)/recipients.(?P<emitter_format>.+)$', 
+        org_recipients_handler, name='org_recipients_handler'),
+
+    # recipients from a single individual
+    url(r'^indiv/(?P<entity_id>.+)/recipients.(?P<emitter_format>.+)$', 
+        indiv_recipients_handler, name='indiv_recipients_handler'),
+
+    # contributions to a single org/pac, broken down by industry
+#    url(r'^org/(?P<entity_id>.+)/contributors/industry/(?P<industry_id>.+)\.(?P<emitter_format>.+)$', 
+#        org_industry_contributors_handler, name='org_industry_contributors_handler'),
+
+    # contributions to a single org/pac, broken down by industry sector
+#    url(r'^org/(?P<entity_id>.+)/contributors/industry/(?P<industry_id>.+)/sectors\.(?P<emitter_format>.+)$', 
+#        org_sector_contributors_handler, name='org_sector_contributors_handler'),
+
+    # contributions to a single politician, broken down by industry
+#    url(r'^pol/(?P<entity_id>.+)/contributors/industry/(?P<industry_id>.+)\.(?P<emitter_format>.+)$', 
+#        org_industry_contributors_handler, name='org_industry_contributors_handler'),
+
+    # contributions to a single politician, broken down by industry sector
+#    url(r'^pol/(?P<entity_id>.+)/contributors/industry/(?P<industry_id>.+)/sectors\.(?P<emitter_format>.+)$', 
+#        org_sector_contributors_handler, name='org_sector_contributors_handler'),
+
+    
+
+    # timelines
+    # breakdown
+    # industries
+    # detail                             
+
+
 )
+
+
+
