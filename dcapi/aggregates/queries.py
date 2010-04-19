@@ -202,8 +202,8 @@ def get_top_employees_to_cand(candidate, cycle, limit):
 def get_top_sectors_to_cand(candidate, cycle, limit):
     return _execute_top(get_top_sectors_to_cand_stmt, candidate, cycle, limit)
 
-def get_top_catorders_to_cand(candidate, category, cycle, limit):
-    return _execute_top(get_top_catorders_to_cand_stmt, candidate, category, cycle, limit)
+def get_top_catorders_to_cand(candidate, sector, cycle, limit):
+    return _execute_top(get_top_catorders_to_cand_stmt, candidate, sector, cycle, limit)
 
 def get_top_cands_from_indiv(individual, cycle, limit):
     return _execute_top(get_top_cands_from_indiv_stmt, individual, cycle, limit)
