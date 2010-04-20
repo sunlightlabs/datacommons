@@ -166,7 +166,8 @@ search_stmt = """
     join agg_entities a 
         on e.id = a.entity_id
     where 
-		to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
+        a.cycle = -1
+    	and to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
 		and (a.contributor_count > 0 or a.recipient_count > 0)
 """
 
@@ -176,6 +177,7 @@ get_entity_totals_stmt = """
     from agg_entities e
     where
         entity_id = %s
+        and cycle = %s
 """
 
 
@@ -254,6 +256,8 @@ def get_contributor_type_to_cand(candidate, cycle):
     return _execute_pie(get_contributor_type_to_politician_stmt, candidate, cycle)
 
 
-def get_entity_totals(entity_id):
-    return _execute_one(get_entity_totals_stmt, entity_id)
+def get_entity_totals(entity_id, cycle = -1):
+    return _execute_one(get_entity_totals_stmt, entity_id, cycle)
+
+
 

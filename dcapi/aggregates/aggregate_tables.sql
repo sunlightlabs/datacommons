@@ -4,13 +4,13 @@
 drop table if exists agg_cycles cascade;
 
 create table agg_cycles as
-    values (2005), (2006), (2007), (2008), (2009), (2010);
---    select distinct cycle from contribution_contribution;
+--    values (2005), (2006), (2007), (2008), (2009), (2010);
+    select distinct cycle from contribution_contribution;
 
 -- Top N: the number of rows to generate for each aggregate
 
-\set agg_top_n 10
--- \set agg_top_n 100
+--\set agg_top_n 10
+\set agg_top_n 100
 
 
 -- CatCodes that should not be included in totals.
@@ -147,23 +147,34 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 drop table if exists agg_entities;
 
 create table agg_entities as
-    select e.id as entity_id, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, 
+    select entity_id, -1 as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, 
         coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
     from 
-        matchbox_entity e
-    left join
         (select a.entity_id, count(transaction), sum(transaction.amount)
         from (select * from contributor_associations union select * from organization_associations) a
         inner join contribution_contribution transaction using (transaction_id)
         group by a.entity_id) as contrib_aggs
-        on contrib_aggs.entity_id = e.id
-    left join
+    full outer join
         (select a.entity_id, count(transaction), sum(transaction.amount)
         from recipient_associations a
         inner join contribution_contribution transaction using (transaction_id)
         group by a.entity_id) as recip_aggs
-        on recip_aggs.entity_id = e.id;
-
+    using (entity_id)
+union
+    select entity_id, coalesce(contrib_aggs.cycle, recip_aggs.cycle) as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, 
+        coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
+    from
+        (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
+        from (select * from contributor_associations union select * from organization_associations) a
+        inner join contribution_contribution transaction using (transaction_id)
+        group by a.entity_id, transaction.cycle) as contrib_aggs
+    full outer join
+        (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
+        from recipient_associations a
+        inner join contribution_contribution transaction using (transaction_id)
+        group by a.entity_id, transaction.cycle) as recip_aggs
+    using (entity_id, cycle);
+        
 create index agg_entities_entity_id on agg_entities (entity_id);
     
 
