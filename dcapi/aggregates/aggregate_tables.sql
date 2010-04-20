@@ -16,6 +16,8 @@ create table agg_cycles as
 -- CatCodes that should not be included in totals.
 -- Taken from the NIMSP column CatCodes.TopSuppress.
 
+drop table if exists agg_suppressed_catcodes;
+
 create table agg_suppressed_catcodes as
     values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'), ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
 
