@@ -305,7 +305,7 @@ drop table if exists agg_cmtes_from_indiv_by_cycle;
 
 create table agg_cmtes_from_indiv_by_cycle as
     select top.contributor_entity, top.recipient_name, top.recipient_entity, top.cycle, top.count, top.amount
-    from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ca.entity_id, '') as recipient_entity,
+    from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
             cycle, count(*), sum(c.amount) as amount,
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
         from contributions_individual c
