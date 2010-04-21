@@ -1,36 +1,6 @@
 
 from django.db import connection
          
-            
-get_top_indivs_to_cand_stmt = """
-    select contributor_name, contributor_entity, count, amount
-    from agg_indivs_to_cand_by_cycle
-    where
-        recipient_entity = %s
-        and cycle = %s
-    order by amount desc
-        limit %s
-"""
-    
-get_top_cmtes_to_cand_stmt = """
-    select contributor_name, contributor_entity, count, amount
-    from agg_cmtes_to_cand_by_cycle
-    where
-        recipient_entity = %s
-        and cycle = %s
-    order by amount desc
-        limit %s
-"""
-    
-get_top_employees_to_cand_stmt = """
-    select organization_name, organization_entity, count, amount
-    from agg_employees_to_cand_by_cycle
-    where
-        recipient_entity = %s
-        and cycle = %s
-    order by amount desc
-        limit %s
-"""    
     
 get_top_sectors_to_cand_stmt = """
     select sector, count, amount
@@ -205,15 +175,6 @@ def _execute_pie(stmt, *args):
     result_rows = _execute_top(stmt, *args)
     return dict([(party, (count, amount)) for (party, count, amount) in result_rows])
 
-
-def get_top_cmtes_to_cand(candidate, cycle, limit):
-    return _execute_top(get_top_cmtes_to_cand_stmt, candidate, cycle, limit)
-
-def get_top_indivs_to_cand(candidate, cycle, limit):
-    return _execute_top(get_top_indivs_to_cand_stmt, candidate, cycle, limit)
-
-def get_top_employees_to_cand(candidate, cycle, limit):
-    return _execute_top(get_top_employees_to_cand_stmt, candidate, cycle, limit)
 
 def get_top_sectors_to_cand(candidate, cycle, limit):
     return _execute_top(get_top_sectors_to_cand_stmt, candidate, cycle, limit)

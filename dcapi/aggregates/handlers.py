@@ -1,104 +1,12 @@
-from dcapi.aggregates.queries import get_top_indivs_to_cand, \
-    get_top_catorders_to_cand, get_top_cmtes_to_cand, get_top_cmtes_from_indiv, \
-    get_top_cands_from_indiv, get_top_cands_from_org, get_top_indivs_to_cmte, \
-    get_top_sectors_to_cand, get_party_from_indiv, get_party_from_org, \
-    get_namespace_from_org, get_local_to_cand, get_contributor_type_to_cand, \
-    get_top_orgs_to_cand
+from dcapi.aggregates.queries import get_top_catorders_to_cand, \
+    get_top_cmtes_from_indiv, get_top_cands_from_indiv, get_top_cands_from_org, \
+    get_top_indivs_to_cmte, get_top_sectors_to_cand, get_party_from_indiv, \
+    get_party_from_org, get_namespace_from_org, get_local_to_cand, \
+    get_contributor_type_to_cand, get_top_orgs_to_cand
 from piston.handler import BaseHandler
 from piston.utils import rc
 import traceback
 
-
-class TopContributorsHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    fields = ['name', 'id', 'count', 'amount', 'type']
-    def read(self, request, entity_id):        
-        n = request.GET.get('limit', 10)        
-        # the user should pass in a cycle, but if not, default to the
-        # most recent cycle.
-        cycle = request.GET.get('cycle', '2010')
-        
-        # if one or more specific entity_types were not specified,
-        # then search them all. otherwise they should be passed in as
-        # a comma-separated list.
-        try:
-            entity_types = request.GET.get('type', 'pac, individual')
-            types_list = [entity.strip() for entity in entity_types.split(',')]
-            results = []
-            for _type in types_list:
-                if _type == 'individual':
-                    query = get_top_indivs_to_cand
-                # not implemented yet: industry search returns different result type
-                #elif type = 'industry':
-                #    query = get_top_cats_to_cand
-                elif _type == 'pac':
-                    query = get_top_cmtes_to_cand
-                else:
-                    response = rc.BAD_REQUEST
-                    response.write("Invalid API Call Parameters: %s" % entity_types)
-                    return response
-                    # add the entity_type to the information returned
-                                
-                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]
-                results.extend(query_results)
-    
-            annotated = []
-            for (name, id_, count, amount, _type) in results:
-                annotated.append({
-                        'name': name,
-                        'id': id_,
-                        'count': count,
-                        'amount': float(amount),
-                        'type': _type
-                        })                
-            return annotated
-        
-        except:
-            traceback.print_exc() 
-            raise
-
-class TopRecipientsHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    fields = ['name', 'id', 'count', 'amount', 'type']    
-    def read(self, request, entity_id):        
-        n = request.GET.get('limit', 10)        
-        cycle = '2006'
-
-        # if one or more specific entity_types were not specified,
-        # then search them all. otherwise they should be passed in as
-        # a comma-separated list.
-        try:
-            entity_types = request.GET.get('type', 'pac, politician')
-            types_list = [entity.strip() for entity in entity_types.split(',')]
-            results = []
-            for _type in types_list:
-                if _type == 'pac':
-                    query = get_top_cmtes_from_indiv
-                elif _type == 'politician':
-                    query = get_top_cands_from_indiv
-                else:                
-                    response = rc.BAD_REQUEST
-                    response.write("Invalid API Call Parameters: %s" % entity_types)
-                    return response
-                
-                # add the entity_type to the information returned
-                query_results = [item+(_type,) for item in list(query(entity_id, cycle, n))]
-                results.extend(query_results)
-                
-            annotated = []
-            for (name, id_, count, amount, _type) in results:
-                annotated.append({
-                        'name': name,
-                        'id': id_,
-                        'count': count,
-                        'amount': float(amount),
-                        'type': _type,
-                        }) 
-            return annotated
-        
-        except:
-            traceback.print_exc() 
-            raise
 
 
 class ContributionsBreakdownHandler(BaseHandler):

@@ -1,26 +1,13 @@
+from dcapi.aggregates.handlers import ContributionsBreakdownHandler, \
+    RecipientsBreakdownHandler, OrgRecipientsHandler, OrgContributorsHandler, \
+    PolContributorsHandler, IndivRecipientsHandler, SectorsHandler, \
+    IndustriesBySectorHandler, OrgRecipientsBreakdownHandler, \
+    IndivRecipientsBreakdownHandler, PolContributorsBreakdownHandler, \
+    MetadataHandler # new handlers
 from django.conf.urls.defaults import *
+from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
-from locksmith.auth.authentication import PistonKeyAuthentication
-from dcapi.aggregates.handlers import (TopContributorsHandler, 
-                                       TopRecipientsHandler, 
-                                       ContributionsBreakdownHandler, 
-                                       RecipientsBreakdownHandler, 
-                                       MetadataHandler, 
-#                                       DetailHandler, 
-#                                       TimelineHandler,
-
-                                       # new handlers
-                                       OrgRecipientsHandler,
-                                       OrgContributorsHandler,
-                                       PolContributorsHandler,
-                                       IndivRecipientsHandler,
-                                       SectorsHandler,
-                                       IndustriesBySectorHandler,
-                                       OrgRecipientsBreakdownHandler,
-                                       IndivRecipientsBreakdownHandler,
-                                       PolContributorsBreakdownHandler,
-                                       )
 
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need. 
@@ -31,8 +18,6 @@ Emitter.unregister('yaml')
 
 ad = { 'authentication': PistonKeyAuthentication() }
 
-topcontributors_handler = Resource(TopContributorsHandler, **ad)
-toprecipients_handler = Resource(TopRecipientsHandler, **ad)
 contributors_breakdown_handler = Resource(ContributionsBreakdownHandler, **ad)
 recipients_breakdown_handler = Resource(RecipientsBreakdownHandler, **ad)
 metadata_handler = Resource(MetadataHandler, **ad)
@@ -52,20 +37,6 @@ pol_contributors_breakdown_handler = Resource(PolContributorsBreakdownHandler, *
 
 
 urlpatterns = patterns('',
-    # Top contributors TO an entity 
-    # eg. /aggregates/entity/<entity_id>/contributors.json
-    # optional parameters (with default values): cycle=2010&limit=10&type=pac,individual,
-#    url(r'^entity/(?P<entity_id>.+)/contributors\.(?P<emitter_format>.+)$', 
-#        topcontributors_handler, name='api_topcontributors_handler'),
-
-    # Top recipients FROM an entity 
-    # eg. /aggregates/entity/<entity_id>/recipients.json
-    # optional parameters (with default values): cycle=2010&limit=10&type=pac,politician,
-#    url(r'^entity/(?P<entity_id>.+)/recipients\.(?P<emitter_format>.+)$', 
-#        toprecipients_handler, name='api_toprecipients_handler'),
-
-
-    # new URLs
 
     # contributors to a single org/pac                       
     url(r'^org/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
