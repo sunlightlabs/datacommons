@@ -23,6 +23,16 @@ get_top_catorders_to_cand_stmt = """
     limit %s
 """    
     
+get_top_orgs_to_cand_stmt = """
+    select organization_name, organization_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+    from agg_orgs_to_cand_by_cycle
+    where
+        recipient_entity = %s
+        and cycle = %s
+    order by total_amount desc
+    limit %s
+"""
+
     
 get_top_cands_from_indiv_stmt = """
     select recipient_name, recipient_entity, count, amount
@@ -34,9 +44,9 @@ get_top_cands_from_indiv_stmt = """
     limit %s
 """    
 
-get_top_cmtes_from_indiv_stmt = """
+get_top_orgs_from_indiv_stmt = """
     select recipient_name, recipient_entity, count, amount
-    from agg_cmtes_from_indiv_by_cycle
+    from agg_orgs_from_indiv_by_cycle
     where
         contributor_entity = %s
         and cycle = %s
@@ -44,35 +54,7 @@ get_top_cmtes_from_indiv_stmt = """
     limit %s
 """
 
-get_top_cands_from_cmte_stmt = """
-    select recipient_name, recipient_entity, count, amount
-    from agg_cands_from_cmte_by_cycle
-    where
-        contributor_entity = %s
-        and cycle = %s
-    order by amount desc
-    limit %s
-"""
 
-get_top_indivs_to_cmte_stmt = """
-    select contributor_name, contributor_entity, count, amount
-    from agg_indivs_to_cmte_by_cycle
-    where
-        recipient_entity = %s
-        and cycle = %s
-    order by amount desc
-    limit %s
-"""
-
-get_top_orgs_to_cand_stmt = """
-    select organization_name, organization_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-    from agg_orgs_to_cand_by_cycle
-    where
-        recipient_entity = %s
-        and cycle = %s
-    order by total_amount desc
-    limit %s
-"""
 
 get_top_cands_from_org_stmt = """
     select recipient_name, recipient_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
@@ -185,14 +167,8 @@ def get_top_catorders_to_cand(candidate, sector, cycle, limit):
 def get_top_cands_from_indiv(individual, cycle, limit):
     return _execute_top(get_top_cands_from_indiv_stmt, individual, cycle, limit)
     
-def get_top_cmtes_from_indiv(individual, cycle, limit):
-    return _execute_top(get_top_cmtes_from_indiv_stmt, individual, cycle, limit)
-
-def get_top_cands_from_cmte(org, cycle, limit):
-    return _execute_top(get_top_cands_from_cmte_stmt, org, cycle, limit)
-
-def get_top_indivs_to_cmte(org, cycle, limit):
-    return _execute_top(get_top_indivs_to_cmte_stmt, org, cycle, limit)
+def get_top_orgs_from_indiv(individual, cycle, limit):
+    return _execute_top(get_top_orgs_from_indiv_stmt, individual, cycle, limit)
 
 def get_top_orgs_to_cand(candidate, cycle, limit):
     return _execute_top(get_top_orgs_to_cand_stmt, candidate, cycle, limit)

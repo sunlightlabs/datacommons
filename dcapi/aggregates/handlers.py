@@ -1,8 +1,8 @@
 from dcapi.aggregates.queries import get_top_catorders_to_cand, \
-    get_top_cmtes_from_indiv, get_top_cands_from_indiv, get_top_cands_from_org, \
-    get_top_indivs_to_cmte, get_top_sectors_to_cand, get_party_from_indiv, \
-    get_party_from_org, get_namespace_from_org, get_local_to_cand, \
-    get_contributor_type_to_cand, get_top_orgs_to_cand
+    get_top_orgs_from_indiv, get_top_cands_from_indiv, get_top_cands_from_org, \
+    get_top_sectors_to_cand, get_party_from_indiv, get_party_from_org, \
+    get_namespace_from_org, get_local_to_cand, get_contributor_type_to_cand, \
+    get_top_orgs_to_cand
 from piston.handler import BaseHandler
 from piston.utils import rc
 import traceback
@@ -149,54 +149,18 @@ class IndivRecipientsBreakdownHandler(BaseHandler):
             raise
         
 
-class OrgContributorsHandler(BaseHandler):
-    ''' Contributors to a single org/pac '''
-    allowed_methods = ('GET',)
-    fields = ['name', 'id', 'count', 'amount', 'type']    
-    def read(self, request, entity_id):        
-        limit = request.GET.get('limit', 10)        
-        cycle = request.GET.get('cycle', '2010')
-        try:
-            results = get_top_indivs_to_cmte(entity_id, cycle, limit)
-            annotated = []
-            for (name, id_, count, amount) in results:
-                annotated.append({
-                        'name': name,
-                        'id': id_,
-                        'count': count,
-                        'amount': float(amount),
-                        'type': 'individual',
-                        }) 
-            return annotated
-        
-        except:
-            traceback.print_exc() 
-            raise
-
-
 class PolContributorsHandler(BaseHandler):
     ''' Contributors to a single politician'''
 
     allowed_methods = ('GET',)
-    fields = ['name', 'id', 'count', 'amount', 'type']    
+    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']    
     def read(self, request, entity_id):        
         limit = request.GET.get('limit', 10)        
         cycle = request.GET.get('cycle', '2010')
 
-        # if one or more specific recipient types were not specified,
-        # then search them all. otherwise they should be passed in as
-        # a comma-separated list.
         try:
-            requested_type = request.GET.get('type', 'org')
-            # only one type exists at the moment. May remove this parameter if it stays as the only option
-            if requested_type == 'org':
-                results = get_top_orgs_to_cand(entity_id, cycle, limit)
-                result_keys = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
-                return [dict(zip(result_keys, row)) for row in results]
-            else:                
-                response = rc.BAD_REQUEST
-                response.write("Invalid API Call Parameters: %s" % requested_type)
-                return response
+            results = get_top_orgs_to_cand(entity_id, cycle, limit)
+            return [dict(zip(self.fields, row)) for row in results]
         
         except:
             traceback.print_exc() 
@@ -221,7 +185,7 @@ class IndivRecipientsHandler(BaseHandler):
             for _type in types_list:
                 if _type == 'org':
                     _type = 'organization'
-                    query = get_top_cmtes_from_indiv
+                    query = get_top_orgs_from_indiv
                 elif _type == 'pol':
                     _type = 'politician' # more user friendly for reading
                     query = get_top_cands_from_indiv
@@ -253,31 +217,14 @@ class OrgRecipientsHandler(BaseHandler):
     ''' Recipients from a single org'''
 
     allowed_methods = ('GET',)
-    fields = ['name', 'id', 'count', 'amount', 'type']    
+    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']    
     def read(self, request, entity_id):        
-        n = request.GET.get('limit', 10)        
+        limit = request.GET.get('limit', 10)        
         cycle = request.GET.get('cycle', '2010')
-        limit = request.GET.get('limit', '10')
-        # if one or more specific recipient types were not specified,
-        # then search them all. otherwise they should be passed in as
-        # a comma-separated list.
+
         try:
             results = get_top_cands_from_org(entity_id, cycle, limit)
-            annotated = []
-            for (name, id_, total_count, pacs_count, indivs_count, total_amount, 
-                 pacs_amount, indivs_amount) in results:
-                annotated.append({
-                        'name': name,
-                        'id': id_,
-                        'total_count': total_count,
-                        'pacs_count': pacs_count,
-                        'indivs_count': indivs_count,                        
-                        'total_amount': float(total_amount),
-                        'pacs_amount': float(pacs_amount),
-                        'indivs_amount': float(indivs_amount),
-                        'type': 'politician',
-                        }) 
-            return annotated
+            return [dict(zip(self.fields, row)) for row in results]
         
         except:
             traceback.print_exc() 

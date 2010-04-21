@@ -9,8 +9,8 @@ create table agg_cycles as
 
 -- Top N: the number of rows to generate for each aggregate
 
---\set agg_top_n 10
-\set agg_top_n 100
+\set agg_top_n 10
+--\set agg_top_n 100
 
 
 -- CatCodes that should not be included in totals.
@@ -36,6 +36,18 @@ create view contributions_individual as
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
     
+
+-- Only contributions from individuals to organizations    
+    
+create view contributions_individual_to_organization as
+    select *
+    from contribution_contribution c
+    where
+        (c.contributor_type is null or c.contributor_type in ('', 'I'))
+        and c.recipient_type = 'C'
+        and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
+        and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and cycle in (select * from agg_cycles);
 
 -- Only contributions that should be included in totals from organizations
 
@@ -227,7 +239,7 @@ create table agg_cands_from_indiv_by_cycle as
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
         from contributions_individual c
         inner join contributor_associations ca using (transaction_id)
-        left join recipient_associations ra using (transaction_id)
+        left join recipient_associations ra using (transaction_id)            
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
         rank <= :agg_top_n;
@@ -237,64 +249,21 @@ create index agg_cands_from_indiv_by_cycle_contributor_entity on agg_cands_from_
     
 -- Committees from Individual
 
-drop table if exists agg_cmtes_from_indiv_by_cycle;
+drop table if exists agg_orgs_from_indiv_by_cycle;
 
-create table agg_cmtes_from_indiv_by_cycle as
+create table agg_orgs_from_indiv_by_cycle as
     select top.contributor_entity, top.recipient_name, top.recipient_entity, top.cycle, top.count, top.amount
     from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
             cycle, count(*), sum(c.amount) as amount,
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
-        from contributions_individual c
+        from contributions_individual_to_organization c
         inner join contributor_associations ca using(transaction_id)
         left join recipient_associations ra using (transaction_id)
         group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
     where
         rank <= :agg_top_n;
         
-create index agg_cmtes_from_indiv_by_cycle_contributor_entity on agg_cmtes_from_indiv_by_cycle (contributor_entity);
-    
-    
--- Candidates from Committee
-
-drop table if exists agg_cands_from_cmte_by_cycle;
-
-create table agg_cands_from_cmte_by_cycle as
-    select top.contributor_entity, top.recipient_name, top.recipient_entity, top.cycle, top.count, top.amount
-    from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ra.entity_id, '') as recipient_entity, 
-            cycle, count(*), sum(c.amount) as amount, 
-            rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
-        from contributions_organization c
-        inner join contributor_associations ca using (transaction_id)
-        left join recipient_associations ra using (transaction_id)
-        group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top
-    where
-        rank <= :agg_top_n;
-
-create index agg_cands_from_cmte_by_cycle_contributor_entity on agg_cands_from_cmte_by_cycle (contributor_entity);
-
-
--- Individuals to Committee
-
-drop table if exists agg_indivs_to_cmte_by_cycle;
-
-create table agg_indivs_to_cmte_by_cycle as
-    select top.recipient_entity, top.contributor_name, top.contributor_entity, top.cycle, top.count, top.amount
-    from (select ra.entity_id as recipient_entity, c.contributor_name, coalesce(ca.entity_id, '') as contributor_entity, 
-            cycle, count(*), sum(c.amount) as amount, 
-            rank() over (partition by ra.entity_id, cycle order by sum(amount) desc) as rank
-        from contribution_contribution c
-        inner join recipient_associations ra using (transaction_id)
-        left join contributor_associations ca using (transaction_id)
-        where
-            (c.contributor_type is null or c.contributor_type in ('', 'I'))
-            and c.recipient_type = 'C'
-            -- any type restrictions?
-            and cycle in (select * from agg_cycles)
-        group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top
-    where
-        rank <= :agg_top_n;
-
-create index agg_indivs_to_cmte_by_cycle_recipient_entity on agg_indivs_to_cmte_by_cycle (recipient_entity);
+create index agg_orgs_from_indiv_by_cycle_contributor_entity on agg_orgs_from_indiv_by_cycle (contributor_entity);
 
 
 -- Organizations to Candidate

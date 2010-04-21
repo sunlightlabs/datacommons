@@ -1,5 +1,5 @@
 from dcapi.aggregates.handlers import ContributionsBreakdownHandler, \
-    RecipientsBreakdownHandler, OrgRecipientsHandler, OrgContributorsHandler, \
+    RecipientsBreakdownHandler, OrgRecipientsHandler, \
     PolContributorsHandler, IndivRecipientsHandler, SectorsHandler, \
     IndustriesBySectorHandler, OrgRecipientsBreakdownHandler, \
     IndivRecipientsBreakdownHandler, PolContributorsBreakdownHandler, \
@@ -26,7 +26,6 @@ metadata_handler = Resource(MetadataHandler, **ad)
 
 # new api calls
 org_recipients_handler = Resource(OrgRecipientsHandler, **ad)
-org_contributors_handler = Resource(OrgContributorsHandler, **ad)
 pol_contributors_handler = Resource(PolContributorsHandler, **ad)
 indiv_recipients_handler = Resource(IndivRecipientsHandler, **ad)
 sectors_handler = Resource(SectorsHandler, **ad)
@@ -37,10 +36,6 @@ pol_contributors_breakdown_handler = Resource(PolContributorsBreakdownHandler, *
 
 
 urlpatterns = patterns('',
-
-    # contributors to a single org/pac                       
-    url(r'^org/(?P<entity_id>.+)/contributors.(?P<emitter_format>.+)$', 
-        org_contributors_handler, name='org_contributors_handler'),
 
     # contributors to a single politician 
     url(r'^pol/(?P<entity_id>.+)/contributors\.(?P<emitter_format>.+)$', 
