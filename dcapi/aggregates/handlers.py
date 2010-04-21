@@ -165,7 +165,28 @@ class OrgRecipientsBreakdownHandler(BaseHandler):
             return response
 
         try:
-            return query(entity_id, cycle)
+            results = query(entity_id, cycle)
+            if breakdown_type == 'party':
+                # the raw database labels aren't very useful so make
+                # them a little nice
+                annotated = {}
+                for k,v in results.iteritems():
+                    if k == 'R':
+                        annotated['Republicans'] = results['R']
+                    elif k == 'D':
+                        annotated['Democrats'] = results['D']
+                results = annotated
+            elif breakdown_type == 'level':
+                # the raw database labels aren't very useful so make
+                # them a little nicer                
+                annotated = {}
+                for k,v in results.iteritems():
+                    if k == 'urn:fec:transaction':
+                        annotated['Federal'] = results['urn:fec:transaction']
+                    elif k == 'urn:minsp:transaction':
+                        annotated['State'] = results['urn:nimsp:transaction']
+                results = annotated
+            return results
         except:
             traceback.print_exc() 
             raise
@@ -189,7 +210,18 @@ class PolContributorsBreakdownHandler(BaseHandler):
             return response
 
         try:
-            return query(entity_id, cycle)
+            results = query(entity_id, cycle)
+            if breakdown_type == 'entity':
+                # the raw database labels aren't very useful so make
+                # them a little nicer
+                annotated = {}
+                for k,v in results.iteritems():                   
+                    if k == 'I':                        
+                        annotated['Individuals'] = results['I']
+                    elif k == 'C':
+                        annotated['PACs'] = results['C']
+                results = annotated
+            return results
         except:
             traceback.print_exc() 
             raise
@@ -260,8 +292,10 @@ class PolContributorsHandler(BaseHandler):
             results = []
             for _type in types_list:
                 if _type == 'org':
+                    _type = 'organization'
                     query = get_top_cmtes_to_cand
                 elif _type == 'indiv':
+                    _type = 'individual'
                     query = get_top_indivs_to_cand
                 else:                
                     response = rc.BAD_REQUEST
@@ -304,14 +338,16 @@ class IndivRecipientsHandler(BaseHandler):
             results = []
             for _type in types_list:
                 if _type == 'org':
+                    _type = 'organization'
                     query = get_top_cmtes_from_indiv
                 elif _type == 'pol':
+                    _type = 'politician' # more user friendly for reading
                     query = get_top_cands_from_indiv
                 else:                
                     response = rc.BAD_REQUEST
                     response.write("Invalid API Call Parameters: %s" % entity_types)
                     return response
-                
+                    
                 # add the entity_type to the information returned
                 query_results = [item+(_type,) for item in list(query(entity_id, cycle, limit))]
                 results.extend(query_results)                
