@@ -1,21 +1,13 @@
-import traceback
-
+from dcapi.aggregates.queries import get_top_indivs_to_cand, \
+    get_top_catorders_to_cand, get_top_cmtes_to_cand, get_top_cmtes_from_indiv, \
+    get_top_cands_from_indiv, get_top_cands_from_org, get_top_indivs_to_cmte, \
+    get_top_sectors_to_cand, get_party_from_indiv, get_party_from_org, \
+    get_namespace_from_org, get_local_to_cand, get_contributor_type_to_cand, \
+    get_top_orgs_to_cand
 from piston.handler import BaseHandler
 from piston.utils import rc
-from dcapi.aggregates.queries import (get_top_indivs_to_cand,
-                                      get_top_catorders_to_cand, 
-                                      get_top_cmtes_to_cand, 
-                                      get_top_cmtes_from_indiv,
-                                      get_top_cands_from_indiv,
-                                      get_top_cands_from_org,
-                                      get_top_indivs_to_cmte,
-                                      get_top_sectors_to_cand,
-                                      get_party_from_indiv,                                      
-                                      get_party_from_org,
-                                      get_namespace_from_org,
-                                      get_local_to_cand,
-                                      get_contributor_type_to_cand,
-                                      )
+import traceback
+
 
 class TopContributorsHandler(BaseHandler):
     allowed_methods=('GET',)    
@@ -287,34 +279,16 @@ class PolContributorsHandler(BaseHandler):
         # then search them all. otherwise they should be passed in as
         # a comma-separated list.
         try:
-            entity_types = request.GET.get('type', 'org, indiv')
-            types_list = [entity.strip() for entity in entity_types.split(',')]
-            results = []
-            for _type in types_list:
-                if _type == 'org':
-                    _type = 'organization'
-                    query = get_top_cmtes_to_cand
-                elif _type == 'indiv':
-                    _type = 'individual'
-                    query = get_top_indivs_to_cand
-                else:                
-                    response = rc.BAD_REQUEST
-                    response.write("Invalid API Call Parameters: %s" % entity_types)
-                    return response
-                
-                # add the entity_type to the information returned
-                query_results = [item+(_type,) for item in list(query(entity_id, cycle, limit))]
-                results.extend(query_results)                
-            annotated = []
-            for (name, id_, count, amount, _type) in results:
-                annotated.append({
-                        'name': name,
-                        'id': id_,
-                        'count': count,
-                        'amount': float(amount),
-                        'type': _type,
-                        }) 
-            return annotated
+            requested_type = request.GET.get('type', 'org')
+            # only one type exists at the moment. May remove this parameter if it stays as the only option
+            if requested_type == 'org':
+                results = get_top_orgs_to_cand(entity_id, cycle, limit)
+                result_keys = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
+                return [dict(zip(result_keys, row)) for row in results]
+            else:                
+                response = rc.BAD_REQUEST
+                response.write("Invalid API Call Parameters: %s" % requested_type)
+                return response
         
         except:
             traceback.print_exc() 
