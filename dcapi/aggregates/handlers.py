@@ -83,7 +83,7 @@ class OrgRecipientsBreakdownHandler(BaseHandler):
                 for k,v in results.iteritems():
                     if k == 'urn:fec:transaction':
                         annotated['Federal'] = results['urn:fec:transaction']
-                    elif k == 'urn:minsp:transaction':
+                    elif k == 'urn:nimsp:transaction':
                         annotated['State'] = results['urn:nimsp:transaction']
                 results = annotated
             return results
