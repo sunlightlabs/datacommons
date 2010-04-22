@@ -72,3 +72,16 @@ class Lobbyist(models.Model):
     
     def __unicode__(self):
         return u"%s is a registered lobbyist" % self.lobbyist_name
+
+class Issue(models.Model):
+    year = models.IntegerField()
+    transaction = models.ForeignKey(Lobbying, related_name='issues')
+    general_issue_code = models.CharField(max_length=3)
+    general_issue = models.CharField(max_length=50)
+    specific_issue = models.CharField(max_length=255)
+    
+    class Meta:
+        ordering = ('year','transaction')
+    
+    def __unicode__(self):
+        return u"%s - %s" % (self.general_issue, self.specific_issue)
