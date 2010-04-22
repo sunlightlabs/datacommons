@@ -37,7 +37,6 @@ class EntityAttributeHandler(BaseHandler):
 class EntityFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    # todo: these are not the fields actually returned
     fields = ['id','name','type','count_given','count_received','total_given','total_received']
 
     def read(self, request):
