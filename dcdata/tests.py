@@ -179,6 +179,31 @@ class TestNIMSPDenormalize(TestCase):
         
         self.assertEqual(2, len(output))
 
+    def test_contributor_type(self):
+        input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
+                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","Z2400","0","0",\
+                        "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+        source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
+        output = list()
+    
+        processor = NIMSPDenormalize.get_allocated_record_processor()
+
+        load_data(source, processor, output.append)
+
+        assert_record_contains(self, {'contributor_type': 'individual', 'organization_name': "Adams & Boswell"}, output[0])
+
+        input_string = '"3327568","341.66","2006-11-07","Kent Adams","Kent Adams",\
+                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
+                        "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+        source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
+        output = list()
+    
+        processor = NIMSPDenormalize.get_allocated_record_processor()
+
+        load_data(source, processor, output.append)
+        
+        assert_record_contains(self, {'contributor_type': 'committee', 'organization_name': "Kent Adams"}, output[0])
+        
 
 class TestCRPDenormalizeAll(TestCase):
     
@@ -258,7 +283,7 @@ class TestCRPDenormalizePac2Candidate(TestCase):
         input_path = os.path.join(dataroot, 'raw/crp/pacs08.csv')
         self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
-                
+        
 
 class TestCRPDenormalizePac2Pac(TestCase):
     output_path = os.path.join(dataroot, 'denormalized/denorm_pac2pac.csv')

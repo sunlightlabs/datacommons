@@ -180,7 +180,6 @@ class IdsFilter(Filter):
         # Contributor
         if record['contributor_id']:
             record['contributor_ext_id'] = record['contributor_id']
-            record['contributor_type'] = None
         if record['newemployerid']:
             record['organization_ext_id'] = record['newemployerid']
         if record['parentcompanyid']:
@@ -191,6 +190,19 @@ class IdsFilter(Filter):
 
         return record
 
+class ContributorTypeFilter(Filter):
+    
+    def __init__(self):
+        super(ContributorTypeFilter, self).__init__()
+        
+    def process_record(self, record):
+        record['contributor_type'] = 'individual' if ',' in record['contributor_name'] else 'committee'
+        
+        if record['contributor_type'] == 'committee' and not record['organization_name']:
+            record['organization_name'] = record['contributor_name'] 
+        return record
+    
+    
 class ZipCleaner(Filter):
     def process_record(self, record):
         if record['contributor_zipcode']:
@@ -270,6 +282,7 @@ class NIMSPDenormalize(BaseCommand):
             RecipientFilter(),
             SeatFilter(),
             IdsFilter(),
+            ContributorTypeFilter(),
             FieldModifier('date', lambda x: str(x) if x else None),
             ZipCleaner(),
            

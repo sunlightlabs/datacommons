@@ -95,6 +95,8 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             FieldModifier('contributor_state', lambda s: s.strip().upper() if s else None),
             
             FieldAdder('contributor_type', 'committee'),
+            FieldCopier({'organization_name': 'contributor_name'}),
+
             
             # add static fields
             FieldAdder('jurisdiction', 'F'),
