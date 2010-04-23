@@ -22,7 +22,6 @@ from scripts.nimsp.common import CSV_SQL_MAPPING
 from updates import edits, update
 from dcdata.management.commands.crp_denormalize import load_candidates,\
     load_committees
-import csv
 from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource,\
     CSVFieldVerifier
 from dcdata import processor
@@ -181,7 +180,7 @@ class TestNIMSPDenormalize(TestCase):
 
     def test_contributor_type(self):
         input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
-                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","Z2400","0","0",\
+                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0",\
                         "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
         source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
         output = list()
@@ -193,7 +192,7 @@ class TestNIMSPDenormalize(TestCase):
         assert_record_contains(self, {'contributor_type': 'individual', 'organization_name': "Adams & Boswell"}, output[0])
 
         input_string = '"3327568","341.66","2006-11-07","Kent Adams","Kent Adams",\
-                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
+                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","A1000","0","0",\
                         "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
         source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
         output = list()
@@ -344,9 +343,9 @@ class TestLoadContributions(TestCase):
         Contribution.objects.all().delete()
         
         # the second record has an out-of-range date
-        input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,"BOTTGER, ANTHONY",,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
-                      ',,1998,urn:nimsp:transaction,227059e3c32af276f5b37642922e415c,,,False,200,0922-09-08,"TRICK, BILL",,,,,,,BOX 2730,TUSCALOOSA,AL,35403,B1500,,,,,,,,"BENTLEY, ROBERT J",3188,,R,politician,AL,,,,,,,G,AL-21,state:upper,,L',
-                      ',,2006,urn:nimsp:transaction,dd0af37dca3bf26b2aa602e4d8756c19,,,False,8,2006-11-07,"BRAKE, PATRICK",,,,UTILITY WORKER,CITY OF PORTLAND,,73728 SOLD RD,RAINIER,OR,97048,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,']
+        input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,|BOTTGER, ANTHONY|,,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
+                      ',,1998,urn:nimsp:transaction,227059e3c32af276f5b37642922e415c,,,False,200,0922-09-08,|TRICK, BILL|,,,,,,,BOX 2730,TUSCALOOSA,AL,35403,B1500,,,,,,,,|BENTLEY, ROBERT J|,3188,,R,politician,AL,,,,,,,G,AL-21,state:upper,,L',
+                      ',,2006,urn:nimsp:transaction,dd0af37dca3bf26b2aa602e4d8756c19,,,False,8,2006-11-07,|BRAKE, PATRICK|,,,,UTILITY WORKER,CITY OF PORTLAND,,73728 SOLD RD,RAINIER,OR,97048,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,']
         
         loader = ContributionLoader(
                 source='unittest',

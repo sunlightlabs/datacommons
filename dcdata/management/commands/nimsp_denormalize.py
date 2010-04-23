@@ -190,13 +190,20 @@ class IdsFilter(Filter):
 
         return record
 
+# the contributor type rules are derived from an email conversation with NIMSP.
+# they have a very complex (an inconsistent) set of rules, which we simplified to the scheme below
 class ContributorTypeFilter(Filter):
     
     def __init__(self):
         super(ContributorTypeFilter, self).__init__()
         
     def process_record(self, record):
-        record['contributor_type'] = 'individual' if ',' in record['contributor_name'] else 'committee'
+        if record['contributor_category'] and record['contributor_category'].startswith(('J1', 'Z2', 'Z9')):
+            record['contributor_type'] = None
+        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) or ',' not in record['contributor_name']:
+            record['contributor_type'] = 'committee'
+        else:
+            record['contributor_type'] = 'individual'
         
         if record['contributor_type'] == 'committee' and not record['organization_name']:
             record['organization_name'] = record['contributor_name'] 
