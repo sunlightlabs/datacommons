@@ -111,7 +111,7 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
         outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2pac.txt'), 'w')
         
         output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
-        source = VerifiedCSVSource(infiles, fieldnames=FILE_TYPES['pac_other'])
+        source = VerifiedCSVSource(infiles, fieldnames=FILE_TYPES['pac_other'], quotechar="|")
 
         record_processor = self.get_record_processor(catcodes, candidates, committees)
 

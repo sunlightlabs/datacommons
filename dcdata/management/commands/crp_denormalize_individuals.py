@@ -131,7 +131,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
     
             sys.stdout.write('Reading from %s, writing to %s...\n' % (in_path, out_path))
     
-            input_source = VerifiedCSVSource(infile, fieldnames=FILE_TYPES['indivs'])
+            input_source = VerifiedCSVSource(infile, fieldnames=FILE_TYPES['indivs'], quotechar="|")
             output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
     
             load_data(input_source, record_processor, output_func)
