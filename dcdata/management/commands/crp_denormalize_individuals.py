@@ -124,9 +124,9 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
         record_processor = self.get_record_processor(catcodes, candidates, committees)   
            
         for cycle in cycles:
-            in_path = os.path.join(data_path, 'raw', 'crp', 'indivs%s.csv' % cycle)
+            in_path = os.path.join(data_path, 'raw', 'crp', 'indivs%s.txt' % cycle)
             infile = open(in_path, 'r')
-            out_path = os.path.join(data_path, 'denormalized', 'denorm_indivs.%s.csv' % cycle)
+            out_path = os.path.join(data_path, 'denormalized', 'denorm_indivs.%s.txt' % cycle)
             outfile = open(out_path, 'w')
     
             sys.stdout.write('Reading from %s, writing to %s...\n' % (in_path, out_path))

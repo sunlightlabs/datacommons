@@ -71,8 +71,8 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             SpecFilter(SPEC))
             
     def denormalize(self, data_path, cycles, catcodes, candidates, committees):
-        input_files = Files(*[os.path.join(data_path, 'raw', 'crp', 'pacs%s.csv' % cycle) for cycle in cycles])
-        outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2cand.csv'), 'w')
+        input_files = Files(*[os.path.join(data_path, 'raw', 'crp', 'pacs%s.txt' % cycle) for cycle in cycles])
+        outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2cand.txt'), 'w')
         
         source = VerifiedCSVSource(input_files, fieldnames=FILE_TYPES['pacs'])
         output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record

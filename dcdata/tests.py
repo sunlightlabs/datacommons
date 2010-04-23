@@ -226,7 +226,7 @@ class TestCRPDenormalizeAll(TestCase):
         
 
 class TestCRPIndividualDenormalization(TestCase):
-    output_path = os.path.join(dataroot, 'denormalized/denorm_indivs.08.csv')
+    output_path = os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt')
     
     def test_command(self):
         
@@ -235,7 +235,7 @@ class TestCRPIndividualDenormalization(TestCase):
         
         call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
         
-        input_path = os.path.join(dataroot, 'raw/crp/indivs08.csv')
+        input_path = os.path.join(dataroot, 'raw/crp/indivs08.txt')
         self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
 
@@ -271,7 +271,7 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(set(model_fields('contribution.Contribution')), set(output_records[0].keys()))
 
 class TestCRPDenormalizePac2Candidate(TestCase):
-    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2cand.csv')
+    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2cand.txt')
     
     def test_command(self):
         
@@ -280,13 +280,13 @@ class TestCRPDenormalizePac2Candidate(TestCase):
         
         call_command('crp_denormalize_pac2candidate', cycles='08', dataroot=dataroot)
         
-        input_path = os.path.join(dataroot, 'raw/crp/pacs08.csv')
+        input_path = os.path.join(dataroot, 'raw/crp/pacs08.txt')
         self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
         
 
 class TestCRPDenormalizePac2Pac(TestCase):
-    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2pac.csv')
+    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2pac.txt')
     
     def test_command(self):
         
@@ -295,7 +295,7 @@ class TestCRPDenormalizePac2Pac(TestCase):
         
         call_command('crp_denormalize_pac2pac', cycles='08', dataroot=dataroot)
         
-        input_path = os.path.join(dataroot, 'raw/crp/pac_other08.csv')
+        input_path = os.path.join(dataroot, 'raw/crp/pac_other08.txt')
         self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
         
@@ -307,7 +307,7 @@ class TestLoadContributions(TestCase):
         Contribution.objects.all().delete()
         
         call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
-        call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.csv'))
+        call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'))
         
         self.assertEqual(10, Contribution.objects.all().count())
         
