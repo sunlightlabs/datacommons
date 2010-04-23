@@ -147,7 +147,9 @@ class CRPDownloadCommand(BaseCommand):
         make_option("-m", "--meta", action="store_true", dest="meta", default=False,
                           help="show the metadata for currently available CRP downloads"),
         make_option("-b", "--verbose", action="store_true", dest="verbose", default=False,
-                          help="noisy output"))
+                          help="noisy output"),
+        make_option("-u", "--username", help="Username for logging into OpenSecrets"),
+        make_option("-p", "--password", help="Password for logging into OpenSecrets"))
     
     def handle(self, *args, **options):
         if 'dataroot' not in options:
@@ -155,7 +157,7 @@ class CRPDownloadCommand(BaseCommand):
         
         if options['meta']:
             
-            dl = CRPDownloader('jcarbaugh@sunlightfoundation.com', '5unlight')
+            dl = CRPDownloader(options['username'], options['password'])
             for res in dl.get_resources():
                 print res
         
@@ -166,7 +168,7 @@ class CRPDownloadCommand(BaseCommand):
             if not os.path.exists(path):
                 os.makedirs(path)
             
-            dl = CRPDownloader('jcarbaugh@sunlightfoundation.com', '5unlight', path)
+            dl = CRPDownloader(options['username'], options['password'], path)
             dl.go(redownload=options['force'])
 
     
