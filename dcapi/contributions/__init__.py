@@ -98,6 +98,11 @@ def _contributor_ft_generator(query, *searches):
     terms = _ft_terms(*searches)
     clause = "(%s)" % " or ".join([_ft_clause('organization_name'), _ft_clause('parent_organization_name'), _ft_clause('contributor_employer'), _ft_clause('contributor_name')])
     return query.extra(where=[clause], params=[terms, terms, terms, terms])
+    
+def _contributor_only_ft_generator(query, *searches):
+    terms = _ft_terms(*searches)
+    clause = "(%s)" % _ft_clause('contributor_name')
+    return query.extra(where=[clause], params=[terms, terms, terms, terms])
 
 def _employer_ft_generator(query, *searches):
     terms = _ft_terms(*searches)
@@ -153,6 +158,7 @@ FOR_AGAINST_FIELD = 'for_against'
 CONTRIBUTOR_INDUSTRY_FIELD = 'contributor_industry'
 
 CONTRIBUTOR_FT_FIELD = 'contributor_ft'
+CONTRIBUTOR_ONLY_FT_FIELD = 'contributor_only_ft'
 ORGANIZATION_FT_FIELD = 'organization_ft'
 COMMITTEE_FT_FIELD = 'committee_ft'
 RECIPIENT_FT_FIELD = 'recipient_ft'
@@ -173,6 +179,7 @@ CONTRIBUTION_SCHEMA = Schema(
                              InclusionField(JURISDICTION_FIELD, _jurisdiction_in_generator),
                              InclusionField(ORGANIZATION_FIELD, _organization_in_generator),
                              InclusionField(CONTRIBUTOR_FT_FIELD, _contributor_ft_generator),
+                             InclusionField(CONTRIBUTOR_ONLY_FT_FIELD, _contributor_only_ft_generator),
                              InclusionField(ORGANIZATION_FT_FIELD, _organization_ft_generator),
                              InclusionField(COMMITTEE_FT_FIELD, _committee_ft_generator),
                              InclusionField(RECIPIENT_FT_FIELD, _recipient_ft_generator),
