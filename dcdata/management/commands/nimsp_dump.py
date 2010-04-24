@@ -5,7 +5,7 @@ import MySQLdb
 
 from settings import OTHER_DATABASES
 
-from scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
+from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from optparse import make_option
 from django.core.management.base import BaseCommand
     
