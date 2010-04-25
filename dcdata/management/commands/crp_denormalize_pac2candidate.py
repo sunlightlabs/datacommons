@@ -32,6 +32,7 @@ class ContributorFilter(Filter):
         committee = self._committees.get('%s:%s' % (record['cycle'], pac_id), None)
         if committee:
             record['contributor_name'] = committee['pac_short']
+            record['organization_name'] = record['contributor_name']
             record['contributor_party'] = committee['party']
         return record
 
@@ -55,7 +56,6 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             ContributorFilter(committees),
             FieldRenamer({'contributor_ext_id': 'pac_id'}),
             FieldAdder('contributor_type', 'committee'),
-            FieldCopier({'organization_name': 'contributor_name'}),
             
             Pac2CandRecipientFilter(candidates),
             FieldAdder('recipient_type', 'politician'),
