@@ -47,6 +47,9 @@ class ContribRecipFilter(Filter):
         donor_name = record['donor_cmte'].strip()
         if donor_name:
             record['contributor_name'] = donor_name
+            
+        if 'contributor_name' in record:
+            record['organization_name'] = record['contributor_name']
 
         return record
         
@@ -95,7 +98,6 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             FieldModifier('contributor_state', lambda s: s.strip().upper() if s else None),
             
             FieldAdder('contributor_type', 'committee'),
-            FieldCopier({'organization_name': 'contributor_name'}),
 
             
             # add static fields
