@@ -76,7 +76,7 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
         cb = cb if cb and is_valid_jsonp_callback_value(cb) else None
         
         qs = self.data
-        if isinstance(qs, Model):
+        if isinstance(qs, (Model, dict)):
             seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
             yield seria
 

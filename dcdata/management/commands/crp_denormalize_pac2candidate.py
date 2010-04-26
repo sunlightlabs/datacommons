@@ -32,6 +32,7 @@ class ContributorFilter(Filter):
         committee = self._committees.get('%s:%s' % (record['cycle'], pac_id), None)
         if committee:
             record['contributor_name'] = committee['pac_short']
+            record['organization_name'] = record['contributor_name']
             record['contributor_party'] = committee['party']
         return record
 
@@ -70,10 +71,10 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             SpecFilter(SPEC))
             
     def denormalize(self, data_path, cycles, catcodes, candidates, committees):
-        input_files = Files(*[os.path.join(data_path, 'raw', 'crp', 'pacs%s.csv' % cycle) for cycle in cycles])
-        outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2cand.csv'), 'w')
+        input_files = Files(*[os.path.join(data_path, 'raw', 'crp', 'pacs%s.txt' % cycle) for cycle in cycles])
+        outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2cand.txt'), 'w')
         
-        source = VerifiedCSVSource(input_files, fieldnames=FILE_TYPES['pacs'])
+        source = VerifiedCSVSource(input_files, fieldnames=FILE_TYPES['pacs'], quotechar="|")
         output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
         
         processor_func = self.get_record_processor(catcodes, candidates, committees)

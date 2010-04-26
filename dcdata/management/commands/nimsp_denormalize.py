@@ -180,7 +180,6 @@ class IdsFilter(Filter):
         # Contributor
         if record['contributor_id']:
             record['contributor_ext_id'] = record['contributor_id']
-            record['contributor_type'] = None
         if record['newemployerid']:
             record['organization_ext_id'] = record['newemployerid']
         if record['parentcompanyid']:
@@ -191,6 +190,26 @@ class IdsFilter(Filter):
 
         return record
 
+# the contributor type rules are derived from an email conversation with NIMSP.
+# they have a very complex (an inconsistent) set of rules, which we simplified to the scheme below
+class ContributorTypeFilter(Filter):
+    
+    def __init__(self):
+        super(ContributorTypeFilter, self).__init__()
+        
+    def process_record(self, record):
+        if record['contributor_category'] and record['contributor_category'].startswith(('J1', 'Z2', 'Z9')):
+            record['contributor_type'] = None
+        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) or ',' not in record['contributor_name']:
+            record['contributor_type'] = 'committee'
+        else:
+            record['contributor_type'] = 'individual'
+        
+        if record['contributor_type'] == 'committee' and not record['organization_name']:
+            record['organization_name'] = record['contributor_name'] 
+        return record
+    
+    
 class ZipCleaner(Filter):
     def process_record(self, record):
         if record['contributor_zipcode']:
@@ -270,6 +289,7 @@ class NIMSPDenormalize(BaseCommand):
             RecipientFilter(),
             SeatFilter(),
             IdsFilter(),
+            ContributorTypeFilter(),
             FieldModifier('date', lambda x: str(x) if x else None),
             ZipCleaner(),
            

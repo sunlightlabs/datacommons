@@ -47,6 +47,9 @@ class ContribRecipFilter(Filter):
         donor_name = record['donor_cmte'].strip()
         if donor_name:
             record['contributor_name'] = donor_name
+            
+        if 'contributor_name' in record:
+            record['organization_name'] = record['contributor_name']
 
         return record
         
@@ -95,6 +98,7 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             FieldModifier('contributor_state', lambda s: s.strip().upper() if s else None),
             
             FieldAdder('contributor_type', 'committee'),
+
             
             # add static fields
             FieldAdder('jurisdiction', 'F'),
@@ -105,11 +109,11 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             SpecFilter(SPEC))
         
     def denormalize(self, data_path, cycles, catcodes, candidates, committees):
-        infiles = Files(*[os.path.join(data_path, 'raw', 'crp', 'pac_other%s.csv' % cycle) for cycle in cycles])
-        outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2pac.csv'), 'w')
+        infiles = Files(*[os.path.join(data_path, 'raw', 'crp', 'pac_other%s.txt' % cycle) for cycle in cycles])
+        outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2pac.txt'), 'w')
         
         output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
-        source = VerifiedCSVSource(infiles, fieldnames=FILE_TYPES['pac_other'])
+        source = VerifiedCSVSource(infiles, fieldnames=FILE_TYPES['pac_other'], quotechar="|")
 
         record_processor = self.get_record_processor(catcodes, candidates, committees)
 
