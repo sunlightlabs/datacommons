@@ -52,9 +52,9 @@ class LobbyingLoader(Loader):
         super(LobbyingLoader, self).__init__(*args, **kwargs)
         
     def get_instance(self, record):
-        try:
-            return self.model.objects.get(transaction_id=record['transaction_id'])
-        except Lobbying.DoesNotExist:
+        #try:
+        #    return self.model.objects.get(transaction_id=record['transaction_id'])
+        #except Lobbying.DoesNotExist:
             return self.model(transaction_id=record['transaction_id'])
 
 class IssueLoader(Loader):
@@ -62,9 +62,9 @@ class IssueLoader(Loader):
     def __init__(self, *args, **kwargs):
         super(IssueLoader, self).__init__(*args, **kwargs)
     def get_instance(self, record):
-        try:
-            return self.model.objects.get(id=record['id'])
-        except self.model.DoesNotExist:
+        #try:
+        #    return self.model.objects.get(id=record['id'])
+        #except self.model.DoesNotExist:
             return self.model(id=record['id'])
 
 class LobbyistLoader(Loader):
@@ -84,10 +84,10 @@ class LobbyistLoader(Loader):
             print "--- %s of %s" % (self._badcount, self._goodcount)
             return
         
-        try:
-            return self.model.objects.get(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
-        except Lobbyist.DoesNotExist:
-            return self.model(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
+        #try:
+        #    return self.model.objects.get(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
+        #except Lobbyist.DoesNotExist:
+        return self.model(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
 
 # handlers
 
@@ -104,7 +104,7 @@ def lobbying_handler(inpath):
         NoneFilter(),
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=5000),
+        CountEmitter(every=5),
         LoaderEmitter(LobbyingLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -121,7 +121,7 @@ def lobbyist_handler(inpath):
         transaction_filter,
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=5000),
+        CountEmitter(every=5),
         LoaderEmitter(LobbyistLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -137,7 +137,7 @@ def issue_handler(inpath):
         transaction_filter,
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=5000),
+        CountEmitter(every=5),
         LoaderEmitter(IssueLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -153,7 +153,8 @@ HANDLERS = {
 }
 
 #TABLES = ('lob_lobbying','lob_lobbyist')
-TABLES = ('lob_lobbying','lob_lobbyist','lob_issue')
+#TABLES = ('lob_lobbying',)
+TABLES = ('lob_lobbyist','lob_issue')
 
 # main management command
 

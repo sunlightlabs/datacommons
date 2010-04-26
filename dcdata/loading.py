@@ -1,11 +1,12 @@
 from dcdata.models import Import
+from dcdata.processor import TerminateProcessingException, SkipRecordException
 from dcentity.models import Entity
+from django.db import transaction
 from django.db.models import get_app, get_model, get_models
 from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter
 import datetime
 import sys
-from dcdata.processor import TerminateProcessingException, SkipRecordException
 
 #
 # saucebrush loading filters
@@ -151,12 +152,17 @@ class Loader(object):
 
 # to do: no need for this class to exist
 class LoaderEmitter(Emitter):
-    def __init__(self, loader):
+    def __init__(self, loader, commit_every=0):
         super(LoaderEmitter, self).__init__()
         self._loader = loader
+        self._commit_every = 0
+        self._count = 0
     def process_record(self, record):
         self.emit_record(record)
         return record
     def emit_record(self, record):
         self._loader.load_record(record)
+        self._count += 1
+        if self._commit_every and self._count % self._commit_every == 0:
+            transaction.commit()
             
