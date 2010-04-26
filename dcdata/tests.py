@@ -309,7 +309,14 @@ class TestLoadContributions(TestCase):
         call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'))
         
         self.assertEqual(10, Contribution.objects.all().count())
+ 
+    def test_skip(self):
+        Contribution.objects.all().delete()
         
+        call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
+        call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'), skip=3)
+        
+        self.assertEqual(7, Contribution.objects.all().count())        
             
     def test_decimal_amounts(self):
         """ See ticket #177. """
