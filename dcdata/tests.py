@@ -314,7 +314,7 @@ class TestLoadContributions(TestCase):
         Contribution.objects.all().delete()
         
         call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
-        call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'), skip=3)
+        call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'), skip='3')
         
         self.assertEqual(7, Contribution.objects.all().count())        
             

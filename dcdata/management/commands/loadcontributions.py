@@ -118,7 +118,7 @@ class LoadContributions(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('-s', '--source', default='CRP', metavar="(CRP|NIMSP)",
             help='Data source'),
-        make_option('-x', '--skip', default=0, help='Number of records to skip.')
+        make_option('-x', '--skip', default=0, type='int', help='Number of records to skip.')
     )
     
     @staticmethod
@@ -157,7 +157,7 @@ class LoadContributions(BaseCommand):
         )
         
         try:
-            input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1 + options['skip'])
+            input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1 + int(options['skip']))
             
             output_func = chain_filters(
                 LoaderEmitter(loader),
