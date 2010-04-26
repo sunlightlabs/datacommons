@@ -78,7 +78,7 @@ class Issue(models.Model):
     transaction = models.ForeignKey(Lobbying, related_name='issues')
     general_issue_code = models.CharField(max_length=3)
     general_issue = models.CharField(max_length=50)
-    specific_issue = models.CharField(max_length=255)
+    specific_issue = models.TextField()
     
     class Meta:
         ordering = ('year','transaction')

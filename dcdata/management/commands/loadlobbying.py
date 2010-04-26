@@ -18,9 +18,10 @@ class CountEmitter(Emitter):
         self.count = 0
         self.every = every
     def emit_record(self, record):
-        self.count += 1
-        if self.count % self.every == 0:
-            print self.count
+        if record:
+            self.count += 1
+            if self.count % self.every == 0:
+                print self.count
 
 class NoneFilter(Filter):
     def process_record(self, record):
@@ -28,6 +29,14 @@ class NoneFilter(Filter):
             if isinstance(value, basestring) and value.strip() == '':
                 record[key] = None
         return record
+
+class YearFilter(Filter):
+    def __init__(self, year, field='year'):
+        self.year = year
+        self.field = field
+    def process_record(self, record):
+        if self.year and self.year == record[self.field]:
+            return record
 
 class TransactionFilter(Filter):
     def __init__(self):
@@ -71,17 +80,10 @@ class LobbyistLoader(Loader):
     model = Lobbyist
     def __init__(self, *args, **kwargs):
         super(LobbyistLoader, self).__init__(*args, **kwargs)
-        self._cache = {}
-        self._goodcount = 0
-        self._badcount = 0
         
     def get_instance(self, record):
         
-        self._goodcount += 1
-        
         if record['transaction'] is None:
-            self._badcount += 1
-            print "--- %s of %s" % (self._badcount, self._goodcount)
             return
         
         #try:
@@ -93,9 +95,10 @@ class LobbyistLoader(Loader):
 
 transaction_filter = TransactionFilter()
 
-def lobbying_handler(inpath):
+def lobbying_handler(inpath, year=None):
     run_recipe(
         CSVSource(open(inpath)),
+        YearFilter(year),
         FieldModifier('year', lambda x: int(x) if x else None),
         FieldModifier('amount', lambda x: Decimal(x) if x else None),
         FieldModifier((
@@ -104,7 +107,7 @@ def lobbying_handler(inpath):
         NoneFilter(),
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=5),
+        CountEmitter(every=100),
         LoaderEmitter(LobbyingLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -112,37 +115,39 @@ def lobbying_handler(inpath):
         )),
     )
 
-def lobbyist_handler(inpath):
+def lobbyist_handler(inpath, year=None):
     run_recipe(
         CSVSource(open(inpath)),
+        YearFilter(year),
         FieldModifier('year', lambda x: int(x) if x else None),
         FieldModifier('member_of_congress', lambda x: x == 'True'),
         NoneFilter(),
         transaction_filter,
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=5),
+        CountEmitter(every=100),
         LoaderEmitter(LobbyistLoader(
             source=inpath,
             description='load from denormalized CSVs',
             imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-        )),
+        ), commit_every=10000),
     )
 
-def issue_handler(inpath):
+def issue_handler(inpath, year=None):
     run_recipe(
         CSVSource(open(inpath)),
+        YearFilter(year),
         FieldModifier('year', lambda x: int(x) if x else None),
         NoneFilter(),
         transaction_filter,
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=5),
+        CountEmitter(every=100),
         LoaderEmitter(IssueLoader(
             source=inpath,
             description='load from denormalized CSVs',
             imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-        )),
+        ), commit_every=10000),
     )
     
 
@@ -160,7 +165,9 @@ TABLES = ('lob_lobbyist','lob_issue')
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),)
+        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
+        make_option("-y", "--year", dest="year", help="year to load", metavar="YEAR"),
+    )
 
     def handle(self, *args, **options):
 
@@ -168,6 +175,7 @@ class Command(BaseCommand):
             raise CommandError("path to dataroot is required")
 
         dataroot = os.path.abspath(options['dataroot'])
+        year = options.get('year', None)
 
         for table in TABLES:
             
@@ -181,4 +189,4 @@ class Command(BaseCommand):
                     print "!!! no handler for %s" % table
                 else:
                     print "loading records for %s" % table
-                    handler(inpath)
+                    handler(inpath, year)
