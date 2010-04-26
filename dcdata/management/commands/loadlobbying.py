@@ -1,5 +1,5 @@
 from dcdata.loading import Loader, LoaderEmitter
-from dcdata.lobbying.models import Lobbying, Lobbyist, Agency
+from dcdata.lobbying.models import Lobbying, Lobbyist, Agency, Issue
 from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
 from decimal import Decimal
 from django.core.management.base import CommandError, BaseCommand
@@ -29,6 +29,21 @@ class NoneFilter(Filter):
                 record[key] = None
         return record
 
+class TransactionFilter(Filter):
+    def __init__(self):
+        self._cache = {}
+    def process_record(self, record):
+        transaction_id = record['transaction']
+        transaction = self._cache.get(transaction_id, None)
+        if transaction is None:
+            try:
+                transaction = Lobbying.objects.get(pk=transaction_id)
+                self._cache[transaction_id] = transaction
+            except Lobbying.DoesNotExist:
+                pass # transaction is still None
+        record['transaction'] = transaction
+        return record
+
 # loaders
 
 class LobbyingLoader(Loader):
@@ -42,6 +57,16 @@ class LobbyingLoader(Loader):
         except Lobbying.DoesNotExist:
             return self.model(transaction_id=record['transaction_id'])
 
+class IssueLoader(Loader):
+    model = Issue
+    def __init__(self, *args, **kwargs):
+        super(IssueLoader, self).__init__(*args, **kwargs)
+    def get_instance(self, record):
+        try:
+            return self.model.objects.get(id=record['id'])
+        except self.model.DoesNotExist:
+            return self.model(id=record['id'])
+
 class LobbyistLoader(Loader):
     model = Lobbyist
     def __init__(self, *args, **kwargs):
@@ -52,29 +77,21 @@ class LobbyistLoader(Loader):
         
     def get_instance(self, record):
         
-        transaction_id = record['transaction_id']
-        
-        transaction = self._cache.get(transaction_id, None)
-        if transaction is None:
-            try:
-                transaction = Lobbying.objects.get(pk=transaction_id)
-                self._cache[transaction_id] = transaction
-            except Lobbying.DoesNotExist:
-                transaction = None
-        
         self._goodcount += 1
         
-        if transaction is None:
+        if record['transaction'] is None:
             self._badcount += 1
             print "--- %s of %s" % (self._badcount, self._goodcount)
             return
         
         try:
-            return self.model.objects.get(transaction=transaction, lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model.objects.get(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
         except Lobbyist.DoesNotExist:
-            return self.model(transaction=transaction, lobbyist_ext_id=record['lobbyist_ext_id'])
+            return self.model(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
 
 # handlers
+
+transaction_filter = TransactionFilter()
 
 def lobbying_handler(inpath):
     run_recipe(
@@ -101,6 +118,7 @@ def lobbyist_handler(inpath):
         FieldModifier('year', lambda x: int(x) if x else None),
         FieldModifier('member_of_congress', lambda x: x == 'True'),
         NoneFilter(),
+        transaction_filter,
         UnicodeFilter(),
         #DebugEmitter(),
         CountEmitter(every=5000),
@@ -111,13 +129,31 @@ def lobbyist_handler(inpath):
         )),
     )
 
+def issue_handler(inpath):
+    run_recipe(
+        CSVSource(open(inpath)),
+        FieldModifier('year', lambda x: int(x) if x else None),
+        NoneFilter(),
+        transaction_filter,
+        UnicodeFilter(),
+        #DebugEmitter(),
+        CountEmitter(every=5000),
+        LoaderEmitter(IssueLoader(
+            source=inpath,
+            description='load from denormalized CSVs',
+            imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+        )),
+    )
+    
+
 HANDLERS = {
     "lob_lobbying": lobbying_handler,
     "lob_lobbyist": lobbyist_handler,
+    "lob_issue": issue_handler,
 }
 
 #TABLES = ('lob_lobbying','lob_lobbyist')
-TABLES = ('lob_lobbyist',)
+TABLES = ('lob_lobbying','lob_lobbyist','lob_issue')
 
 # main management command
 
