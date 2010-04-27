@@ -22,6 +22,8 @@ class CountEmitter(Emitter):
             self.count += 1
             if self.count % self.every == 0:
                 print self.count
+    def done(self):
+        print "%s total records" % self.count
 
 class NoneFilter(Filter):
     def process_record(self, record):
@@ -49,9 +51,10 @@ class TransactionFilter(Filter):
                 transaction = Lobbying.objects.get(pk=transaction_id)
                 self._cache[transaction_id] = transaction
             except Lobbying.DoesNotExist:
-                pass # transaction is still None
-        record['transaction'] = transaction
-        return record
+                pass
+        if transaction:
+            record['transaction'] = transaction
+            return record
 
 # loaders
 
@@ -107,7 +110,7 @@ def lobbying_handler(inpath, year=None):
         NoneFilter(),
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=100),
+        CountEmitter(every=1000),
         LoaderEmitter(LobbyingLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -125,7 +128,7 @@ def lobbyist_handler(inpath, year=None):
         transaction_filter,
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=100),
+        CountEmitter(every=1000),
         LoaderEmitter(LobbyistLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -139,10 +142,11 @@ def issue_handler(inpath, year=None):
         YearFilter(year),
         FieldModifier('year', lambda x: int(x) if x else None),
         NoneFilter(),
+        FieldModifier('specific_issue', lambda x: '' if x is None else x),
         transaction_filter,
         UnicodeFilter(),
         #DebugEmitter(),
-        CountEmitter(every=100),
+        CountEmitter(every=1000),
         LoaderEmitter(IssueLoader(
             source=inpath,
             description='load from denormalized CSVs',
@@ -157,9 +161,10 @@ HANDLERS = {
     "lob_issue": issue_handler,
 }
 
-#TABLES = ('lob_lobbying','lob_lobbyist')
+TABLES = ('lob_lobbying','lob_lobbyist','lob_issue')
 #TABLES = ('lob_lobbying',)
-TABLES = ('lob_lobbyist','lob_issue')
+#TABLES = ('lob_lobbyist','lob_issue')
+#TABLES = ('lob_issue',)
 
 # main management command
 
