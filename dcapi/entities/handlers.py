@@ -40,7 +40,7 @@ class EntityFilterHandler(BaseHandler):
     fields = ['id','name','type','count_given','count_received','total_given','total_received']
 
     def read(self, request):
-        search_string = request.GET.get('search', None)
+        search_string = unquote_plus(request.GET.get('search', None))
         if not search_string:
             return {'response' : "It doesn't make any sense to do a search without a search string"}
 
