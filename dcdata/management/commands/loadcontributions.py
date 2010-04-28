@@ -144,8 +144,8 @@ class LoadContributions(BaseCommand):
                 
                 StringLengthFilter(Contribution))
     
-    #@transaction.commit_manually
-    @transaction.commit_on_success
+    @transaction.commit_manually
+    #@transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
         
         fieldnames = model_fields('contribution.Contribution')
@@ -168,7 +168,7 @@ class LoadContributions(BaseCommand):
 
             load_data(input_iterator, record_processor, output_func)
 
-            #transaction.commit()
+            transaction.commit()
         except:
             traceback.print_exception(*sys.exc_info())
             raise
