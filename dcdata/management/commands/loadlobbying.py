@@ -161,16 +161,14 @@ HANDLERS = {
     "lob_issue": issue_handler,
 }
 
-TABLES = ('lob_lobbying','lob_lobbyist','lob_issue')
-#TABLES = ('lob_lobbying',)
-#TABLES = ('lob_lobbyist','lob_issue')
-#TABLES = ('lob_issue',)
+SOURCE_FILES = ('lob_lobbying','lob_lobbyist','lob_issue')
 
 # main management command
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
+        make_option("-f", "--files", dest="files", help="source files", metavar="FILE[,FILE]"),
         make_option("-y", "--year", dest="year", help="year to load", metavar="YEAR"),
     )
 
@@ -181,8 +179,9 @@ class Command(BaseCommand):
 
         dataroot = os.path.abspath(options['dataroot'])
         year = options.get('year', None)
+        tables = options.get('files', '').split(',') or SOURCE_FILES
 
-        for table in TABLES:
+        for table in tables:
             
             infields = FILE_TYPES[table]
             inpath = os.path.join(dataroot, "denorm_%s.csv" % table)
