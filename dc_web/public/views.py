@@ -1,28 +1,13 @@
-
-
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from dcapi.contributions.handlers import load_contributions
 from dcapi.contributions.urls import contributionfilter_handler
-from dcentity.models import Entity
-from dcentity.queries import search_entities_by_name
+from dcapi.lobbying.handlers import load_lobbying
+from dcapi.lobbying.urls import lobbyingfilter_handler
 from locksmith.auth.models import ApiKey
-
-entity_type_map = {
-    'quick': ('politician','organization'),
-    'contributor': ('individual','committee'),
-    'recipient': ('politician','committee'),
-    'organization': ('organization',),
-    'committee': ('committee',),
-}
-
-role_map = {
-    'organization': 'organization',
-    'politician': 'recipient',
-}
 
 API_KEY = getattr(settings, 'SYSTEM_API_KEY', None)
 if not API_KEY:
@@ -32,16 +17,13 @@ def index(request):
     return render_to_response('index.html', context_instance=RequestContext(request))
 
 def filter(request):
-    data = { }
-    entity_id = request.GET.get('entityId', None)
-    if entity_id:
-        e = Entity.objects.get(pk=entity_id)
-        data['entity'] = {
-            'id': e.id,
-            'name': e.name,
-            'role': role_map[e.type],
-        }
-    return render_to_response('filter.html', data, context_instance=RequestContext(request))
+    return HttpResponsePermanentRedirect('/contributions/')
+
+def filter_contributions(request):
+    return render_to_response('filter_contributions.html', context_instance=RequestContext(request))
+
+def filter_lobbying(request):
+    return render_to_response('filter_lobbying.html', context_instance=RequestContext(request))
         
 def api_index(request):
     return render_to_response('api/index.html', context_instance=RequestContext(request))
@@ -53,32 +35,23 @@ def doc_index(request):
     return render_to_response('docs/index.html', context_instance=RequestContext(request))
 
 #
-# ajaxy stuff
+# ajaxy contributions stuff
 #
-
-def data_entities(request, entity_type):
-    
-    types = entity_type_map.get(entity_type, [])
-    name = request.GET.get('q', None)
-    
-    result = list(search_entities_by_name(name, types))
-    
-    return HttpResponse("%s,%s\n" % (e[0], e[1]) for e in result)
 
 def debug_contributions(request):
     content = '\n'.join(data_contributions(request))
     return render_to_response('debug.html', {'content': content})
 
-def data_contributions(request):
-    request.GET = request.GET.copy()
-    request.GET['per_page'] = 30
-    request.apikey = ApiKey.objects.get(key=API_KEY, status='A')
-    return contributionfilter_handler(request)
-
-def data_contributions_count(request):    
-    params = request.GET.copy()
-    c = load_contributions(params, nolimit=True).order_by().count()
-    return HttpResponse("%i" % c, content_type='text/plain')
+def data_contributions(request, count=False):
+    if count:
+        params = request.GET.copy()
+        c = load_contributions(params, nolimit=True).order_by().count()
+        return HttpResponse("%i" % c, content_type='text/plain')
+    else:
+        request.GET = request.GET.copy()
+        request.GET['per_page'] = 30
+        request.apikey = ApiKey.objects.get(key=API_KEY, status='A')
+        return contributionfilter_handler(request)
     
 def data_contributions_download(request):
     request.GET = request.GET.copy()
@@ -90,4 +63,31 @@ def data_contributions_download(request):
     response['Content-Type'] = "text/csv; charset=utf-8"
     return response
 
+#
+# ajaxy lobbying stuff
+#
 
+def debug_lobbying(request):
+    content = '\n'.join(data_lobbying(request))
+    return render_to_response('debug.html', {'content': content})
+
+def data_lobbying(request, count=False):
+    if count:
+        params = request.GET.copy()
+        c = load_lobbying(params, nolimit=True).order_by().count()
+        return HttpResponse("%i" % c, content_type='text/plain')
+    else:
+        request.GET = request.GET.copy()
+        request.GET['per_page'] = 30
+        request.apikey = ApiKey.objects.get(key=API_KEY, status='A')
+        return lobbyingfilter_handler(request)
+
+def data_lobbying_download(request):
+    request.GET = request.GET.copy()
+    request.apikey = ApiKey.objects.get(key=API_KEY, status='A')
+    request.GET['per_page'] = 1000000
+    request.GET['format'] = 'json'
+    response = lobbyingfilter_handler(request)
+    response['Content-Disposition'] = "attachment; filename=lobbying.json"
+    response['Content-Type'] = "application/json; charset=utf-8"
+    return response

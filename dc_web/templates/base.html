@@ -19,48 +19,13 @@
         <!--[if IE 7]>{% css "css/buggy7.css" %}<![endif]-->
 
 		<!-- scripts -->
-        {% js "js/jquery-1.3.2.min.js" %}
+        {% js "js/jquery-1.4.2.min.js" %}
         {% js "js/jquery-ui-1.7.2.custom.min.js" %}
-        {% comment %}{% js "js/jquery.autocomplete.custom.js" %}{% endcomment %}
         {% js "js/jquery.currency.js" %}
         {% js "js/underscore-min.js" %}
 		<script src="http://services.sunlightlabs.com/brandingbar/hat_js/transparencydata/" type="text/javascript"></script> 
     </head>
-    <body class="{% block bodyclass %}{% endblock %}">
-        <div id="headerWrapper">
-            <div id="headerContainer">
-                <div id="pageMain">
-                    <div id="header">
-                        <h1><a href="{% url index %}">Transparency Data</a></h1>
-                        <div class="clear"></div>
-                        <div id="nav">
-                            <ul>
-                                <li id="nav_bulk"><a href="{% url bulk_index %}">Bulk Downloads</a></li>
-                                <li id="nav_docs"><a href="{% url doc_index %}">Documentation</a></li>
-                                <li id="nav_api"><a href="{% url api_index %}">API</a></li>
-                                {% if user.is_authenticated %}
-                                    <li id="nav_logout"><a href="{% url django.contrib.auth.views.logout %}">Logout</a></li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                        <div class="clear"></div>
-                    </div>
-                    
-                    <div id="columnWrapper">
-                        {% block content_container %}
-                            <div id="leftColumn">
-                                {% block sidebar %}{% endblock %}
-                            </div>
-                            <div id="rightColumn">
-                                {% block content %}{% endblock %}
-                                <div class="clear"></div>
-                            </div>
-                        {% endblock %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% js "transparencydata.js" %}
+    <body id="{% block bodyid %}transparencydata{% endblock %}" class="{% block bodyclass %}{% endblock %}">
 		<script type="text/javascript">
 			var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
 			document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
@@ -70,13 +35,56 @@
 				var pageTracker = _gat._getTracker("UA-1265484-52");
 				pageTracker._setDomainName(".transparencydata.com");
 				pageTracker._trackPageview();
-			} catch(err) {}</script>
+			} catch(err) {}
+		</script>
+        <div id="headerWrapper">
+            <div id="headerContainer">
+                <div id="header">
+                    <h1><a href="{% url index %}">Transparency Data</a></h1>
+                    <div class="clear"></div>
+                    <div id="nav">
+                        <ul>
+                            <li id="nav_bulk"><a href="{% url bulk_index %}">Bulk Downloads</a></li>
+                            <li id="nav_docs"><a href="{% url doc_index %}">Documentation</a></li>
+                            <li id="nav_api"><a href="{% url api_index %}">API</a></li>
+                        </ul>
+                    </div>
+                    <div class="clear"></div>
+                </div> <!-- end header -->
+			</div> <!-- end headerContainer --> 
+		</div> <!-- end headerWrapper -->                 
+		<div id="pageMain">
+            <div id="columnWrapper">
+                {% block content_container %}
+                    <div id="leftColumn">
+                        {% block sidebar %}{% endblock %}
+                    </div>
+                    <div id="rightColumn">
+                        {% block content %}{% endblock %}
+                        <div class="clear"></div>
+                    </div>
+                {% endblock %}
+			</div> <!-- end columnWrapper -->
+        </div> <!-- end pageMain -->
+        <div class="clear"></div>
+        <div id="footerContainer">
+			<div id="footer">
+				<h5>Sunlight Foundation</h5>
+				<p class="partner">
+			        <a id="openSecrets" href="http://opensecrets.org"><big>OpenSecrets.org</big><small>Center for Responsive Politics</small></a>
+			        <a id="nimsp" href="http://followthemoney.org"><big>National Institute on Money in State Politics</big><small>Follow The Money</small></a>
+			    </p>
+			    <p id="footerText">Founded in 2006, the Sunlight Foundation is a non-partisan non-profit that uses cutting-edge technology and ideas to make government transparent and accountable. Visit <a href="http://www.sunlightfoundation.com" target="_blank">SunlightFoundation.com</a> to learn more.</p>
+			    <div class="clear"></div>
+			</div> <!-- end footer -->
+		</div> <!-- end footerContainer -->
         <script type="text/javascript" src="http://use.typekit.com/plg0bms.js"></script>
         <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+		<!--
 		<script type="text/javascript" charset="utf-8">
-		  var is_ssl = ("https:" == document.location.protocol);
-		  var asset_host = is_ssl ? "https://s3.amazonaws.com/getsatisfaction.com/" : "http://s3.amazonaws.com/getsatisfaction.com/";
-		  document.write(unescape("%3Cscript src='" + asset_host + "javascripts/feedback-v2.js' type='text/javascript'%3E%3C/script%3E"));
+			var is_ssl = ("https:" == document.location.protocol);
+		  	var asset_host = is_ssl ? "https://s3.amazonaws.com/getsatisfaction.com/" : "http://s3.amazonaws.com/getsatisfaction.com/";
+			document.write(unescape("%3Cscript src='" + asset_host + "javascripts/feedback-v2.js' type='text/javascript'%3E%3C/script%3E"));
 		</script>
 		<script type="text/javascript" charset="utf-8">
 			var feedback_widget_options = {};
@@ -86,5 +94,6 @@
 			feedback_widget_options.color = "#222";
 			feedback_widget_options.style = "question";var feedback_widget = new GSFN.feedback_widget(feedback_widget_options);
 		</script>
+		-->
     </body>
 </html>
