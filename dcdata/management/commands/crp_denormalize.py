@@ -94,7 +94,7 @@ def load_candidates(dataroot):
     fields = FILE_TYPES['cands']
     for cycle in CYCLES:
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cands%s.txt' % cycle)
-        reader = csv.DictReader(open(path), fieldnames=fields)
+        reader = csv.DictReader(open(path), fieldnames=fields, quotechar="|")
         for record in reader:
             key = "%s:%s" % (record.pop('cycle'), record['cid'].upper())
             del record['fec_cand_id']
@@ -111,7 +111,7 @@ def load_committees(dataroot):
     fields = FILE_TYPES['cmtes']
     for cycle in CYCLES:
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cmtes%s.txt' % cycle)
-        reader = csv.DictReader(open(path), fieldnames=fields)
+        reader = csv.DictReader(open(path), fieldnames=fields, quotechar="|")
         for record in reader:
             key = "%s:%s" % (record.pop('cycle'), record['cmte_id'].upper())
             del record['fec_cand_id']
