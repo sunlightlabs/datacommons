@@ -1,13 +1,8 @@
-from time import time
-import sys
 
 from urllib import unquote_plus
-from django.db.models import Q
 from piston.handler import BaseHandler
-from dcentity.models import Entity, Normalization
 from dcdata.contribution.models import Contribution
 from dcapi.contributions import filter_contributions
-from dcentity.queries import search_entities_by_name
 
 RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 100
@@ -24,7 +19,6 @@ CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'tran
 
 def load_contributions(params, nolimit=False, ordering=True):
     
-    start_time = time()
 
     per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
     page = int(params.get('page', 1)) - 1
