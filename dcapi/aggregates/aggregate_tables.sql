@@ -189,14 +189,14 @@ union
         group by a.entity_id) as recip_aggs
     using (entity_id);
         
-create index agg_entities_entity_id on agg_entities (entity_id);
+create index agg_entities_idx on agg_entities (entity_id, cycle);
 
 
 -- Industry Sector to Candidate
 
-drop table if exists agg_sectors_to_cand_by_cycle;
+drop table if exists agg_sectors_to_cand;
 
-create table agg_sectors_to_cand_by_cycle as
+create table agg_sectors_to_cand as
     select top.recipient_entity, top.sector, top.cycle, top.count, top.amount 
     from
         (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, c.cycle, count(*), sum(amount) as amount,
@@ -217,14 +217,14 @@ union
     where
         rank <= :agg_top_n;
 
-create index agg_sectors_to_cand_by_cycle_recipient_entity on agg_sectors_to_cand_by_cycle (recipient_entity);
+create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle);
        
        
 -- Industry Category Orders to Candidate
 
-drop table if exists agg_cat_orders_to_cand_by_cycle;
+drop table if exists agg_cat_orders_to_cand;
 
-create table agg_cat_orders_to_cand_by_cycle as
+create table agg_cat_orders_to_cand as
     select top.recipient_entity, top.sector, top.contributor_category_order, top.cycle, top.count, top.amount 
     from
         (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, c.contributor_category_order, c.cycle, count(*), sum(amount) as amount,
@@ -245,14 +245,14 @@ union
     where
         rank <= :agg_top_n;
         
-create index agg_cat_orders_to_cand_by_cycle_recipient_entity on agg_cat_orders_to_cand_by_cycle (recipient_entity);
+create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, cycle);
         
         
 -- Candidates from Individual
 
-drop table if exists agg_cands_from_indiv_by_cycle;
+drop table if exists agg_cands_from_indiv;
 
-create table agg_cands_from_indiv_by_cycle as
+create table agg_cands_from_indiv as
     select top.contributor_entity, top.recipient_name, top.recipient_entity, top.cycle, top.count, top.amount
     from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ra.entity_id, '') as recipient_entity, 
             cycle, count(*), sum(c.amount) as amount, 
@@ -275,14 +275,14 @@ union
     where
         rank <= :agg_top_n;
 
-create index agg_cands_from_indiv_by_cycle_contributor_entity on agg_cands_from_indiv_by_cycle (contributor_entity);
+create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle);
     
     
 -- Committees from Individual
 
-drop table if exists agg_orgs_from_indiv_by_cycle;
+drop table if exists agg_orgs_from_indiv;
 
-create table agg_orgs_from_indiv_by_cycle as
+create table agg_orgs_from_indiv as
     select top.contributor_entity, top.recipient_name, top.recipient_entity, top.cycle, top.count, top.amount
     from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
             cycle, count(*), sum(c.amount) as amount,
@@ -305,14 +305,14 @@ union
     where
         rank <= :agg_top_n;
         
-create index agg_orgs_from_indiv_by_cycle_contributor_entity on agg_orgs_from_indiv_by_cycle (contributor_entity);
+create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
 
 
 -- Organizations to Candidate
 
-drop table if exists agg_orgs_to_cand_by_cycle;
+drop table if exists agg_orgs_to_cand;
 
-create table agg_orgs_to_cand_by_cycle as
+create table agg_orgs_to_cand as
     select  top.recipient_entity, top.organization_name, top.organization_entity, top.cycle, 
             top.total_count, top.pacs_count, top.indivs_count, top.total_amount, top.pacs_amount, top.indivs_amount
     from   
@@ -379,14 +379,14 @@ union
     where
         rank <= :agg_top_n;
         
-create index agg_orgs_to_cand_by_cycle_recipient_entity on agg_orgs_to_cand_by_cycle (recipient_entity);
+create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle);
     
     
 -- Candidates from Organization
 
-drop table if exists agg_cands_from_org_by_cycle;
+drop table if exists agg_cands_from_org;
 
-create table agg_cands_from_org_by_cycle as
+create table agg_cands_from_org as
     select  top.organization_entity, top.recipient_name, top.recipient_entity, top.cycle, 
             top.total_count, top.pacs_count, top.indivs_count, top.total_amount, top.pacs_amount, top.indivs_amount
     from   
@@ -437,14 +437,14 @@ union
     where
         rank <= :agg_top_n;
 
-create index agg_cands_from_org_by_cycle_organization_entity on agg_cands_from_org_by_cycle (organization_entity);
+create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, cycle);
   
     
 -- Party from Individual
 
-drop table if exists agg_party_from_indiv_by_cycle;
+drop table if exists agg_party_from_indiv;
 
-create table agg_party_from_indiv_by_cycle as
+create table agg_party_from_indiv as
     select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
     from contributions_individual c
     inner join contributor_associations ca using (transaction_id)
@@ -455,14 +455,14 @@ union
     inner join contributor_associations ca using (transaction_id)
     group by ca.entity_id, c.recipient_party;
     
-create index agg_party_from_indiv_by_cycle_contributor_entity on agg_party_from_indiv_by_cycle (contributor_entity);
+create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entity, cycle);
     
     
 -- Party from Organization
 
-drop table if exists agg_party_from_org_by_cycle;
+drop table if exists agg_party_from_org;
 
-create table agg_party_from_org_by_cycle as
+create table agg_party_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
     from (select * from contributions_individual union select * from contributions_organization) c
     inner join organization_associations oa using (transaction_id)
@@ -473,14 +473,14 @@ union
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.recipient_party;
 
-create index agg_party_from_org_by_cycle_organization_entity on agg_party_from_org_by_cycle (organization_entity);
+create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle);
     
     
 -- State/Fed from Organization
 
-drop table if exists agg_namespace_from_org_by_cycle;
+drop table if exists agg_namespace_from_org;
 
-create table agg_namespace_from_org_by_cycle as
+create table agg_namespace_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.transaction_namespace, count(*), sum(amount) as amount
     from (select * from contributions_individual union select * from contributions_organization) c
     inner join organization_associations oa using (transaction_id)
@@ -491,14 +491,14 @@ union
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.transaction_namespace;
     
-create index agg_namespace_from_org_by_cycle_organization_entity on agg_namespace_from_org_by_cycle (organization_entity);
+create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle);
     
     
 -- In-state/Out-of-state to Politician
 
-drop table if exists agg_local_to_politician_by_cycle;
+drop table if exists agg_local_to_politician;
 
-create table agg_local_to_politician_by_cycle as
+create table agg_local_to_politician as
     select ra.entity_id as recipient_entity, c.cycle, 
         case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
         count(*), sum(amount) as amount
@@ -513,14 +513,14 @@ union
     inner join recipient_associations ra using (transaction_id)
     group by ra.entity_id, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end;
     
-create index agg_local_to_politician_by_cycle_recipient_entity on agg_local_to_politician_by_cycle (recipient_entity);
+create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle);
     
     
 -- Indiv/PAC to Politician
 
-drop table if exists agg_contributor_type_to_politician_by_cycle;
+drop table if exists agg_contributor_type_to_politician;
 
-create table agg_contributor_type_to_politician_by_cycle as
+create table agg_contributor_type_to_politician as
     select ra.entity_id as recipient_entity, c.cycle, coalesce(c.contributor_type, '') as contributor_type, count(*), sum(amount) as amount
     from (select * from contributions_individual union select * from contributions_organization) c
     inner join recipient_associations ra using (transaction_id)
@@ -531,7 +531,7 @@ union
     inner join recipient_associations ra using (transaction_id)
     group by ra.entity_id, coalesce(c.contributor_type, '');
     
-create index agg_contributor_type_to_politician_by_cycle_recipient_entity on agg_contributor_type_to_politician_by_cycle (recipient_entity);
+create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle);
 
 
     
