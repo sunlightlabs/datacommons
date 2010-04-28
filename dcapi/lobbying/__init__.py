@@ -17,6 +17,7 @@ LOBBYIST_FT_FIELD = 'lobbyist_ft'
 REGISTRANT_FT_FIELD = 'registrant_ft'
 
 AMOUNT_FIELD = 'amount'
+ISSUE_FIELD = 'issue'
 FILING_TYPE_FIELD = 'filing_type'
 YEAR_FIELD = 'year'
 
@@ -49,6 +50,9 @@ def _year_in_generator(query, *years):
 def _filing_type_in_generator(query, *filing_types):
     return query.filter(filing_type__in=filing_types)
 
+def _issue_in_generator(query, *issues):
+    return query.filter(issues__general_issue_code__in=issues)
+
 # amount generators
 def _amount_less_than_generator(query, amount):
     return query.filter(amount__lte=int(amount))
@@ -78,6 +82,7 @@ LOBBYING_SCHEMA = Schema(
     InclusionField(TRANSACTION_TYPE_FIELD, _transaction_type_in_generator),
     InclusionField(FILING_TYPE_FIELD, _filing_type_in_generator),
     InclusionField(YEAR_FIELD, _year_in_generator),
+    InclusionField(ISSUE_FIELD, _issue_in_generator),
     # full text fields
     InclusionField(CLIENT_FT_FIELD, _client_ft_generator),
     InclusionField(CLIENT_PARENT_FT_FIELD, _client_parent_ft_generator),
