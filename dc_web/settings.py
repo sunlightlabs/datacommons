@@ -49,7 +49,7 @@ MIDDLEWARE_CLASSES = (
     'piston.middleware.CommonMiddlewareCompatProxy',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+#    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'locksmith.auth.middleware.APIKeyMiddleware',
     'dcapi.middleware.APIMiddleware',
 )
@@ -64,7 +64,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'debug_toolbar',
     'mediasync',
-    'registration',
     'locksmith.auth',
     'matchbox',
     'dcdata',
@@ -76,13 +75,6 @@ INSTALLED_APPS = (
     'dcapi.contributions', 
     'dc_web.public',
 )
-
-# LOGIN_URL = '/auth/login/'
-# LOGIN_REDIRECT_URL = '/'
-# LOGOUT_URL = '/auth/logout/'
-
-ACCOUNT_ACTIVATION_DAYS = 2
-LOGIN_REDIRECT_URL = '/'
 
 PISTON_DISPLAY_ERRORS = True
 PISTON_EMAIL_ERRORS = False
@@ -98,9 +90,33 @@ DEBUG_TOOLBAR_CONFIG = {
 }
 
 MEDIASYNC_JOINED = {
-    'contributions.js': ['js/td.js', 'js/td.fields.js', 'js/td.contributions.js'],
-    'lobbying.js': ['js/td.js', 'js/td.fields.js', 'js/td.lobbying.js'],
-    'index.js': ['js/td.js', 'js/td.fields.js', 'js/td.lobbying.js', 'js/td.contributions.js'],
+    'css/all.css': [
+        'css/ui-lightness/jquery-ui-1.7.2.custom.css',
+        'css/jquery.autocomplete.css',
+        'css/main.css'
+    ],
+    '3rdparty.js': [
+        'js/jquery-1.4.2.min.js',
+        'js/jquery-ui-1.7.2.custom.min.js',
+        'js/jquery.currency.js',
+        'js/underscore-min.js'
+    ],
+    'contributions.js': [
+        'js/td.js',
+        'js/td.fields.js',
+        'js/td.contributions.js'
+    ],
+    'lobbying.js': [
+        'js/td.js',
+        'js/td.fields.js',
+        'js/td.lobbying.js'
+    ],
+    'index.js': [
+        'js/td.js',
+        'js/td.fields.js',
+        'js/td.lobbying.js',
+        'js/td.contributions.js'
+    ],
 }
 
 try:
