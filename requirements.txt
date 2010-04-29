@@ -2,4 +2,4 @@
 django-debug-toolbar
 django-piston
 -e git://github.com/sunlightlabs/django-locksmith.git#egg=locksmith
-python-psycopg2
+#python-psycopg2
