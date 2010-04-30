@@ -31,7 +31,7 @@ class EntityAttributeHandler(BaseHandler):
 
         attributes = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
         
-        return [a.entity_id for a in attributes]
+        return [{'id': a.entity_id} for a in attributes]
     
 
 class EntityFilterHandler(BaseHandler):
