@@ -27,7 +27,7 @@ def build_recipients(csv_rows):
                     raise Exception('Unknown namespace: %s' % namespace)
                 attributes = [(attr_namespace, id)]
             
-            build_entity(name, 'recipient', attributes)
+            build_entity(name, 'politician', attributes)
             
         except:
             traceback.print_exception(*sys.exc_info())
