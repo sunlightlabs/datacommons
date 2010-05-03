@@ -1,4 +1,15 @@
 
+-- Lobbying View
+-- Maps years to 2-year cycles and only includes valid reports
+
+drop view if exists lobbying_report;
+
+create view lobbying_report as
+    select *, case when year % 2 = 0 then year else year + 1 end as cycle
+    from lobbying_lobbying l
+    where
+        use = 't';
+
 
 -- Lobbying Client Associations
 
@@ -89,11 +100,9 @@ create table agg_lobbying_registrants_for_client as
     select top.client_entity, top.cycle, top.registrant_name, top.registrant_entity, top.amount
     from (select ca.entity_id as client_entity, r.cycle, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, sum(amount) as amount, 
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
-        from lobbying_lobbying r
+        from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
-        where
-            use = 't'
         group by ca.entity_id, cycle, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n
@@ -101,11 +110,9 @@ union
     select top.client_entity, -1, top.registrant_name, top.registrant_entity, top.amount
     from (select ca.entity_id as client_entity, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, sum(amount) as amount, 
             rank() over (partition by ca.entity_id order by sum(amount) desc) as rank
-        from lobbying_lobbying r
+        from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
-        where
-            use = 't'
         group by ca.entity_id, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n;
@@ -121,11 +128,9 @@ create table agg_lobbying_issues_for_client as
     select client_entity, cycle, issue, count
     from (select ca.entity_id as client_entity, r.cycle, i.general_issue as issue, count(*),
             rank() over (partition by ca.entity_id, r.cycle, i.general_issue order by count(*) desc) as rank
-        from lobbying_lobbying r
+        from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
         inner join assoc_lobbying_client ca using (transaction_id)
-        where
-            r.use = 't'
         group by ca.entity_id, r.cycle, i.general_issue) top
     where
         rank <= :agg_top_n
@@ -133,11 +138,9 @@ union
     select client_entity, -1, issue, count
     from (select ca.entity_id as client_entity, i.general_issue as issue, count(*),
             rank() over (partition by ca.entity_id, i.general_issue order by count(*) desc) as rank
-        from lobbying_lobbying r
+        from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
         inner join assoc_lobbying_client ca using (transaction_id)
-        where
-            r.use = 't'
         group by ca.entity_id, i.general_issue) top
     where
         rank <= :agg_top_n;
@@ -153,12 +156,10 @@ create table agg_lobbying_lobbyists_for_client as
     select client_entity, cycle, lobbyist_name, lobbyist_entity, count
     from (select ca.entity_id as client_entity, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '') as lobbyist_entity, count(*),
             rank() over (partition by ca.entity_id, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '')  order by count(*) desc) as rank
-        from lobbying_lobbying r
+        from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
         inner join assoc_lobbying_client ca using (transaction_id)
         left join assoc_lobbying_lobbyist la using (id)
-        where
-            r.use = 't'
         group by ca.entity_id, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '')) top
     where
         rank <= :agg_top_n
@@ -166,12 +167,10 @@ union
     select client_entity, -1, lobbyist_name, lobbyist_entity, count
     from (select ca.entity_id as client_entity, l.lobbyist_name, coalesce(la.entity_id, '') as lobbyist_entity, count(*),
             rank() over (partition by ca.entity_id, l.lobbyist_name, coalesce(la.entity_id, '')  order by count(*) desc) as rank
-        from lobbying_lobbying r
+        from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
         inner join assoc_lobbying_client ca using (transaction_id)
         left join assoc_lobbying_lobbyist la using (id)
-        where
-            r.use = 't'
         group by ca.entity_id, l.lobbyist_name, coalesce(la.entity_id, '')) top
     where
         rank <= :agg_top_n;
