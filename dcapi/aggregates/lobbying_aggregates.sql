@@ -80,6 +80,8 @@ create table assoc_lobbying_lobbyist_candidate as
 create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id);
 create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id);
     
+
+-- Firms Hired by Client    
     
 drop table if exists agg_lobbying_registrants_for_client;
 
@@ -109,3 +111,71 @@ union
         top.rank <= :agg_top_n;
         
 create index agg_lobbying_registrants_for_client_idx on agg_lobbying_registrants_for_client (client_entity, cycle);
+
+
+-- Issues Lobbied by Client
+
+drop table if exists agg_lobbying_issues_for_client;
+
+create table agg_lobbying_issues_for_client as
+    select client_entity, cycle, issue, count
+    from (select ca.entity_id as client_entity, r.cycle, i.general_issue as issue, count(*),
+            rank() over (partition by ca.entity_id, r.cycle, i.general_issue order by count(*) desc) as rank
+        from lobbying_lobbying r
+        inner join lobbying_issue i using (transaction_id)
+        inner join assoc_lobbying_client ca using (transaction_id)
+        where
+            r.use = 't'
+        group by ca.entity_id, r.cycle, i.general_issue) top
+    where
+        rank <= :agg_top_n
+union
+    select client_entity, -1, issue, count
+    from (select ca.entity_id as client_entity, i.general_issue as issue, count(*),
+            rank() over (partition by ca.entity_id, i.general_issue order by count(*) desc) as rank
+        from lobbying_lobbying r
+        inner join lobbying_issue i using (transaction_id)
+        inner join assoc_lobbying_client ca using (transaction_id)
+        where
+            r.use = 't'
+        group by ca.entity_id, i.general_issue) top
+    where
+        rank <= :agg_top_n;
+
+create index agg_lobbying_issues_for_client_idx on agg_lobbying_issues_for_client (client_entity, cycle);
+
+
+-- Lobbyists Working for Client
+
+drop table if exists agg_lobbying_lobbyists_for_client;
+
+create table agg_lobbying_lobbyists_for_client as
+    select client_entity, cycle, lobbyist_name, lobbyist_entity, count
+    from (select ca.entity_id as client_entity, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '') as lobbyist_entity, count(*),
+            rank() over (partition by ca.entity_id, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '')  order by count(*) desc) as rank
+        from lobbying_lobbying r
+        inner join lobbying_lobbyist l using (transaction_id)
+        inner join assoc_lobbying_client ca using (transaction_id)
+        left join assoc_lobbying_lobbyist la using (id)
+        where
+            r.use = 't'
+        group by ca.entity_id, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '')) top
+    where
+        rank <= :agg_top_n
+union
+    select client_entity, -1, lobbyist_name, lobbyist_entity, count
+    from (select ca.entity_id as client_entity, l.lobbyist_name, coalesce(la.entity_id, '') as lobbyist_entity, count(*),
+            rank() over (partition by ca.entity_id, l.lobbyist_name, coalesce(la.entity_id, '')  order by count(*) desc) as rank
+        from lobbying_lobbying r
+        inner join lobbying_lobbyist l using (transaction_id)
+        inner join assoc_lobbying_client ca using (transaction_id)
+        left join assoc_lobbying_lobbyist la using (id)
+        where
+            r.use = 't'
+        group by ca.entity_id, l.lobbyist_name, coalesce(la.entity_id, '')) top
+    where
+        rank <= :agg_top_n;
+        
+create index agg_lobbying_lobbyists_for_client_idx on agg_lobbying_lobbyists_for_client (client_entity, cycle);
+    
+    
