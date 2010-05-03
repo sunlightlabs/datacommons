@@ -79,3 +79,33 @@ create table assoc_lobbying_lobbyist_candidate as
 
 create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id);
 create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id);
+    
+    
+drop table if exists agg_lobbying_registrants_for_client;
+
+create table agg_lobbying_registrants_for_client as
+    select top.client_entity, top.cycle, top.registrant_name, top.registrant_entity, top.amount
+    from (select ca.entity_id as client_entity, r.cycle, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, sum(amount) as amount, 
+            rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
+        from lobbying_lobbying r
+        inner join assoc_lobbying_client as ca using (transaction_id)
+        left join assoc_lobbying_registrant as ra using (transaction_id)
+        where
+            use = 't'
+        group by ca.entity_id, cycle, r.registrant_name, coalesce(ra.entity_id, '')) top
+    where
+        top.rank <= :agg_top_n
+union
+    select top.client_entity, -1, top.registrant_name, top.registrant_entity, top.amount
+    from (select ca.entity_id as client_entity, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, sum(amount) as amount, 
+            rank() over (partition by ca.entity_id order by sum(amount) desc) as rank
+        from lobbying_lobbying r
+        inner join assoc_lobbying_client as ca using (transaction_id)
+        left join assoc_lobbying_registrant as ra using (transaction_id)
+        where
+            use = 't'
+        group by ca.entity_id, r.registrant_name, coalesce(ra.entity_id, '')) top
+    where
+        top.rank <= :agg_top_n;
+        
+create index agg_lobbying_registrants_for_client_idx on agg_lobbying_registrants_for_client (client_entity, cycle);
