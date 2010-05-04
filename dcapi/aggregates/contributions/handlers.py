@@ -238,7 +238,7 @@ class SectorsHandler(BaseHandler):
     fields = ['sector_code', 'contributions_count', 'amount']
     def read(self, request, entity_id):
         cycle = request.GET.get('cycle', DEFAULT_CYCLE)
-        limit = request.GET.get('limit', 'DEFAULT_LIMIT')
+        limit = request.GET.get('limit', DEFAULT_LIMIT)
         print 'sectors handler: entity id %s' % entity_id
         results = get_top_sectors_to_cand(entity_id, cycle, limit)
         annotated = []
