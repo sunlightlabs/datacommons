@@ -1,4 +1,4 @@
-from dcapi.aggregates.queries import get_top_catorders_to_cand, \
+from queries import get_top_catorders_to_cand, \
     get_top_orgs_from_indiv, get_top_cands_from_indiv, get_top_cands_from_org, \
     get_top_sectors_to_cand, get_party_from_indiv, get_party_from_org, \
     get_namespace_from_org, get_local_to_cand, get_contributor_type_to_cand, \

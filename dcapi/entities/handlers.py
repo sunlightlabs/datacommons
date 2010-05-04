@@ -1,4 +1,4 @@
-from dcapi.aggregates.queries import search_names
+from dcapi.aggregates.contributions.queries import search_names
 from dcentity.models import Entity, EntityAttribute
 from django.db.models import Q
 from piston.handler import BaseHandler

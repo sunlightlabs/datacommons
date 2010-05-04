@@ -1,4 +1,4 @@
-from dcapi.aggregates.handlers import ContributionsBreakdownHandler, \
+from dcapi.aggregates.contributions.handlers import ContributionsBreakdownHandler, \
     RecipientsBreakdownHandler, OrgRecipientsHandler, \
     PolContributorsHandler, IndivRecipientsHandler, SectorsHandler, \
     IndustriesBySectorHandler, OrgRecipientsBreakdownHandler, \
