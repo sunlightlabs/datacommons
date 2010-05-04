@@ -16,9 +16,15 @@ CLIENT_PARENT_FT_FIELD = 'client_parent_ft'
 LOBBYIST_FT_FIELD = 'lobbyist_ft'
 REGISTRANT_FT_FIELD = 'registrant_ft'
 
+CLIENT_EXT_ID = 'client_ext_id'
+LOBBYIST_EXT_ID = 'lobbyist_ext_id'
+CANDIDATE_EXT_ID = 'candidate_ext_id'
+
 AMOUNT_FIELD = 'amount'
+ISSUE_FIELD = 'issue'
 FILING_TYPE_FIELD = 'filing_type'
 YEAR_FIELD = 'year'
+LOBBYIST_IS_REP = 'lobbyist_is_rep'
 
 # utility generators
 
@@ -49,6 +55,22 @@ def _year_in_generator(query, *years):
 def _filing_type_in_generator(query, *filing_types):
     return query.filter(filing_type__in=filing_types)
 
+def _issue_in_generator(query, *issues):
+    return query.filter(issues__general_issue_code__in=issues)
+
+def _lobbyist_is_rep_generator(query, value):
+    return query.filter(lobbyists__member_of_congress=True)
+
+# external ids
+def _client_ext_id_generator(query, *ids):
+    return query.filter(client_ext_id__in=ids)
+
+def _lobbyist_ext_id_generator(query, *ids):
+    return query.filter(lobbyists__lobbyist_ext_id__in=ids)
+
+def _candidate_ext_id_generator(query, *ids):
+    return query.filter(lobbyists__candidate_ext_id__in=ids)
+
 # amount generators
 def _amount_less_than_generator(query, amount):
     return query.filter(amount__lte=int(amount))
@@ -78,6 +100,12 @@ LOBBYING_SCHEMA = Schema(
     InclusionField(TRANSACTION_TYPE_FIELD, _transaction_type_in_generator),
     InclusionField(FILING_TYPE_FIELD, _filing_type_in_generator),
     InclusionField(YEAR_FIELD, _year_in_generator),
+    InclusionField(ISSUE_FIELD, _issue_in_generator),
+    InclusionField(LOBBYIST_IS_REP, _lobbyist_is_rep_generator),
+    # external ids
+    InclusionField(CLIENT_EXT_ID, _client_ext_id_generator),
+    InclusionField(LOBBYIST_EXT_ID, _lobbyist_ext_id_generator),
+    InclusionField(CANDIDATE_EXT_ID, _candidate_ext_id_generator),
     # full text fields
     InclusionField(CLIENT_FT_FIELD, _client_ft_generator),
     InclusionField(CLIENT_PARENT_FT_FIELD, _client_parent_ft_generator),

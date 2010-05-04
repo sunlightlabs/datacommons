@@ -2,6 +2,17 @@
  Transparency Data API
 =======================	
 
+License
+=======
+
+Data returned by this service is subject to the use restrictions set by the Federal Election Commission. By accessing this data, you understand that you are using the data subject to all applicable local, state and federal law, including FEC restrictions.
+
+All data licensed under the Creative Commons BY-NC-SA license. By downloading data and accessing the API you are agreeing to the terms of the license.
+
+Federal campaign contribution and lobbying records must be attributed to OpenSecrets.org.
+
+State campaign contribution records must be attributed to FollowTheMoney.org.
+
 Authentication
 ==============
 
@@ -9,7 +20,7 @@ An API key is required to access the Transparency Data API. `Registration is eas
 
 The API key *must* be as either an ``apikey`` query string parameter or as a ``X-APIKEY`` HTTP request parameter. Example::
 
- http://transparencydata.com/api/1.0/contributions.csv?apikey=<key>&...
+	http://transparencydata.com/api/1.0/contributions.csv?apikey=<key>&...
 
 Common Parameters
 =================
@@ -81,6 +92,16 @@ date
 
 employer_ft
     full-text search on name of an individual's employer
+
+for_against
+    When organizations run ads against a candidate, they are counted as independent expenditures with the candidate as the recipient. This parameter can be used to filter contributions meant for the candidate and those meant to be against the candidate.
+
+    =======  ==============================================
+    Options  Description
+    =======  ==============================================
+    for      contributions made in support of the candidate
+    against  contributions made against the candidate
+    =======  ==============================================
 
 recipient_ft
     full-text search on name of PAC or candidate receiving the contribution

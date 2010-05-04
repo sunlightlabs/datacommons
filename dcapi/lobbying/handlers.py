@@ -1,10 +1,7 @@
-from time import time
-import sys
 
 from urllib import unquote_plus
 from django.db.models import Q
 from piston.handler import BaseHandler
-from dcentity.models import Entity, Normalization
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from dcdata.lobbying.models import Lobbying
 from dcapi.lobbying import filter_lobbying
@@ -16,12 +13,11 @@ MAX_PER_PAGE = 100000
 LOBBYING_FIELDS = ['year', 'transaction_id', 'transaction_type', 'transaction_type_desc',
     'filing_type', 'amount', 'registrant_name', 'registrant_is_firm',
     'client_name', 'client_category', 'client_ext_id', 'client_parent_name',
-    ('lobbyists', ('lobbyist_name','lobbyist_ext_id','candidate_ext_id','government_position','member_of_congress'))]
+    ('lobbyists', ('lobbyist_name','lobbyist_ext_id','candidate_ext_id','government_position','member_of_congress')),
+    ('issues', ('general_issue_code','general_issue','specific_issue')),]
 
 def load_lobbying(params, nolimit=False, ordering=True):
     
-    start_time = time()
-
     per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
     page = int(params.get('page', 1)) - 1
     

@@ -1,15 +1,82 @@
 $().ready(function() {
+    
+    TD.ContributionFilter = new TD.DataFilter();
+    
+    TD.ContributionFilter.countPath = "/data/contributions/count/";
+    TD.ContributionFilter.downloadPath = "/contributions/download/";
+    TD.ContributionFilter.previewPath = "/contributions/";    
+    
+    TD.ContributionFilter.shouldUseBulk = function() {
+        var values = _.keys(this.values());
+        values = _.without(values, 'for_against', 'cycle', 'transaction_namespace');
+        var useBulk = values.length == 0;
+        if (useBulk) {
+            $('#suggestbulk').dialog('open');    
+        }
+        return useBulk;
+    };
+    
+    TD.ContributionFilter.preview = function() {
+        if ($('#mainTable').length > 0) {
+            if (!this.shouldUseBulk()) {
+                var that = this;
+                var params = this.values();
+                var qs = TD.Utils.toQueryString(params);
+                TD.HashMonitor.setAnchor(qs);
+                this.previewNode.removeClass('enabled');
+                $('div#tableScroll').hide();
+                $('div#nodata').hide();
+                $('div#loading').show();
+                $('#mainTable tbody').empty();
+                $('span#previewCount').html('...');
+                $('span#recordCount').html('...');
+                $.getJSON('/data/contributions/', params, function(data) {
+                    if (data.length === 0) {
+                        $('div#nodata').show();
+                    } else {
+                        for (var i = 0; i < data.length; i++) {
+                            var contrib = data[i];
+                            var className = (i % 2 == 0) ? 'even' : 'odd';
+                            var jurisdiction = (contrib.transaction_namespace == 'urn:fec:transaction') ? 'Federal' : 'State';
+                            var content = '<tr class="' + className + '">';
+                            content += '<td class="jurisdiction">' + jurisdiction + '</td>';
+                            content += '<td class="datestamp">' + (contrib.date || '&nbsp;') + '</td>';
+                            content += '<td class="amount">$' + TD.Utils.currencyFormat(contrib.amount) + '</td>';
+                            content += '<td class="contributor_name">' + contrib.contributor_name + '</td>';
+                            content += '<td class="contributor_location">' + TD.Utils.cityStateFormat(contrib.contributor_city, contrib.contributor_state) + '</td>';
+                            content += '<td class="organization_name">' + (contrib.organization_name || '&nbsp;') + '</td>';
+                            content += '<td class="recipient_name">' + contrib.recipient_name + '</td>';
+                            content += '</tr>';
+                            $('#mainTable tbody').append(content);
+                        }
+                        $('span#previewCount').html(data.length);
+                        TD.ContributionFilter.downloadNode.addClass('enabled');
+                        $('div#nodata').hide();
+                        $('div#tableScroll').show();
+                    }    
+                    $('div#loading').hide();
+                    if (data.length < 30) {
+                        $('span#recordCount').html(data.length);
+                    } else {
+                        $.get(that.countPath, params, function(data) {
+                            $('span#recordCount').html(data);
+                        });
+                    }
+                });
+            }
+        }
+    };
 
-    if ($('#datafilter').length > 0) {
+    TD.ContributionFilter.init = function() {
 
-        TD.DataFilter.registerFilter({
+        TD.ContributionFilter.registerFilter({
             name: 'amount',
             label: 'Amount',
             help: 'This is the amount of the contribution',
             field: TD.DataFilter.OperatorField
         });
-    
-        TD.DataFilter.registerFilter({
+
+        TD.ContributionFilter.registerFilter({
             name: 'cycle',
             label: 'Cycle',
             help: 'The two-year span in which the contributions were reported',
@@ -22,16 +89,16 @@ $().ready(function() {
                 ['2008','2007-2008'], ['2010','2009-2010']
             ]
         });
-    
-        TD.DataFilter.registerFilter({
+
+        TD.ContributionFilter.registerFilter({
             name: 'contributor_ft',
             label: 'Contributor',
             help: 'Name of individual, employer, or organization that made contribution',
             field: TD.DataFilter.TextField,
             allowMultipleFields: true
         });
-    
-        TD.DataFilter.registerFilter({
+
+        TD.ContributionFilter.registerFilter({
             name: 'contributor_industry',
             label: 'Contributor Industry',
             help: 'The industry in which the person or organization making the contribution is involved',
@@ -350,7 +417,7 @@ $().ready(function() {
             ]
         });
 
-        TD.DataFilter.registerFilter({
+        TD.ContributionFilter.registerFilter({
             name: 'contributor_state',
             label: 'Contributor State',
             help: 'State from which the contribution was made',
@@ -374,14 +441,14 @@ $().ready(function() {
             ]
         });
 
-        TD.DataFilter.registerFilter({
+        TD.ContributionFilter.registerFilter({
             name: 'date',
             label: 'Date',
             help: 'This is the date of the contribution',
             field: TD.DataFilter.DateRangeField
         });
 
-        TD.DataFilter.registerFilter({
+        TD.ContributionFilter.registerFilter({
             name: 'transaction_namespace',
             label: 'Federal/State',
             help: 'State or federal office',
@@ -392,7 +459,7 @@ $().ready(function() {
             ]
         });
 
-        TD.DataFilter.registerFilter({
+        TD.ContributionFilter.registerFilter({
             name: 'for_against',
             label: 'For/against candidate',
             help: 'Contributions can be made in support of or against a candidate',
@@ -403,8 +470,8 @@ $().ready(function() {
                 ['against','Against the candidate']
             ]
         });
-        
-        TD.DataFilter.registerFilter({
+    
+        TD.ContributionFilter.registerFilter({
             label: 'Office',
             name: 'seat',
             help: 'Office for which candidate is running',
@@ -421,22 +488,15 @@ $().ready(function() {
             ]
         });
 
-        TD.DataFilter.registerFilter({
-            name: 'employer_ft',
+        TD.ContributionFilter.registerFilter({
+            name: 'organization_ft',
             label: 'Organization',
             help: 'Name of employer or pass-through organization associated with contribution',
-            field: TD.DataFilter.TextField
+            field: TD.DataFilter.TextField,
+            allowMultipleFields: true
         });
-    
-        // TD.DataFilter.registerFilter({
-        //     name: 'organization_ft',
-        //     label: 'Employer',
-        //     help: 'Employer of individual that made contribution',
-        //     field: TD.DataFilter.TextField,
-        //     allowMultipleFields: true,
-        // });
-    
-        TD.DataFilter.registerFilter({
+
+        TD.ContributionFilter.registerFilter({
             name: 'recipient_ft',
             label: 'Recipient',
             help: 'Name of candidate or PAC that received contribution',
@@ -444,7 +504,7 @@ $().ready(function() {
             allowMultipleFields: true
         });
 
-        TD.DataFilter.registerFilter({
+        TD.ContributionFilter.registerFilter({
             name: 'recipient_state',
             label: 'Recipient State',
             help: 'The state in which the recipient is running or is located',
@@ -467,8 +527,8 @@ $().ready(function() {
                 ['WI', 'Wisconsin'],        ['WY', 'Wyoming']
             ]
         });
-    
-        TD.DataFilter.registerFilter({
+
+        TD.ContributionFilter.registerFilter({
             label: 'Transaction Type',
             name: 'transaction_type',
             help: 'The FEC transaction type of the contribution. You must remove the for/against filter for this filter to work properly.',
@@ -493,19 +553,13 @@ $().ready(function() {
                 ['11', 'Tribal contribution (11)']
             ]
         });
-
-        TD.DataFilter.init();
         
-        setInterval(function() {
-                TD.HashMonitor.check(function(hash) {
-                    if (hash) {
-                        TD.DataFilter.reset();
-                        TD.DataFilter.loadHash();
-                        TD.DataFilter.preview();
-                    }
-                });
-            }, 200);
-            
-    }
+        var anchor = TD.HashMonitor.getAnchor();
+        if (anchor === undefined) {
+            TD.HashMonitor.setAnchor('for_against=for&cycle=2010');
+            this.loadHash();
+        }
+        
+    };
 
 });

@@ -11,7 +11,7 @@ from django.db import transaction
 
 @transaction.commit_on_success
 def build_recipients(csv_rows):
-    for (name,id,namespace) in csv.reader(csv_rows):
+    for (name,namespace,id,_) in csv.reader(csv_rows):
         try:
             print 'Generating entity for %s, %s, %s' % (name, namespace, id)
             name = name.strip().decode('utf8', 'replace')
@@ -27,7 +27,7 @@ def build_recipients(csv_rows):
                     raise Exception('Unknown namespace: %s' % namespace)
                 attributes = [(attr_namespace, id)]
             
-            build_entity(name, 'recipient', attributes)
+            build_entity(name, 'politician', attributes)
             
         except:
             traceback.print_exception(*sys.exc_info())

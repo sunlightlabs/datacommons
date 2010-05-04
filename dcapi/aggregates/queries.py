@@ -4,7 +4,7 @@ from django.db import connection
     
 get_top_sectors_to_cand_stmt = """
     select sector, count, amount
-    from agg_sectors_to_cand_by_cycle
+    from agg_sectors_to_cand
     where
         recipient_entity = %s
         and cycle = %s
@@ -14,7 +14,7 @@ get_top_sectors_to_cand_stmt = """
 
 get_top_catorders_to_cand_stmt = """
     select contributor_category_order, count, amount
-    from agg_cat_orders_to_cand_by_cycle
+    from agg_cat_orders_to_cand
     where
         recipient_entity = %s
         and sector = %s
@@ -25,7 +25,7 @@ get_top_catorders_to_cand_stmt = """
     
 get_top_orgs_to_cand_stmt = """
     select organization_name, organization_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-    from agg_orgs_to_cand_by_cycle
+    from agg_orgs_to_cand
     where
         recipient_entity = %s
         and cycle = %s
@@ -36,7 +36,7 @@ get_top_orgs_to_cand_stmt = """
     
 get_top_cands_from_indiv_stmt = """
     select recipient_name, recipient_entity, count, amount
-    from agg_cands_from_indiv_by_cycle
+    from agg_cands_from_indiv
     where
         contributor_entity = %s
         and cycle = %s
@@ -46,7 +46,7 @@ get_top_cands_from_indiv_stmt = """
 
 get_top_orgs_from_indiv_stmt = """
     select recipient_name, recipient_entity, count, amount
-    from agg_orgs_from_indiv_by_cycle
+    from agg_orgs_from_indiv
     where
         contributor_entity = %s
         and cycle = %s
@@ -58,7 +58,7 @@ get_top_orgs_from_indiv_stmt = """
 
 get_top_cands_from_org_stmt = """
     select recipient_name, recipient_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-    from agg_cands_from_org_by_cycle
+    from agg_cands_from_org
     where
         organization_entity = %s
         and cycle = %s
@@ -69,7 +69,7 @@ get_top_cands_from_org_stmt = """
 
 get_party_from_indiv_stmt = """
     select recipient_party, count, amount
-    from agg_party_from_indiv_by_cycle
+    from agg_party_from_indiv
     where
         contributor_entity = %s
         and cycle = %s
@@ -78,7 +78,7 @@ get_party_from_indiv_stmt = """
 
 get_party_from_org_stmt = """
     select recipient_party, count, amount
-    from agg_party_from_org_by_cycle
+    from agg_party_from_org
     where
         organization_entity = %s
         and cycle = %s
@@ -87,7 +87,7 @@ get_party_from_org_stmt = """
 
 get_namespace_from_org_stmt = """
     select transaction_namespace, count, amount
-    from agg_namespace_from_org_by_cycle
+    from agg_namespace_from_org
     where
         organization_entity = %s
         and cycle = %s
@@ -96,7 +96,7 @@ get_namespace_from_org_stmt = """
 
 get_local_to_politician_stmt = """
     select local, count, amount
-    from agg_local_to_politician_by_cycle
+    from agg_local_to_politician
     where
         recipient_entity = %s
         and cycle = %s
@@ -105,7 +105,7 @@ get_local_to_politician_stmt = """
 
 get_contributor_type_to_politician_stmt = """
     select contributor_type, count, amount
-    from agg_contributor_type_to_politician_by_cycle
+    from agg_contributor_type_to_politician
     where
         recipient_entity = %s
         and cycle = %s

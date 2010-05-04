@@ -9,19 +9,6 @@ FILE_TYPES = {
 }
 """
 
-class Agency(models.Model):
-    transaction_id = models.CharField(max_length=64, db_index=True)
-    agency_name = models.CharField(max_length=255, blank=True, null=True)
-    agency_entity = EntityRef('agency_transactions')
-    agency_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    
-    class Meta:
-        ordering = ('agency_name',)
-    
-    def __unicode__(self):
-        return self.agency_name
-    
-
 class Lobbying(models.Model):
     transaction_id = models.CharField(max_length=64, primary_key=True, db_index=True)
     transaction_type = models.CharField(max_length=8)
@@ -55,6 +42,19 @@ class Lobbying(models.Model):
     def __unicode__(self):
         return u"%s hired %s as a lobbyist for %0.2f" % (self.client_name or 'unknown', self.registrant_name, self.amount)
 
+
+class Agency(models.Model):
+    transaction = models.ForeignKey(Lobbying, related_name='agencies')
+    agency_name = models.CharField(max_length=255, blank=True, null=True)
+    agency_entity = EntityRef('agency_transactions')
+    agency_ext_id = models.CharField(max_length=128, blank=True, null=True)
+
+    class Meta:
+        ordering = ('agency_name',)
+
+    def __unicode__(self):
+        return self.agency_name
+                
 class Lobbyist(models.Model):
     year = models.IntegerField()
     #transaction_id = models.CharField(max_length=64, db_index=True)
@@ -72,3 +72,16 @@ class Lobbyist(models.Model):
     
     def __unicode__(self):
         return u"%s is a registered lobbyist" % self.lobbyist_name
+
+class Issue(models.Model):
+    year = models.IntegerField()
+    transaction = models.ForeignKey(Lobbying, related_name='issues')
+    general_issue_code = models.CharField(max_length=3)
+    general_issue = models.CharField(max_length=50)
+    specific_issue = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ('year','transaction')
+    
+    def __unicode__(self):
+        return u"%s - %s" % (self.general_issue, self.specific_issue)

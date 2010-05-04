@@ -22,7 +22,6 @@ def lobbying_handler(inpath, outpath, infields, outfields):
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldRemover('Source'),
-        FieldAdder('id', ''),
         FieldAdder('registrant_entity', ''),
         FieldMerger({'registrant_name': ('Registrant','RegistrantRaw')}, name_proc),
         FieldMerger({'registrant_is_firm': ('IsFirm',)}, yn_proc),
@@ -58,7 +57,7 @@ def lobbyist_handler(inpath, outpath, infields, outfields):
         FieldMerger({'lobbyist_name': ('Lobbyist','Lobbyist_raw')}, name_proc),
         FieldMerger({'member_of_congress': ('FormerCongMem',)}, yn_proc),
         FieldRenamer({
-            'transaction_id': 'Uniqid',
+            'transaction': 'Uniqid',
             'year': 'Year',
             'lobbyist_ext_id': 'LobbyistID',
             'candidate_ext_id': 'CID',
@@ -75,9 +74,25 @@ def agency_handler(inpath, outpath, infields, outfields):
         FieldAdder('id', ''),
         FieldAdder('agency_entity', ''),
         FieldRenamer({
-            'transaction_id': 'UniqID',
+            'transaction': 'UniqID',
             'agency_name': 'Agency',
             'agency_ext_id': 'AgencyID',
+        }),
+        #DebugEmitter(),
+        CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
+    )
+
+def issue_handler(inpath, outpath, infields, outfields):
+    
+    run_recipe(
+        CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        FieldRenamer({
+            'id': 'SI_ID',
+            'transaction': 'UniqID',
+            'general_issue_code': 'IssueID',
+            'general_issue': 'Issue',
+            'specific_issue': 'SpecIssue',
+            'year': 'Year',
         }),
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
@@ -87,6 +102,7 @@ HANDLERS = {
     "lob_lobbying": lobbying_handler,
     "lob_lobbyist": lobbyist_handler,
     "lob_agency": agency_handler,
+    "lob_issue": issue_handler,
 }
 
 # management command
