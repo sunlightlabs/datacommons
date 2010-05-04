@@ -51,7 +51,7 @@ class OrgRecipientsBreakdownHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = ['name', 'id', 'count', 'amount', 'type']    
     def read(self, request, entity_id):        
-        cycle = request.GET.get('cycle', '2010')
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
 
         # a single type of breakdown must be specified
         breakdown_type = request.GET.get('type', None)
@@ -96,7 +96,7 @@ class PolContributorsBreakdownHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = ['name', 'id', 'count', 'amount', 'type']    
     def read(self, request, entity_id):        
-        cycle = request.GET.get('cycle', '2010')
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
 
         # a single type of breakdown must be specified
         breakdown_type = request.GET.get('type', None)
@@ -131,7 +131,7 @@ class IndivRecipientsBreakdownHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = ['name', 'id', 'count', 'amount', 'type']    
     def read(self, request, entity_id):        
-        cycle = request.GET.get('cycle', '2010')
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
 
         # a single type of breakdown must be specified
         breakdown_type = request.GET.get('type', None)
@@ -155,8 +155,8 @@ class PolContributorsHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']    
     def read(self, request, entity_id):        
-        limit = request.GET.get('limit', 10)        
-        cycle = request.GET.get('cycle', '2010')
+        limit = request.GET.get('limit', DEFAULT_LIMIT)        
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
 
         try:
             results = get_top_orgs_to_cand(entity_id, cycle, limit)
@@ -172,8 +172,8 @@ class IndivRecipientsHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = ['name', 'id', 'count', 'amount', 'type']    
     def read(self, request, entity_id):        
-        limit = request.GET.get('limit', 10)        
-        cycle = request.GET.get('cycle', '2010')
+        limit = request.GET.get('limit', DEFAULT_LIMIT)        
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
 
         # if one or more specific recipient types were not specified,
         # then search them all. otherwise they should be passed in as
@@ -217,10 +217,11 @@ class OrgRecipientsHandler(BaseHandler):
     ''' Recipients from a single org'''
 
     allowed_methods = ('GET',)
-    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']    
+    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']   
+     
     def read(self, request, entity_id):        
-        limit = request.GET.get('limit', 10)        
-        cycle = request.GET.get('cycle', '2010')
+        limit = request.GET.get('limit', DEFAULT_LIMIT)        
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
 
         try:
             results = get_top_cands_from_org(entity_id, cycle, limit)
@@ -235,8 +236,8 @@ class SectorsHandler(BaseHandler):
     allowed_methods=('GET',)    
     fields = ['sector_code', 'contributions_count', 'amount']
     def read(self, request, entity_id):
-        cycle = request.GET.get('cycle', '2010')
-        limit = request.GET.get('limit', '10')
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
+        limit = request.GET.get('limit', 'DEFAULT_LIMIT')
         print 'sectors handler: entity id %s' % entity_id
         results = get_top_sectors_to_cand(entity_id, cycle, limit)
         annotated = []
@@ -253,8 +254,8 @@ class IndustriesBySectorHandler(BaseHandler):
     allowed_methods=('GET',)    
     fields = ['industry_code', 'contributions_count', 'amount']
     def read(self, request, entity_id, sector_id):
-        cycle = request.GET.get('cycle', '2010')
-        limit = request.GET.get('limit', '10')
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
+        limit = request.GET.get('limit', DEFAULT_LIMIT)
         results = get_top_catorders_to_cand(entity_id, sector_id, cycle, limit)
         annotated = []
         for (name, count, amount) in results:
