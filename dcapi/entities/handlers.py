@@ -16,7 +16,27 @@ class EntityHandler(BaseHandler):
     fields = Entity._meta.get_all_field_names()
     
     def read(self, request, entity_id):
-        return Entity.objects.get(pk=entity_id)
+        results = Entity.objects.get(pk=entity_id)
+        #print dir(results)
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
+        # info about totals contributed and received is stored in a
+        # different db table. this is a bit of a hack since the
+        # *fields* for totals still exists in the entity model, they
+        # just contain zero. so override those values with the
+        # accurate ones from the other tables. 
+        
+        # in progress by jessy
+        # del results['contribution_total_received'] 
+        # del results['contribution_count']
+        # del results['contribution_total_given']
+        # totals_values = get_entity_totals(entity_id, cycle)
+        #if not totals_values:
+        #    totals_values = [0,0,0,0]
+        #totals_keys = ['contributor_count', 'recipient_count', 'contributor_amount', 
+        #               'recipient_amount']
+        #totals = dict(zip(totals_keys, totals_values))
+        #results.update(totals)
+        return results
 
 
 class EntityAttributeHandler(BaseHandler):
