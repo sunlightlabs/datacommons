@@ -1,10 +1,12 @@
-from dcapi.aggregates.queries import search_names
+from dcapi.aggregates.contributions.queries import search_names,\
+    get_entity_totals
 from dcentity.models import Entity, EntityAttribute
 from django.db.models import Q
 from piston.handler import BaseHandler
 from time import time
 from urllib import unquote_plus
 import sys
+from dcapi.aggregates.queries import DEFAULT_CYCLE
 
 
 class EntityHandler(BaseHandler):
@@ -63,4 +65,15 @@ class EntityFilterHandler(BaseHandler):
                     })
         return results_annotated 
 
-
+class EntityTotalsHandler(BaseHandler):
+    allowed_methods = ['GET']
+    
+    fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount']
+    
+    def read(self, request, entity_id):
+        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
+        
+        result = get_entity_totals(entity_id, cycle)
+        
+        return dict(zip(self.fields, result)) if result else None
+            
