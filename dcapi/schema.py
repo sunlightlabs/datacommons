@@ -91,8 +91,7 @@ class Schema(object):
         args = value.split(Schema.VALUE_DELIMITER)
         if len(args) == 1 and isinstance(field, OperatorField):
             args.insert(0, '=')
-        print args
-        return self.get_field(field_name).apply(query, *args)
+        return field.apply(query, *args)
         
     def build_filter(self, initial_query_set, request):
         """
