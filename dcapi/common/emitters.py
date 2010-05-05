@@ -38,11 +38,13 @@ class StreamingLoggingEmitter(Emitter):
         
         if self.handler.fields:
             fields = self.handler.fields
-        else:
+        elif hasattr(self.data, 'model'):
             fields = self.data.model._meta.get_all_field_names()
             if self.handler.exclude:
                 for field in self.handler.exclude:
                     fields.remove(field)
+        else:
+            fields = []
         
         if request.session.get(RETURN_ENTITIES_KEY, False):
             entity_fields = entityref_cache.get(self.handler.model, [])
