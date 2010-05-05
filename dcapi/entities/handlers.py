@@ -6,37 +6,33 @@ from piston.handler import BaseHandler
 from time import time
 from urllib import unquote_plus
 import sys
-from dcapi.aggregates.queries import DEFAULT_CYCLE
+from dcapi.aggregates.queries import DEFAULT_CYCLE, ALL_CYCLES
 
 
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
-    model = Entity
+    #model = Entity
     
-    fields = Entity._meta.get_all_field_names()
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount']
+    ext_id_fields = ['namespace', 'id']
+    #fields = ['name', 'id', ['contributions'] + totals_fields, ['external_ids'] + ext_id_fields]
     
     def read(self, request, entity_id):
-        results = Entity.objects.get(pk=entity_id)
-        #print dir(results)
         cycle = request.GET.get('cycle', DEFAULT_CYCLE)
-        # info about totals contributed and received is stored in a
-        # different db table. this is a bit of a hack since the
-        # *fields* for totals still exists in the entity model, they
-        # just contain zero. so override those values with the
-        # accurate ones from the other tables. 
+
+        entity = Entity.objects.select_related().get(id=entity_id)
+        totals = dict(zip(self.totals_fields, get_entity_totals(entity_id, cycle)))
+        external_ids = [{'namespace': attr.namespace, 'id': attr.value} for attr in entity.attributes.all()]
         
-        # in progress by jessy
-        # del results['contribution_total_received'] 
-        # del results['contribution_count']
-        # del results['contribution_total_given']
-        # totals_values = get_entity_totals(entity_id, cycle)
-        #if not totals_values:
-        #    totals_values = [0,0,0,0]
-        #totals_keys = ['contributor_count', 'recipient_count', 'contributor_amount', 
-        #               'recipient_amount']
-        #totals = dict(zip(totals_keys, totals_values))
-        #results.update(totals)
-        return results
+        result = {'name': entity.name,
+                  'id': entity.id,
+                  'contributions': totals,
+                  'external_ids': external_ids}
+        
+        if cycle != ALL_CYCLES:
+            result.update({'cycle': cycle})
+            
+        return result
 
 
 class EntityAttributeHandler(BaseHandler):
@@ -84,16 +80,4 @@ class EntityFilterHandler(BaseHandler):
                     'total_received': float(total_received)
                     })
         return results_annotated 
-
-class EntityTotalsHandler(BaseHandler):
-    allowed_methods = ['GET']
-    
-    fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount']
-    
-    def read(self, request, entity_id):
-        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
-        
-        result = get_entity_totals(entity_id, cycle)
-        
-        return dict(zip(self.fields, result)) if result else None
-            
+     
