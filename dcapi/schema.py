@@ -19,7 +19,6 @@ class Operator(object):
         return self._generator(query, *args)
 
 
-
 class Field(object):
     """
     A field that may be searched over.
@@ -46,7 +45,6 @@ class OperatorField(Field):
             
     def __init__(self, name, *operators):
         super(OperatorField, self).__init__(name)
-        
         self._name_to_op = dict()
         for op in [op for op in operators]:
             self._name_to_op[op.get_name()] = op
@@ -89,7 +87,11 @@ class Schema(object):
         return self._name_to_field[name]
        
     def _apply(self, field_name, value, query):
+        field = self.get_field(field_name)
         args = value.split(Schema.VALUE_DELIMITER)
+        if len(args) == 1 and isinstance(field, OperatorField):
+            args.insert(0, '=')
+        print args
         return self.get_field(field_name).apply(query, *args)
         
     def build_filter(self, initial_query_set, request):

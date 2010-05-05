@@ -4,6 +4,7 @@ from dcdata.utils.strings.transformers import build_remove_substrings
 from dcdata.lobbying.models import Lobbying
 from dcapi.schema import Operator, Schema, InclusionField, OperatorField
 
+EQUAL_OP = '='
 LESS_THAN_OP = '<'
 GREATER_THAN_OP = '>'
 BETWEEN_OP = '><'
@@ -72,6 +73,9 @@ def _candidate_ext_id_generator(query, *ids):
     return query.filter(lobbyists__candidate_ext_id__in=ids)
 
 # amount generators
+def _amount_equal_generator(query, amount):
+    return query.filter(amount=int(amount))
+        
 def _amount_less_than_generator(query, amount):
     return query.filter(amount__lte=int(amount))
     
@@ -113,6 +117,7 @@ LOBBYING_SCHEMA = Schema(
     InclusionField(REGISTRANT_FT_FIELD, _registrant_ft_generator),
     # operator fields
     OperatorField(AMOUNT_FIELD,
+        Operator(EQUAL_OP, _amount_equal_generator),
         Operator(LESS_THAN_OP, _amount_less_than_generator),
         Operator(GREATER_THAN_OP, _amount_greater_than_generator),
         Operator(BETWEEN_OP, _amount_between_generator)))

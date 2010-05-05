@@ -10,10 +10,10 @@ The schema used to search the Contribution model.
 Defines the syntax of HTTP requests and how the requests are mapped into Django queries.
 """
 
+EQUAL_OP = '='
 LESS_THAN_OP = '<'
 GREATER_THAN_OP = '>'
 BETWEEN_OP = '><'
-
 
 #
 # convert all punctuation to simple whitespace
@@ -40,6 +40,9 @@ fields = []
 
 # amount filter
     
+def _amount_equal_generator(query, amount):
+    return query.filter(amount=int(amount))
+    
 def _amount_less_than_generator(query, amount):
     return query.filter(amount__lte=int(amount))
 
@@ -50,6 +53,7 @@ def _amount_between_generator(query, lower, upper):
     return query.filter(amount__range=(int(lower), int(upper)))
 
 fields.append(OperatorField('amount',
+                Operator(EQUAL_OP, _amount_equal_generator),
                 Operator(LESS_THAN_OP, _amount_less_than_generator),
                 Operator(GREATER_THAN_OP, _amount_greater_than_generator),
                 Operator(BETWEEN_OP, _amount_between_generator)))
@@ -93,6 +97,9 @@ fields.append(InclusionField('cycle', _cycle_in_generator))
 
 # date filter
 
+def _date_equal_generator(query, date):
+    return query.filter(date=parse_date(date))
+
 def _date_before_generator(query, date):
     return query.filter(date__lte=parse_date(date))
     
@@ -103,6 +110,7 @@ def _date_between_generator(query, first, second):
     return query.filter(date__range=(parse_date(first), parse_date(second)))
 
 fields.append(OperatorField('date',
+                Operator(EQUAL_OP, _date_equal_generator),
                 Operator(LESS_THAN_OP, _date_before_generator),
                 Operator(GREATER_THAN_OP, _date_after_generator),
                 Operator(BETWEEN_OP, _date_between_generator)))
