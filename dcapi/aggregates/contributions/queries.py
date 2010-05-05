@@ -180,7 +180,11 @@ def get_contributor_type_to_cand(candidate, cycle):
 
 
 def get_entity_totals(entity_id, cycle):
-    return execute_one(get_entity_totals_stmt, entity_id, cycle)
+    result = execute_one(get_entity_totals_stmt, entity_id, cycle)
+    
+    if not result:
+        return [0, 0, 0, 0]
+    return result
 
 
 
