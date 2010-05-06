@@ -23,49 +23,6 @@ get_top_catorders_to_cand_stmt = """
     order by amount desc
     limit %s
 """    
-    
-get_top_orgs_to_cand_stmt = """
-    select organization_name, organization_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-    from agg_orgs_to_cand
-    where
-        recipient_entity = %s
-        and cycle = %s
-    order by total_amount desc
-    limit %s
-"""
-
-    
-get_top_cands_from_indiv_stmt = """
-    select recipient_name, recipient_entity, count, amount
-    from agg_cands_from_indiv
-    where
-        contributor_entity = %s
-        and cycle = %s
-    order by amount desc
-    limit %s
-"""    
-
-get_top_orgs_from_indiv_stmt = """
-    select recipient_name, recipient_entity, count, amount
-    from agg_orgs_from_indiv
-    where
-        contributor_entity = %s
-        and cycle = %s
-    order by amount desc
-    limit %s
-"""
-
-
-
-get_top_cands_from_org_stmt = """
-    select recipient_name, recipient_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-    from agg_cands_from_org
-    where
-        organization_entity = %s
-        and cycle = %s
-    order by total_amount desc
-    limit %s
-"""
 
 
 get_party_from_indiv_stmt = """
@@ -120,19 +77,6 @@ def get_top_sectors_to_cand(candidate, cycle, limit):
 
 def get_top_catorders_to_cand(candidate, sector, cycle, limit):
     return execute_top(get_top_catorders_to_cand_stmt, candidate, sector, cycle, limit)
-
-def get_top_cands_from_indiv(individual, cycle, limit):
-    return execute_top(get_top_cands_from_indiv_stmt, individual, cycle, limit)
-    
-def get_top_orgs_from_indiv(individual, cycle, limit):
-    return execute_top(get_top_orgs_from_indiv_stmt, individual, cycle, limit)
-
-def get_top_orgs_to_cand(candidate, cycle, limit):
-    return execute_top(get_top_orgs_to_cand_stmt, candidate, cycle, limit)
-
-def get_top_cands_from_org(organization, cycle, limit):
-    return execute_top(get_top_cands_from_org_stmt, organization, cycle, limit)
-
 
 def get_party_from_indiv(individual, cycle):
     return execute_pie(get_party_from_indiv_stmt, individual, cycle)

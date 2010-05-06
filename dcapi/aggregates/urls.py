@@ -1,11 +1,11 @@
-from dcapi.aggregates.contributions.handlers import ContributionsBreakdownHandler, \
-    RecipientsBreakdownHandler, OrgRecipientsHandler, \
-    PolContributorsHandler, IndivRecipientsHandler, SectorsHandler, \
-    IndustriesBySectorHandler, OrgRecipientsBreakdownHandler, \
-    IndivRecipientsBreakdownHandler, PolContributorsBreakdownHandler, \
-    MetadataHandler # new handlers
-from dcapi.aggregates.lobbying.handlers import *
-from django.conf.urls.defaults import *
+
+from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
+    PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
+    SectorsHandler, IndustriesBySectorHandler, OrgRecipientsBreakdownHandler, \
+    IndivRecipientsBreakdownHandler, PolContributorsBreakdownHandler
+from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
+    OrgIssuesHandler, OrgLobbyistsHandler
+from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
@@ -19,16 +19,11 @@ Emitter.unregister('yaml')
 
 ad = { 'authentication': PistonKeyAuthentication() }
 
-contributors_breakdown_handler = Resource(ContributionsBreakdownHandler, **ad)
-recipients_breakdown_handler = Resource(RecipientsBreakdownHandler, **ad)
-metadata_handler = Resource(MetadataHandler, **ad)
-#detail_handler = Resource(DetailHandler, **ad)
-#timeline_handler = Resource(TimelineHandler, **ad)
 
-# new api calls
 org_recipients_handler = Resource(OrgRecipientsHandler, **ad)
 pol_contributors_handler = Resource(PolContributorsHandler, **ad)
-indiv_recipients_handler = Resource(IndivRecipientsHandler, **ad)
+indiv_org_recipients_handler = Resource(IndivOrgRecipientsHandler, **ad)
+indiv_pol_recipients_handler = Resource(IndivPolRecipientsHandler, **ad)
 sectors_handler = Resource(SectorsHandler, **ad)
 industries_by_sector_handler = Resource(IndustriesBySectorHandler, **ad)
 org_recipients_breakdown_handler = Resource(OrgRecipientsBreakdownHandler, **ad)
@@ -64,8 +59,11 @@ urlpatterns = patterns('',
         indiv_recipients_breakdown_handler, name='indiv_recipients_breakdown_handler'),
 
     # recipients from a single individual
-    url(r'^indiv/(?P<entity_id>.+)/recipients\.(?P<emitter_format>.+)$', 
-        indiv_recipients_handler, name='indiv_recipients_handler'),
+    url(r'^indiv/(?P<entity_id>.+)/recipient_orgs\.(?P<emitter_format>.+)$', 
+        indiv_org_recipients_handler, name='indiv_recipients_handler'),
+
+    url(r'^indiv/(?P<entity_id>.+)/recipient_pols\.(?P<emitter_format>.+)$', 
+        indiv_pol_recipients_handler, name='indiv_recipients_handler'),
 
 
     # recipients from a single org//pac 

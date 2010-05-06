@@ -1,8 +1,8 @@
 
+from django.db import connection
 from piston.handler import BaseHandler
-from django.db import connection        
-
 import traceback
+
 
 # at the database level -1 is used to indicate summation over all cycles
 ALL_CYCLES = '-1'

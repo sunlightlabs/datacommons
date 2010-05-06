@@ -1,6 +1,5 @@
-from handlers import EntityHandler, EntityFilterHandler, \
-    EntityAttributeHandler
 from django.conf.urls.defaults import *
+from handlers import EntityHandler, EntityFilterHandler, EntityAttributeHandler
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource

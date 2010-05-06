@@ -1,12 +1,11 @@
-from dcapi.aggregates.entities.queries import search_names,\
-    get_entity_totals
+from dcapi.aggregates.entities.queries import search_names, get_entity_totals
+from dcapi.aggregates.handlers import DEFAULT_CYCLE, ALL_CYCLES
 from dcentity.models import Entity, EntityAttribute
 from django.db.models import Q
 from piston.handler import BaseHandler
 from time import time
 from urllib import unquote_plus
 import sys
-from dcapi.aggregates.handlers import DEFAULT_CYCLE, ALL_CYCLES
 
 
 class EntityHandler(BaseHandler):
@@ -62,11 +61,7 @@ class EntityFilterHandler(BaseHandler):
         if not search_string:
             return {'response' : "It doesn't make any sense to do a search without a search string"}
 
-        
-        # entity_types is currently not supported but we'll probably
-        # build it in at some point.
-        entity_types = request.GET.get('type', None)        
-        result = search_names(search_string, entity_types)
+        result = search_names(search_string)
         
         results_annotated = []
         for (id_, name, type, count_given, count_received, total_given, total_received) in result:

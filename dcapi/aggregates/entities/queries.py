@@ -23,10 +23,7 @@ get_entity_totals_stmt = """
 """
 
 
-def search_names(query, entity_types=[]):
-    # entity_types is not currently used but we'll build it in at some
-    # point...
-    
+def search_names(query):
     parsed_query = ' & '.join(query.split(' '))
     
     return execute_top(search_stmt, parsed_query)
