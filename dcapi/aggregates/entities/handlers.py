@@ -6,7 +6,7 @@ from piston.handler import BaseHandler
 from time import time
 from urllib import unquote_plus
 import sys
-from dcapi.aggregates.queries import DEFAULT_CYCLE, ALL_CYCLES
+from dcapi.aggregates.handlers import DEFAULT_CYCLE, ALL_CYCLES
 
 
 class EntityHandler(BaseHandler):

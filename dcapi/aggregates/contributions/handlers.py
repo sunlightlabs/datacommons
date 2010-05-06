@@ -6,8 +6,7 @@ from queries import get_top_catorders_to_cand, \
 from piston.handler import BaseHandler
 from piston.utils import rc
 import traceback
-from dcapi.aggregates.queries import DEFAULT_LIMIT, DEFAULT_CYCLE
-from dcapi.aggregates.handlers import AggTopHandler
+from dcapi.aggregates.handlers import AggTopHandler, DEFAULT_LIMIT, DEFAULT_CYCLE
 
 
 

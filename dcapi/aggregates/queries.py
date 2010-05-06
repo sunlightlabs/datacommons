@@ -3,11 +3,6 @@
 
 from django.db import connection
 
-# at the database level -1 is used to indicate summation over all cycles
-ALL_CYCLES = '-1'
-DEFAULT_LIMIT = '10'
-DEFAULT_CYCLE = ALL_CYCLES
-
 
 def execute_one(stmt, *args):
     cursor = connection.cursor()

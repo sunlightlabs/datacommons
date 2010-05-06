@@ -1,28 +1,45 @@
 
-from piston.handler import BaseHandler
-from dcapi.aggregates.lobbying.queries import get_top_registrants_for_client,\
-    get_top_issues_for_client, get_top_lobbyists_for_client
-from dcapi.aggregates.handlers import AggTopHandler
+from dcapi.aggregates.handlers import TopListHandler
 
 
-
-class OrgRegistrantsHandler(AggTopHandler):
+class OrgRegistrantsHandler(TopListHandler):
     fields = ['registrant_name', 'registrant_entity', 'amount']
+    
+    stmt = """
+        select registrant_name, registrant_entity, amount
+        from agg_lobbying_registrants_for_client
+        where
+            client_entity = %s
+            and cycle = %s
+        order by amount desc
+        limit %s
+    """
 
-    def query(self, entity_id, cycle, limit):
-        return get_top_registrants_for_client(entity_id, cycle, limit)
 
-
-class OrgIssuesHandler(AggTopHandler):
+class OrgIssuesHandler(TopListHandler):
     fields = ['issue', 'count']
+    
+    stmt = """
+        select issue, count
+        from agg_lobbying_issues_for_client
+        where
+            client_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s
+    """
 
-    def query(self, entity_id, cycle, limit):
-        return get_top_issues_for_client(entity_id, cycle, limit)
 
-
-class OrgLobbyistsHandler(AggTopHandler):
+class OrgLobbyistsHandler(TopListHandler):
+    
     fields = ['lobbyist_name', 'lobbyist_entity', 'count']
 
-    def query(self, entity_id, cycle, limit):
-        return get_top_lobbyists_for_client(entity_id, cycle, limit)
-
+    stmt = """
+        select lobbyist_name, lobbyist_entity, count
+        from agg_lobbying_lobbyists_for_client
+        where
+            client_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s    
+    """
