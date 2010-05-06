@@ -36,26 +36,44 @@ class SQLHandler(BaseHandler):
     
     # these four fields must be filled in by subclass
     args = None
-    fields = None
     stmt = None
     exec_type = None
     
     def read(self, request, **kwargs):
+        # todo: handle error properly
+        assert(set(self.args) == set(kwargs.keys()))
+        
         return execution[self.exec_type](self.stmt, self.fields, *[kwargs[param] for param in self.args])
         
         
 
-class TopListHandler(SQLHandler):
+class TopListHandler(BaseHandler):
     
     args = ['entity_id', 'cycle', 'limit']
     fields = None
     stmt = None
-    exec_type = 'top'
     
     def read(self, request, **kwargs):
-        cycle = request.GET.get('cycle', ALL_CYCLES)
-        limit = request.GET.get('limit', DEFAULT_LIMIT)        
+        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)}) 
+        kwargs.update({'limit': request.GET.get('limit', DEFAULT_LIMIT)})    
         
-        return super(TopListHandler,self).read(request, cycle=cycle, limit=limit, **kwargs)
+        raw_result = execute_top(self.stmt, self.fields, *[kwargs[param] for param in self.args])
     
+        return [dict(zip(self.fields, row)) for row in raw_result]
+
+
+class PieHandler(BaseHandler):
+    
+    args = ['entity_id', 'cycle']
+    category_map = {}
+    stmt = None
+    
+    
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)}) 
+        
+        raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
+        
+        return dict([(self.category_map[key], value) if key in self.category_map else (key, value) for (key, value) in raw_result.items() ])
+ 
     
