@@ -1,4 +1,4 @@
-from dcapi.entities.handlers import EntityHandler, EntityFilterHandler, \
+from handlers import EntityHandler, EntityFilterHandler, \
     EntityAttributeHandler
 from django.conf.urls.defaults import *
 from locksmith.auth.authentication import PistonKeyAuthentication

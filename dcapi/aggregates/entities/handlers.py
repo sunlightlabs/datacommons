@@ -1,4 +1,4 @@
-from dcapi.aggregates.contributions.queries import search_names,\
+from dcapi.aggregates.entities.queries import search_names,\
     get_entity_totals
 from dcentity.models import Entity, EntityAttribute
 from django.db.models import Q

@@ -84,15 +84,6 @@ urlpatterns = patterns('',
         
     url(r'org/(?P<entity_id>.+)/lobbyists\.(?P<emitter_format>.+)',
         lobbying_org_lobbyists_handler, name='lobbying_org_lobbyists_handler'),
-
-    # timeline                       
-    # eg. /aggregates/entity/<entity_id>/timeline.json?start=<date>&end=<date>
-#    url(r'^entity/(?P<entity_id>.+)/timeline\.(?P<emitter_format>.+)$', 
-#        timeline_handler, name='timeline_handler'),
-
-
-    # detail                        
-
 )
 
 
