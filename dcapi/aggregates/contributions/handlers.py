@@ -7,6 +7,7 @@ from piston.handler import BaseHandler
 from piston.utils import rc
 import traceback
 from dcapi.aggregates.queries import DEFAULT_LIMIT, DEFAULT_CYCLE
+from dcapi.aggregates.handlers import AggTopHandler
 
 
 
@@ -214,23 +215,13 @@ class IndivRecipientsHandler(BaseHandler):
             raise
 
 
-class OrgRecipientsHandler(BaseHandler):
+class OrgRecipientsHandler(AggTopHandler):
     ''' Recipients from a single org'''
 
-    allowed_methods = ('GET',)
     fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']   
      
-    def read(self, request, entity_id):        
-        limit = request.GET.get('limit', DEFAULT_LIMIT)        
-        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
-
-        try:
-            results = get_top_cands_from_org(entity_id, cycle, limit)
-            return [dict(zip(self.fields, row)) for row in results]
-        
-        except:
-            traceback.print_exc() 
-            raise
+    def query(self, entity_id, cycle, limit):
+        return get_top_cands_from_org(entity_id, cycle, limit)
 
 
 class SectorsHandler(BaseHandler):
