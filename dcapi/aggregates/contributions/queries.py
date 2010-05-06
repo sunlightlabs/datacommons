@@ -2,27 +2,7 @@
 from dcapi.aggregates.queries import *
 
          
-    
-get_top_sectors_to_cand_stmt = """
-    select sector, count, amount
-    from agg_sectors_to_cand
-    where
-        recipient_entity = %s
-        and cycle = %s
-    order by amount desc
-    limit %s
-"""    
 
-get_top_catorders_to_cand_stmt = """
-    select contributor_category_order, count, amount
-    from agg_cat_orders_to_cand
-    where
-        recipient_entity = %s
-        and sector = %s
-        and cycle = %s
-    order by amount desc
-    limit %s
-"""    
 
 
 get_party_from_indiv_stmt = """
@@ -72,11 +52,6 @@ get_contributor_type_to_politician_stmt = """
 
 
 
-def get_top_sectors_to_cand(candidate, cycle, limit):
-    return execute_top(get_top_sectors_to_cand_stmt, candidate, cycle, limit)
-
-def get_top_catorders_to_cand(candidate, sector, cycle, limit):
-    return execute_top(get_top_catorders_to_cand_stmt, candidate, sector, cycle, limit)
 
 def get_party_from_indiv(individual, cycle):
     return execute_pie(get_party_from_indiv_stmt, individual, cycle)

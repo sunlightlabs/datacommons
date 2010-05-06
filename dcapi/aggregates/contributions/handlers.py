@@ -1,6 +1,6 @@
 from dcapi.aggregates.contributions.queries import get_party_from_org, \
     get_namespace_from_org, get_local_to_cand, get_contributor_type_to_cand, \
-    get_party_from_indiv, get_top_sectors_to_cand, get_top_catorders_to_cand
+    get_party_from_indiv
 from dcapi.aggregates.handlers import DEFAULT_LIMIT, DEFAULT_CYCLE, \
     TopListHandler
 from piston.handler import BaseHandler
@@ -171,39 +171,38 @@ class OrgRecipientsHandler(TopListHandler):
     """
 
 
-class SectorsHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    fields = ['sector_code', 'contributions_count', 'amount']
-    def read(self, request, entity_id):
-        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
-        limit = request.GET.get('limit', DEFAULT_LIMIT)
-        print 'sectors handler: entity id %s' % entity_id
-        results = get_top_sectors_to_cand(entity_id, cycle, limit)
-        annotated = []
-        for (name, count, amount) in results:
-            annotated.append({
-                    'sector_code': name,
-                    'contributions_count': count,
-                    'amount': float(amount),
-                    })
-        return annotated
-
+class SectorsHandler(TopListHandler):
+    
+    fields = ['sector', 'count', 'amount']
+    
+    stmt = """
+        select sector, count, amount
+        from agg_sectors_to_cand
+        where
+            recipient_entity = %s
+            and cycle = %s
+        order by amount desc
+        limit %s
+    """
+    
 
 class IndustriesBySectorHandler(BaseHandler):
-    allowed_methods=('GET',)    
-    fields = ['industry_code', 'contributions_count', 'amount']
-    def read(self, request, entity_id, sector_id):
-        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
-        limit = request.GET.get('limit', DEFAULT_LIMIT)
-        results = get_top_catorders_to_cand(entity_id, sector_id, cycle, limit)
-        annotated = []
-        for (name, count, amount) in results:
-            annotated.append({
-                    'industry_code': name,
-                    'contributions_count': count,
-                    'amount': float(amount),
-                    })
-        return annotated
+    
+    args = ['entity_id', 'sector', 'cycle', 'limit']
+    
+    fields = ['industry', 'count', 'amount']
+    
+    stmt = """
+        select contributor_category_order, count, amount
+        from agg_cat_orders_to_cand
+        where
+            recipient_entity = %s
+            and sector = %s
+            and cycle = %s
+        order by amount desc
+        limit %s
+    """    
+
 
 
 
