@@ -1,0 +1,25 @@
+{% if lobbying %}
+	<div class="lobbying">
+		<h2><span>{{ name }}</span> might be a lobbyist!</h2>
+		<p>This name was found in our lobbyist database. View matching <a href="http://transparencydata.com/lobbying/#{{ lobbying_hash }}">lobbying registrations</a> for more information.</p>
+	</div>
+{% endif %}
+
+<h2>Campaign Contributions</h2>
+<h3>{{ cycle }} election cycle</h3>
+{% if contributions %}
+	<ol class="contributions">
+		{% for contrib in contributions %}
+			<li class="{% cycle 'even' 'odd' %} party-{{ contrib.recipient_party|lower }}">
+				{% if contrib.contributor_state %}({{ contrib.contributor_state }}){% endif %}
+				${{ contrib.amount }} to <span class="recipient">{{ contrib.recipient_name }}</span>
+			</li>
+		{% endfor %}
+	</ol>
+	<p>More at <a href="http://transparencydata.com/contributions/#{{ contributions_hash }}">TransparencyData.com</a></p>
+{% else %}
+	<p>No contributions found from this name. Try another search at <a href="http://transparencydata.com/contributions/#{{ contributions_hash }}">TransparencyData.com</a></p>
+{% endif %}
+<p class="terms">
+	Data is matched by name. We make no claim that this person actually made the contributions or was involved in lobbying.
+</p>

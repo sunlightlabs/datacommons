@@ -78,13 +78,14 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
         cb = cb if cb and is_valid_jsonp_callback_value(cb) else None
         
         qs = self.data
+        
+        if cb:
+            yield '%s(' % cb
         if isinstance(qs, (Model, dict)):
             seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
             yield seria
-
         else:
-            yield '%s([' % cb if cb else '['
-
+            yield '['
             for record in qs:
                 self.data = record
                 seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
@@ -93,10 +94,11 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
                 else:
                     yield ',%s' % seria
                 stats.log(record)
-            
+            yield ']'
             self.data = qs
         
-            yield ']);' if cb else ']';
+        if cb:
+            yield ');'
 
 class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
     

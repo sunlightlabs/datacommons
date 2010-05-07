@@ -1,0 +1,20 @@
+a { color: #00f; text-decoration: underline; }
+h2 { font-size: 12px; }
+h2 span { display: block; }
+h3 { font-size: 10px; }
+ol.contributions { list-style: none; margin: 0; padding: 0; }
+ol.contributions li { border-left: 3px solid #ddd; font-family: monospace; font-size: 85%; padding: 8px 5px; }
+ol.contributions li.party-d { border-left: 3px solid #33d; }
+ol.contributions li.party-r { border-left: 3px solid #d33; }
+/* ol.contributions li.odd { background-color: #fff; } */
+ol.contributions li span.recipient { display: block; }
+p { font-size: 90%; }
+p.terms { color: #999; font-size: 70%; }
+div.lobbying {
+    background-color: #DBEEF7;
+    border: 1px solid #BACAD2;
+    padding: 5px 10px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+}
