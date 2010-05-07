@@ -3,21 +3,6 @@
 
 from django.db import connection
 
-# at the database level -1 is used to indicate summation over all cycles
-ALL_CYCLES = '-1'
-DEFAULT_LIMIT = '10'
-DEFAULT_CYCLE = ALL_CYCLES
-
-def search_names(query, entity_types=[]):
-    # entity_types is not currently used but we'll build it in at some
-    # point...
-
-    # do some freaky stuff to quote the query in case it contains
-    # special characters.
-    query_items = ['"'+item+'"' for item in query.split(' ')]
-    parsed_query = ' & '.join(query_items)
-    
-    return _execute_top(search_stmt, parsed_query)
 
 def execute_one(stmt, *args):
     cursor = connection.cursor()

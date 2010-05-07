@@ -1,11 +1,12 @@
-from dcapi.aggregates.contributions.handlers import ContributionsBreakdownHandler, \
-    RecipientsBreakdownHandler, OrgRecipientsHandler, \
-    PolContributorsHandler, IndivRecipientsHandler, SectorsHandler, \
-    IndustriesBySectorHandler, OrgRecipientsBreakdownHandler, \
-    IndivRecipientsBreakdownHandler, PolContributorsBreakdownHandler, \
-    MetadataHandler # new handlers
-from dcapi.aggregates.lobbying.handlers import *
-from django.conf.urls.defaults import *
+
+from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
+    PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
+    SectorsHandler, IndustriesBySectorHandler, PolLocalBreakdownHandler, \
+    PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
+    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler
+from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
+    OrgIssuesHandler, OrgLobbyistsHandler
+from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
@@ -19,80 +20,59 @@ Emitter.unregister('yaml')
 
 ad = { 'authentication': PistonKeyAuthentication() }
 
-contributors_breakdown_handler = Resource(ContributionsBreakdownHandler, **ad)
-recipients_breakdown_handler = Resource(RecipientsBreakdownHandler, **ad)
-metadata_handler = Resource(MetadataHandler, **ad)
-#detail_handler = Resource(DetailHandler, **ad)
-#timeline_handler = Resource(TimelineHandler, **ad)
-
-# new api calls
-org_recipients_handler = Resource(OrgRecipientsHandler, **ad)
-pol_contributors_handler = Resource(PolContributorsHandler, **ad)
-indiv_recipients_handler = Resource(IndivRecipientsHandler, **ad)
-sectors_handler = Resource(SectorsHandler, **ad)
-industries_by_sector_handler = Resource(IndustriesBySectorHandler, **ad)
-org_recipients_breakdown_handler = Resource(OrgRecipientsBreakdownHandler, **ad)
-indiv_recipients_breakdown_handler = Resource(IndivRecipientsBreakdownHandler, **ad)
-pol_contributors_breakdown_handler = Resource(PolContributorsBreakdownHandler, **ad)
-
-lobbying_org_registrants_handler = Resource(OrgRegistrantsHandler, **ad)
-lobbying_org_issues_handler = Resource(OrgIssuesHandler, **ad)
-lobbying_org_lobbyists_handler = Resource(OrgLobbyistsHandler, **ad)
-
 
 urlpatterns = patterns('',
 
     # contributors to a single politician 
     url(r'^pol/(?P<entity_id>.+)/contributors\.(?P<emitter_format>.+)$', 
-        pol_contributors_handler, name='pol_contributors_handler'),
+        Resource(PolContributorsHandler, **ad)),
 
     # contributions to a single politician, broken down by industry
     url(r'^pol/(?P<entity_id>.+)/contributors/sectors\.(?P<emitter_format>.+)$', 
-        sectors_handler, name='sectors_handler'),
+        Resource(SectorsHandler, **ad)),
 
     # contributions to a single politician, broken down by industry sector
-    url(r'^pol/(?P<entity_id>.+)/contributors/sector/(?P<sector_id>.+)/industries\.(?P<emitter_format>.+)$', 
-        industries_by_sector_handler, name='industries_by_sector_handler'),
+    url(r'^pol/(?P<entity_id>.+)/contributors/sector/(?P<sector>.+)/industries\.(?P<emitter_format>.+)$', 
+        Resource(IndustriesBySectorHandler, **ad)),
 
     # contributions to a single politician, broken down to show percentages
-    url(r'^pol/(?P<entity_id>.+)/contributors/breakdown\.(?P<emitter_format>.+)$', 
-        pol_contributors_breakdown_handler, name='pol_contributors_breakdown_handler'),
-
+    url(r'^pol/(?P<entity_id>.+)/contributors/local_breakdown\.(?P<emitter_format>.+)$', 
+        Resource(PolLocalBreakdownHandler, **ad)),
+    
+    url(r'^pol/(?P<entity_id>.+)/contributors/type_breakdown\.(?P<emitter_format>.+)$', 
+        Resource(PolContributorTypeBreakdownHandler, **ad)),
     
     # recipients from a single individual, broken down to show percentages
-    url(r'^indiv/(?P<entity_id>.+)/recipients/breakdown\.(?P<emitter_format>.+)$', 
-        indiv_recipients_breakdown_handler, name='indiv_recipients_breakdown_handler'),
+    url(r'^indiv/(?P<entity_id>.+)/recipients/party_breakdown\.(?P<emitter_format>.+)$', 
+        Resource(IndivPartyBreakdownHandler, **ad)),
 
     # recipients from a single individual
-    url(r'^indiv/(?P<entity_id>.+)/recipients\.(?P<emitter_format>.+)$', 
-        indiv_recipients_handler, name='indiv_recipients_handler'),
+    url(r'^indiv/(?P<entity_id>.+)/recipient_orgs\.(?P<emitter_format>.+)$', 
+        Resource(IndivOrgRecipientsHandler, **ad)),
+
+    url(r'^indiv/(?P<entity_id>.+)/recipient_pols\.(?P<emitter_format>.+)$', 
+        Resource(IndivPolRecipientsHandler, **ad)),
 
 
     # recipients from a single org//pac 
     url(r'^org/(?P<entity_id>.+)/recipients\.(?P<emitter_format>.+)$', 
-        org_recipients_handler, name='org_recipients_handler'),
+        Resource(OrgRecipientsHandler, **ad)),
 
     # recipients from a single org, broken down to show percentages
-    url(r'^org/(?P<entity_id>.+)/recipients/breakdown\.(?P<emitter_format>.+)$', 
-        org_recipients_breakdown_handler, name='org_recipients_breakdown_handler'),
+    url(r'^org/(?P<entity_id>.+)/recipients/party_breakdown\.(?P<emitter_format>.+)$', 
+        Resource(OrgPartyBreakdownHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>.+)/recipients/level_breakdown\.(?P<emitter_format>.+)$', 
+        Resource(OrgLevelBreakdownHandler, **ad)),
 
     url(r'^org/(?P<entity_id>.+)/registrants\.(?P<emitter_format>.+)$',
-        lobbying_org_registrants_handler, name='lobbying_org_registrants_handler'),
+        Resource(OrgRegistrantsHandler, **ad)),
         
     url(r'^org/(?P<entity_id>.+)/issues\.(?P<emitter_format>.+)',
-        lobbying_org_issues_handler, name='lobbying_org_issues_handler'),
+        Resource(OrgIssuesHandler, **ad)),
         
     url(r'org/(?P<entity_id>.+)/lobbyists\.(?P<emitter_format>.+)',
-        lobbying_org_lobbyists_handler, name='lobbying_org_lobbyists_handler'),
-
-    # timeline                       
-    # eg. /aggregates/entity/<entity_id>/timeline.json?start=<date>&end=<date>
-#    url(r'^entity/(?P<entity_id>.+)/timeline\.(?P<emitter_format>.+)$', 
-#        timeline_handler, name='timeline_handler'),
-
-
-    # detail                        
-
+        Resource(OrgLobbyistsHandler, **ad)),
 )
 
 
