@@ -1,7 +1,6 @@
 
 from django.db import connection
 from piston.handler import BaseHandler
-import traceback
 
 
 # at the database level -1 is used to indicate summation over all cycles
@@ -10,26 +9,15 @@ DEFAULT_LIMIT = '10'
 DEFAULT_CYCLE = ALL_CYCLES
 
 
-        
-def execute_one(stmt, fields, *args):
-    cursor = connection.cursor()
-    cursor.execute(stmt, args)
-    return dict(zip(fields, cursor.fetchone()))
-
 def execute_top(stmt, fields, *args):
     cursor = connection.cursor()
     cursor.execute(stmt, args)
-    return [dict(zip(fields, row)) for row in cursor]
+    return list(cursor)
 
 def execute_pie(stmt, *args):
     cursor = connection.cursor()
     cursor.execute(stmt, args)
     return dict([(category, (count, amount)) for (category, count, amount) in cursor])
-        
-        
-execution = {'top': execute_top,
-             'one': execute_one,
-             'pie': execute_pie}        
         
 
 class TopListHandler(BaseHandler):
