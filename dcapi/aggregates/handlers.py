@@ -21,30 +21,15 @@ def execute_top(stmt, fields, *args):
     cursor.execute(stmt, args)
     return [dict(zip(fields, row)) for row in cursor]
 
-def execute_pie(stmt, _, *args):
-    result_rows = execute_top(stmt, *args)
-    return dict([(category, (count, amount)) for (category, count, amount) in result_rows])
+def execute_pie(stmt, *args):
+    cursor = connection.cursor()
+    cursor.execute(stmt, args)
+    return dict([(category, (count, amount)) for (category, count, amount) in cursor])
         
         
 execution = {'top': execute_top,
              'one': execute_one,
              'pie': execute_pie}        
-        
-class SQLHandler(BaseHandler):
-    
-    allowed_methods = ['GET']
-    
-    # these four fields must be filled in by subclass
-    args = None
-    stmt = None
-    exec_type = None
-    
-    def read(self, request, **kwargs):
-        # todo: handle error properly
-        assert(set(self.args) == set(kwargs.keys()))
-        
-        return execution[self.exec_type](self.stmt, self.fields, *[kwargs[param] for param in self.args])
-        
         
 
 class TopListHandler(BaseHandler):
