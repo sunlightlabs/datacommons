@@ -1,20 +1,36 @@
-from dcapi.aggregates.entities.queries import search_names, get_entity_totals
 from dcapi.aggregates.handlers import DEFAULT_CYCLE, ALL_CYCLES
+from dcapi.aggregates.handlers import execute_top, execute_one
 from dcentity.models import Entity, EntityAttribute
-from django.db.models import Q
 from piston.handler import BaseHandler
-from time import time
 from urllib import unquote_plus
-import sys
+
+
+
+
+
+get_entity_totals_stmt = """
+    select contributor_count, recipient_count, contributor_amount, recipient_amount
+    from agg_entities e
+    where
+        entity_id = %s
+        and cycle = %s
+"""
+
+
+def get_entity_totals(entity_id, cycle):
+    result = execute_one(get_entity_totals_stmt, entity_id, cycle)
+    
+    if  result:
+        return result
+    else:
+        return [0, 0, 0, 0]
 
 
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
-    #model = Entity
     
     totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount']
     ext_id_fields = ['namespace', 'id']
-    #fields = ['name', 'id', ['contributions'] + totals_fields, ['external_ids'] + ext_id_fields]
     
     def read(self, request, entity_id):
         cycle = request.GET.get('cycle', DEFAULT_CYCLE)
@@ -55,24 +71,27 @@ class EntityFilterHandler(BaseHandler):
     allowed_methods = ('GET',)
 
     fields = ['id','name','type','count_given','count_received','total_given','total_received']
+    
+    stmt = """
+        select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
+        from matchbox_entity e
+        join agg_entities a 
+            on e.id = a.entity_id
+        where 
+            a.cycle = -1
+            and to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
+            and (a.contributor_count > 0 or a.recipient_count > 0)
+    """
 
     def read(self, request):
         search_string = unquote_plus(request.GET.get('search', None))
         if not search_string:
             return {'response' : "It doesn't make any sense to do a search without a search string"}
 
-        result = search_names(search_string)
+        parsed_query = ' & '.join(search_string.split(' '))
+
+        raw_result = execute_top(self.stmt, parsed_query)
         
-        results_annotated = []
-        for (id_, name, type, count_given, count_received, total_given, total_received) in result:
-            results_annotated.append({
-                    'id': id_,
-                    'name': name,
-                    'type': type,
-                    'count_given': count_given,
-                    'count_received': count_received,
-                    'total_given': float(total_given),
-                    'total_received': float(total_received)
-                    })
-        return results_annotated 
+        return [dict(zip(self.fields, row)) for row in raw_result]
+
      
