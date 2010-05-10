@@ -1,7 +1,8 @@
-from dcapi.aggregates.handlers import DEFAULT_CYCLE, ALL_CYCLES
-from dcapi.aggregates.handlers import execute_top, execute_one
+from dcapi.aggregates.handlers import DEFAULT_CYCLE, ALL_CYCLES, execute_top, \
+    execute_one
 from dcentity.models import Entity, EntityAttribute
 from piston.handler import BaseHandler
+from piston.utils import rc
 from urllib import unquote_plus
 
 
@@ -59,8 +60,9 @@ class EntityAttributeHandler(BaseHandler):
         id = request.GET.get('id', None)
         
         if not id or not namespace:
-            # to do: what's the proper way to do error handling in a handler?
-            return {'response': 'Must provide a namespace and id.'}
+            error_response = rc.BAD_REQUEST
+            error_response.write("Must include a 'namespace' and an 'id' parameter.")
+            return error_response
 
         attributes = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
         
@@ -84,11 +86,13 @@ class EntityFilterHandler(BaseHandler):
     """
 
     def read(self, request):
-        search_string = unquote_plus(request.GET.get('search', None))
-        if not search_string:
-            return {'response' : "It doesn't make any sense to do a search without a search string"}
-
-        parsed_query = ' & '.join(search_string.split(' '))
+        query = request.GET.get('search', None)
+        if not query:
+            error_response = rc.BAD_REQUEST
+            error_response.write("Must include a query in the 'search' parameter.")
+            return error_response
+        
+        parsed_query = ' & '.join(unquote_plus(query).split(' '))
 
         raw_result = execute_top(self.stmt, parsed_query)
         
