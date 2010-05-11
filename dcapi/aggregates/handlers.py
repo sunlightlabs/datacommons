@@ -27,15 +27,15 @@ def execute_one(stmt, *args):
     return cursor.fetchone()
 
 
-def handle_empty_result(entity_id):
+def check_empty(entity_id, result):
     """ Empty results are normally fine, expect when the entity ID doesn't exist at all--then return 404. """
     
-    if Entity.objects.filter(id=entity_id).count() != 1:
+    if not result and Entity.objects.filter(id=entity_id).count() != 1:
         error_response = rc.NOT_FOUND
         error_response.write('No entity with the given ID.')
         return error_response
     
-    return []
+    return result
 
 
 
@@ -50,11 +50,9 @@ class TopListHandler(BaseHandler):
         kwargs.update({'limit': request.GET.get('limit', DEFAULT_LIMIT)})    
         
         raw_result = execute_top(self.stmt, *[kwargs[param] for param in self.args])
+        labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
         
-        if not raw_result:
-            return handle_empty_result(kwargs['entity_id'])
-    
-        return [dict(zip(self.fields, row)) for row in raw_result]
+        return check_empty(kwargs['entity_id'], labeled_result)
 
 
 class PieHandler(BaseHandler):
@@ -68,10 +66,8 @@ class PieHandler(BaseHandler):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)}) 
         
         raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
+        labeled_result = dict([(self.category_map[key], value) if key in self.category_map else (key, value) for (key, value) in raw_result.items() ])
         
-        if not raw_result:
-            return handle_empty_result(kwargs['entity_id'])        
-        
-        return dict([(self.category_map[key], value) if key in self.category_map else (key, value) for (key, value) in raw_result.items() ])
+        return check_empty(kwargs['entity_id'], labeled_result)
  
     
