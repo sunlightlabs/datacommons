@@ -6,19 +6,22 @@
 {% endif %}
 
 <h2>Campaign Contributions</h2>
-<h3>{{ cycle }} election cycle</h3>
-{% if contributions %}
-	<ol class="contributions">
-		{% for contrib in contributions %}
-			<li class="{% cycle 'even' 'odd' %} party-{{ contrib.recipient_party|lower }}">
-				{% if contrib.contributor_state %}({{ contrib.contributor_state }}){% endif %}
-				${{ contrib.amount }} to <span class="recipient">{{ contrib.recipient_name }}</span>
+<p>Contributors named <b>{{ name }}</b> from the {{ cycle }} election cycle.</p>
+{% if contributors %}
+	<ol class="contributors">
+		{% for contrib in contributors %}
+			<li class="{% cycle 'even' 'odd' %}">
+				<a href="http://transparencydata.com/contributions/#{{ contrib.hash }}">
+					<span class="contributor">{{ contrib.contributor_name }} from {{ contrib.contributor_state}}</span>
+					{% if contrib.organization_name %}
+						<span class="organization">{{ contrib.organization_name }}</span>
+					{% endif %}
+				</a>
 			</li>
 		{% endfor %}
 	</ol>
-	<p>More at <a href="http://transparencydata.com/contributions/#{{ contributions_hash }}">TransparencyData.com</a></p>
 {% else %}
-	<p>No contributions found from this name. Try another search at <a href="http://transparencydata.com/contributions/#{{ contributions_hash }}">TransparencyData.com</a></p>
+	<p>No contributions found from this name. Try another search at <a href="http://transparencydata.com/">TransparencyData.com</a></p>
 {% endif %}
 <p class="terms">
 	Data is matched by name. We make no claim that this person actually made the contributions or was involved in lobbying.
