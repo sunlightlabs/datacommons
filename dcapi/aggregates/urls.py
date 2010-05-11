@@ -5,7 +5,8 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
-    OrgIssuesHandler, OrgLobbyistsHandler
+    OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler,\
+    IndivIssuesHandler, IndivClientsHandler
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
@@ -53,7 +54,16 @@ urlpatterns = patterns('',
 
     url(r'^indiv/(?P<entity_id>.+)/recipient_pols\.(?P<emitter_format>.+)$', 
         Resource(IndivPolRecipientsHandler, **ad)),
-
+        
+    url(r'indiv/(?P<entity_id>.+)/registrants\.(?P<emitter_format>.+)$',
+        Resource(IndivRegistrantsHandler, **ad)),
+        
+    url(r'indiv/(?P<entity_id>.+)/issues\.(?P<emitter_format>.+)$',
+        Resource(IndivIssuesHandler, **ad)),
+        
+    url(r'indiv/(?P<entity_id>.+)/clients\.(?P<emitter_format>.+)$',
+        Resource(IndivClientsHandler, **ad)),
+                
 
     # recipients from a single org//pac 
     url(r'^org/(?P<entity_id>.+)/recipients\.(?P<emitter_format>.+)$', 
