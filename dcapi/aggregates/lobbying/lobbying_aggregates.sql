@@ -239,3 +239,33 @@ union
 
 create index agg_lobbying_issues_for_lobbyist_idx on agg_lobbying_issues_for_lobbyist (lobbyist_entity, cycle);
 
+
+-- Clients of a Lobbyist
+
+drop table if exists agg_lobbying_clients_for_lobbyist;
+
+create table agg_lobbying_clients_for_lobbyist as
+    select lobbyist_entity, cycle, client_name, client_entity, count
+    from (select la.entity_id as lobbyist_entity, r.cycle, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r),
+            rank() over (partition by la.entity_id, r.cycle order by count(r) desc) as rank
+        from lobbying_report r
+        inner join lobbying_lobbyist l using (transaction_id)
+        inner join assoc_lobbying_lobbyist la using (id)
+        left join assoc_lobbying_client ca using (transaction_id)
+        group by la.entity_id, r.cycle, r.client_name, coalesce(ca.entity_id, '')) top
+    where
+        rank <= :agg_top_n
+union
+    select lobbyist_entity, -1, client_name, client_entity, count
+    from (select la.entity_id as lobbyist_entity, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r),
+            rank() over (partition by la.entity_id order by count(r) desc) as rank
+        from lobbying_report r
+        inner join lobbying_lobbyist l using (transaction_id)
+        inner join assoc_lobbying_lobbyist la using (id)
+        left join assoc_lobbying_client ca using (transaction_id)
+        group by la.entity_id, r.client_name, coalesce(ca.entity_id, '')) top
+    where
+        rank <= :agg_top_n;
+        
+create index agg_lobbying_clients_for_lobbyist_idx on agg_lobbying_clients_for_lobbyist (lobbyist_entity, cycle);
+        
