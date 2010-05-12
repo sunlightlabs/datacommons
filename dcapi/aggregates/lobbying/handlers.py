@@ -46,10 +46,10 @@ class OrgLobbyistsHandler(TopListHandler):
     
 class IndivRegistrantsHandler(TopListHandler):
     
-    fields = ['lobbyist_entity', 'cycle', 'registrant_name', 'registrant_entity', 'count']
+    fields = ['registrant_name', 'registrant_entity', 'count']
     
     stmt = """
-        select lobbyist_entity, cycle, registrant_name, registrant_entity, count
+        select registrant_name, registrant_entity, count
         from agg_lobbying_registrants_for_lobbyist
         where
             lobbyist_entity = %s
@@ -60,10 +60,10 @@ class IndivRegistrantsHandler(TopListHandler):
     
 class IndivIssuesHandler(TopListHandler):
     
-    fields = ['lobbyist_entity', 'cycle', 'issue', 'count']
+    fields = ['issue', 'count']
     
     stmt = """
-        select lobbyist_entity, cycle, issue, count
+        select issue, count
         from agg_lobbying_issues_for_lobbyist
         where
             lobbyist_entity = %s
@@ -74,10 +74,10 @@ class IndivIssuesHandler(TopListHandler):
     
 class IndivClientsHandler(TopListHandler):        
     
-    fields = ['lobbyist_entity', 'cycle', 'client_name', 'client_entity', 'count']
+    fields = ['client_name', 'client_entity', 'count']
     
     stmt = """
-        select lobbyist_entity, cycle, client_name, client_entity, count
+        select client_name, client_entity, count
         from agg_lobbying_clients_for_lobbyist
         where
             lobbyist_entity = %s
@@ -86,4 +86,49 @@ class IndivClientsHandler(TopListHandler):
         limit %s
     """        
     
+class RegistrantIssuesHandler(TopListHandler):
+    
+    fields = ['issue', 'count']
+
+    stmt = """
+        select issue, count
+        from agg_lobbying_issues_for_registrant
+        where
+            registrant_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s        
+    """
+
+class RegistrantClientsHandler(TopListHandler):
+    
+    fields = ['client_name', 'client_entity' 'count']
+
+    stmt = """
+        select client_name, client_entity, count
+        from agg_lobbying_clients_for_registrant
+        where
+            registrant_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s        
+    """
+
+
+class REgistrantLobbyistsHandler(TopListHandler):
+        
+    fields = ['lobbyist_name', 'lobbyist_entity' 'count']
+
+    stmt = """
+        select lobbyist_name, lobbyist_entity, count
+        from agg_lobbying_lobby_for_registrant
+        where
+            registrant_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s        
+    """
+
+
+
     
