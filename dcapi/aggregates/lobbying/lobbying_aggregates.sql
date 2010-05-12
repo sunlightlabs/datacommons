@@ -268,4 +268,37 @@ union
         rank <= :agg_top_n;
         
 create index agg_lobbying_clients_for_lobbyist_idx on agg_lobbying_clients_for_lobbyist (lobbyist_entity, cycle);
+
+      
+-- Clients of a Lobbying Firm
+
+
+drop table if exists agg_lobbying_clients_for_registrant;
+
+create table agg_lobbying_clients_for_registrant as
+    select registrant_entity, cycle, client_name, client_entity, count
+    from (select ra.entity_id as registrant_entity, r.cycle, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r),
+            rank() over (partition by ra.entity_id, r.cycle order by count(r) desc) as rank
+        from lobbying_report r
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        left join assoc_lobbying_client ca using (transaction_id)
+        group by ra.entity_id, r.cycle, r.client_name, coalesce(ca.entity_id, '')) top
+    where
+        rank <= :agg_top_n
+union
+    select registrant_entity, -1, client_name, client_entity, count
+    from (select ra.entity_id as registrant_entity, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r),
+            rank() over (partition by ra.entity_id order by count(r) desc) as rank
+        from lobbying_report r
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        left join assoc_lobbying_client ca using (transaction_id)
+        group by ra.entity_id, r.client_name, coalesce(ca.entity_id, '')) top
+    where
+        rank <= :agg_top_n;
         
+create index agg_lobbying_clients_for_registrant_idx on agg_lobbying_clients_for_registrant (registrant_entity, cycle);
+
+
+-- Issues on which a Firm Works
+
+-- Lobbyists Employed by a Firm
