@@ -54,13 +54,16 @@ urlpatterns = patterns('',
 
     url(r'^indiv/(?P<entity_id>.+)/recipient_pols\.(?P<emitter_format>.+)$', 
         Resource(IndivPolRecipientsHandler, **ad)),
-        
+
+    # lobbying - registrants this individual lobbied (worked) for
     url(r'indiv/(?P<entity_id>.+)/registrants\.(?P<emitter_format>.+)$',
         Resource(IndivRegistrantsHandler, **ad)),
-        
+
+    # issues an individual lobbied on
     url(r'indiv/(?P<entity_id>.+)/issues\.(?P<emitter_format>.+)$',
         Resource(IndivIssuesHandler, **ad)),
         
+    # clients of the firms this individual lobbied with
     url(r'indiv/(?P<entity_id>.+)/clients\.(?P<emitter_format>.+)$',
         Resource(IndivClientsHandler, **ad)),
                 
@@ -79,9 +82,11 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>.+)/registrants\.(?P<emitter_format>.+)$',
         Resource(OrgRegistrantsHandler, **ad)),
         
+    # issues an org hired people to 
     url(r'^org/(?P<entity_id>.+)/issues\.(?P<emitter_format>.+)',
         Resource(OrgIssuesHandler, **ad)),
         
+    # lobbyists who worked with this org.
     url(r'org/(?P<entity_id>.+)/lobbyists\.(?P<emitter_format>.+)',
         Resource(OrgLobbyistsHandler, **ad)),
 )
