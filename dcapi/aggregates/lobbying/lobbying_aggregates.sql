@@ -301,4 +301,30 @@ create index agg_lobbying_clients_for_registrant_idx on agg_lobbying_clients_for
 
 -- Issues on which a Firm Works
 
+drop table if exists agg_lobbying_issues_for_registrant;
+
+create table agg_lobbying_issues_for_registrant as
+    select registrant_entity, cycle, issue, count
+    from (select ra.entity_id as registrant_entity, r.cycle, i.general_issue as issue, count(r),
+            rank() over (partition by ra.entity_id, r.cycle order by count(r) desc) as rank
+        from lobbying_report r
+        inner join lobbying_issue i using (transaction_id)
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        group by ra.entity_id, r.cycle, i.general_issue) top
+    where
+        rank <= :agg_top_n
+union
+    select registrant_entity, -1, issue, count
+    from (select ra.entity_id as registrant_entity, i.general_issue as issue, count(r),
+            rank() over (partition by ra.entity_id order by count(r) desc) as rank
+        from lobbying_report r
+        inner join lobbying_issue i using (transaction_id)
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        group by ra.entity_id, i.general_issue) top
+    where
+        rank <= :agg_top_n;    
+        
+create index agg_lobbying_issues_for_registrant_idx on agg_lobbying_issues_for_registrant (registrant_entity, cycle);
+
+
 -- Lobbyists Employed by a Firm
