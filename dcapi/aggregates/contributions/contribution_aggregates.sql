@@ -22,13 +22,26 @@ create table agg_suppressed_catcodes as
     values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'), ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
 
 
+-- Adjust the odd-year cycles upward
+
+drop view if exists contributions_even_cycles;
+
+create view contributions_even_cycles as
+    select transaction_id, transaction_namespace, transaction_type, amount, 
+        case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle,
+        contributor_name, contributor_type, contributor_category, contributor_category_order, contributor_state,
+        organization_name, parent_organization_name,
+        recipient_name, recipient_type, recipient_party, recipient_state
+    from contribution_contribution;
+
+
 -- Only contributions that should be included in totals from individuals
 
 drop view if exists contributions_individual;
 
 create view contributions_individual as
     select *
-    from contribution_contribution c
+    from contributions_even_cycles c
     where
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'P'
@@ -41,7 +54,7 @@ create view contributions_individual as
     
 create view contributions_individual_to_organization as
     select *
-    from contribution_contribution c
+    from contributions_even_cycles c
     where
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'C'
@@ -55,7 +68,7 @@ drop view if exists contributions_organization;
 
 create view contributions_organization as
     select *
-    from contribution_contribution c
+    from contributions_even_cycles c
     where
         contributor_type = 'C'
         and recipient_type = 'P'
@@ -166,12 +179,12 @@ create table agg_entities as
     from
         (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
         from (select * from contributor_associations union select * from organization_associations) a
-        inner join contribution_contribution transaction using (transaction_id)
+        inner join contributions_even_cycles transaction using (transaction_id)
         group by a.entity_id, transaction.cycle) as contrib_aggs
     full outer join
         (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
         from recipient_associations a
-        inner join contribution_contribution transaction using (transaction_id)
+        inner join contributions_even_cycles transaction using (transaction_id)
         group by a.entity_id, transaction.cycle) as recip_aggs
     using (entity_id, cycle)
 union
@@ -180,12 +193,12 @@ union
     from 
         (select a.entity_id, count(transaction), sum(transaction.amount)
         from (select * from contributor_associations union select * from organization_associations) a
-        inner join contribution_contribution transaction using (transaction_id)
+        inner join contributions_even_cycles transaction using (transaction_id)
         group by a.entity_id) as contrib_aggs
     full outer join
         (select a.entity_id, count(transaction), sum(transaction.amount)
         from recipient_associations a
-        inner join contribution_contribution transaction using (transaction_id)
+        inner join contributions_even_cycles transaction using (transaction_id)
         group by a.entity_id) as recip_aggs
     using (entity_id);
         
