@@ -121,7 +121,7 @@ class REgistrantLobbyistsHandler(TopListHandler):
 
     stmt = """
         select lobbyist_name, lobbyist_entity, count
-        from agg_lobbying_lobby_for_registrant
+        from agg_lobbying_lobbyists_for_registrant
         where
             registrant_entity = %s
             and cycle = %s
