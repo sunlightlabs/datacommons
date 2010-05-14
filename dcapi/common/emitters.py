@@ -9,7 +9,9 @@ from dcentity.models import entityref_cache
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE, CRP_TRANSACTION_NAMESPACE
 from time import time
 import csv
+import cStringIO
 import datetime
+import xlwt
 
 class AmnesiacFile(object):
     def __init__(self):
@@ -110,5 +112,42 @@ class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
             stats.log(record)
             writer.writerow(record)
             yield f.read()
-            
-            
+
+class ExcelEmitter(StreamingLoggingEmitter):
+
+    def write_row(self, ws, row, values):
+        col = 0
+        for value in values:
+            ws.write(row, col, value)
+            col += 1
+    
+    def stream(self, request, fields, stats):
+
+        output = cStringIO.StringIO()
+        
+        if self.handler.model:
+            fields = [f.name for f in self.handler.model._meta.fields]
+            fields.remove('import_reference')
+            sheet_name = self.handler.model._meta.object_name.lower()
+        else:
+            sheet_name = ''
+        
+        wb = xlwt.Workbook()
+        ws = wb.add_sheet(sheet_name)
+                
+        self.write_row(ws, 0, fields)
+        
+        row = 0
+        for record in self.data:
+            row += 1
+            values = [getattr(record, f) for f in fields]
+            self.write_row(ws, row, values)
+            stats.log(record)
+        
+        stats.stats['total'] = row
+        
+        wb.save(output)
+        xls = output.getvalue()
+        output.close()
+        
+        yield xls
