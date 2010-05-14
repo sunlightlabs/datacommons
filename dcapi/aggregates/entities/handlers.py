@@ -69,7 +69,7 @@ class EntityAttributeHandler(BaseHandler):
         return [{'id': a.entity_id} for a in attributes]
     
 
-class EntityFilterHandler(BaseHandler):
+class EntitySearchHandler(BaseHandler):
     allowed_methods = ('GET',)
 
     fields = ['id','name','type','count_given','count_received','total_given','total_received']

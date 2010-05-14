@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-from handlers import EntityHandler, EntityFilterHandler, EntityAttributeHandler
+from handlers import EntityHandler, EntitySearchHandler, EntityAttributeHandler
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
@@ -17,7 +17,7 @@ Emitter.unregister('yaml')
 ad = { 'authentication': PistonKeyAuthentication() }
 
 entity_handler = Resource(EntityHandler, **ad)
-entityfilter_handler = Resource(EntityFilterHandler, **ad)
+entityfilter_handler = Resource(EntitySearchHandler, **ad)
 entity_attribute_handler = Resource(EntityAttributeHandler, **ad)
 
 urlpatterns = patterns('',
