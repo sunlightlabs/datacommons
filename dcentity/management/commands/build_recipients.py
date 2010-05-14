@@ -11,7 +11,7 @@ from django.db import transaction
 
 @transaction.commit_on_success
 def build_recipients(csv_rows):
-    for (name,namespace,id,_) in csv.reader(csv_rows):
+    for (name,namespace,id) in csv.reader(csv_rows):
         try:
             print 'Generating entity for %s, %s, %s' % (name, namespace, id)
             name = name.strip().decode('utf8', 'replace')
