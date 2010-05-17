@@ -99,9 +99,9 @@ create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_can
 drop table if exists agg_lobbying_registrants_for_client;
 
 create table agg_lobbying_registrants_for_client as
-    select top.client_entity, top.cycle, top.registrant_name, top.registrant_entity, top.amount
-    from (select ca.entity_id as client_entity, r.cycle, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, sum(amount) as amount, 
-            rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
+    select client_entity, cycle, registrant_name, registrant_entity, count, amount
+    from (select ca.entity_id as client_entity, r.cycle, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, count(r), sum(amount) as amount, 
+            rank() over (partition by ca.entity_id, cycle order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
@@ -109,9 +109,9 @@ create table agg_lobbying_registrants_for_client as
     where
         top.rank <= :agg_top_n
 union
-    select top.client_entity, -1, top.registrant_name, top.registrant_entity, top.amount
-    from (select ca.entity_id as client_entity, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, sum(amount) as amount, 
-            rank() over (partition by ca.entity_id order by sum(amount) desc) as rank
+    select client_entity, -1, registrant_name, registrant_entity, count, amount
+    from (select ca.entity_id as client_entity, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, count(r), sum(amount) as amount, 
+            rank() over (partition by ca.entity_id order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
@@ -276,9 +276,9 @@ create index agg_lobbying_clients_for_lobbyist_idx on agg_lobbying_clients_for_l
 drop table if exists agg_lobbying_clients_for_registrant;
 
 create table agg_lobbying_clients_for_registrant as
-    select registrant_entity, cycle, client_name, client_entity, count
-    from (select ra.entity_id as registrant_entity, r.cycle, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r),
-            rank() over (partition by ra.entity_id, r.cycle order by count(r) desc) as rank
+    select registrant_entity, cycle, client_name, client_entity, count, amount
+    from (select ra.entity_id as registrant_entity, r.cycle, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r), sum(amount) as amount,
+            rank() over (partition by ra.entity_id, r.cycle order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
         left join assoc_lobbying_client ca using (transaction_id)
@@ -286,9 +286,9 @@ create table agg_lobbying_clients_for_registrant as
     where
         rank <= :agg_top_n
 union
-    select registrant_entity, -1, client_name, client_entity, count
-    from (select ra.entity_id as registrant_entity, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r),
-            rank() over (partition by ra.entity_id order by count(r) desc) as rank
+    select registrant_entity, -1, client_name, client_entity, count, amount
+    from (select ra.entity_id as registrant_entity, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r), sum(amount) as amount,
+            rank() over (partition by ra.entity_id order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
         left join assoc_lobbying_client ca using (transaction_id)

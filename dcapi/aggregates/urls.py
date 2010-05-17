@@ -7,7 +7,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler,\
     IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler,\
-    RegistrantClientsHandler, REgistrantLobbyistsHandler
+    RegistrantClientsHandler, RegistrantLobbyistsHandler
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
@@ -98,7 +98,7 @@ urlpatterns = patterns('',
         Resource(RegistrantClientsHandler, **ad)),
     
     url(r'org/(?P<entity_id>[a-f0-9]+)/registrant/lobbyists\.(?P<emitter_format>.+)',
-        Resource(REgistrantLobbyistsHandler, **ad)),
+        Resource(RegistrantLobbyistsHandler, **ad)),
 )
 
 

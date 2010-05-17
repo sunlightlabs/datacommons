@@ -3,15 +3,15 @@ from dcapi.aggregates.handlers import TopListHandler
 
 
 class OrgRegistrantsHandler(TopListHandler):
-    fields = ['registrant_name', 'registrant_entity', 'amount']
+    fields = ['registrant_name', 'registrant_entity', 'count', 'amount']
     
     stmt = """
-        select registrant_name, registrant_entity, amount
+        select registrant_name, registrant_entity, count, amount
         from agg_lobbying_registrants_for_client
         where
             client_entity = %s
             and cycle = %s
-        order by amount desc
+        order by amount desc, count desc
         limit %s
     """
 
@@ -102,22 +102,22 @@ class RegistrantIssuesHandler(TopListHandler):
 
 class RegistrantClientsHandler(TopListHandler):
     
-    fields = ['client_name', 'client_entity' 'count']
+    fields = ['client_name', 'client_entity', 'count', 'amount']
 
     stmt = """
-        select client_name, client_entity, count
+        select client_name, client_entity, count, amount
         from agg_lobbying_clients_for_registrant
         where
             registrant_entity = %s
             and cycle = %s
-        order by count desc
+        order by amount desc, count desc
         limit %s        
     """
 
 
-class REgistrantLobbyistsHandler(TopListHandler):
+class RegistrantLobbyistsHandler(TopListHandler):
         
-    fields = ['lobbyist_name', 'lobbyist_entity' 'count']
+    fields = ['lobbyist_name', 'lobbyist_entity', 'count']
 
     stmt = """
         select lobbyist_name, lobbyist_entity, count
