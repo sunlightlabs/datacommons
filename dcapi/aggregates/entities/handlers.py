@@ -8,38 +8,37 @@ from urllib import unquote_plus
 
 
 
-get_entity_totals_stmt = """
-    select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount
-    from agg_entities e
+get_totals_stmt = """
+    select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount, client_count, registrant_count, client_amount, registrant_amount
+    from agg_entities c
+    full outer join agg_lobbying_totals l using (entity_id, cycle)
     where
         entity_id = %s
 """
 
-
-def get_entity_totals(entity_id):
-    return execute_top(get_entity_totals_stmt, entity_id)
-
+def get_totals(entity_id):
+    return execute_top(get_totals_stmt, entity_id)
 
 
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
     
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'client_count', 'registrant_count', 'client_amount', 'registrant_amount']
     ext_id_fields = ['namespace', 'id']
     
     def read(self, request, entity_id):
 
         entity = Entity.objects.select_related().get(id=entity_id)
 
-        totals_by_cycle = dict()
-        for row in get_entity_totals(entity_id):
-            totals_by_cycle[row[0]] = dict(zip(self.totals_fields, row[1:]))
+        totals = dict()
+        for row in get_totals(entity_id):
+            totals[row[0]] = dict(zip(self.totals_fields, row[1:]))
             
         external_ids = [{'namespace': attr.namespace, 'id': attr.value} for attr in entity.attributes.all()]
         
         result = {'name': entity.name,
                   'id': entity.id,
-                  'contributions': totals_by_cycle,
+                  'totals': totals,
                   'external_ids': external_ids}
         
         return result

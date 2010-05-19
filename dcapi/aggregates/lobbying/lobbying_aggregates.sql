@@ -93,6 +93,42 @@ create table assoc_lobbying_lobbyist_candidate as
 create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id);
 create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id);
     
+    
+-- Total Spent
+
+drop table if exists agg_lobbying_totals;
+
+create table agg_lobbying_totals as
+    select entity_id, coalesce(client.cycle, registrant.cycle) as cycle, coalesce(client.count, 0) as client_count, coalesce(registrant.count, 0) as registrant_count,
+        coalesce(client.amount, 0) as client_amount, coalesce(registrant.amount, 0) as registrant_amount
+    from
+        (select entity_id, cycle, count(r), sum(amount) as amount
+        from lobbying_report r
+        inner join assoc_lobbying_client ca using (transaction_id)    
+        group by entity_id, cycle) as client
+    full outer join
+        (select entity_id, cycle, count(r), sum(amount) as amount
+        from lobbying_report r
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        group by entity_id, cycle) as registrant
+    using (entity_id, cycle)
+union
+    select entity_id, -1, coalesce(client.count, 0) as client_count, coalesce(registrant.count, 0) as registrant_count,
+        coalesce(client.amount, 0) as client_amount, coalesce(registrant.amount, 0) as registrant_amount
+    from
+        (select entity_id, count(r), sum(amount) as amount
+        from lobbying_report r
+        inner join assoc_lobbying_client ca using (transaction_id)    
+        group by entity_id) as client
+    full outer join
+        (select entity_id, count(r), sum(amount) as amount
+        from lobbying_report r
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        group by entity_id) as registrant
+    using (entity_id);
+    
+create index agg_lobbying_totals_idx on agg_lobbying_totals (entity_id);
+
 
 -- Firms Hired by Client    
     
