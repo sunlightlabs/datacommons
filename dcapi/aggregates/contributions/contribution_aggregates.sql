@@ -202,7 +202,7 @@ union
         group by a.entity_id) as recip_aggs
     using (entity_id);
         
-create index agg_entities_idx on agg_entities (entity_id, cycle);
+create index agg_entities_idx on agg_entities (entity_id);
 
 
 -- Industry Sector to Candidate
