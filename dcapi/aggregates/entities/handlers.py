@@ -1,5 +1,4 @@
-from dcapi.aggregates.handlers import DEFAULT_CYCLE, ALL_CYCLES, execute_top, \
-    execute_one
+from dcapi.aggregates.handlers import execute_top
 from dcentity.models import Entity, EntityAttribute
 from piston.handler import BaseHandler
 from piston.utils import rc
@@ -10,21 +9,16 @@ from urllib import unquote_plus
 
 
 get_entity_totals_stmt = """
-    select contributor_count, recipient_count, contributor_amount, recipient_amount
+    select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount
     from agg_entities e
     where
         entity_id = %s
-        and cycle = %s
 """
 
 
-def get_entity_totals(entity_id, cycle):
-    result = execute_one(get_entity_totals_stmt, entity_id, cycle)
-    
-    if  result:
-        return result
-    else:
-        return [0, 0, 0, 0]
+def get_entity_totals(entity_id):
+    return execute_top(get_entity_totals_stmt, entity_id)
+
 
 
 class EntityHandler(BaseHandler):
@@ -34,20 +28,20 @@ class EntityHandler(BaseHandler):
     ext_id_fields = ['namespace', 'id']
     
     def read(self, request, entity_id):
-        cycle = request.GET.get('cycle', DEFAULT_CYCLE)
 
         entity = Entity.objects.select_related().get(id=entity_id)
-        totals = dict(zip(self.totals_fields, get_entity_totals(entity_id, cycle)))
+
+        totals_by_cycle = dict()
+        for row in get_entity_totals(entity_id):
+            totals_by_cycle[row[0]] = dict(zip(self.totals_fields, row[1:]))
+            
         external_ids = [{'namespace': attr.namespace, 'id': attr.value} for attr in entity.attributes.all()]
         
         result = {'name': entity.name,
                   'id': entity.id,
-                  'contributions': totals,
+                  'contributions': totals_by_cycle,
                   'external_ids': external_ids}
         
-        if cycle != ALL_CYCLES:
-            result.update({'cycle': cycle})
-            
         return result
 
 
