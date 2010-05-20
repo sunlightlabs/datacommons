@@ -50,6 +50,8 @@ class PolContributorTypeBreakdownHandler(PieHandler):
     """
 
 class IndivPartyBreakdownHandler(PieHandler):
+
+    category_map = {'R': 'Republicans', 'D': 'Democrats'}
     
     stmt = """
         select recipient_party, count, amount
