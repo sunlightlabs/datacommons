@@ -55,6 +55,14 @@ class TopListHandler(BaseHandler):
         return check_empty(kwargs['entity_id'], labeled_result)
 
 
+#class EntityPairHandler(BaseHandler):
+#    args = ['contrib_entity', 'recipient_entity', 'cycle', 'limit']
+#    fields = None
+#    stmt = None
+#    
+#    def read(self, request, **wkargs):
+    
+
 class PieHandler(BaseHandler):
     
     args = ['entity_id', 'cycle']

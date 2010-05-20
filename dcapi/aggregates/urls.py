@@ -43,7 +43,12 @@ urlpatterns = patterns('',
     
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/type_breakdown\.(?P<emitter_format>.+)$', 
         Resource(PolContributorTypeBreakdownHandler, **ad)),
-    
+        
+#    url(r'^pol/(?P<entity_id>[a-f0-9]+)/indiv_contributor/(?P<contrib_id>[a-f0-9]+).(?P<emitter_format>.+)$', 
+#        Resource(PolIndivContributorHandler, **ad)),    
+#
+#    url(r'^pol/(?P<entity_id>[a-f0-9]+)/org_contributor/(?P<contrib_id>[a-f0-9]+).(?P<emitter_format>.+)$', 
+#        Resource(PolOrgContributorHandler, **ad)),    
     
     # recipients from a single individual, broken down to show percentages
     url(r'^indiv/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$', 

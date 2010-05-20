@@ -73,6 +73,18 @@ class PolContributorsHandler(TopListHandler):
         limit %s
     """
 
+class PolOrgContributorHandler(TopListHandler):
+    fields = ['total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
+    
+    stmt = """
+        select total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+        from agg_orgs_to_cand
+        where
+            recipient_entity = %s
+            and cycle = %s
+        order by total_amount desc
+        limit %s
+    """
 
 class IndivOrgRecipientsHandler(TopListHandler):
 
