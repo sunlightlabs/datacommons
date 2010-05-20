@@ -3,10 +3,10 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
     SectorsHandler, IndustriesBySectorHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
-    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler
+    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
-    OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler,\
-    IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler,\
+    OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
+    IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
     RegistrantClientsHandler, RegistrantLobbyistsHandler
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -24,6 +24,9 @@ ad = { 'authentication': PistonKeyAuthentication() }
 
 
 urlpatterns = patterns('',
+
+    url(r'^(pol|org|indiv)/(?P<entity_id>[a-f0-9]+)/sparkline.(?P<emitter_format>.+)$',
+        Resource(SparklineHandler, **ad)),
 
     # contributors to a single politician 
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors\.(?P<emitter_format>.+)$', 

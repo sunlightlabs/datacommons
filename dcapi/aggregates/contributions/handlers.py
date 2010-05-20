@@ -166,5 +166,17 @@ class IndustriesBySectorHandler(TopListHandler):
     """    
 
 
-
-
+class SparklineHandler(TopListHandler):
+    
+    args = ['entity_id', 'cycle']
+    
+    fields = ['step', 'amount']
+    
+    stmt = """
+        select step, amount
+        from agg_contribution_sparklines
+        where
+            entity_id = %s
+            and cycle = %s
+        order by step
+    """
