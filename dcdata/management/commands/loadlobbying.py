@@ -48,13 +48,12 @@ class TransactionFilter(Filter):
         transaction = self._cache.get(transaction_id, None)
         if transaction is None:
             try:
-                print "loading transaction %s from database" % transaction_id
+                #print "loading transaction %s from database" % transaction_id
                 transaction = Lobbying.objects.get(pk=transaction_id)
                 self._cache[transaction_id] = transaction
-                print "\t* loaded"
-            except Lobbying.DoesNotExist:    
-                print "\t* does not exist"
-                #pass
+                #print "\t* loaded"
+            except Lobbying.DoesNotExist:
+                pass #print "\t* does not exist"
         if transaction:
             record['transaction'] = transaction
             return record
@@ -127,6 +126,7 @@ def lobbying_handler(inpath, year=None):
     )
 
 def agency_handler(inpath, year=None):
+    Agency.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
         FieldModifier('year', lambda x: int(x) if x else None),
@@ -135,15 +135,16 @@ def agency_handler(inpath, year=None):
         UnicodeFilter(),
         #DebugEmitter(),
         CountEmitter(every=1000),
-        # LoaderEmitter(AgencyLoader(
-        #             source=inpath,
-        #             description='load from denormalized CSVs',
-        #             imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-        #         ), commit_every=10000),
+        LoaderEmitter(AgencyLoader(
+            source=inpath,
+            description='load from denormalized CSVs',
+            imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+        ), commit_every=10000),
     )
 
 
 def lobbyist_handler(inpath, year=None):
+    Lobbyist.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
         YearFilter(year),
@@ -162,6 +163,7 @@ def lobbyist_handler(inpath, year=None):
     )
 
 def issue_handler(inpath, year=None):
+    Issue.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
         YearFilter(year),
