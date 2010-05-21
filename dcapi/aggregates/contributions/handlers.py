@@ -50,6 +50,8 @@ class PolContributorTypeBreakdownHandler(PieHandler):
     """
 
 class IndivPartyBreakdownHandler(PieHandler):
+
+    category_map = {'R': 'Republicans', 'D': 'Democrats'}
     
     stmt = """
         select recipient_party, count, amount
@@ -73,6 +75,18 @@ class PolContributorsHandler(TopListHandler):
         limit %s
     """
 
+class PolOrgContributorHandler(TopListHandler):
+    fields = ['total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
+    
+    stmt = """
+        select total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+        from agg_orgs_to_cand
+        where
+            recipient_entity = %s
+            and cycle = %s
+        order by total_amount desc
+        limit %s
+    """
 
 class IndivOrgRecipientsHandler(TopListHandler):
 
@@ -152,5 +166,17 @@ class IndustriesBySectorHandler(TopListHandler):
     """    
 
 
-
-
+class SparklineHandler(TopListHandler):
+    
+    args = ['entity_id', 'cycle']
+    
+    fields = ['step', 'amount']
+    
+    stmt = """
+        select step, amount
+        from agg_contribution_sparklines
+        where
+            entity_id = %s
+            and cycle = %s
+        order by step
+    """

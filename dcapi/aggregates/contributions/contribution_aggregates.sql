@@ -28,7 +28,7 @@ drop view if exists contributions_even_cycles;
 
 create view contributions_even_cycles as
     select transaction_id, transaction_namespace, transaction_type, amount, 
-        case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle,
+        case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle, date,
         contributor_name, contributor_type, contributor_category, contributor_category_order, contributor_state,
         organization_name, parent_organization_name,
         recipient_name, recipient_type, recipient_party, recipient_state
@@ -169,6 +169,24 @@ create index recipient_associations_entity_id on recipient_associations (entity_
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);             
 
 
+-- Sparklines
+
+\set sparkline_resolution 24
+
+drop table if exists agg_contribution_sparklines;
+
+create table agg_contribution_sparklines as
+    select entity_id, cycle, 
+        ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step, 
+        sum(amount) as amount
+        from (select * from contributor_associations 
+              union select * from recipient_associations) a
+        inner join contributions_even_cycles c using (transaction_id)
+        group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
+
+create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
+
+
 -- Entity Aggregates
 
 drop table if exists agg_entities;
@@ -202,7 +220,7 @@ union
         group by a.entity_id) as recip_aggs
     using (entity_id);
         
-create index agg_entities_idx on agg_entities (entity_id, cycle);
+create index agg_entities_idx on agg_entities (entity_id);
 
 
 -- Industry Sector to Candidate
