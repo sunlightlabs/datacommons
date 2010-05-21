@@ -17,7 +17,10 @@ def build_recipients(csv_rows):
             name = name.strip().decode('utf8', 'replace')
             id = id.strip()
             namespace = namespace.strip()
-                
+            
+            assert name
+            
+            attributes = []    
             if id:
                 if namespace == NIMSP_TRANSACTION_NAMESPACE:
                     attr_namespace = 'urn:nimsp:recipient'
