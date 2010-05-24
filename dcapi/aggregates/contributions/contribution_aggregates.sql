@@ -24,7 +24,7 @@ create table agg_suppressed_catcodes as
 
 -- Adjust the odd-year cycles upward
 
-drop view if exists contributions_even_cycles;
+drop view if exists contributions_even_cycles cascade;
 
 create view contributions_even_cycles as
     select transaction_id, transaction_namespace, transaction_type, amount, 
@@ -86,8 +86,11 @@ create table contributor_associations as
     from contribution_contribution c
     inner join matchbox_entityalias a
         on c.contributor_name = a.alias
+    inner join matchbox_entity e
+        on e.id = a.entity_id
     where
         a.verified = 't'
+        and e.type in ('individual', 'organization')
 union    
     select a.entity_id, c.transaction_id
     from contribution_contribution c
@@ -111,15 +114,21 @@ create table organization_associations as
     from contribution_contribution c
     inner join matchbox_entityalias a
         on c.organization_name = a.alias
+    inner join matchbox_entity e
+        on e.id = a.entity_id
     where
         a.verified = 't'
+        and e.type = 'organization'
 union
     select a.entity_id, c.transaction_id
         from contribution_contribution c
         inner join matchbox_entityalias a
             on c.parent_organization_name = a.alias
+        inner join matchbox_entity e
+            on e.id = a.entity_id
         where
             a.verified = 't'
+            and e.type = 'organization'
 union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
@@ -152,8 +161,11 @@ create table recipient_associations as
     from contribution_contribution c
     inner join matchbox_entityalias a
         on c.recipient_name = a.alias
+    inner join matchbox_entity e
+        on e.id = a.entity_id
     where
         a.verified = 't'
+        and e.type = 'politician'
 union    
     select a.entity_id, c.transaction_id
     from contribution_contribution c

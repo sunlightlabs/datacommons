@@ -20,10 +20,13 @@ drop table if exists assoc_lobbying_client;
 create table assoc_lobbying_client as
     select a.entity_id, l.transaction_id
     from matchbox_entityalias a
+    inner join matchbox_entity e
+        on e.id = a.entity_id
     inner join lobbying_lobbying l
         on a.alias = l.client_name or a.alias = l.client_parent_name
     where
         a.verified = 't'
+        and e.type = 'organization'
 union
     select a.entity_id, l.transaction_id
     from matchbox_entityattribute a
@@ -44,10 +47,13 @@ drop table if exists assoc_lobbying_registrant;
 create table assoc_lobbying_registrant as
     select a.entity_id, l.transaction_id
     from matchbox_entityalias a
+    inner join matchbox_entity e
+        on e.id = a.entity_id    
     inner join lobbying_lobbying l
         on a.alias = l.registrant_name
     where
-        a.verified = 't';
+        a.verified = 't'
+        and e.type = 'organization';
 
 create index assoc_lobbying_registrant_entity_id on assoc_lobbying_registrant (entity_id);
 create index assoc_lobbying_registrant_transaction_id on assoc_lobbying_registrant (transaction_id);
@@ -60,10 +66,13 @@ drop table if exists assoc_lobbying_lobbyist;
 create table assoc_lobbying_lobbyist as
     select a.entity_id, l.id
     from matchbox_entityalias a
+    inner join matchbox_entity e
+        on e.id = a.entity_id
     inner join lobbying_lobbyist l
         on a.alias = l.lobbyist_name
     where
         a.verified = 't'
+        and e.type = 'individual'
 union
     select a.entity_id, l.id
     from matchbox_entityattribute a
