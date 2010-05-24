@@ -67,14 +67,23 @@ class PieHandler(BaseHandler):
     
     args = ['entity_id', 'cycle']
     category_map = {}
+    default_key = None
     stmt = None
-    
     
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)}) 
         
         raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
-        labeled_result = dict([(self.category_map[key], value) if key in self.category_map else (key, value) for (key, value) in raw_result.items() ])
+        print raw_result
+
+        if self.default_key:
+            extra_keys = [k for k in raw_result.keys() if k not in self.category_map.keys()]
+
+            labeled_result = dict([(self.category_map[key], value) for (key, value) in raw_result.items() if key in self.category_map])
+            labeled_result[self.default_key] = (sum([value[0] for (key, value) in raw_result.items() if key in extra_keys]), sum([value[1] for (key, value) in raw_result.items() if key in extra_keys]))
+        else:
+            labeled_result = dict([(self.category_map[key], value) if key in self.category_map else (key, value) for (key, value) in raw_result.items() ])
+
         
         return check_empty(kwargs['entity_id'], labeled_result)
  
