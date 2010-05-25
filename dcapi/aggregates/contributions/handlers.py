@@ -6,6 +6,7 @@ from dcapi.aggregates.handlers import TopListHandler, PieHandler
 class OrgPartyBreakdownHandler(PieHandler):
     
     category_map = {'R': 'Republicans', 'D': 'Democrats'}
+    default_key = 'Other'
     
     stmt = """
         select recipient_party, count, amount
