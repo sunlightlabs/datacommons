@@ -165,7 +165,7 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         a.verified = 't'
-        and e.type = 'politician'
+        and e.type in ('organization', 'politician')
 union    
     select a.entity_id, c.transaction_id
     from contribution_contribution c
