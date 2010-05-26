@@ -74,7 +74,6 @@ class PieHandler(BaseHandler):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)}) 
         
         raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
-        print raw_result
 
         if self.default_key:
             extra_keys = [k for k in raw_result.keys() if k not in self.category_map.keys()]
