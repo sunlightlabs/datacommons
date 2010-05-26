@@ -18,8 +18,6 @@ def build_recipients(csv_rows):
             id = id.strip()
             namespace = namespace.strip()
             
-            assert name
-            
             attributes = []    
             if id:
                 if namespace == NIMSP_TRANSACTION_NAMESPACE:
