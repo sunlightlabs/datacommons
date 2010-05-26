@@ -130,7 +130,9 @@ def build_ranked_table(table, from_, primary_terms, secondary_terms, measures):
 
 ASSOCIATION_TABLES = dict(
     contributor="contributor_associations",
-    recipient='recipient_associations')
+    recipient='recipient_associations',
+    client='assoc_lobbying_client',
+    registrant='assoc_lobbying_registrant')
 
 
 
@@ -165,7 +167,7 @@ ASSOCIATION_TABLES = dict(
 
 ### also: associations, views, totals, sparklines... ###
 
-COUNT = dict(count='count(source)')
+COUNT = dict(count='count(*)')
 AMOUNT = dict(amount='sum(amount)')
 COUNT_AND_AMOUNT = dict_union(COUNT, AMOUNT)
 
@@ -190,6 +192,26 @@ agg_cat_orders_to_cand_stmt = build_ranked_table(
     primary_terms={'recipient_entity': 'recipient.entity_id', 'sector': "substring(contributor_category_order for 1)"},
     secondary_terms={'category_order': 'contributor_category_order'},
     measures=COUNT_AND_AMOUNT)
+
+agg_lobbying_registrants_for_client_stmt = build_standard_ranked_table(
+    table='agg_lobbying_registrants_for_client', 
+    source='lobbying_report',
+    primary='client',
+    secondary='registrant', 
+    measures=COUNT_AND_AMOUNT)
+
+agg_lobbying_issues_for_lobbyist_stmt = build_ranked_table(
+    table='agg_lobbying_issues_for_lobbyist',
+    from_= \
+        """
+        lobbying_report r
+            inner join lobbying_issue i using (transaction_id)
+            inner join lobbying_lobbyist l using (transaction_id)
+            inner join assoc_lobbying_lobbyist la on la.id = l.id
+        """,
+    primary_terms={'lobbyist_entity': 'la.entity_id'}, 
+    secondary_terms={'issue': 'i.general_issue'}, 
+    measures=COUNT)
 
 agg_party_from_indiv_stmt = build_pie_table(
     table='agg_party_from_indiv',
