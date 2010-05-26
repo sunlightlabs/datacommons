@@ -47,7 +47,7 @@ class Command(BaseCommand):
             UnicodeFilter(),
             FieldModifier('action_date', lambda x: x if x else None),
             #DebugEmitter(),
-            CountEmitter(every=10),
+            CountEmitter(every=1000),
             LoaderEmitter(GrantLoader(
                 source=inpath,
                 description='load from denormalized CSVs',
