@@ -56,7 +56,7 @@ class Agency(models.Model):
         return self.agency_name
                 
 class Lobbyist(models.Model):
-    year = models.IntegerField()
+    year = models.IntegerField(blank=True, null=True)
     #transaction_id = models.CharField(max_length=64, db_index=True)
     transaction = models.ForeignKey(Lobbying, related_name='lobbyists')
     lobbyist_name = models.CharField(max_length=255, blank=True, null=True)
@@ -74,7 +74,7 @@ class Lobbyist(models.Model):
         return u"%s is a registered lobbyist" % self.lobbyist_name
 
 class Issue(models.Model):
-    year = models.IntegerField()
+    year = models.IntegerField(blank=True, null=True)
     transaction = models.ForeignKey(Lobbying, related_name='issues')
     general_issue_code = models.CharField(max_length=3)
     general_issue = models.CharField(max_length=50)

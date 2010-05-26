@@ -4,7 +4,7 @@ from django.core.management.base import CommandError, BaseCommand
 from optparse import make_option
 from saucebrush import run_recipe
 from saucebrush.emitters import Emitter, DebugEmitter
-from saucebrush.filters import FieldRemover, UnicodeFilter
+from saucebrush.filters import FieldModifier, FieldRemover, UnicodeFilter
 from saucebrush.sources import CSVSource
 import os
 
@@ -45,8 +45,9 @@ class Command(BaseCommand):
             CSVSource(open(inpath)),
             FieldRemover('import_reference'),
             UnicodeFilter(),
+            FieldModifier('action_date', lambda x: x if x else None),
             #DebugEmitter(),
-            CountEmitter(every=10),
+            CountEmitter(every=1000),
             LoaderEmitter(GrantLoader(
                 source=inpath,
                 description='load from denormalized CSVs',

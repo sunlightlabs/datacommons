@@ -37,7 +37,7 @@ class YearFilter(Filter):
         self.year = year
         self.field = field
     def process_record(self, record):
-        if self.year and self.year == record[self.field]:
+        if not self.year or (self.year and self.year == record[self.field]):
             return record
 
 class TransactionFilter(Filter):
@@ -48,10 +48,12 @@ class TransactionFilter(Filter):
         transaction = self._cache.get(transaction_id, None)
         if transaction is None:
             try:
+                #print "loading transaction %s from database" % transaction_id
                 transaction = Lobbying.objects.get(pk=transaction_id)
                 self._cache[transaction_id] = transaction
+                #print "\t* loaded"
             except Lobbying.DoesNotExist:
-                pass
+                pass #print "\t* does not exist"
         if transaction:
             record['transaction'] = transaction
             return record
@@ -69,10 +71,15 @@ class LobbyingLoader(Loader):
         #except Lobbying.DoesNotExist:
             return self.model(transaction_id=record['transaction_id'])
 
+class AgencyLoader(Loader):
+    model = Agency
+    def __init__(self, *args, **kwargs):
+        super(AgencyLoader, self).__init__(*args, **kwargs)
+    def get_instance(self, record):
+        return self.model(transaction=record['transaction'], agency_ext_id=record['agency_ext_id'])
+
 class IssueLoader(Loader):
     model = Issue
-    def __init__(self, *args, **kwargs):
-        super(IssueLoader, self).__init__(*args, **kwargs)
     def get_instance(self, record):
         #try:
         #    return self.model.objects.get(id=record['id'])
@@ -118,7 +125,26 @@ def lobbying_handler(inpath, year=None):
         )),
     )
 
+def agency_handler(inpath, year=None):
+    Agency.objects.all().delete()
+    run_recipe(
+        CSVSource(open(inpath)),
+        FieldModifier('year', lambda x: int(x) if x else None),
+        NoneFilter(),
+        transaction_filter,
+        UnicodeFilter(),
+        #DebugEmitter(),
+        CountEmitter(every=1000),
+        LoaderEmitter(AgencyLoader(
+            source=inpath,
+            description='load from denormalized CSVs',
+            imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+        ), commit_every=10000),
+    )
+
+
 def lobbyist_handler(inpath, year=None):
+    Lobbyist.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
         YearFilter(year),
@@ -137,6 +163,7 @@ def lobbyist_handler(inpath, year=None):
     )
 
 def issue_handler(inpath, year=None):
+    Issue.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
         YearFilter(year),
@@ -159,9 +186,10 @@ HANDLERS = {
     "lob_lobbying": lobbying_handler,
     "lob_lobbyist": lobbyist_handler,
     "lob_issue": issue_handler,
+    "lob_agency": agency_handler,
 }
 
-SOURCE_FILES = ('lob_lobbying','lob_lobbyist','lob_issue')
+SOURCE_FILES = ('lob_lobbying','lob_lobbyist','lob_issue','lob_agency')
 
 # main management command
 

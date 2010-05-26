@@ -1,6 +1,4 @@
-
 from urllib import unquote_plus
-from django.db.models import Q
 from piston.handler import BaseHandler
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from dcdata.lobbying.models import Lobbying
