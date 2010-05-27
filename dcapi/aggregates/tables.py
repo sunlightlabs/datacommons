@@ -1,17 +1,34 @@
 from dcdata.utils.sql import augment, dict_union
 
-
-
-
-def case_empty(preferred, fallback):
-    return "case %s != '' then %s else %s end" % (preferred, preferred, fallback)
-  
+# An ordered dictionary for name/value pairs
+class ODict(dict):
+    def __init__(self, assignments):
+        super(ODict,self).__init__(assignments)
+        self.ordered_keys = [name for (name, _) in assignments]
     
-def ranked_select(selected, from_, rank, rank_order, group_by):
+    def keys(self):
+        return self.ordered_keys
+    
+    def items(self):
+        return [(key, self[key]) for key in self.keys()]
+
+
+
+  
+########## Code for generating generic SQL Code -- assumes nothing about our particular schemas ##########  
+    
+def case_empty(preferred, fallback):
+    return "case when %s != '' then %s else %s end" % (preferred, preferred, fallback)
+      
+    
+def ranked_select(selected, from_, rank, rank_order, group_by=[]):
     aliases = ", ".join(selected.keys())    
-    select_columns = ", ".join(["%s as %s" % (value, alias) for (alias, value) in selected.iteritems()])
+    select_columns = ", ".join(["%s as %s" % (value, alias) for (alias, value) in selected.items()])
     group_values = ", ".join([selected[alias] for alias in group_by])
     rank_values = ", ".join([selected[alias] for alias in rank])
+    rank_order_values = ", ".join(["%s desc" % selected[alias] for alias in rank_order])
+    
+    group_clause = "group by " + group_values if group_by else ""
     
     return \
         """
@@ -19,27 +36,35 @@ def ranked_select(selected, from_, rank, rank_order, group_by):
         from (select %(columns)s, 
                 rank() over (partition by %(rank)s order by %(rank_order)s) as rank
             from %(from_tables)s   
-            group by %(group)s) top
+            %(group_clause)s) top
         where
-            rank <= :agg_top_n
-        """ % dict(aliases=aliases, columns=select_columns, from_tables=from_, rank=rank_values, rank_order=rank_order, group=group_values)    
+            rank <= 10
+        """ % dict(aliases=aliases, columns=select_columns, from_tables=from_, rank=rank_values, rank_order=rank_order_values, group_clause=group_clause)    
 
 
-def grouped_select(selected, from_, group_by):
-    select_columns = ", ".join(["%s as %s" % (value, alias) for (alias, value) in selected.iteritems()])
+
+
+
+
+
+def grouped_select(selected, from_, group_by, where=None):
+    select_columns = ", ".join(["%s as %s" % (value, alias) for (alias, value) in selected.items()])
     group_values = ", ".join([selected[alias] for alias in group_by])
+
+    where_clause = "where %s" % where if where else ""
 
     return \
         """
         select %(columns)s
         from %(from_tables)s
+        %(where_clause)s
         group by %(group)s
-        """ % dict(columns=select_columns, from_tables=from_, group=group_values)
+        """ % dict(columns=select_columns, from_tables=from_, where_clause=where_clause, group=group_values)
 
 
-def create_as_ranked_cycle_combination(table, selected, from_, rank, rank_order, group_by):
-    with_cycle = ranked_select(augment(selected, cycle='cycle'), from_, rank + ['cycle'], rank_order, group_by + ['cycle'])
-    without_cycle = ranked_select(augment(selected, cycle='-1'), from_, rank, rank_order, group_by)
+def create_as_ranked_cycle_combination(table, selected, from_, rank, rank_order, group_by=None):
+    with_cycle = ranked_select(ODict(selected.items() + [('cycle', 'cycle')]), from_, rank + ['cycle'], rank_order, group_by + ['cycle'])
+    without_cycle = with_cycle.replace('cycle', '-1', 1).replace(', cycle as cycle', '').replace(', cycle', '').replace('cycle as cycle, ', '').replace('cycle, ', '')
     
     return \
         """
@@ -48,6 +73,20 @@ def create_as_ranked_cycle_combination(table, selected, from_, rank, rank_order,
         union
             %(without_cycle)s;
         """ % dict(table=table, with_cycle=with_cycle, without_cycle=without_cycle)
+
+
+def create_as_cycle_combination(table, cycle_select):
+    without_cycle = cycle_select.replace('cycle', '-1', 1).replace(', cycle as cycle', '').replace(', cycle', '').replace('cycle as cycle, ', '').replace('cycle, ', '')
+
+    return \
+        """
+        create table %(table)s as
+            %(with_cycle)s
+        union
+            %(without_cycle)s;
+        """ % dict(table=table, with_cycle=cycle_select, without_cycle=without_cycle)
+
+
 
 
 def create_as_grouped_cycle_combination(table, selected, from_, group_by):
@@ -71,6 +110,58 @@ def create_index(table, columns):
 
 
 
+def standard_association_join(source, primary, secondary):
+    return \
+        """
+        %s source
+        inner join %s %s using (transaction_id)
+        left join %s %s using (transaction_id)
+        """ % (source, ASSOCIATION_TABLES[primary], primary, ASSOCIATION_TABLES[secondary], secondary)
+
+
+
+def build_ranked_table(table, from_, primary_terms, secondary_terms, measures, rank_order):
+    
+    selected = ODict(primary_terms.items() + secondary_terms.items() + measures.items())
+
+    rank = primary_terms.keys()
+    
+    group_by = primary_terms.keys() + secondary_terms.keys()
+    
+    return "%s\n%s\n%s\n" % (
+                             drop_table(table),
+                             create_as_ranked_cycle_combination(table, selected, from_, rank, rank_order, group_by),
+                             create_index(table, rank + ['cycle'])
+                             )    
+
+    
+    pass
+
+
+
+########## Code specific to the Data Commons tables ##########
+
+
+ASSOCIATION_TABLES = dict(
+    contributor="contributor_associations",
+    recipient='recipient_associations',
+    organization='organization_associations',
+    client='assoc_lobbying_client',
+    registrant='assoc_lobbying_registrant')
+
+
+def build_standard_ranked_table(table, source, primary, secondary, measures):
+    assert primary in ASSOCIATION_TABLES
+    assert secondary in ASSOCIATION_TABLES
+    
+    primary_terms = {primary + '_entity': primary + ".entity_id"}
+    secondary_terms = {secondary + '_entity': "coalesce(%s.entity_id, '')" % secondary,
+                       secondary + '_name': secondary + '_name'}
+    
+    from_ = standard_association_join(source, primary, secondary)
+
+    return build_ranked_table(table, from_, primary_terms, secondary_terms, measures, measures.keys())
+
 def build_pie_table(table, source, primary, features, measures):
     assert primary in ASSOCIATION_TABLES
     
@@ -92,48 +183,6 @@ def build_pie_table(table, source, primary, features, measures):
                              create_as_grouped_cycle_combination(table, selected, from_, group_by),
                              create_index(table, [primary_alias])
                              )
-
-def build_standard_ranked_table(table, source, primary, secondary, measures):
-    assert primary in ASSOCIATION_TABLES
-    assert secondary in ASSOCIATION_TABLES
-    
-    primary_terms = {primary + '_entity': primary + ".entity_id"}
-    secondary_terms = {secondary + '_entity': "coalesce(%s.entity_id, '')" % secondary,
-                       secondary + '_name': secondary + '_name'}
-    
-    from_ = \
-        """
-        %s source
-        inner join %s %s using (transaction_id)
-        left join %s %s using (transaction_id)
-        """ % (source, ASSOCIATION_TABLES[primary], primary, ASSOCIATION_TABLES[secondary], secondary)
-
-    return build_ranked_table(table, from_, primary_terms, secondary_terms, measures)
-
-def build_ranked_table(table, from_, primary_terms, secondary_terms, measures):
-    
-    selected = dict_union(primary_terms, secondary_terms, measures)
-
-    rank = primary_terms.keys()
-    rank_order = 'sum(amount) desc'
-    
-    group_by = dict_union(primary_terms, secondary_terms).keys()
-    
-    return "%s\n%s\n%s\n" % (
-                             drop_table(table),
-                             create_as_ranked_cycle_combination(table, selected, from_, rank, rank_order, group_by),
-                             create_index(table, rank + ['cycle'])
-                             )    
-
-    
-    pass
-
-ASSOCIATION_TABLES = dict(
-    contributor="contributor_associations",
-    recipient='recipient_associations',
-    client='assoc_lobbying_client',
-    registrant='assoc_lobbying_registrant')
-
 
 
         
@@ -169,7 +218,55 @@ ASSOCIATION_TABLES = dict(
 
 COUNT = dict(count='count(*)')
 AMOUNT = dict(amount='sum(amount)')
-COUNT_AND_AMOUNT = dict_union(COUNT, AMOUNT)
+COUNT_AND_AMOUNT = ODict(AMOUNT.items() + COUNT.items())
+
+
+pacs_to_cand = grouped_select(
+                            selected=dict(
+                                recipient_entity='recipient.entity_id',
+                                organization_name='contributor_name',
+                                organization_entity="coalesce(contributor.entity_id, '')",
+                                cycle='cycle', 
+                                count='count(*)', 
+                                amount='sum(amount)'), 
+                            from_=standard_association_join('contributions_organization', 'recipient', 'contributor'),
+                            group_by=['recipient_entity', 'organization_name', 'organization_entity', 'cycle'])
+
+employees_to_cand = grouped_select(
+                            selected=dict(
+                                recipient_entity='recipient.entity_id',
+                                organization_name=case_empty('parent_organization_name', 'organization_name'),
+                                organization_entity="coalesce(organization.entity_id, '')",
+                                cycle='cycle', 
+                                count='count(*)', 
+                                amount='sum(amount)'), 
+                            from_=standard_association_join('contributions_individual', 'recipient', 'organization'),
+                            group_by=['recipient_entity', 'organization_name', 'organization_entity', 'cycle'])
+
+
+agg_orgs_to_cand_base = ranked_select(
+    selected=ODict([
+        ('recipient_entity', 'recipient_entity'),
+        ('cycle', 'cycle'),
+        ('organization_name', 'organization_name'),
+        ('organization_entity', 'organization_entity'),
+        ('total_count', "coalesce(top_pacs.count, 0) + coalesce(top_indivs.count, 0)"),
+        ('pacs_count', "coalesce(top_pacs.count, 0)"),
+        ('indivs_count', "coalesce(top_indivs.count, 0)"),
+        ('total_amount', "coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0)"),
+        ('pacs_amount', "coalesce(top_pacs.amount, 0)"),
+        ('indivs_amount', "coalesce(top_indivs.amount, 0)")]),
+    from_="""    (%s) top_pacs 
+            full outer join
+                (%s) top_indivs
+            using (recipient_entity, organization_name, organization_entity, cycle)
+        """ % (pacs_to_cand, employees_to_cand),
+    rank=['recipient_entity', 'cycle'],
+    rank_order=['total_amount'])
+
+agg_orgs_to_cand_stmt = create_as_cycle_combination('agg_orgs_to_cand', agg_orgs_to_cand_base)
+
+                               
 
 
 agg_cands_from_indiv_stmt = build_standard_ranked_table(
@@ -184,14 +281,16 @@ agg_sectors_to_cand_stmt = build_ranked_table(
     from_='(select * from contributions_individual union select * from contributions_organization) source inner join recipient_associations recipient using (transaction_id)',
     primary_terms={'recipient_entity': 'recipient.entity_id'},
     secondary_terms={'sector': "substring(contributor_category_order for 1)"},
-    measures=COUNT_AND_AMOUNT)
+    measures=COUNT_AND_AMOUNT,
+    rank_order=['amount'])
 
 agg_cat_orders_to_cand_stmt = build_ranked_table(
     table='agg_cat_orders_to_cand',
     from_="(select * from contributions_individual union select * from contributions_organization) source inner join recipient_associations recipient using (transaction_id)",
-    primary_terms={'recipient_entity': 'recipient.entity_id', 'sector': "substring(contributor_category_order for 1)"},
+    primary_terms=ODict([('recipient_entity', 'recipient.entity_id'), ('sector', "substring(contributor_category_order for 1)")]),
     secondary_terms={'category_order': 'contributor_category_order'},
-    measures=COUNT_AND_AMOUNT)
+    measures=COUNT_AND_AMOUNT,
+    rank_order=['amount'])
 
 agg_lobbying_registrants_for_client_stmt = build_standard_ranked_table(
     table='agg_lobbying_registrants_for_client', 
@@ -211,7 +310,8 @@ agg_lobbying_issues_for_lobbyist_stmt = build_ranked_table(
         """,
     primary_terms={'lobbyist_entity': 'la.entity_id'}, 
     secondary_terms={'issue': 'i.general_issue'}, 
-    measures=COUNT)
+    measures=COUNT,
+    rank_order=['count'])
 
 agg_party_from_indiv_stmt = build_pie_table(
     table='agg_party_from_indiv',
