@@ -9,7 +9,9 @@ LESS_THAN_OP = '<'
 GREATER_THAN_OP = '>'
 BETWEEN_OP = '><'
 
+AGENCY_FT_FIELD = 'agency_ft'
 AMOUNT_TOTAL_FIELD = 'amount_total'
+ASSISTANCE_TYPE_FIELD = 'assistance_type'
 FISCAL_YEAR_FIELD = 'fiscal_year'
 RECIPIENT_FT_FIELD = 'recipient_ft'
 RECIPIENT_STATE_FIELD = 'recipient_state'
@@ -45,10 +47,16 @@ def _amount_total_between_generator(query, lower, upper):
 
 # full-text generators
 
+def _agency_ft_generator(query, *searches):
+    return _ft_generator(query, 'agency_name', *searches)
+
 def _recipient_ft_generator(query, *searches):
     return _ft_generator(query, 'recipient_name', *searches)
 
 # other generators
+
+def _assistance_type_generator(query, *types):
+    return query.filter(assistance_type__in=types)
 
 def _fiscal_year_generator(query, *years):
     return query.filter(fiscal_year__in=years)
@@ -62,6 +70,8 @@ def _recipient_type_generator(query, *types):
 # SCHEMA
 
 GRANTS_SCHEMA = Schema(
+    InclusionField(AGENCY_FT_FIELD, _agency_ft_generator),
+    InclusionField(ASSISTANCE_TYPE_FIELD, _assistance_type_generator),
     InclusionField(FISCAL_YEAR_FIELD, _fiscal_year_generator),
     InclusionField(RECIPIENT_FT_FIELD, _recipient_ft_generator),
     InclusionField(RECIPIENT_STATE_FIELD, _recipient_state_generator),

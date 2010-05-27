@@ -12,7 +12,8 @@ LOBBYING_FIELDS = ['year', 'transaction_id', 'transaction_type', 'transaction_ty
     'filing_type', 'amount', 'registrant_name', 'registrant_is_firm',
     'client_name', 'client_category', 'client_ext_id', 'client_parent_name',
     ('lobbyists', ('lobbyist_name','lobbyist_ext_id','candidate_ext_id','government_position','member_of_congress')),
-    ('issues', ('general_issue_code','general_issue','specific_issue')),]
+    ('issues', ('general_issue_code','general_issue','specific_issue')),
+    ('agencies', ('agency_ext_id','agency_name')),]
 
 def load_lobbying(params, nolimit=False, ordering=True):
     
