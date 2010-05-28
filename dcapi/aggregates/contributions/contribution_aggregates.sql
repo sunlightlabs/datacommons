@@ -194,6 +194,7 @@ create table agg_contribution_sparklines as
         from (select * from contributor_associations 
               union select * from recipient_associations) a
         inner join contributions_even_cycles c using (transaction_id)
+        where date is not null
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
@@ -288,7 +289,7 @@ union
     where
         rank <= :agg_top_n;
         
-create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, cycle);
+create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, sector, cycle);
         
         
 -- Candidates from Individual
@@ -385,7 +386,8 @@ create table agg_orgs_to_cand as
                     case when parent_organization_name != '' then parent_organization_name
                         else organization_name end,
                     coalesce(oa.entity_id, ''), cycle) top_indivs
-        using (recipient_entity, organization_name, organization_entity, cycle)) top
+            using (recipient_entity, organization_name, organization_entity, cycle)
+        ) top
     where
         rank <= :agg_top_n
 union
@@ -418,7 +420,7 @@ union
                     case when parent_organization_name != '' then parent_organization_name
                         else organization_name end,
                     coalesce(oa.entity_id, '')) top_indivs
-        using (recipient_entity, organization_name, organization_entity)) top
+                using (recipient_entity, organization_name, organization_entity)) top
     where
         rank <= :agg_top_n;
         
