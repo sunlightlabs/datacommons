@@ -44,5 +44,5 @@ create table tmp_lobbying_orgs as
     where
         use = 't'
         and registrant_name != ''
-        and not exists (select * from tmp_heavyhitters where lower(name) = lower(registrant_name))
+        and not exists (select * from tmp_heavy_hitters where lower(name) = lower(registrant_name))
     group by lower(registrant_name);
