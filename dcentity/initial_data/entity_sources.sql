@@ -28,4 +28,21 @@ create table tmp_politicians as
     where
         recipient_type = 'P'
         and recipient_name != ''
+        and recipient_ext_id != ''
     group by transaction_namespace, recipient_ext_id;
+    
+    
+    
+    
+    
+create table tmp_heavyhitters as ...;
+    
+
+create table tmp_lobbying_orgs as
+    select 0 as crp_id, 0 as nimsp_id, max(registrant_name) as name
+    from lobbying_lobbying
+    where
+        use = 't'
+        and registrant_name != ''
+        and not exists (select * from tmp_heavyhitters where lower(name) = lower(registrant_name))
+    group by lower(registrant_name);
