@@ -190,6 +190,7 @@ def _organization_ft_generator(query, *searches):
     clause = "(%s)" % " or ".join([_ft_clause('organization_name'), _ft_clause('parent_organization_name'), _ft_clause('contributor_employer')])
     return query.extra(where=[clause], params=[terms, terms, terms])
     
+fields.append(InclusionField('employer_ft', _organization_ft_generator)) # deprecated!!!!
 fields.append(InclusionField('organization_ft', _organization_ft_generator))
 
 # recipient
