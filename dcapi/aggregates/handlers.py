@@ -55,14 +55,6 @@ class TopListHandler(BaseHandler):
         return check_empty(kwargs['entity_id'], labeled_result)
 
 
-#class EntityPairHandler(BaseHandler):
-#    args = ['contrib_entity', 'recipient_entity', 'cycle', 'limit']
-#    fields = None
-#    stmt = None
-#    
-#    def read(self, request, **wkargs):
-    
-
 class PieHandler(BaseHandler):
     
     args = ['entity_id', 'cycle']
@@ -76,10 +68,11 @@ class PieHandler(BaseHandler):
         raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
 
         if self.default_key:
-            extra_keys = [k for k in raw_result.keys() if k not in self.category_map.keys()]
-
             labeled_result = dict([(self.category_map[key], value) for (key, value) in raw_result.items() if key in self.category_map])
-            labeled_result[self.default_key] = (sum([value[0] for (key, value) in raw_result.items() if key in extra_keys]), sum([value[1] for (key, value) in raw_result.items() if key in extra_keys]))
+            
+            extra_keys = [k for k in raw_result.keys() if k not in self.category_map.keys()]
+            if extra_keys:
+                labeled_result[self.default_key] = (sum([value[0] for (key, value) in raw_result.items() if key in extra_keys]), sum([value[1] for (key, value) in raw_result.items() if key in extra_keys]))
         else:
             labeled_result = dict([(self.category_map[key], value) if key in self.category_map else (key, value) for (key, value) in raw_result.items() ])
 
