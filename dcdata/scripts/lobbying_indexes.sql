@@ -4,11 +4,14 @@ drop index if exists lobbying_lobbying_registrant_name;
 drop index if exists lobbying_lobbying_client_name;
 drop index if exists lobbying_lobbying_client_parent_name;
 drop index if exists lobbying_lobbyist_lobbyist_name;
+drop index if exists lobbying_lobbyist_lobbyist_name;
+drop index if exists lobbying_issue_general_issue_code;
 
 create index lobbying_lobbying_registrant_name on lobbying_lobbying (registrant_name);
 create index lobbying_lobbying_client_name on lobbying_lobbying (client_name);
 create index lobbying_lobbying_client_parent_name on lobbying_lobbying (client_parent_name);
 create index lobbying_lobbyist_lobbyist_name on lobbying_lobbyist (lobbyist_name);
+create index lobbying_issue_general_issue_code on lobbying_issue (general_issue_code);
 
 # entitites
 drop index if exists lobbying_lobbying_registrant_entity;
