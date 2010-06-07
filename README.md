@@ -17,7 +17,7 @@
 
 * install dependencies in requirements.txt files for dc_web and
   dc_matchbox
-  $ pip install -E datacommons/ <package name>
+  $ pip install -r requirements.txt
    
 * add dc_data, dc_matcchbox, dc_web to the virtual env python path
   $ add2virtualenv [dir]
