@@ -195,6 +195,7 @@ create table agg_contribution_sparklines as
               union select * from recipient_associations) a
         inner join contributions_even_cycles c using (transaction_id)
         where date is not null
+            and c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
