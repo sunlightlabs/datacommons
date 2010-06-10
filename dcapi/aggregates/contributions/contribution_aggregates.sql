@@ -188,12 +188,21 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 drop table if exists agg_contribution_sparklines;
 
 create table agg_contribution_sparklines as
-    select entity_id, cycle, 
-        ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step, 
+    select entity_id, cycle,
+        ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step,
         sum(amount) as amount
-        from (select * from contributor_associations 
-              union select * from recipient_associations) a
-        inner join contributions_even_cycles c using (transaction_id)
+        from (
+                select * from contributor_associations
+                union
+                select * from recipient_associations
+                union
+                select * from organization_associations
+            ) a
+            inner join (
+                select * from contributions_individual
+                union
+                select * from contributions_organization
+            ) c using (transaction_id)
         where date is not null
             and c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
