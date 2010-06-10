@@ -75,7 +75,17 @@ create view contributions_organization as
         and transaction_type in ('', '24k', '24r', '24z')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
-    
+
+-- All contributions that we can aggregate
+
+drop view if exists contributions_all_relevant;
+
+create view contributions_all_relevant as
+    select * from contributions_individual
+    union
+    select * from contributions_individual_to_organization
+    union
+    select * from contributions_organization;
 
 -- Contributor Associations
 
@@ -198,51 +208,46 @@ create table agg_contribution_sparklines as
                 union
                 select * from organization_associations
             ) a
-            inner join (
-                select * from contributions_individual
-                union
-                select * from contributions_organization
-            ) c using (transaction_id)
-        where date is not null
-            and c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
+            inner join contributions_all_relevant c using (transaction_id)
+        where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
 
 
--- Entity Aggregates
+-- Entity Aggregates (Contribution Totals)
 
 drop table if exists agg_entities;
 
 create table agg_entities as
-    select entity_id, coalesce(contrib_aggs.cycle, recip_aggs.cycle) as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, 
+    select entity_id, coalesce(contrib_aggs.cycle, recip_aggs.cycle) as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count,
         coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
     from
         (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
         from (select * from contributor_associations union select * from organization_associations) a
-        inner join contributions_even_cycles transaction using (transaction_id)
+            inner join contributions_all_relevant transaction using (transaction_id)
         group by a.entity_id, transaction.cycle) as contrib_aggs
     full outer join
         (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
         from recipient_associations a
-        inner join contributions_even_cycles transaction using (transaction_id)
+            inner join contributions_all_relevant transaction using (transaction_id)
         group by a.entity_id, transaction.cycle) as recip_aggs
     using (entity_id, cycle)
 union
-    select entity_id, -1 as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count, 
+    select entity_id, -1 as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count,
         coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
     from 
         (select a.entity_id, count(transaction), sum(transaction.amount)
         from (select * from contributor_associations union select * from organization_associations) a
-        inner join contributions_even_cycles transaction using (transaction_id)
+            inner join contributions_all_relevant transaction using (transaction_id)
         group by a.entity_id) as contrib_aggs
     full outer join
         (select a.entity_id, count(transaction), sum(transaction.amount)
         from recipient_associations a
-        inner join contributions_even_cycles transaction using (transaction_id)
+            inner join contributions_all_relevant transaction using (transaction_id)
         group by a.entity_id) as recip_aggs
     using (entity_id);
-        
+
 create index agg_entities_idx on agg_entities (entity_id);
 
 
