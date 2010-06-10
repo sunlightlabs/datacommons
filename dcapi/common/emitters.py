@@ -1,4 +1,5 @@
 from django.core.serializers.json import DateTimeAwareJSONEncoder
+from django.http import HttpResponse
 from django.utils import simplejson
 from django.db.models import Model
 from piston.emitters import Emitter
@@ -86,6 +87,8 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
         if isinstance(qs, (Model, dict)):
             seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
             yield seria
+        elif isinstance(qs, HttpResponse):
+            pass
         else:
             yield '['
             for record in qs:
