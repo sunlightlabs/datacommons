@@ -46,7 +46,7 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
                              
             # transaction filters
             FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
-            FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
+            FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: 'pac2cand:%s:%s' % (cycle, fecid), keep_fields=True),
             FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
             
             # date stamp

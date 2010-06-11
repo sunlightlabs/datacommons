@@ -76,7 +76,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
         
                 # transaction filters
                 FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
-                FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: '%s:%s' % (cycle, fecid), keep_fields=True),
+                FieldMerger({'transaction_id': ('cycle','fec_trans_id')}, lambda cycle, fecid: 'indiv:%s:%s' % (cycle, fecid), keep_fields=True),
                 FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower() if t else '', keep_fields=True),
         
                 # filing reference ID

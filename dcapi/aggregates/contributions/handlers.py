@@ -41,7 +41,8 @@ class PolLocalBreakdownHandler(PieHandler):
 class PolContributorTypeBreakdownHandler(PieHandler):
     
     category_map = {'I': 'Individuals', 'C': 'PACs'}
-    
+    default_key = 'Unknown'        
+
     stmt = """
         select contributor_type, count, amount
         from agg_contributor_type_to_politician
