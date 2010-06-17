@@ -10,15 +10,16 @@ import os
 # util functions
 
 def name_proc(standardized, raw):
-    return standardized or raw
-        
+    if standardized or raw:
+        return (standardized or raw).strip()
+
 def yn_proc(yn):
     return yn.lower() == 'y'
 
 # denormalization handlers
 
 def lobbying_handler(inpath, outpath, infields, outfields):
-    
+
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldRemover('Source'),
@@ -83,7 +84,7 @@ def agency_handler(inpath, outpath, infields, outfields):
     )
 
 def issue_handler(inpath, outpath, infields, outfields):
-    
+
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldRenamer({
@@ -112,23 +113,23 @@ class Command(BaseCommand):
         make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),)
 
     def handle(self, *args, **options):
-        
+
         if 'dataroot' not in options or options['dataroot'] is None:
             raise CommandError("path to dataroot is required")
-        
+
         dataroot = os.path.abspath(options['dataroot'])
-    
+
         for table, infields in FILE_TYPES.iteritems():
-            
+
             handler = HANDLERS.get(table, None)
-            
+
             if handler is not None:
-                
+
                 inpath = os.path.join(dataroot, "%s.txt" % table)
                 outpath = os.path.join(dataroot, "denorm_%s.csv" % table)
-                
+
                 outfields = [field.name for field in MODELS[table]._meta.fields]
 
                 print "Denormalizing %s" % inpath
-                
+
                 handler(inpath, outpath, infields, outfields)
