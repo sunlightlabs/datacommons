@@ -78,9 +78,6 @@ class Entity(models.Model):
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
-#    contribution_count = models.IntegerField(null=True, blank=True)
-#    contribution_total_given = models.DecimalField(null=True, blank=True, default=0, max_digits=15, decimal_places=2)    
-#    contribution_total_received = models.DecimalField(null=True, blank=True, default=0, max_digits=15, decimal_places=2)    
 
     def __unicode__(self):
         return self.name
@@ -145,6 +142,15 @@ class Normalization(models.Model):
     
     def __unicode__(self):
         return self.original
+
+
+class OrganizationMetadata(models.Model):
+    entity = models.ForeignKey(Entity, related_name='organization_metadata', null=False)
+    
+    lobbying_firm = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'matchbox_organizationmetadata'
 
 #
 # merge candidate

@@ -1,5 +1,5 @@
 from dcapi.aggregates.handlers import execute_top
-from dcentity.models import Entity, EntityAttribute
+from dcentity.models import Entity, EntityAttribute, OrganizationMetadata
 from piston.handler import BaseHandler
 from piston.utils import rc
 from urllib import unquote_plus
@@ -17,7 +17,17 @@ get_totals_stmt = """
 """
 
 def get_totals(entity_id):
-    return execute_top(get_totals_stmt, entity_id)
+    totals = dict()
+    for row in execute_top(get_totals_stmt, entity_id):
+        totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
+    return totals
+
+
+def get_type_specific_metadata(entity):
+    if entity.type == 'organization':
+        return {'lobbying_firm': bool(OrganizationMetadata.objects.filter(entity=entity.id, lobbying_firm=True))}
+    else:
+        return {}
 
 
 class EntityHandler(BaseHandler):
@@ -30,16 +40,18 @@ class EntityHandler(BaseHandler):
 
         entity = Entity.objects.select_related().get(id=entity_id)
 
-        totals = dict()
-        for row in get_totals(entity_id):
-            totals[row[0]] = dict(zip(self.totals_fields, row[1:]))
+        totals = get_totals(entity_id)
             
         external_ids = [{'namespace': attr.namespace, 'id': attr.value} for attr in entity.attributes.all()]
         
+        metadata = get_type_specific_metadata(entity)
+        
         result = {'name': entity.name,
                   'id': entity.id,
+                  'type': entity.type,
                   'totals': totals,
-                  'external_ids': external_ids}
+                  'external_ids': external_ids,
+                  'metadata': metadata}
         
         return result
 
