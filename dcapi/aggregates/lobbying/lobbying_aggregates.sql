@@ -10,7 +10,7 @@ create view lobbying_report as
     select *, case when year % 2 = 0 then year else year + 1 end as cycle
     from lobbying_lobbying l
     where
-        include_in_industry_totals = 't';
+        use = 't';
 
 
 -- Lobbying Client Associations
