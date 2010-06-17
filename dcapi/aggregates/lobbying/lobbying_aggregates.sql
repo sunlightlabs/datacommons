@@ -168,6 +168,8 @@ create index agg_lobbying_totals_idx on agg_lobbying_totals (entity_id);
 
 
 -- Firms Hired by Client
+-- Note: We don't include records where the registrant_name = client_name. These don't represent an actual firm/client relationship,
+-- they're just the way client firms report their overall spending.
 
 drop table if exists agg_lobbying_registrants_for_client;
 
@@ -178,6 +180,7 @@ create table agg_lobbying_registrants_for_client as
         from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
+        where registrant_name != client_name
         group by ca.entity_id, cycle, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n
@@ -188,6 +191,7 @@ union
         from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
+        where registrant_name != client_name
         group by ca.entity_id, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n;
