@@ -1,12 +1,15 @@
-
 from uuid import uuid4
+import datetime
+
+from django.contrib.localflavor.us.models import USStateField
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q, Sum
+
 from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
 from dcdata.utils.strings.normalizer import basic_normalizer
-import datetime
+from dcdata.contribution.models import PARTIES, SEATS, SEAT_STATUSES
 
 #
 # entity reference field
@@ -152,6 +155,19 @@ class OrganizationMetadata(models.Model):
     class Meta:
         db_table = 'matchbox_organizationmetadata'
 
+
+class PoliticianMetadata(models.Model):
+    entity = models.ForeignKey(Entity, related_name='politician_metadata', null=False)
+
+    recipient_state = USStateField(blank=True, null=True)
+    recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
+    seat = models.CharField(max_length=64, choices=SEATS, blank=True, null=True)
+    seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True, null=True)
+
+    class Meta:
+        db_table = 'matchbox_politicianmetadata'
+
+    
 #
 # merge candidate
 #
