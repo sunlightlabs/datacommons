@@ -1,8 +1,8 @@
 
-from dcapi.aggregates.handlers import TopListHandler
+from dcapi.aggregates.handlers import EntityTopListHandler
 
 
-class OrgRegistrantsHandler(TopListHandler):
+class OrgRegistrantsHandler(EntityTopListHandler):
     fields = ['registrant_name', 'registrant_entity', 'count', 'amount']
     
     stmt = """
@@ -16,7 +16,7 @@ class OrgRegistrantsHandler(TopListHandler):
     """
 
 
-class OrgIssuesHandler(TopListHandler):
+class OrgIssuesHandler(EntityTopListHandler):
     fields = ['issue', 'count']
     
     stmt = """
@@ -30,7 +30,7 @@ class OrgIssuesHandler(TopListHandler):
     """
 
 
-class OrgLobbyistsHandler(TopListHandler):
+class OrgLobbyistsHandler(EntityTopListHandler):
     
     fields = ['lobbyist_name', 'lobbyist_entity', 'count']
 
@@ -44,7 +44,7 @@ class OrgLobbyistsHandler(TopListHandler):
         limit %s    
     """
     
-class IndivRegistrantsHandler(TopListHandler):
+class IndivRegistrantsHandler(EntityTopListHandler):
     
     fields = ['registrant_name', 'registrant_entity', 'count']
     
@@ -58,7 +58,7 @@ class IndivRegistrantsHandler(TopListHandler):
         limit %s
     """
     
-class IndivIssuesHandler(TopListHandler):
+class IndivIssuesHandler(EntityTopListHandler):
     
     fields = ['issue', 'count']
     
@@ -72,7 +72,7 @@ class IndivIssuesHandler(TopListHandler):
         limit %s
     """
     
-class IndivClientsHandler(TopListHandler):        
+class IndivClientsHandler(EntityTopListHandler):        
     
     fields = ['client_name', 'client_entity', 'count']
     
@@ -86,7 +86,7 @@ class IndivClientsHandler(TopListHandler):
         limit %s
     """        
     
-class RegistrantIssuesHandler(TopListHandler):
+class RegistrantIssuesHandler(EntityTopListHandler):
     
     fields = ['issue', 'count']
 
@@ -100,7 +100,7 @@ class RegistrantIssuesHandler(TopListHandler):
         limit %s        
     """
 
-class RegistrantClientsHandler(TopListHandler):
+class RegistrantClientsHandler(EntityTopListHandler):
     
     fields = ['client_name', 'client_entity', 'count', 'amount']
 
@@ -115,7 +115,7 @@ class RegistrantClientsHandler(TopListHandler):
     """
 
 
-class RegistrantLobbyistsHandler(TopListHandler):
+class RegistrantLobbyistsHandler(EntityTopListHandler):
         
     fields = ['lobbyist_name', 'lobbyist_entity', 'count']
 
