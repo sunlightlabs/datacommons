@@ -9,7 +9,7 @@ from urllib import unquote_plus
 
 
 get_totals_stmt = """
-    select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount, client_count, registrant_count, client_amount, registrant_amount
+    select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount, l.count as lobbying_count, firm_income, non_firm_spending
     from agg_entities c
     full outer join agg_lobbying_totals l using (entity_id, cycle)
     where
@@ -33,7 +33,7 @@ def get_type_specific_metadata(entity):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
     
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'client_count', 'registrant_count', 'client_amount', 'registrant_amount']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending']
     ext_id_fields = ['namespace', 'id']
     
     def read(self, request, entity_id):

@@ -122,42 +122,58 @@ insert into matchbox_organizationmetadata (entity_id, lobbying_firm)
 drop table if exists agg_lobbying_totals;
 
 create table agg_lobbying_totals as
-    select entity_id, coalesce(client.cycle, coalesce(registrant.cycle, lobbyist.cycle)) as cycle, coalesce(client.count, 0) as client_count, coalesce(registrant.count, 0) as registrant_count,
-        coalesce(client.amount, 0) as client_amount, coalesce(registrant.amount, 0) as registrant_amount
+    select entity_id, coalesce(lobbyist.cycle, coalesce(firm.cycle, non_firm.cycle)) as cycle, 
+        coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm.count, 0))) as count,
+        coalesce(non_firm.amount, 0) as non_firm_spending, coalesce(firm.amount, 0) as firm_income
     from
         (select entity_id, cycle, count(r), sum(amount) as amount
         from lobbying_report r
-        inner join assoc_lobbying_client ca using (transaction_id)
-        group by entity_id, cycle) as client
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        left join matchbox_organizationmetadata m using (entity_id)
+        where
+            coalesce(m.lobbying_firm, 'f') = 'f'
+            and r.registrant_name = r.client_name
+        group by entity_id, cycle) as non_firm
     full outer join
         (select entity_id, cycle, count(r), sum(amount) as amount
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
-        group by entity_id, cycle) as registrant
+        inner join matchbox_organizationmetadata m using (entity_id)
+        where
+            m.lobbying_firm = 't'
+        group by entity_id, cycle) as firm
     using (entity_id, cycle)
     full outer join
-        (select entity_id, cycle
+        (select entity_id, cycle, count(r)
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
         inner join assoc_lobbying_lobbyist la using (id)
         group by entity_id, cycle) as lobbyist
     using (entity_id, cycle)
 union
-    select entity_id, -1, coalesce(client.count, 0) as client_count, coalesce(registrant.count, 0) as registrant_count,
-        coalesce(client.amount, 0) as client_amount, coalesce(registrant.amount, 0) as registrant_amount
+    select entity_id, -1, 
+        coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm.count, 0))) as count,
+        coalesce(non_firm.amount, 0) as non_firm_spending, coalesce(firm.amount, 0) as firm_income
     from
         (select entity_id, count(r), sum(amount) as amount
         from lobbying_report r
-        inner join assoc_lobbying_client ca using (transaction_id)
-        group by entity_id) as client
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        left join matchbox_organizationmetadata m using (entity_id)
+        where
+            coalesce(m.lobbying_firm, 'f') = 'f'
+            and r.registrant_name = r.client_name
+        group by entity_id) as non_firm
     full outer join
         (select entity_id, count(r), sum(amount) as amount
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
-        group by entity_id) as registrant
+        inner join matchbox_organizationmetadata m using (entity_id)
+        where
+            m.lobbying_firm = 't'
+        group by entity_id) as firm
     using (entity_id)
     full outer join
-        (select entity_id
+        (select entity_id, count(r)
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
         inner join assoc_lobbying_lobbyist la using (id)
