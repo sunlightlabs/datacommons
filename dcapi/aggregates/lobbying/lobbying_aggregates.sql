@@ -102,20 +102,6 @@ create table assoc_lobbying_lobbyist_candidate as
 create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id);
 create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id);
 
-
--- Organization Lobbying Metadat
--- This data might some day be editable through a tool like Matchbox. For now just recompute it from the data.
--- Also, this approach of dropping the table and regenerating only works b/c we know there's only one column.
--- Consider this a temporary hack until we have a more principled way of dealing with metadata.
-
-delete from matchbox_organizationmetadata;
-
-insert into matchbox_organizationmetadata (entity_id, lobbying_firm)
-    select entity_id, bool_or(registrant_is_firm) as lobbying_firm
-    from lobbying_report
-    inner join assoc_lobbying_registrant using (transaction_id)
-    group by entity_id;
-    
     
 -- Total Spent
 

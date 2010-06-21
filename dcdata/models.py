@@ -1,5 +1,4 @@
 from django.db import models
-from dcentity.models import entityref_cache
 from django.db.models import Q
 
 class Import(models.Model):
@@ -16,6 +15,8 @@ class Import(models.Model):
 
 class DataCommonsModelManager(models.Manager):
     def with_entity(self, entity, fields=None):
+        from dcentity.models import entityref_cache
+        
         if not fields:
             fields = entityref_cache.get(self.model, None)
         if fields:
