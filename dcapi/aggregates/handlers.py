@@ -27,10 +27,10 @@ def execute_one(stmt, *args):
     return cursor.fetchone()
 
 
-def check_empty(entity_id, result):
+def check_empty(result, *entity_ids):
     """ Empty results are normally fine, except when the entity ID doesn't exist at all--then return 404. """
 
-    if not result and Entity.objects.filter(id=entity_id).count() != 1:
+    if not result and Entity.objects.filter(id__in=entity_ids).count() < len(entity_ids):
         error_response = rc.NOT_FOUND
         error_response.write('No entity with the given ID.')
         return error_response
@@ -66,7 +66,7 @@ class EntityTopListHandler(BaseHandler):
         raw_result = execute_top(self.stmt, *[kwargs[param] for param in self.args])
         labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
 
-        return check_empty(kwargs['entity_id'], labeled_result)
+        return check_empty(labeled_result, kwargs['entity_id'])
 
 
 class PieHandler(BaseHandler):
@@ -90,7 +90,6 @@ class PieHandler(BaseHandler):
         else:
             labeled_result = dict([(self.category_map[key], value) if key in self.category_map else (key, value) for (key, value) in raw_result.items() ])
 
-
-        return check_empty(kwargs['entity_id'], labeled_result)
+        return check_empty(labeled_result, kwargs['entity_id'])
 
 
