@@ -19,3 +19,4 @@ dc_data/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv
 .project
 .pydevproject
 
+.DS_Store
