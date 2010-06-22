@@ -173,13 +173,15 @@ class TopPoliticiansByReceiptsHandler(TopListHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'count', 'amount']
+    fields = ['name', 'id', 'count', 'amount', 'state', 'party', 'seat']
 
     stmt = """
-        select name, id, recipient_count, recipient_amount
-          from agg_entities
-         inner join matchbox_entity
-            on entity_id = id
+        select name, me.id, recipient_count, recipient_amount, state, party, seat
+          from agg_entities ae
+         inner join matchbox_entity me
+            on ae.entity_id = id
+         left join matchbox_politicianmetadata mpm
+            on me.id = mpm.entity_id
          where cycle     = %s
            and type      = 'politician'
          order by recipient_amount desc, recipient_count desc
