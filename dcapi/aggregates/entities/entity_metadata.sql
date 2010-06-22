@@ -19,8 +19,8 @@ insert into matchbox_organizationmetadata (entity_id, lobbying_firm)
 
 delete from matchbox_politicianmetadata;
     
-insert into matchbox_politicianmetadata (entity_id, state, party, seat, seat_status)
-    select distinct on (entity_id) entity_id, recipient_state, recipient_party, seat, seat_status
+insert into matchbox_politicianmetadata (entity_id, state, party, seat)
+    select distinct on (entity_id) entity_id, recipient_state, recipient_party, seat
     from contribution_contribution c
     inner join recipient_associations ra using (transaction_id)
     inner join matchbox_entity e on e.id = ra.entity_id

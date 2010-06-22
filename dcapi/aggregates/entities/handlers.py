@@ -78,11 +78,11 @@ class EntitySearchHandler(BaseHandler):
     allowed_methods = ('GET',)
 
     fields = ['id','name','type','count_given','count_received','total_given','total_received',
-              'state', 'party', 'seat', 'seat_status']
+              'state', 'party', 'seat']
     
     stmt = """
         select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount,
-               m.state, m.party, m.seat, m.seat_status
+               m.state, m.party, m.seat
         from matchbox_entity e
         left join matchbox_politicianmetadata m
             on e.id = m.entity_id

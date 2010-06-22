@@ -160,7 +160,6 @@ class PoliticianMetadata(models.Model):
     state = USStateField(blank=True, null=True)
     party = models.CharField(max_length=64, blank=True, null=True)
     seat = models.CharField(max_length=64, blank=True, null=True)
-    seat_status = models.CharField(max_length=1, blank=True, null=True)
 
     class Meta:
         db_table = 'matchbox_politicianmetadata'
