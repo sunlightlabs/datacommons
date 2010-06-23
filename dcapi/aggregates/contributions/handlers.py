@@ -1,6 +1,6 @@
 
-from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler
-
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, check_empty
+from piston.handler import BaseHandler
 
 
 class OrgPartyBreakdownHandler(PieHandler):
@@ -239,3 +239,48 @@ class SparklineHandler(EntityTopListHandler):
             and cycle = %s
         order by step
     """
+
+
+class ContributionAmountHandler(BaseHandler):
+
+    args = ['contributor_entity', 'contributor_entity', 'recipient_entity']
+
+    fields = 'recipient_entity recipient_name contributor_name contributor_entity amount'.split()
+
+    stmt = """
+        select
+            recipient.entity_id as recipient_entity,
+            re.name as recipient_name,
+            ce.name as contributor_name,
+            contributor.entity_id as contributor_entity,
+            sum(amount)::integer as amount
+        from
+            contributions_all_relevant
+            inner join recipient_associations recipient using (transaction_id)
+            inner join matchbox_entity re on recipient.entity_id = re.id
+            inner join (
+                select * from contributor_associations
+                where entity_id = %%s
+                union
+                select * from organization_associations oa
+                where entity_id = %%s
+            ) contributor using (transaction_id)
+            inner join matchbox_entity ce on contributor.entity_id = ce.id
+        where
+            recipient.entity_id = %%s
+            and %s
+        group by recipient.entity_id, re.name, contributor.entity_id, ce.name
+    """
+
+    def read(self, request, **kwargs):
+        cycle_where = '1=1'
+        if request:
+            cycle = int(request.GET.get('cycle', ALL_CYCLES))
+            if cycle != -1:
+                cycle_where = 'cycle = %d' % cycle
+
+        raw_result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
+        labeled_result = dict(zip(self.fields, raw_result))
+
+        return check_empty(labeled_result, kwargs['recipient_entity'], kwargs['contributor_entity'])
+

@@ -5,7 +5,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
     TopPoliticiansByReceiptsHandler, TopIndividualsByContributionsHandler, \
-    TopOrganizationsByContributionsHandler
+    TopOrganizationsByContributionsHandler, ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
     IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
@@ -29,6 +29,10 @@ urlpatterns = patterns('',
 
     url(r'^(pol|org|indiv)/(?P<entity_id>[a-f0-9]+)/sparkline.(?P<emitter_format>.+)$',
         Resource(SparklineHandler, **ad)),
+
+    # amount contributed by one entity to another
+    url(r'^recipient/(?P<recipient_entity>[a-f0-9]+)/contributor/(?P<contributor_entity>[a-f0-9]+)/amount.(?P<emitter_format>.+)$',
+        Resource(ContributionAmountHandler, **ad)),
 
     # contributors to a single politician
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors\.(?P<emitter_format>.+)$',
