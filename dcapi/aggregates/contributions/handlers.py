@@ -1,5 +1,5 @@
 
-from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, check_empty
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, KeyedSeriesHandler, ALL_CYCLES, execute_one, execute_top, check_empty
 from piston.handler import BaseHandler
 
 
@@ -239,6 +239,40 @@ class SparklineHandler(EntityTopListHandler):
             and cycle = %s
         order by step
     """
+
+class SparklineByPartyHandler(BaseHandler):
+
+    args   = ['entity_id', 'cycle']
+    fields = ['step', 'amount']
+
+    stmt = """
+        select
+            case
+                when recipient_party = 'D' then 'Democrats'
+                when recipient_party = 'R' then 'Republicans'
+                else 'Other' end as recipient_party,
+            step,
+            sum(amount) as amount
+        from agg_contribution_sparklines_by_party
+        where
+            entity_id = %s
+            and cycle = %s
+        group by recipient_party, step
+        order by step
+    """
+
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
+
+        raw_result = execute_top(self.stmt, *[kwargs[param] for param in self.args])
+
+        labeled_result = {}
+
+        for (party, step, amount) in raw_result:
+            if not labeled_result.has_key(party): labeled_result[party] = []
+            labeled_result[party].append(dict(zip(self.fields, (step, amount))))
+
+        return check_empty(labeled_result, kwargs['entity_id'])
 
 
 class ContributionAmountHandler(BaseHandler):
