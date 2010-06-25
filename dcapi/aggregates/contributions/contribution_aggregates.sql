@@ -164,6 +164,7 @@ create index organization_associations_entity_id on organization_associations (e
 create index organization_associations_transaction_id on organization_associations (transaction_id);
 
 
+--TODO: wrap each block of operations in a transaction
 -- Recipient Associations
 
 drop table if exists recipient_associations;
@@ -177,7 +178,7 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         a.verified = 't'
-        and e.type in ('organization', 'politician')
+        and e.type in ('organization')
 union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
