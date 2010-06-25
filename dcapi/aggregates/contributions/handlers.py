@@ -1,5 +1,5 @@
 
-from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, KeyedSeriesHandler, ALL_CYCLES, execute_one, execute_top, check_empty
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
 from piston.handler import BaseHandler
 
 
