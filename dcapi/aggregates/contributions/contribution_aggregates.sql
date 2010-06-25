@@ -48,10 +48,10 @@ create view contributions_individual as
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
-    
 
--- Only contributions from individuals to organizations    
-    
+
+-- Only contributions from individuals to organizations
+
 create view contributions_individual_to_organization as
     select *
     from contributions_even_cycles c
@@ -215,6 +215,31 @@ create table agg_contribution_sparklines as
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
+
+
+-- Sparklines by Party
+
+\set sparkline_resolution 24
+
+drop table if exists agg_contribution_sparklines_by_party;
+
+create table agg_contribution_sparklines_by_party as
+    select
+        entity_id,
+        cycle,
+        recipient_party,
+        ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step,
+        sum(amount) as amount
+        from (
+                select * from contributor_associations
+                union
+                select * from organization_associations
+            ) a
+            inner join contributions_all_relevant c using (transaction_id)
+        where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
+        group by entity_id, cycle, recipient_party, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
+
+create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, party);
 
 
 -- Entity Aggregates (Contribution Totals)
@@ -592,8 +617,8 @@ union
     from (select * from contributions_individual union select * from contributions_organization) c
     inner join recipient_associations ra using (transaction_id)
     group by ra.entity_id, coalesce(c.contributor_type, '');
-    
+
 create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle);
 
 
-    
+
