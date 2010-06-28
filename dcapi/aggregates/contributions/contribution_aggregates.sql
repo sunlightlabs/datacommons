@@ -1,12 +1,14 @@
 -- Cycles: controls the cycles for which aggregates are computed
 -- Mainly of using during development, when it helps to be able to regenerate the aggregates quickly.
 
+begin;
 drop table if exists agg_cycles cascade;
 
 create table agg_cycles as
 --    values (2005), (2006), (2007), (2008), (2009), (2010);
     select distinct cycle from contribution_contribution;
 
+commit;
 -- Top N: the number of rows to generate for each aggregate
 
 \set agg_top_n 10
@@ -16,14 +18,17 @@ create table agg_cycles as
 -- CatCodes that should not be included in totals.
 -- Taken from the NIMSP column CatCodes.TopSuppress.
 
+begin;
 drop table if exists agg_suppressed_catcodes;
 
 create table agg_suppressed_catcodes as
     values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'), ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
+commit;
 
 
 -- Adjust the odd-year cycles upward
 
+begin;
 drop view if exists contributions_even_cycles cascade;
 
 create view contributions_even_cycles as
@@ -33,10 +38,12 @@ create view contributions_even_cycles as
         organization_name, parent_organization_name,
         recipient_name, recipient_type, recipient_party, recipient_state
     from contribution_contribution;
+commit;
 
 
 -- Only contributions that should be included in totals from individuals to politicians
 
+begin;
 drop view if exists contributions_individual;
 
 create view contributions_individual as
@@ -48,10 +55,11 @@ create view contributions_individual as
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
-    
+commit;
 
--- Only contributions from individuals to organizations    
-    
+-- Only contributions from individuals to organizations
+begin;
+drop view if exists contributions_individual_to_organization;
 create view contributions_individual_to_organization as
     select *
     from contributions_even_cycles c
@@ -61,9 +69,11 @@ create view contributions_individual_to_organization as
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
+commit;
 
 -- Only contributions that should be included in totals from organizations
 
+begin;
 drop view if exists contributions_organization;
 
 create view contributions_organization as
@@ -76,8 +86,11 @@ create view contributions_organization as
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
+commit;
+
 -- All contributions that we can aggregate
 
+begin;
 drop table if exists contributions_all_relevant;
 
 create table contributions_all_relevant as
@@ -88,9 +101,11 @@ create table contributions_all_relevant as
     select * from contributions_organization;
 
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
+commit;
 
 -- Contributor Associations
 
+begin;
 drop table if exists contributor_associations;
 
 create table contributor_associations as
@@ -116,9 +131,11 @@ union
 create index contributor_associations_entity_id on contributor_associations (entity_id);
 create index contributor_associations_transaction_id on contributor_associations (transaction_id);
 
+commit;
 
 -- Organization Associations
 
+begin;
 drop table if exists organization_associations;
 
 create table organization_associations as
@@ -163,10 +180,11 @@ union
 create index organization_associations_entity_id on organization_associations (entity_id);
 create index organization_associations_transaction_id on organization_associations (transaction_id);
 
+commit;
 
---TODO: wrap each block of operations in a transaction
 -- Recipient Associations
 
+begin;
 drop table if exists recipient_associations;
 
 create table recipient_associations as
@@ -192,12 +210,14 @@ union
 
 create index recipient_associations_entity_id on recipient_associations (entity_id);
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
+commit;
 
 
 -- Sparklines
 
 \set sparkline_resolution 24
 
+begin;
 drop table if exists agg_contribution_sparklines;
 
 create table agg_contribution_sparklines as
@@ -216,10 +236,12 @@ create table agg_contribution_sparklines as
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
+commit;
 
 
 -- Entity Aggregates (Contribution Totals)
 
+begin;
 drop table if exists agg_entities;
 
 create table agg_entities as
@@ -252,10 +274,12 @@ union
     using (entity_id);
 
 create index agg_entities_idx on agg_entities (entity_id);
+commit;
 
 
 -- Industry Sector to Candidate
 
+begin;
 drop table if exists agg_sectors_to_cand;
 
 create table agg_sectors_to_cand as
@@ -280,10 +304,12 @@ union
         rank <= :agg_top_n;
 
 create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle);
+commit;
 
 
 -- Industry Category Orders to Candidate
 
+begin;
 drop table if exists agg_cat_orders_to_cand;
 
 create table agg_cat_orders_to_cand as
@@ -308,10 +334,12 @@ union
         rank <= :agg_top_n;
 
 create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, sector, cycle);
+commit;
 
 
 -- Candidates from Individual
 
+begin;
 drop table if exists agg_cands_from_indiv;
 
 create table agg_cands_from_indiv as
@@ -338,10 +366,12 @@ union
         rank <= :agg_top_n;
 
 create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle);
+commit;
 
 
 -- Committees from Individual
 
+begin;
 drop table if exists agg_orgs_from_indiv;
 
 create table agg_orgs_from_indiv as
@@ -368,10 +398,12 @@ union
         rank <= :agg_top_n;
 
 create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
+commit;
 
 
 -- Organizations to Candidate
 
+begin;
 drop table if exists agg_orgs_to_cand;
 
 create table agg_orgs_to_cand as
@@ -443,10 +475,12 @@ union
         rank <= :agg_top_n;
 
 create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle);
+commit;
 
 
 -- Candidates from Organization
 
+begin;
 drop table if exists agg_cands_from_org;
 
 create table agg_cands_from_org as
@@ -501,10 +535,12 @@ union
         rank <= :agg_top_n;
 
 create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, cycle);
+commit;
 
 
 -- Party from Individual
 
+begin;
 drop table if exists agg_party_from_indiv;
 
 create table agg_party_from_indiv as
@@ -519,10 +555,12 @@ union
     group by ca.entity_id, c.recipient_party;
 
 create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entity, cycle);
+commit;
 
 
 -- Party from Organization
 
+begin;
 drop table if exists agg_party_from_org;
 
 create table agg_party_from_org as
@@ -537,10 +575,12 @@ union
     group by oa.entity_id, c.recipient_party;
 
 create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle);
+commit;
 
 
 -- State/Fed from Organization
 
+begin;
 drop table if exists agg_namespace_from_org;
 
 create table agg_namespace_from_org as
@@ -555,10 +595,12 @@ union
     group by oa.entity_id, c.transaction_namespace;
 
 create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle);
+commit;
 
 
 -- In-state/Out-of-state to Politician
 
+begin;
 drop table if exists agg_local_to_politician;
 
 create table agg_local_to_politician as
@@ -577,10 +619,12 @@ union
     group by ra.entity_id, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end;
 
 create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle);
+commit;
 
 
 -- Indiv/PAC to Politician
 
+begin;
 drop table if exists agg_contributor_type_to_politician;
 
 create table agg_contributor_type_to_politician as
@@ -593,8 +637,9 @@ union
     from (select * from contributions_individual union select * from contributions_organization) c
     inner join recipient_associations ra using (transaction_id)
     group by ra.entity_id, coalesce(c.contributor_type, '');
-    
+
 create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle);
+commit;
 
 
-    
+
