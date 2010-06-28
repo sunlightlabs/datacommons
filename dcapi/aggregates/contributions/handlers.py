@@ -247,18 +247,23 @@ class SparklineByPartyHandler(BaseHandler):
 
     stmt = """
         select
-            case
-                when recipient_party = 'D' then 'Democrats'
-                when recipient_party = 'R' then 'Republicans'
-                else 'Other' end as recipient_party,
+            recipient_party,
             step,
             sum(amount) as amount
-        from agg_contribution_sparklines_by_party
-        where
-            entity_id = %s
-            and cycle = %s
+        from (
+            select
+                case
+                    when recipient_party = 'D' then 'Democrats'
+                    when recipient_party = 'R' then 'Republicans'
+                    else 'Other' end as recipient_party,
+                step,
+                amount
+            from agg_contribution_sparklines_by_party
+            where
+                entity_id = %s
+                and cycle = %s
+        ) x
         group by recipient_party, step
-        order by step
     """
 
     def read(self, request, **kwargs):
