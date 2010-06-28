@@ -35,7 +35,7 @@ create view contributions_even_cycles as
     from contribution_contribution;
 
 
--- Only contributions that should be included in totals from individuals
+-- Only contributions that should be included in totals from individuals to politicians
 
 drop view if exists contributions_individual;
 
@@ -461,7 +461,7 @@ create table agg_cands_from_org as
                 (select ca.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
                     cycle, count(*), sum(c.amount) as amount
                 from contributions_organization c
-                inner join contributor_associations ca using (transaction_id)
+                inner join organization_associations ca using (transaction_id)
                 left join recipient_associations ra using (transaction_id)
                 group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top_direct
             full outer join
@@ -509,12 +509,12 @@ drop table if exists agg_party_from_indiv;
 
 create table agg_party_from_indiv as
     select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
-    from contributions_individual c
+    from (select * from contributions_individual union all select * from contributions_individual_to_organization) c
     inner join contributor_associations ca using (transaction_id)
     group by ca.entity_id, c.cycle, c.recipient_party
 union
     select ca.entity_id as contributor_entity, -1, c.recipient_party, count(*), sum(c.amount) as amount
-    from contributions_individual c
+    from (select * from contributions_individual union all select * from contributions_individual_to_organization) c
     inner join contributor_associations ca using (transaction_id)
     group by ca.entity_id, c.recipient_party;
 
@@ -527,12 +527,12 @@ drop table if exists agg_party_from_org;
 
 create table agg_party_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
-    from (select * from contributions_individual union select * from contributions_organization) c
+    from contributions_all_relevant c
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.cycle, c.recipient_party
 union
     select oa.entity_id as organization_entity, -1, c.recipient_party, count(*), sum(amount) as amount
-    from (select * from contributions_individual union select * from contributions_organization) c
+    from contributions_all_relevant c
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.recipient_party;
 
@@ -545,12 +545,12 @@ drop table if exists agg_namespace_from_org;
 
 create table agg_namespace_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.transaction_namespace, count(*), sum(amount) as amount
-    from (select * from contributions_individual union select * from contributions_organization) c
+    from contributions_all_relevant c
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.cycle, c.transaction_namespace
 union
     select oa.entity_id as organization_entity, -1, c.transaction_namespace, count(*), sum(amount) as amount
-    from (select * from contributions_individual union select * from contributions_organization) c
+    from contributions_all_relevant c
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.transaction_namespace;
 
