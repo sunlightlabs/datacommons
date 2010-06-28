@@ -44,9 +44,10 @@ commit;
 -- Only contributions that should be included in totals from individuals to politicians
 
 begin;
-drop view if exists contributions_individual;
+drop view if exists contributions_individual; -- TODO: remove after the next time aggregates are generated
+drop table if exists contributions_individual;
 
-create view contributions_individual as
+create table contributions_individual as
     select *
     from contributions_even_cycles c
     where
@@ -59,8 +60,10 @@ commit;
 
 -- Only contributions from individuals to organizations
 begin;
-drop view if exists contributions_individual_to_organization;
-create view contributions_individual_to_organization as
+drop view if exists contributions_individual_to_organization; -- TODO: remove after the next time aggregates are generated
+drop table if exists contributions_individual_to_organization;
+
+create table contributions_individual_to_organization as
     select *
     from contributions_even_cycles c
     where
@@ -74,9 +77,10 @@ commit;
 -- Only contributions that should be included in totals from organizations
 
 begin;
-drop view if exists contributions_organization;
+drop view if exists contributions_organization; -- TODO: remove after the next time aggregates are generated
+drop table if exists contributions_organization;
 
-create view contributions_organization as
+create table contributions_organization as
     select *
     from contributions_even_cycles c
     where
