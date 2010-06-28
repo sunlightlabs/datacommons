@@ -56,6 +56,8 @@ create table contributions_individual as
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
+
+create index contributions_individual_transaction_id on contributions_individual (transaction_id);
 commit;
 
 -- Only contributions from individuals to organizations
@@ -72,6 +74,8 @@ create table contributions_individual_to_organization as
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
+        
+create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id);
 commit;
 
 -- Only contributions that should be included in totals from organizations
@@ -89,7 +93,8 @@ create table contributions_organization as
         and transaction_type in ('', '24k', '24r', '24z')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
-
+        
+create index contributions_organization_transaction_id on contributions_organization (transaction_id);
 commit;
 
 -- All contributions that we can aggregate
