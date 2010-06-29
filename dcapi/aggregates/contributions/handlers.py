@@ -249,21 +249,36 @@ class SparklineByPartyHandler(BaseHandler):
         select
             recipient_party,
             step,
-            sum(amount) as amount
+            sum(amount)
         from (
             select
-                case
-                    when recipient_party = 'D' then 'Democrats'
-                    when recipient_party = 'R' then 'Republicans'
-                    else 'Other' end as recipient_party,
+                recipient_party,
                 step,
-                amount
-            from agg_contribution_sparklines_by_party
-            where
-                entity_id = %s
-                and cycle = %s
-        ) x
+                coalesce(amount, 0) as amount
+            from (
+                select *
+                from generate_series(1,24) as all_steps(step)
+                cross join (
+                    select recipient_party from (values ('D'), ('R'), ('O')) as parties(recipient_party)
+                ) x
+            ) steps_and_parties
+            left join (
+                select
+                    case
+                        when recipient_party in('D', 'R') then recipient_party
+                        else 'O'
+                    end as recipient_party,
+                    step,
+                    amount
+                from
+                    agg_contribution_sparklines_by_party
+                where
+                    entity_id = %s
+                    and cycle = %s
+            ) contribution_data using (step, recipient_party)
+        ) grouped
         group by recipient_party, step
+        order by step, recipient_party
     """
 
     def read(self, request, **kwargs):
