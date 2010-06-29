@@ -1,5 +1,5 @@
 
-from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, check_empty
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
 from piston.handler import BaseHandler
 
 
@@ -239,6 +239,60 @@ class SparklineHandler(EntityTopListHandler):
             and cycle = %s
         order by step
     """
+
+class SparklineByPartyHandler(BaseHandler):
+
+    args   = ['entity_id', 'cycle']
+    fields = ['step', 'amount']
+
+    stmt = """
+        select
+            recipient_party,
+            step,
+            sum(amount)
+        from (
+            select
+                recipient_party,
+                step,
+                coalesce(amount, 0) as amount
+            from (
+                select *
+                from generate_series(1,24) as all_steps(step)
+                cross join (
+                    select recipient_party from (values ('D'), ('R'), ('O')) as parties(recipient_party)
+                ) x
+            ) steps_and_parties
+            left join (
+                select
+                    case
+                        when recipient_party in('D', 'R') then recipient_party
+                        else 'O'
+                    end as recipient_party,
+                    step,
+                    amount
+                from
+                    agg_contribution_sparklines_by_party
+                where
+                    entity_id = %s
+                    and cycle = %s
+            ) contribution_data using (step, recipient_party)
+        ) grouped
+        group by recipient_party, step
+        order by step, recipient_party
+    """
+
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
+
+        raw_result = execute_top(self.stmt, *[kwargs[param] for param in self.args])
+
+        labeled_result = {}
+
+        for (party, step, amount) in raw_result:
+            if not labeled_result.has_key(party): labeled_result[party] = []
+            labeled_result[party].append(dict(zip(self.fields, (step, amount))))
+
+        return check_empty(labeled_result, kwargs['entity_id'])
 
 
 class ContributionAmountHandler(BaseHandler):

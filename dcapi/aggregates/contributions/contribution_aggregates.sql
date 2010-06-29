@@ -74,7 +74,7 @@ create table contributions_individual_to_organization as
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
-        
+
 create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id);
 commit;
 
@@ -93,7 +93,7 @@ create table contributions_organization as
         and transaction_type in ('', '24k', '24r', '24z')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
-        
+
 create index contributions_organization_transaction_id on contributions_organization (transaction_id);
 commit;
 
@@ -245,6 +245,33 @@ create table agg_contribution_sparklines as
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
+commit;
+
+
+-- Sparklines by Party
+
+\set sparkline_resolution 24
+
+begin;
+drop table if exists agg_contribution_sparklines_by_party;
+
+create table agg_contribution_sparklines_by_party as
+    select
+        entity_id,
+        cycle,
+        recipient_party,
+        ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step,
+        sum(amount) as amount
+        from (
+                select * from contributor_associations
+                union
+                select * from organization_associations
+            ) a
+            inner join contributions_all_relevant c using (transaction_id)
+        where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
+        group by entity_id, cycle, recipient_party, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
+
+create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party);
 commit;
 
 

@@ -4,6 +4,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     SectorsHandler, IndustriesBySectorHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
+    SparklineByPartyHandler, \
     TopPoliticiansByReceiptsHandler, TopIndividualsByContributionsHandler, \
     TopOrganizationsByContributionsHandler, ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -26,6 +27,9 @@ ad = { 'authentication': PistonKeyAuthentication() }
 
 
 urlpatterns = patterns('',
+
+    url(r'^(pol|org|indiv)/(?P<entity_id>[a-f0-9]+)/sparkline_by_party.(?P<emitter_format>.+)$',
+        Resource(SparklineByPartyHandler, **ad)),
 
     url(r'^(pol|org|indiv)/(?P<entity_id>[a-f0-9]+)/sparkline.(?P<emitter_format>.+)$',
         Resource(SparklineHandler, **ad)),
