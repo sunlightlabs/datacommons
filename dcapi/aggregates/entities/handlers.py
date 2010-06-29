@@ -77,17 +77,20 @@ class EntityAttributeHandler(BaseHandler):
 class EntitySearchHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    fields = ['id','name','type','count_given','count_received','total_given','total_received']
+    fields = ['id','name','type','count_given','count_received','total_given','total_received',
+              'state', 'party', 'seat']
     
     stmt = """
-        select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount
+        select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount,
+               m.state, m.party, m.seat
         from matchbox_entity e
-        join agg_entities a 
+        left join matchbox_politicianmetadata m
+            on e.id = m.entity_id
+        left join agg_entities a 
             on e.id = a.entity_id
         where 
             a.cycle = -1
             and to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
-            and (a.contributor_count > 0 or a.recipient_count > 0)
     """
 
     def read(self, request):

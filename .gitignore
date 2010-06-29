@@ -6,6 +6,7 @@ local_settings.py
 screenlog*
 data/
 tmp/
+src/
 *~
 ._*
 .settings/org.eclipse.core.resources.prefs
@@ -16,6 +17,11 @@ dc_data/test_data/denormalized/nimsp_allocated_contributions.csv
 dc_data/test_data/denormalized/nimsp_unallocated_contributions.csv.TMP
 dc_data/test_data/denormalized/nimsp_unallocated_contributions_salted.csv
 dc_data/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv
+dcdata/test_data/denormalized/denorm_indivs.08.txt
+dcdata/test_data/denormalized/denorm_pac2cand.txt
+dcdata/test_data/denormalized/denorm_pac2pac.txt
+dc_web/build
 .project
 .pydevproject
 
+.DS_Store

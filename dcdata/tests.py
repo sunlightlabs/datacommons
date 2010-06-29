@@ -12,7 +12,7 @@ from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
-from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
+#from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 from dcdata.processor import load_data, chain_filters, compose_one2many,\
     SkipRecordException
 from django.core.management import call_command
