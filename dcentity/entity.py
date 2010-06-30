@@ -43,7 +43,8 @@ def build_entity(name, type, attributes):
     EntityAlias.objects.create(entity=e, alias=name, verified=True)
     
     for (namespace, value) in attributes:
-        EntityAttribute.objects.create(entity=e, namespace=namespace, value=value, verified=True)
+        if namespace and value:
+            EntityAttribute.objects.create(entity=e, namespace=namespace, value=value, verified=True)
     
     
 # currently unused

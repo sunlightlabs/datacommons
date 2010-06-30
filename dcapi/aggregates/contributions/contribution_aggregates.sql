@@ -131,7 +131,7 @@ union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
-        on c.contributor_ext_id = a.value
+        on c.contributor_ext_id = a.value and a.value != ''
     where
         a.verified = 't'
         and ((a.namespace in ('urn:crp:individual', 'urn:crp:organization') and c.transaction_namespace = 'urn:fec:transaction')
@@ -171,7 +171,7 @@ union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
-        on c.organization_ext_id = a.value
+        on c.organization_ext_id = a.value and a.value != ''
     where
         a.verified = 't'
         and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
@@ -180,7 +180,7 @@ union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
-        on c.parent_organization_ext_id = a.value
+        on c.parent_organization_ext_id = a.value and a.value != ''
     where
         a.verified = 't'
         and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
@@ -210,7 +210,7 @@ union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
-        on c.recipient_ext_id = a.value
+        on c.recipient_ext_id = a.value and a.value != ''
     where
         a.verified = 't'
         and ((a.namespace = 'urn:crp:recipient' and c.transaction_namespace = 'urn:fec:transaction')
