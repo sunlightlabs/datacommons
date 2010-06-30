@@ -297,33 +297,62 @@ class SparklineByPartyHandler(BaseHandler):
 
 class ContributionAmountHandler(BaseHandler):
 
-    args = ['contributor_entity', 'contributor_entity', 'recipient_entity']
+    args = ['contributor_entity', 'recipient_entity']
 
     fields = 'recipient_entity recipient_name contributor_name contributor_entity amount'.split()
 
     stmt = """
         select
-            recipient.entity_id as recipient_entity,
-            re.name as recipient_name,
-            ce.name as contributor_name,
-            contributor.entity_id as contributor_entity,
-            sum(amount)::integer as amount
-        from
-            contributions_all_relevant
-            inner join recipient_associations recipient using (transaction_id)
-            inner join matchbox_entity re on recipient.entity_id = re.id
-            inner join (
-                select * from contributor_associations
-                where entity_id = %%s
-                union
-                select * from organization_associations oa
-                where entity_id = %%s
-            ) contributor using (transaction_id)
-            inner join matchbox_entity ce on contributor.entity_id = ce.id
-        where
-            recipient.entity_id = %%s
-            and %s
-        group by recipient.entity_id, re.name, contributor.entity_id, ce.name
+            recipient_entity,
+            recipient_name,
+            contributor_name,
+            contributor_entity,
+            coalesce(amount, 0) as amount
+        from (
+            select
+                recipient_contributor_pair.recipient_entity,
+                recipient_contributor_pair.recipient_name,
+                recipient_contributor_pair.contributor_name,
+                recipient_contributor_pair.contributor_entity,
+                sum(amount)::integer as amount
+            from (
+                select
+                    r.name as recipient_name,
+                    r.id as recipient_entity,
+                    c.name as contributor_name,
+                    c.id as contributor_entity
+                from
+                    matchbox_entity r
+                    cross join (
+                        select
+                            c.name,
+                            c.id
+                        from
+                            matchbox_entity c
+                        where
+                            c.id = %%s
+                    ) c
+                where r.id = %%s
+            ) recipient_contributor_pair
+                left join recipient_associations recipient on recipient_entity = entity_id
+                left join (
+                    select * from contributor_associations
+                    union
+                    select * from organization_associations
+                ) contributor
+                    on contributor.entity_id = contributor_entity
+                        and recipient.transaction_id = contributor.transaction_id
+                left join contributions_all_relevant contributions
+                    on recipient.transaction_id = contributions.transaction_id
+                        and contributor.transaction_id = contributions.transaction_id
+            where
+                %s -- cycle where clause
+            group by
+                recipient_contributor_pair.recipient_entity,
+                recipient_contributor_pair.recipient_name,
+                recipient_contributor_pair.contributor_entity,
+                recipient_contributor_pair.contributor_name
+        ) x
     """
 
     def read(self, request, **kwargs):
