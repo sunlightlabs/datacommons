@@ -22,7 +22,9 @@ begin;
 drop table if exists agg_suppressed_catcodes;
 
 create table agg_suppressed_catcodes as
-    values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'), ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
+    values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'),
+        ('Z9010'), ('Z9020'), ('Z9030'), ('Z9040'),
+        ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
 commit;
 
 
