@@ -123,7 +123,7 @@ create table contributor_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityalias a
-        on c.contributor_name = a.alias
+        on lower(c.contributor_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
@@ -153,7 +153,7 @@ create table organization_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityalias a
-        on c.organization_name = a.alias
+        on lower(c.organization_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
@@ -163,7 +163,7 @@ union
     select a.entity_id, c.transaction_id
         from contribution_contribution c
         inner join matchbox_entityalias a
-            on c.parent_organization_name = a.alias
+            on lower(c.parent_organization_name) = lower(a.alias)
         inner join matchbox_entity e
             on e.id = a.entity_id
         where
@@ -202,7 +202,7 @@ create table recipient_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityalias a
-        on c.recipient_name = a.alias
+        on lower(c.recipient_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
