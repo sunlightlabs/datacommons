@@ -8,6 +8,7 @@ from saucebrush.emitters import Emitter, DebugEmitter, CSVEmitter
 from saucebrush.filters import (
     Filter, FieldAdder, FieldModifier, FieldRenamer, FieldRemover, UnicodeFilter
 )
+import csv
 import os
 import MySQLdb
 import MySQLdb.cursors
@@ -143,6 +144,19 @@ class MySQLSource(object):
     def done(self):
         self.conn.close()
 
+class AgencyFilter(Filter):
+    def __init__(self, agencies):
+        super(AgencyFilter, self).__init__()
+        self.agencies = agencies
+    def process_record(self, record):
+        if record['agency_id'] in self.agencies:
+            record['agency_name'] = self.agencies[record['agency_id']]
+        if record['contracting_agency_id'] in self.agencies:
+            record['contracting_agency_name'] = self.agencies[record['contracting_agency_id']]        
+        if record['requesting_agency_id'] in self.agencies:
+            record['requesting_agency_name'] = self.agencies[record['requesting_agency_id']]
+        return record
+
 class Command(BaseCommand):
 
     option_list = BaseCommand.option_list + (
@@ -152,6 +166,8 @@ class Command(BaseCommand):
         make_option("-p", "--password", dest="password", help="MySQL password", metavar="PASSWORD"),
         make_option("-u", "--username", dest="username", help="MySQL username", metavar="USERNAME"),
         make_option("-y", "--year", dest="year", help="fiscal year to load", metavar="YEAR"),
+        make_option("--agencies", dest="agencies_path", help="agencies CSV", metavar="PATH"),
+        make_option("--departments", dest="departments_path", help="departments CSV", metavar="PATH"),
     )
     
     def handle(self, *args, **options):
@@ -164,9 +180,21 @@ class Command(BaseCommand):
         outfields = [field.name for field in Contract._meta.fields]
         unused_fields = list(set(FPDS_FIELDS) - set(MODEL_FPDS_MAPPING.values() + UNMODIFIED_FIELDS))
         
+        agency_mapping = {}
+        if options['agencies_path']:
+            for rec in csv.DictReader(open(os.path.abspath(options['agencies_path']))):
+                agency_mapping[rec['id']] = rec['name']
+        
+        department_mapping = {}
+        if options['departments_path']:
+            for rec in csv.DictReader(open(os.path.abspath(options['departments_path']))):
+                department_mapping[rec['id']] = rec['name']
+        
         query = """SELECT * FROM fpds_award3_sunlight"""
         if options['year']:
             query = "%s WHERE fiscal_year = %s" % (query, int(options['year']))
+        
+        #query += " LIMIT 1000"
         
         mysql_params = {
             'query': query,
@@ -184,6 +212,7 @@ class Command(BaseCommand):
             FieldAdder('contracting_agency_name', None),
             FieldRenamer(MODEL_FPDS_MAPPING),
             FieldModifier(('place_state_code', 'vendor_state'), state_abbr),
+            AgencyFilter(agency_mapping),
             ChoiceFilter(Contract),
             UnicodeFilter(),
             CountEmitter(every=1000),
