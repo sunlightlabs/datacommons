@@ -46,7 +46,6 @@ commit;
 -- Only contributions that should be included in totals from individuals to politicians
 
 begin;
-drop view if exists contributions_individual; -- TODO: remove after the next time aggregates are generated
 drop table if exists contributions_individual;
 
 create table contributions_individual as
@@ -64,7 +63,6 @@ commit;
 
 -- Only contributions from individuals to organizations
 begin;
-drop view if exists contributions_individual_to_organization; -- TODO: remove after the next time aggregates are generated
 drop table if exists contributions_individual_to_organization;
 
 create table contributions_individual_to_organization as
@@ -83,7 +81,6 @@ commit;
 -- Only contributions that should be included in totals from organizations
 
 begin;
-drop view if exists contributions_organization; -- TODO: remove after the next time aggregates are generated
 drop table if exists contributions_organization;
 
 create table contributions_organization as
