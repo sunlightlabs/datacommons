@@ -10,6 +10,7 @@ from saucebrush.filters import (
 )
 import csv
 import os
+import sys
 import MySQLdb
 import MySQLdb.cursors
 
@@ -167,7 +168,6 @@ class Command(BaseCommand):
         make_option("-u", "--username", dest="username", help="MySQL username", metavar="USERNAME"),
         make_option("-y", "--year", dest="year", help="fiscal year to load", metavar="YEAR"),
         make_option("--agencies", dest="agencies_path", help="agencies CSV", metavar="PATH"),
-        make_option("--departments", dest="departments_path", help="departments CSV", metavar="PATH"),
     )
     
     def handle(self, *args, **options):
@@ -175,8 +175,11 @@ class Command(BaseCommand):
         for required in ('username','outfile','year'):
             if required not in options or options[required] is None:
                 raise CommandError("%s argument is required" % required)
-
-        outfile = os.path.abspath(options['outfile'])
+                
+        if 'outfile' in options and options['outfile']:
+            outfile = open(os.path.abspath(options['outfile']), 'w')
+        else:
+            outfile = sys.stdout
         outfields = [field.name for field in Contract._meta.fields]
         unused_fields = list(set(FPDS_FIELDS) - set(MODEL_FPDS_MAPPING.values() + UNMODIFIED_FIELDS))
         
@@ -184,11 +187,6 @@ class Command(BaseCommand):
         if options['agencies_path']:
             for rec in csv.DictReader(open(os.path.abspath(options['agencies_path']))):
                 agency_mapping[rec['id']] = rec['name']
-        
-        department_mapping = {}
-        if options['departments_path']:
-            for rec in csv.DictReader(open(os.path.abspath(options['departments_path']))):
-                department_mapping[rec['id']] = rec['name']
         
         query = """SELECT * FROM fpds_award3_sunlight"""
         if options['year']:
@@ -215,6 +213,6 @@ class Command(BaseCommand):
             AgencyFilter(agency_mapping),
             ChoiceFilter(Contract),
             UnicodeFilter(),
-            CountEmitter(every=1000),
-            CSVEmitter(open(outfile, 'w'), fieldnames=outfields),
+            #CountEmitter(every=1000),
+            CSVEmitter(outfile, fieldnames=outfields),
         )
