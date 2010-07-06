@@ -23,7 +23,7 @@ create table assoc_lobbying_client as
     inner join matchbox_entity e
         on e.id = a.entity_id
     inner join lobbying_lobbying l
-        on a.alias = l.client_name or a.alias = l.client_parent_name
+        on lower(a.alias) = lower(l.client_name) or lower(a.alias) = lower(l.client_parent_name)
     where
         a.verified = 't'
         and e.type = 'organization'
@@ -50,7 +50,7 @@ create table assoc_lobbying_registrant as
     inner join matchbox_entity e
         on e.id = a.entity_id
     inner join lobbying_lobbying l
-        on a.alias = l.registrant_name
+        on lower(a.alias) = lowe(l.registrant_name)
     where
         a.verified = 't'
         and e.type = 'organization';
@@ -69,7 +69,7 @@ create table assoc_lobbying_lobbyist as
     inner join matchbox_entity e
         on e.id = a.entity_id
     inner join lobbying_lobbyist l
-        on a.alias = l.lobbyist_name
+        on lower(a.alias) = lower(l.lobbyist_name)
     where
         a.verified = 't'
         and e.type = 'individual'

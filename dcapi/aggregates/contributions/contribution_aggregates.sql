@@ -22,7 +22,9 @@ begin;
 drop table if exists agg_suppressed_catcodes;
 
 create table agg_suppressed_catcodes as
-    values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'), ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
+    values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'),
+        ('Z9010'), ('Z9020'), ('Z9030'), ('Z9040'),
+        ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
 commit;
 
 
@@ -44,7 +46,6 @@ commit;
 -- Only contributions that should be included in totals from individuals to politicians
 
 begin;
-drop view if exists contributions_individual; -- TODO: remove after the next time aggregates are generated
 drop table if exists contributions_individual;
 
 create table contributions_individual as
@@ -62,7 +63,6 @@ commit;
 
 -- Only contributions from individuals to organizations
 begin;
-drop view if exists contributions_individual_to_organization; -- TODO: remove after the next time aggregates are generated
 drop table if exists contributions_individual_to_organization;
 
 create table contributions_individual_to_organization as
@@ -81,7 +81,6 @@ commit;
 -- Only contributions that should be included in totals from organizations
 
 begin;
-drop view if exists contributions_organization; -- TODO: remove after the next time aggregates are generated
 drop table if exists contributions_organization;
 
 create table contributions_organization as
@@ -121,7 +120,7 @@ create table contributor_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityalias a
-        on c.contributor_name = a.alias
+        on lower(c.contributor_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
@@ -151,7 +150,7 @@ create table organization_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityalias a
-        on c.organization_name = a.alias
+        on lower(c.organization_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
@@ -161,7 +160,7 @@ union
     select a.entity_id, c.transaction_id
         from contribution_contribution c
         inner join matchbox_entityalias a
-            on c.parent_organization_name = a.alias
+            on lower(c.parent_organization_name) = lower(a.alias)
         inner join matchbox_entity e
             on e.id = a.entity_id
         where
@@ -200,7 +199,7 @@ create table recipient_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityalias a
-        on c.recipient_name = a.alias
+        on lower(c.recipient_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where

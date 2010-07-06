@@ -1,9 +1,8 @@
 
-# names
+-- names
 drop index if exists lobbying_lobbying_registrant_name;
 drop index if exists lobbying_lobbying_client_name;
 drop index if exists lobbying_lobbying_client_parent_name;
-drop index if exists lobbying_lobbyist_lobbyist_name;
 drop index if exists lobbying_lobbyist_lobbyist_name;
 drop index if exists lobbying_issue_general_issue_code;
 
@@ -13,18 +12,20 @@ create index lobbying_lobbying_client_parent_name on lobbying_lobbying (client_p
 create index lobbying_lobbyist_lobbyist_name on lobbying_lobbyist (lobbyist_name);
 create index lobbying_issue_general_issue_code on lobbying_issue (general_issue_code);
 
-# entitites
-drop index if exists lobbying_lobbying_registrant_entity;
-drop index if exists lobbying_lobbying_client_entity;
-drop index if exists lobbying_lobbying_client_parent_entity;
-drop index if exists lobbying_lobbyist_lobbyist_entity;
+-- case-insensitive names
 
-create index lobbying_lobbying_registrant_entity on lobbying_lobbying (registrant_entity);
-create index lobbying_lobbying_client_entity on lobbying_lobbying (client_entity);
-create index lobbying_lobbying_client_parent_entity on lobbying_lobbying (client_parent_entity);
-create index lobbying_lobbyist_lobbyist_entity on lobbying_lobbyist (lobbyist_entity);
+drop index if exists lobbying_lobbying_registrant_name_lower;
+drop index if exists lobbying_lobbying_client_name_lower;
+drop index if exists lobbying_lobbying_client_parent_name_lower;
+drop index if exists lobbying_lobbyist_lobbyist_name_lower;
 
-# names full text
+create index lobbying_lobbying_registrant_name_lower on lobbying_lobbying (lower(registrant_name));
+create index lobbying_lobbying_client_name_lower on lobbying_lobbying (lower(client_name));
+create index lobbying_lobbying_client_parent_name_lower on lobbying_lobbying (lower(client_parent_name));
+create index lobbying_lobbyist_lobbyist_name_lower on lobbying_lobbyist (lower(lobbyist_name));
+
+
+-- names full text
 drop index if exists lobbying_lobbying_registrant_name_ft;
 drop index if exists lobbying_lobbying_client_name_ft;
 drop index if exists lobbying_lobbying_client_parent_name_ft;
