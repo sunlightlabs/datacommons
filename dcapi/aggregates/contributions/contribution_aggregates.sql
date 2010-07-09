@@ -1,12 +1,12 @@
 -- Cycles: controls the cycles for which aggregates are computed
 -- Mainly of using during development, when it helps to be able to regenerate the aggregates quickly.
 
-select now() || ' -- Starting contribution aggregate computation...';
+select date_trunc('second', now()) || ' -- Starting contribution aggregate computation...';
 
-select now() || ' -- drop table if exists agg_cycles cascade';
+select date_trunc('second', now()) || ' -- drop table if exists agg_cycles cascade';
 drop table if exists agg_cycles cascade;
 
-select now() || ' -- create table agg_cycles';
+select date_trunc('second', now()) || ' -- create table agg_cycles';
 create table agg_cycles as
 --    values (2005), (2006), (2007), (2008), (2009), (2010);
     select distinct cycle from contribution_contribution;
@@ -22,10 +22,10 @@ create table agg_cycles as
 -- Taken from the NIMSP column CatCodes.TopSuppress.
 
 
-select now() || ' -- drop table if exists agg_suppressed_catcodes';
+select date_trunc('second', now()) || ' -- drop table if exists agg_suppressed_catcodes';
 drop table if exists agg_suppressed_catcodes;
 
-select now() || ' -- create table agg_suppressed_catcodes';
+select date_trunc('second', now()) || ' -- create table agg_suppressed_catcodes';
 create table agg_suppressed_catcodes as
     values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'),
         ('Z9010'), ('Z9020'), ('Z9030'), ('Z9040'),
@@ -36,10 +36,10 @@ create table agg_suppressed_catcodes as
 -- Adjust the odd-year cycles upward
 
 
-select now() || ' -- drop view if exists contributions_even_cycles cascade';
+select date_trunc('second', now()) || ' -- drop view if exists contributions_even_cycles cascade';
 drop view if exists contributions_even_cycles cascade;
 
-select now() || ' -- create view contributions_even_cycles';
+select date_trunc('second', now()) || ' -- create view contributions_even_cycles';
 create view contributions_even_cycles as
     select transaction_id, transaction_namespace, transaction_type, amount,
         case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle, date,
@@ -53,10 +53,10 @@ create view contributions_even_cycles as
 -- Only contributions that should be included in totals from individuals to politicians
 
 
-select now() || ' -- drop table if exists contributions_individual';
+select date_trunc('second', now()) || ' -- drop table if exists contributions_individual';
 drop table if exists contributions_individual;
 
-select now() || ' -- create table contributions_individual';
+select date_trunc('second', now()) || ' -- create table contributions_individual';
 create table contributions_individual as
     select *
     from contributions_even_cycles c
@@ -67,16 +67,16 @@ create table contributions_individual as
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
-select now() || ' -- create index contributions_individual_transaction_id on contributions_individual (transaction_id)';
+select date_trunc('second', now()) || ' -- create index contributions_individual_transaction_id on contributions_individual (transaction_id)';
 create index contributions_individual_transaction_id on contributions_individual (transaction_id);
 
 
 -- Only contributions from individuals to organizations
 
-select now() || ' -- drop table if exists contributions_individual_to_organization';
+select date_trunc('second', now()) || ' -- drop table if exists contributions_individual_to_organization';
 drop table if exists contributions_individual_to_organization;
 
-select now() || ' -- create table contributions_individual_to_organization';
+select date_trunc('second', now()) || ' -- create table contributions_individual_to_organization';
 create table contributions_individual_to_organization as
     select *
     from contributions_even_cycles c
@@ -87,17 +87,17 @@ create table contributions_individual_to_organization as
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
-select now() || ' -- create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id)';
+select date_trunc('second', now()) || ' -- create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id)';
 create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id);
 
 
 -- Only contributions that should be included in totals from organizations
 
 
-select now() || ' -- drop table if exists contributions_organization';
+select date_trunc('second', now()) || ' -- drop table if exists contributions_organization';
 drop table if exists contributions_organization;
 
-select now() || ' -- create table contributions_organization';
+select date_trunc('second', now()) || ' -- create table contributions_organization';
 create table contributions_organization as
     select *
     from contributions_even_cycles c
@@ -108,17 +108,17 @@ create table contributions_organization as
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
-select now() || ' -- create index contributions_organization_transaction_id on contributions_organization (transaction_id)';
+select date_trunc('second', now()) || ' -- create index contributions_organization_transaction_id on contributions_organization (transaction_id)';
 create index contributions_organization_transaction_id on contributions_organization (transaction_id);
 
 
 -- All contributions that we can aggregate
 
 
-select now() || ' -- drop table if exists contributions_all_relevant';
+select date_trunc('second', now()) || ' -- drop table if exists contributions_all_relevant';
 drop table if exists contributions_all_relevant;
 
-select now() || ' -- create table contributions_all_relevant';
+select date_trunc('second', now()) || ' -- create table contributions_all_relevant';
 create table contributions_all_relevant as
     select * from contributions_individual
     union all
@@ -126,17 +126,17 @@ create table contributions_all_relevant as
     union all
     select * from contributions_organization;
 
-select now() || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
+select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
 
 
 -- Contributor Associations
 
 
-select now() || ' -- drop table if exists contributor_associations';
+select date_trunc('second', now()) || ' -- drop table if exists contributor_associations';
 drop table if exists contributor_associations;
 
-select now() || ' -- create table contributor_associations';
+select date_trunc('second', now()) || ' -- create table contributor_associations';
 create table contributor_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
@@ -157,9 +157,9 @@ union
         and ((a.namespace in ('urn:crp:individual', 'urn:crp:organization') and c.transaction_namespace = 'urn:fec:transaction')
             or (a.namespace in ('urn:nimsp:individual', 'urn:nimsp:organization') and c.transaction_namespace = 'urn:nimsp:transaction'));
 
-select now() || ' -- create index contributor_associations_entity_id on contributor_associations (entity_id)';
+select date_trunc('second', now()) || ' -- create index contributor_associations_entity_id on contributor_associations (entity_id)';
 create index contributor_associations_entity_id on contributor_associations (entity_id);
-select now() || ' -- create index contributor_associations_transaction_id on contributor_associations (transaction_id)';
+select date_trunc('second', now()) || ' -- create index contributor_associations_transaction_id on contributor_associations (transaction_id)';
 create index contributor_associations_transaction_id on contributor_associations (transaction_id);
 
 
@@ -167,10 +167,10 @@ create index contributor_associations_transaction_id on contributor_associations
 -- Organization Associations
 
 
-select now() || ' -- drop table if exists organization_associations';
+select date_trunc('second', now()) || ' -- drop table if exists organization_associations';
 drop table if exists organization_associations;
 
-select now() || ' -- create table organization_associations';
+select date_trunc('second', now()) || ' -- create table organization_associations';
 create table organization_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
@@ -210,9 +210,9 @@ union
         and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
             or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'));
 
-select now() || ' -- create index organization_associations_entity_id on organization_associations (entity_id)';
+select date_trunc('second', now()) || ' -- create index organization_associations_entity_id on organization_associations (entity_id)';
 create index organization_associations_entity_id on organization_associations (entity_id);
-select now() || ' -- create index organization_associations_transaction_id on organization_associations (transaction_id)';
+select date_trunc('second', now()) || ' -- create index organization_associations_transaction_id on organization_associations (transaction_id)';
 create index organization_associations_transaction_id on organization_associations (transaction_id);
 
 
@@ -220,10 +220,10 @@ create index organization_associations_transaction_id on organization_associatio
 -- Recipient Associations
 
 
-select now() || ' -- drop table if exists recipient_associations';
+select date_trunc('second', now()) || ' -- drop table if exists recipient_associations';
 drop table if exists recipient_associations;
 
-select now() || ' -- create table recipient_associations';
+select date_trunc('second', now()) || ' -- create table recipient_associations';
 create table recipient_associations as
     select a.entity_id, c.transaction_id
     from contribution_contribution c
@@ -245,9 +245,9 @@ union
             or (a.namespace = 'urn:nimsp:recipient' and c.transaction_namespace = 'urn:nimsp:transaction'));
 
 
-select now() || ' -- create index recipient_associations_entity_id on recipient_associations (entity_id)';
+select date_trunc('second', now()) || ' -- create index recipient_associations_entity_id on recipient_associations (entity_id)';
 create index recipient_associations_entity_id on recipient_associations (entity_id);
-select now() || ' -- create index recipient_associations_transaction_id on recipient_associations (transaction_id)';
+select date_trunc('second', now()) || ' -- create index recipient_associations_transaction_id on recipient_associations (transaction_id)';
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
 
@@ -257,10 +257,10 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 \set sparkline_resolution 24
 
 
-select now() || ' -- drop table if exists agg_contribution_sparklines';
+select date_trunc('second', now()) || ' -- drop table if exists agg_contribution_sparklines';
 drop table if exists agg_contribution_sparklines;
 
-select now() || ' -- create table agg_contribution_sparklines';
+select date_trunc('second', now()) || ' -- create table agg_contribution_sparklines';
 create table agg_contribution_sparklines as
     select entity_id, cycle,
         ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step,
@@ -276,7 +276,7 @@ create table agg_contribution_sparklines as
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
-select now() || ' -- create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle)';
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
 
 
@@ -286,10 +286,10 @@ create index agg_contribution_sparklines_idx on agg_contribution_sparklines (ent
 \set sparkline_resolution 24
 
 
-select now() || ' -- drop table if exists agg_contribution_sparklines_by_party';
+select date_trunc('second', now()) || ' -- drop table if exists agg_contribution_sparklines_by_party';
 drop table if exists agg_contribution_sparklines_by_party;
 
-select now() || ' -- create table agg_contribution_sparklines_by_party';
+select date_trunc('second', now()) || ' -- create table agg_contribution_sparklines_by_party';
 create table agg_contribution_sparklines_by_party as
     select
         entity_id,
@@ -306,7 +306,7 @@ create table agg_contribution_sparklines_by_party as
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, recipient_party, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
 
-select now() || ' -- create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party)';
+select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party)';
 create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party);
 
 
@@ -314,10 +314,10 @@ create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparkl
 -- Entity Aggregates (Contribution Totals)
 
 
-select now() || ' -- drop table if exists agg_entities';
+select date_trunc('second', now()) || ' -- drop table if exists agg_entities';
 drop table if exists agg_entities;
 
-select now() || ' -- create table agg_entities';
+select date_trunc('second', now()) || ' -- create table agg_entities';
 create table agg_entities as
     select entity_id, coalesce(contrib_aggs.cycle, recip_aggs.cycle) as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count,
         coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
@@ -347,7 +347,7 @@ union
         group by a.entity_id) as recip_aggs
     using (entity_id);
 
-select now() || ' -- create index agg_entities_idx on agg_entities (entity_id)';
+select date_trunc('second', now()) || ' -- create index agg_entities_idx on agg_entities (entity_id)';
 create index agg_entities_idx on agg_entities (entity_id);
 
 
@@ -355,10 +355,10 @@ create index agg_entities_idx on agg_entities (entity_id);
 -- Industry Sector to Candidate
 
 
-select now() || ' -- drop table if exists agg_sectors_to_cand';
+select date_trunc('second', now()) || ' -- drop table if exists agg_sectors_to_cand';
 drop table if exists agg_sectors_to_cand;
 
-select now() || ' -- create table agg_sectors_to_cand';
+select date_trunc('second', now()) || ' -- create table agg_sectors_to_cand';
 create table agg_sectors_to_cand as
     select top.recipient_entity, top.sector, top.cycle, top.count, top.amount
     from
@@ -380,7 +380,7 @@ union
     where
         rank <= :agg_top_n;
 
-select now() || ' -- create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle)';
 create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle);
 
 
@@ -388,10 +388,10 @@ create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, c
 -- Industry Category Orders to Candidate
 
 
-select now() || ' -- drop table if exists agg_cat_orders_to_cand';
+select date_trunc('second', now()) || ' -- drop table if exists agg_cat_orders_to_cand';
 drop table if exists agg_cat_orders_to_cand;
 
-select now() || ' -- create table agg_cat_orders_to_cand';
+select date_trunc('second', now()) || ' -- create table agg_cat_orders_to_cand';
 create table agg_cat_orders_to_cand as
     select top.recipient_entity, top.sector, top.contributor_category_order, top.cycle, top.count, top.amount
     from
@@ -413,7 +413,7 @@ union
     where
         rank <= :agg_top_n;
 
-select now() || ' -- create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, sector, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, sector, cycle)';
 create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, sector, cycle);
 
 
@@ -421,10 +421,10 @@ create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_ent
 -- Candidates from Individual
 
 
-select now() || ' -- drop table if exists agg_cands_from_indiv';
+select date_trunc('second', now()) || ' -- drop table if exists agg_cands_from_indiv';
 drop table if exists agg_cands_from_indiv;
 
-select now() || ' -- create table agg_cands_from_indiv';
+select date_trunc('second', now()) || ' -- create table agg_cands_from_indiv';
 create table agg_cands_from_indiv as
     select top.contributor_entity, top.recipient_name, top.recipient_entity, top.cycle, top.count, top.amount
     from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
@@ -448,7 +448,7 @@ union
     where
         rank <= :agg_top_n;
 
-select now() || ' -- create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle)';
 create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle);
 
 
@@ -456,10 +456,10 @@ create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entit
 -- Committees from Individual
 
 
-select now() || ' -- drop table if exists agg_orgs_from_indiv';
+select date_trunc('second', now()) || ' -- drop table if exists agg_orgs_from_indiv';
 drop table if exists agg_orgs_from_indiv;
 
-select now() || ' -- create table agg_orgs_from_indiv';
+select date_trunc('second', now()) || ' -- create table agg_orgs_from_indiv';
 create table agg_orgs_from_indiv as
     select top.contributor_entity, top.recipient_name, top.recipient_entity, top.cycle, top.count, top.amount
     from (select ca.entity_id as contributor_entity, c.recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
@@ -483,7 +483,7 @@ union
     where
         rank <= :agg_top_n;
 
-select now() || ' -- create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle)';
 create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
 
 
@@ -491,10 +491,10 @@ create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity,
 -- Organizations to Candidate
 
 
-select now() || ' -- drop table if exists agg_orgs_to_cand';
+select date_trunc('second', now()) || ' -- drop table if exists agg_orgs_to_cand';
 drop table if exists agg_orgs_to_cand;
 
-select now() || ' -- create table agg_orgs_to_cand';
+select date_trunc('second', now()) || ' -- create table agg_orgs_to_cand';
 create table agg_orgs_to_cand as
     select  top.recipient_entity, top.organization_name, top.organization_entity, top.cycle,
             top.total_count, top.pacs_count, top.indivs_count, top.total_amount, top.pacs_amount, top.indivs_amount
@@ -563,7 +563,7 @@ union
     where
         rank <= :agg_top_n;
 
-select now() || ' -- create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle)';
 create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle);
 
 
@@ -571,10 +571,10 @@ create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle);
 -- Candidates from Organization
 
 
-select now() || ' -- drop table if exists agg_cands_from_org';
+select date_trunc('second', now()) || ' -- drop table if exists agg_cands_from_org';
 drop table if exists agg_cands_from_org;
 
-select now() || ' -- create table agg_cands_from_org';
+select date_trunc('second', now()) || ' -- create table agg_cands_from_org';
 create table agg_cands_from_org as
     select  top.organization_entity, top.recipient_name, top.recipient_entity, top.cycle,
             top.total_count, top.pacs_count, top.indivs_count, top.total_amount, top.pacs_amount, top.indivs_amount
@@ -626,7 +626,7 @@ union
     where
         rank <= :agg_top_n;
 
-select now() || ' -- create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, cycle)';
 create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, cycle);
 
 
@@ -634,10 +634,10 @@ create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, 
 -- Party from Individual
 
 
-select now() || ' -- drop table if exists agg_party_from_indiv';
+select date_trunc('second', now()) || ' -- drop table if exists agg_party_from_indiv';
 drop table if exists agg_party_from_indiv;
 
-select now() || ' -- create table agg_party_from_indiv';
+select date_trunc('second', now()) || ' -- create table agg_party_from_indiv';
 create table agg_party_from_indiv as
     select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
     from (select * from contributions_individual union all select * from contributions_individual_to_organization) c
@@ -649,7 +649,7 @@ union
     inner join contributor_associations ca using (transaction_id)
     group by ca.entity_id, c.recipient_party;
 
-select now() || ' -- create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entity, cycle)';
 create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entity, cycle);
 
 
@@ -657,10 +657,10 @@ create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entit
 -- Party from Organization
 
 
-select now() || ' -- drop table if exists agg_party_from_org';
+select date_trunc('second', now()) || ' -- drop table if exists agg_party_from_org';
 drop table if exists agg_party_from_org;
 
-select now() || ' -- create table agg_party_from_org';
+select date_trunc('second', now()) || ' -- create table agg_party_from_org';
 create table agg_party_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
     from contributions_all_relevant c
@@ -672,7 +672,7 @@ union
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.recipient_party;
 
-select now() || ' -- create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle)';
 create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle);
 
 
@@ -680,10 +680,10 @@ create index agg_party_from_org_idx on agg_party_from_org (organization_entity, 
 -- State/Fed from Organization
 
 
-select now() || ' -- drop table if exists agg_namespace_from_org';
+select date_trunc('second', now()) || ' -- drop table if exists agg_namespace_from_org';
 drop table if exists agg_namespace_from_org;
 
-select now() || ' -- create table agg_namespace_from_org';
+select date_trunc('second', now()) || ' -- create table agg_namespace_from_org';
 create table agg_namespace_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.transaction_namespace, count(*), sum(amount) as amount
     from contributions_all_relevant c
@@ -695,7 +695,7 @@ union
     inner join organization_associations oa using (transaction_id)
     group by oa.entity_id, c.transaction_namespace;
 
-select now() || ' -- create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle)';
 create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle);
 
 
@@ -703,10 +703,10 @@ create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_
 -- In-state/Out-of-state to Politician
 
 
-select now() || ' -- drop table if exists agg_local_to_politician';
+select date_trunc('second', now()) || ' -- drop table if exists agg_local_to_politician';
 drop table if exists agg_local_to_politician;
 
-select now() || ' -- create table agg_local_to_politician';
+select date_trunc('second', now()) || ' -- create table agg_local_to_politician';
 create table agg_local_to_politician as
     select ra.entity_id as recipient_entity, c.cycle,
         case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
@@ -722,7 +722,7 @@ union
     inner join recipient_associations ra using (transaction_id)
     group by ra.entity_id, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end;
 
-select now() || ' -- create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle)';
 create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle);
 
 
@@ -730,10 +730,10 @@ create index agg_local_to_politician_idx on agg_local_to_politician (recipient_e
 -- Indiv/PAC to Politician
 
 
-select now() || ' -- drop table if exists agg_contributor_type_to_politician';
+select date_trunc('second', now()) || ' -- drop table if exists agg_contributor_type_to_politician';
 drop table if exists agg_contributor_type_to_politician;
 
-select now() || ' -- create table agg_contributor_type_to_politician';
+select date_trunc('second', now()) || ' -- create table agg_contributor_type_to_politician';
 create table agg_contributor_type_to_politician as
     select ra.entity_id as recipient_entity, c.cycle, coalesce(c.contributor_type, '') as contributor_type, count(*), sum(amount) as amount
     from (select * from contributions_individual union select * from contributions_organization) c
@@ -745,10 +745,10 @@ union
     inner join recipient_associations ra using (transaction_id)
     group by ra.entity_id, coalesce(c.contributor_type, '');
 
-select now() || ' -- create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle)';
+select date_trunc('second', now()) || ' -- create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle)';
 create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle);
 
 
-select now() || ' -- Finished computing contribution aggregates.';
+select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
 
 
