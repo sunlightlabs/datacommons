@@ -4,8 +4,10 @@
 -- Lobbying View
 -- Maps years to 2-year cycles and only includes valid reports
 
+select date_trunc('second', now()) || ' -- drop view if exists lobbying_report';
 drop view if exists lobbying_report;
 
+select date_trunc('second', now()) || ' -- create view lobbying_report as';
 create view lobbying_report as
     select *, case when year % 2 = 0 then year else year + 1 end as cycle
     from lobbying_lobbying l
@@ -15,8 +17,10 @@ create view lobbying_report as
 
 -- Lobbying Client Associations
 
+select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_client';
 drop table if exists assoc_lobbying_client;
 
+select date_trunc('second', now()) || ' -- create table assoc_lobbying_client as';
 create table assoc_lobbying_client as
     select a.entity_id, l.transaction_id
     from matchbox_entityalias a
@@ -36,14 +40,18 @@ union
         a.verified = 't'
         and a.namespace = 'urn:crp:organization';
 
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id)';
 create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_transaction_id on assoc_lobbying_client (transaction_id)';
 create index assoc_lobbying_client_transaction_id on assoc_lobbying_client (transaction_id);
 
 
 -- Lobbying Registrant Associations
 
+select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_registrant';
 drop table if exists assoc_lobbying_registrant;
 
+select date_trunc('second', now()) || ' -- create table assoc_lobbying_registrant as';
 create table assoc_lobbying_registrant as
     select a.entity_id, l.transaction_id
     from matchbox_entityalias a
@@ -55,14 +63,18 @@ create table assoc_lobbying_registrant as
         a.verified = 't'
         and e.type = 'organization';
 
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_registrant_entity_id on assoc_lobbying_registrant (entity_id)';
 create index assoc_lobbying_registrant_entity_id on assoc_lobbying_registrant (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_registrant_transaction_id on assoc_lobbying_registrant (transaction_id)';
 create index assoc_lobbying_registrant_transaction_id on assoc_lobbying_registrant (transaction_id);
 
 
 -- Lobbyist Associations
 
+select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_lobbyist';
 drop table if exists assoc_lobbying_lobbyist;
 
+select date_trunc('second', now()) || ' -- create table assoc_lobbying_lobbyist as';
 create table assoc_lobbying_lobbyist as
     select a.entity_id, l.id
     from matchbox_entityalias a
@@ -82,14 +94,18 @@ union
         a.verified = 't'
         and a.namespace = 'urn:crp:individual';
 
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entity_id)';
 create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id)';
 create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id);
 
 
 -- Lobbyist Candidate Associations
 
+select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_lobbyist_candidate';
 drop table if exists assoc_lobbying_lobbyist_candidate;
 
+select date_trunc('second', now()) || ' -- create table assoc_lobbying_lobbyist_candidate as';
 create table assoc_lobbying_lobbyist_candidate as
     select a.entity_id, l.id
     from matchbox_entityattribute a
@@ -99,14 +115,18 @@ create table assoc_lobbying_lobbyist_candidate as
         a.verified = 't'
         and a.namespace = 'urn:crp:recipient';
 
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id)';
 create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id)';
 create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id);
 
     
 -- Total Spent
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_totals';
 drop table if exists agg_lobbying_totals;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_totals as';
 create table agg_lobbying_totals as
     select entity_id, coalesce(lobbyist.cycle, coalesce(firm.cycle, coalesce(non_firm_registrant.cycle, non_firm_client.cycle))) as cycle, 
         coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm_registrant.count, coalesce(non_firm_client.count, 0)))) as count,
@@ -184,6 +204,7 @@ union
         group by entity_id) as non_firm_client
     using (entity_id);
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_totals_idx on agg_lobbying_totals (entity_id)';
 create index agg_lobbying_totals_idx on agg_lobbying_totals (entity_id);
 
 
@@ -191,8 +212,10 @@ create index agg_lobbying_totals_idx on agg_lobbying_totals (entity_id);
 -- Note: We don't include records where the registrant_name = client_name. These don't represent an actual firm/client relationship,
 -- they're just the way client firms report their overall spending.
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_registrants_for_client';
 drop table if exists agg_lobbying_registrants_for_client;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_registrants_for_client as';
 create table agg_lobbying_registrants_for_client as
     select client_entity, cycle, registrant_name, registrant_entity, count, amount
     from (select ca.entity_id as client_entity, r.cycle, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, count(r), sum(amount) as amount,
@@ -216,13 +239,16 @@ union
     where
         top.rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_registrants_for_client_idx on agg_lobbying_registrants_for_client (client_entity, cycle)';
 create index agg_lobbying_registrants_for_client_idx on agg_lobbying_registrants_for_client (client_entity, cycle);
 
 
 -- Issues Lobbied by Client
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_issues_for_client';
 drop table if exists agg_lobbying_issues_for_client;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_issues_for_client as';
 create table agg_lobbying_issues_for_client as
     select client_entity, cycle, issue, count
     from (select ca.entity_id as client_entity, r.cycle, i.general_issue as issue, count(*),
@@ -244,13 +270,16 @@ union
     where
         rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_issues_for_client_idx on agg_lobbying_issues_for_client (client_entity, cycle)';
 create index agg_lobbying_issues_for_client_idx on agg_lobbying_issues_for_client (client_entity, cycle);
 
 
 -- Lobbyists Working for Client
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_lobbyists_for_client';
 drop table if exists agg_lobbying_lobbyists_for_client;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_lobbyists_for_client as';
 create table agg_lobbying_lobbyists_for_client as
     select client_entity, cycle, lobbyist_name, lobbyist_entity, count
     from (select ca.entity_id as client_entity, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '') as lobbyist_entity, count(*),
@@ -274,13 +303,16 @@ union
     where
         rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_lobbyists_for_client_idx on agg_lobbying_lobbyists_for_client (client_entity, cycle)';
 create index agg_lobbying_lobbyists_for_client_idx on agg_lobbying_lobbyists_for_client (client_entity, cycle);
 
 
 -- Firms Employing a Lobbyist
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_registrants_for_lobbyist';
 drop table if exists agg_lobbying_registrants_for_lobbyist;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_registrants_for_lobbyist as';
 create table agg_lobbying_registrants_for_lobbyist as
     select top.lobbyist_entity, top.cycle, top.registrant_name, top.registrant_entity, top.count
     from (select la.entity_id as lobbyist_entity, r.cycle, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, count(r),
@@ -304,13 +336,16 @@ union
     where
         top.rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_registrants_for_lobbyist_idx on agg_lobbying_registrants_for_lobbyist (lobbyist_entity, cycle)';
 create index agg_lobbying_registrants_for_lobbyist_idx on agg_lobbying_registrants_for_lobbyist (lobbyist_entity, cycle);
 
 
 -- Issues Worked on by a Lobbyist
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_issues_for_lobbyist';
 drop table if exists agg_lobbying_issues_for_lobbyist;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_issues_for_lobbyist as';
 create table agg_lobbying_issues_for_lobbyist as
     select lobbyist_entity, cycle, issue, count
     from (select la.entity_id as lobbyist_entity, r.cycle, i.general_issue as issue, count(r),
@@ -334,13 +369,16 @@ union
     where
         rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_issues_for_lobbyist_idx on agg_lobbying_issues_for_lobbyist (lobbyist_entity, cycle)';
 create index agg_lobbying_issues_for_lobbyist_idx on agg_lobbying_issues_for_lobbyist (lobbyist_entity, cycle);
 
 
 -- Clients of a Lobbyist
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_clients_for_lobbyist';
 drop table if exists agg_lobbying_clients_for_lobbyist;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_clients_for_lobbyist as';
 create table agg_lobbying_clients_for_lobbyist as
     select lobbyist_entity, cycle, client_name, client_entity, count
     from (select la.entity_id as lobbyist_entity, r.cycle, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r),
@@ -364,14 +402,17 @@ union
     where
         rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_clients_for_lobbyist_idx on agg_lobbying_clients_for_lobbyist (lobbyist_entity, cycle)';
 create index agg_lobbying_clients_for_lobbyist_idx on agg_lobbying_clients_for_lobbyist (lobbyist_entity, cycle);
 
 
 -- Clients of a Lobbying Firm
 
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_clients_for_registrant';
 drop table if exists agg_lobbying_clients_for_registrant;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_clients_for_registrant as';
 create table agg_lobbying_clients_for_registrant as
     select registrant_entity, cycle, client_name, client_entity, count, amount
     from (select ra.entity_id as registrant_entity, r.cycle, r.client_name, coalesce(ca.entity_id, '') as client_entity, count(r), sum(amount) as amount,
@@ -393,13 +434,16 @@ union
     where
         rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_clients_for_registrant_idx on agg_lobbying_clients_for_registrant (registrant_entity, cycle)';
 create index agg_lobbying_clients_for_registrant_idx on agg_lobbying_clients_for_registrant (registrant_entity, cycle);
 
 
 -- Issues on which a Firm Works
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_issues_for_registrant';
 drop table if exists agg_lobbying_issues_for_registrant;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_issues_for_registrant as';
 create table agg_lobbying_issues_for_registrant as
     select registrant_entity, cycle, issue, count
     from (select ra.entity_id as registrant_entity, r.cycle, i.general_issue as issue, count(r),
@@ -421,13 +465,16 @@ union
     where
         rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_issues_for_registrant_idx on agg_lobbying_issues_for_registrant (registrant_entity, cycle)';
 create index agg_lobbying_issues_for_registrant_idx on agg_lobbying_issues_for_registrant (registrant_entity, cycle);
 
 
 -- Lobbyists Employed by a Firm
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_lobbyists_for_registrant';
 drop table if exists agg_lobbying_lobbyists_for_registrant;
 
+select date_trunc('second', now()) || ' -- create table agg_lobbying_lobbyists_for_registrant as';
 create table agg_lobbying_lobbyists_for_registrant as
     select registrant_entity, cycle, lobbyist_name, lobbyist_entity, count
     from (select ra.entity_id as registrant_entity, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '') as lobbyist_entity, count(r),
@@ -451,4 +498,5 @@ union
     where
         top.rank <= :agg_top_n;
 
+select date_trunc('second', now()) || ' -- create index agg_lobbying_lobbyists_for_registrant_idx on agg_lobbying_lobbyists_for_registrant (lobbyist_entity, cycle)';
 create index agg_lobbying_lobbyists_for_registrant_idx on agg_lobbying_lobbyists_for_registrant (lobbyist_entity, cycle);
