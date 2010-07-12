@@ -32,64 +32,69 @@ def get_type_specific_metadata(entity):
 
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
-    
+
     totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending']
     ext_id_fields = ['namespace', 'id']
-    
+
     def read(self, request, entity_id):
 
         entity = Entity.objects.select_related().get(id=entity_id)
 
         totals = get_totals(entity_id)
-            
+
         external_ids = [{'namespace': attr.namespace, 'id': attr.value} for attr in entity.attributes.all()]
-        
+
         metadata = get_type_specific_metadata(entity)
-        
+
         result = {'name': entity.name,
                   'id': entity.id,
                   'type': entity.type,
                   'totals': totals,
                   'external_ids': external_ids,
                   'metadata': metadata}
-        
+
         return result
 
 
 class EntityAttributeHandler(BaseHandler):
     allowed_methods = ('GET',)
     fields = ['id']
-    
+
     def read(self, request):
         namespace = request.GET.get('namespace', None)
         id = request.GET.get('id', None)
-        
+
         if not id or not namespace:
             error_response = rc.BAD_REQUEST
             error_response.write("Must include a 'namespace' and an 'id' parameter.")
             return error_response
 
         attributes = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
-        
+
         return [{'id': a.entity_id} for a in attributes]
-    
+
 
 class EntitySearchHandler(BaseHandler):
     allowed_methods = ('GET',)
 
     fields = ['id','name','type','count_given','count_received','total_given','total_received',
-              'state', 'party', 'seat']
-    
+              'state', 'party', 'seat', 'lobbying_firm']
+
     stmt = """
-        select e.id, e.name, e.type, a.contributor_count, a.recipient_count, a.contributor_amount, a.recipient_amount,
-               m.state, m.party, m.seat
+        select e.id, e.name, e.type, a.contributor_count, coalesce(l.count, a.recipient_count), a.contributor_amount, coalesce(l.firm_income, a.recipient_amount),
+               pm.state, pm.party, pm.seat, om.lobbying_firm
         from matchbox_entity e
-        left join matchbox_politicianmetadata m
-            on e.id = m.entity_id
-        left join agg_entities a 
+        left join matchbox_politicianmetadata pm
+            on e.id = pm.entity_id
+        left join matchbox_organizationmetadata om
+            on e.id = om.entity_id
+        left join agg_lobbying_totals l
+            on e.id = l.entity_id
+        left join agg_entities a
             on e.id = a.entity_id
-        where 
+        where
             a.cycle = -1
+            and l.cycle = -1
             and to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
     """
 
@@ -99,11 +104,11 @@ class EntitySearchHandler(BaseHandler):
             error_response = rc.BAD_REQUEST
             error_response.write("Must include a query in the 'search' parameter.")
             return error_response
-        
+
         parsed_query = ' & '.join(unquote_plus(query).split(' '))
 
         raw_result = execute_top(self.stmt, parsed_query)
-        
+
         return [dict(zip(self.fields, row)) for row in raw_result]
 
-     
+
