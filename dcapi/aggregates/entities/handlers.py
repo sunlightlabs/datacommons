@@ -77,12 +77,19 @@ class EntityAttributeHandler(BaseHandler):
 class EntitySearchHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    fields = ['id','name','type','count_given','count_received','total_given','total_received',
-              'state', 'party', 'seat', 'lobbying_firm']
+    fields = [
+        'id', 'name', 'type',
+        'count_given', 'count_received', 'count_lobbied',
+        'total_given','total_received', 'firm_income', 'non_firm_spending',
+        'state', 'party', 'seat', 'lobbying_firm'
+    ]
 
     stmt = """
-        select e.id, e.name, e.type, a.contributor_count, coalesce(l.count, a.recipient_count), a.contributor_amount, coalesce(l.firm_income, a.recipient_amount),
-               pm.state, pm.party, pm.seat, om.lobbying_firm
+        select
+            e.id, e.name, e.type,
+            a.contributor_count, a.recipient_count, coalesce(l.count, 0),
+            a.contributor_amount, a.recipient_amount, l.firm_income, l.non_firm_spending,
+            pm.state, pm.party, pm.seat, om.lobbying_firm
         from matchbox_entity e
         left join matchbox_politicianmetadata pm
             on e.id = pm.entity_id
@@ -94,7 +101,7 @@ class EntitySearchHandler(BaseHandler):
             on e.id = a.entity_id
         where
             a.cycle = -1
-            and l.cycle = -1
+            and (l.cycle is null or l.cycle = -1)
             and to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', %s)
     """
 
