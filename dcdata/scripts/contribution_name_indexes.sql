@@ -7,19 +7,6 @@ drop index if exists contribution_contribution_contributor_category_order;
 create index contribution_contribution_contributor_category on contribution_contribution (contributor_category);
 create index contribution_contribution_contributor_category_order on contribution_contribution (contributor_category_order);
 
--- entity foreign key indexes
-
-drop index if exists contribution_contribution_contributor_entity;
-drop index if exists contribution_contribution_organization_entity;
-drop index if exists contribution_contribution_parent_organization_entity;
-drop index if exists contribution_contribution_committee_entity;
-drop index if exists contribution_contribution_recipient_entity;
-
-create index contribution_contribution_contributor_entity on contribution_contribution (contributor_entity);
-create index contribution_contribution_organization_entity on contribution_contribution (organization_entity);
-create index contribution_contribution_parent_organization_entity on contribution_contribution (parent_organization_entity);
-create index contribution_contribution_committee_entity on contribution_contribution (committee_entity);
-create index contribution_contribution_recipient_entity on contribution_contribution (recipient_entity);
 
 -- urn indexes
 
@@ -51,6 +38,18 @@ create index contribution_contribution_organization_name on contribution_contrib
 create index contribution_contribution_parent_organization_name on contribution_contribution (parent_organization_name);
 create index contribution_contribution_committee_name on contribution_contribution (committee_name);
 create index contribution_contribution_recipient_name on contribution_contribution (recipient_name);
+
+
+-- case-insensitive names
+
+drop if exists contribution_contribution_contributor_name_lower;
+drop if exists contribution_contribution_organization_name_lower;
+drop if exists contribution_contribution_parent_organization_name_lower;
+
+create index contribution_contribution_contributor_name_lower on contribution_contribution (lower(contributor_name));
+create index contribution_contribution_organization_name_lower on contribution_contribution (lower(organization_name));
+create index contribution_contribution_parent_organization_name_lower on contribution_contribution (lower(parent_organization_name));
+create index contribution_contribution_recipient_name_lower on contribution_contribution (lower(recipient_name));
 
 
 -- full text indexes
