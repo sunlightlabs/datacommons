@@ -12,6 +12,7 @@ from time import time
 import csv
 import cStringIO
 import datetime
+from xlwt import XFStyle
 import xlwt
 
 class AmnesiacFile(object):
@@ -117,11 +118,26 @@ class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
             yield f.read()
 
 class ExcelEmitter(StreamingLoggingEmitter):
+    
+    def __init__(self, *args, **kwargs):
+        
+        super(ExcelEmitter, self).__init__(*args, **kwargs)
+        
+        self.mdy_style = XFStyle()
+        self.mdy_style.num_format_str = 'MM/DD/YYYY'
+    
+        self.mdyhm_style = XFStyle()
+        self.mdyhm_style.num_format_str = 'MM/DD/YYYY h:mm'
 
     def write_row(self, ws, row, values):
         col = 0
         for value in values:
-            ws.write(row, col, value)
+            if isinstance(value, datetime.datetime):
+                ws.write(row, col, value, self.mdyhm_style)
+            elif isinstance(value, datetime.date):
+                ws.write(row, col, value, self.mdy_style)
+            else:
+                ws.write(row, col, value)
             col += 1
     
     def stream(self, request, fields, stats):
