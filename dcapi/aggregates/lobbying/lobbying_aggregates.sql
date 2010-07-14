@@ -58,7 +58,7 @@ create table assoc_lobbying_registrant as
     inner join matchbox_entity e
         on e.id = a.entity_id
     inner join lobbying_lobbying l
-        on lower(a.alias) = lowe(l.registrant_name)
+        on lower(a.alias) = lower(l.registrant_name)
     where
         a.verified = 't'
         and e.type = 'organization';
