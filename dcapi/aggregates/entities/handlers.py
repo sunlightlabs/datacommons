@@ -4,8 +4,8 @@ from piston.handler import BaseHandler
 from piston.utils import rc
 from urllib import unquote_plus
 
-
-
+import time
+import sys
 
 
 get_totals_stmt = """
@@ -38,13 +38,21 @@ class EntityHandler(BaseHandler):
 
     def read(self, request, entity_id):
 
+        t1 = time.time()
         entity = Entity.objects.select_related().get(id=entity_id)
 
+        t2 = time.time()
         totals = get_totals(entity_id)
 
+        t3 = time.time()
         external_ids = [{'namespace': attr.namespace, 'id': attr.value} for attr in entity.attributes.all()]
 
+        t4 = time.time()
         metadata = get_type_specific_metadata(entity)
+
+        t5 = time.time()
+
+        sys.stdout.write("EntityHandler(): (%s, %s, %s, %s)\n" % (t2-t1, t3-t2, t4-t3, t5-t4))
 
         result = {'name': entity.name,
                   'id': entity.id,
