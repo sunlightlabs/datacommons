@@ -4,6 +4,7 @@ from django.db import connection
 from piston.handler import BaseHandler
 from piston.utils import rc
 
+from profiling import TimeProfile
 
 # at the database level -1 is used to indicate summation over all cycles
 ALL_CYCLES = '-1'
@@ -44,6 +45,7 @@ class TopListHandler(BaseHandler):
     fields = None
     stmt = None
 
+    @TimeProfile
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
 
@@ -59,6 +61,7 @@ class EntityTopListHandler(BaseHandler):
     fields = None
     stmt = None
 
+    @TimeProfile
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
         kwargs.update({'limit': request.GET.get('limit', DEFAULT_LIMIT)})
@@ -76,6 +79,7 @@ class PieHandler(BaseHandler):
     default_key = None
     stmt = None
 
+    @TimeProfile
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
 
