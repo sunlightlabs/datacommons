@@ -9,16 +9,21 @@ from urllib import unquote_plus
 
 
 get_totals_stmt = """
-    select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount, l.count as lobbying_count, firm_income, non_firm_spending
-    from agg_entities c
-    full outer join agg_lobbying_totals l using (entity_id, cycle)
-    where
-        entity_id = %s
+     select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount, lobbying_count, firm_income, non_firm_spending
+     from 
+         (select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount
+         from agg_entities
+         where entity_id = %s) c
+     full outer join
+         (select cycle, count as lobbying_count, firm_income, non_firm_spending
+         from agg_lobbying_totals
+         where entity_id = %s) l
+     using (cycle)
 """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id):
+    for row in execute_top(get_totals_stmt, entity_id, entity_id):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
