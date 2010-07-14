@@ -1,8 +1,8 @@
 from django.db.models.query_utils import Q
-from dcdata.utils.sql import parse_date
-from dcdata.utils.strings.transformers import build_remove_substrings
-from dcdata.grants.models import Grant
+from dcapi.common.schema import fulltext_generator
 from dcapi.schema import Operator, Schema, InclusionField, OperatorField
+from dcdata.utils.sql import parse_date
+from dcdata.grants.models import Grant
 
 EQUAL_OP = '='
 LESS_THAN_OP = '<'
@@ -16,20 +16,6 @@ FISCAL_YEAR_FIELD = 'fiscal_year'
 RECIPIENT_FT_FIELD = 'recipient_ft'
 RECIPIENT_STATE_FIELD = 'recipient_state'
 RECIPIENT_TYPE_FIELD = 'recipient_type'
-
-# utility generators
-
-def _ft_generator(query, column, *searches):
-    return query.extra(where=[_ft_clause(column)], params=[_ft_terms(*searches)])
-
-_strip_postgres_ft_operators = build_remove_substrings("&|!():*")
-
-def _ft_terms(*searches):
-    cleaned_searches = map(_strip_postgres_ft_operators, searches)
-    return ' | '.join("(%s)" % ' & '.join(search.split()) for search in cleaned_searches)
-
-def _ft_clause(column):
-    return """to_tsvector('datacommons', %s) @@ to_tsquery('datacommons', %%s)""" % column
 
 # amount total generators
 
@@ -48,10 +34,10 @@ def _amount_total_between_generator(query, lower, upper):
 # full-text generators
 
 def _agency_ft_generator(query, *searches):
-    return _ft_generator(query, 'agency_name', *searches)
+    return fulltext_generator(query, 'agency_name', *searches)
 
 def _recipient_ft_generator(query, *searches):
-    return _ft_generator(query, 'recipient_name', *searches)
+    return fulltext_generator(query, 'recipient_name', *searches)
 
 # other generators
 
