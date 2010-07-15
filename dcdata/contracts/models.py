@@ -68,8 +68,8 @@ class Contract(DataCommonsModel):
     purchase_card_as_payment = models.NullBooleanField(blank=True, null=True) # purchaseCardAsPaymentMethod
     
     # vendor
-    vendor_name = models.CharField(max_length=100, blank=True, null=True) # vendorName
-    vendor_business_name = models.CharField(max_length=60, blank=True, null=True) # vendorDoingAsBusinessName
+    vendor_name = models.CharField(max_length=255, blank=True, null=True) # vendorName
+    vendor_business_name = models.CharField(max_length=255, blank=True, null=True) # vendorDoingAsBusinessName
     vendor_employees = models.IntegerField(blank=True, null=True) # numberOfEmployees
     vendor_annual_revenue = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True) # annualRevenue
     vendor_street_address = models.CharField(max_length=255, blank=True, null=True) # streetAddress
