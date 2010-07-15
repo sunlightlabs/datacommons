@@ -5,7 +5,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db import transaction
 from matchbox.forms import AssociationForm
-from dcentity.models import entityref_cache, Entity, EntityNote
+from dcentity.models import entityref_cache, Entity
 from dcentity.queries import associate_transactions, disassociate_transactions
 import base64
 import re
@@ -47,19 +47,6 @@ def entity_transactions(request, entity_id):
                                   'entity': entity,
                                   'transactions': transactions
                               }, context_instance=RequestContext(request))
-
-@login_required
-def entity_notes(request, entity_id):
-    entity = Entity.objects.get(pk=entity_id)
-    if request.method == 'POST':
-        content = request.POST.get('content', '').strip()
-        if content:
-            note = EntityNote(user=request.user, content=content)
-            entity.notes.add(note)
-            data = {'note': note}
-            return render_to_response('matchbox/merge/partials/entity_note.html', data)
-    else:
-        return HttpResponse('these are not the notes you are looking for')
 
 def parse_transaction_ids(clob):
     ids = []

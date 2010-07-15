@@ -8,7 +8,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils import simplejson as json
-from dcentity.models import Entity, entityref_cache, MergeCandidate, EntityNote
+from dcentity.models import Entity, entityref_cache, MergeCandidate
 from matchbox.utils import decode_htmlentities
 from dcentity.queries import search_entities_by_name, merge_entities
 import urllib
@@ -77,9 +77,6 @@ def merge(request):
             
             e = Entity(name=request.POST['new_name'], type=request.POST['new_type'])
             merge_entities(entity_ids, e)
-            
-            note_content = 'New entity created from merge of %s' % ", ".join(old_names)
-            e.notes.add(EntityNote(user=request.user, content=note_content))
         
         params = []
         params.extend([('q', q) for q in request.POST.getlist('query')])

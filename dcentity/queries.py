@@ -6,7 +6,7 @@ import re
 
 from dcdata.utils.sql import dict_union, is_disjoint
 from dcdata.contribution.models import sql_names as contribution_names, Contribution
-from dcentity.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity, entityref_cache, EntityNote
+from dcentity.models import sql_names as matchbox_names, Normalization, EntityAlias, EntityAttribute, Entity, entityref_cache
 assert is_disjoint(contribution_names, matchbox_names)
 sql_names = dict_union(contribution_names, matchbox_names)    
 
@@ -284,7 +284,6 @@ def merge_entities(entity_ids, new_entity):
     # update alias and attribute tables
     _merge_aliases(entity_ids, new_entity)
     _merge_attributes(entity_ids, new_entity)
-    _merge_notes(entity_ids, new_entity)
     _recompute_sums(new_entity.id)
 
     # remove the old entity objects
@@ -292,11 +291,6 @@ def merge_entities(entity_ids, new_entity):
     
             
     return new_entity.id
-
-def _merge_notes(old_ids, new_entity):
-    notes = EntityNote.objects.filter(entity__in=old_ids)
-    for note in notes:
-        new_entity.notes.add(note)
 
 def _merge_aliases(old_ids, new_entity):
     entity_ids = list(old_ids)
