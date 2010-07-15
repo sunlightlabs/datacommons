@@ -80,7 +80,7 @@ class Contract(DataCommonsModel):
     vendor_zipcode = models.CharField(max_length=10, blank=True, null=True) # ZIPCode
     vendor_district = models.CharField(max_length=4, blank=True, null=True) # vendor_cd
     vendor_country_code = models.CharField(max_length=3, blank=True, null=True) # vendorCountryCode, FIPS code
-    vendor_duns = models.CharField(max_length=12, blank=True, null=True) # DUNSNumber
+    vendor_duns = models.CharField(max_length=16, blank=True, null=True) # DUNSNumber
     vendor_parent_duns = models.CharField(max_length=9, blank=True, null=True) # parentDUNSNumber
     vender_phone = models.CharField(max_length=20, blank=True, null=True) # phoneNo
     vendor_fax = models.CharField(max_length=20, blank=True, null=True) # faxNo
