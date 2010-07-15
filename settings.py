@@ -47,6 +47,8 @@ INSTALLED_APPS = (
     'dcapi.contributions'
 )
 
+DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
+
 try:
     from local_settings import *
 except ImportError:
