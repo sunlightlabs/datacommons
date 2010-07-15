@@ -72,9 +72,9 @@ class Contract(DataCommonsModel):
     vendor_business_name = models.CharField(max_length=60, blank=True, null=True) # vendorDoingAsBusinessName
     vendor_employees = models.IntegerField(blank=True, null=True) # numberOfEmployees
     vendor_annual_revenue = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True) # annualRevenue
-    vendor_street_address = models.CharField(max_length=55, blank=True, null=True) # streetAddress
-    vendor_street_address2 = models.CharField(max_length=55, blank=True, null=True) # streetAddress2
-    vendor_street_address3 = models.CharField(max_length=55, blank=True, null=True) # streetAddress3
+    vendor_street_address = models.CharField(max_length=255, blank=True, null=True) # streetAddress
+    vendor_street_address2 = models.CharField(max_length=255, blank=True, null=True) # streetAddress2
+    vendor_street_address3 = models.CharField(max_length=255, blank=True, null=True) # streetAddress3
     vendor_city = models.CharField(max_length=35, blank=True, null=True) # city
     vendor_state = USStateField(blank=True, null=True) # state
     vendor_zipcode = models.CharField(max_length=10, blank=True, null=True) # ZIPCode
