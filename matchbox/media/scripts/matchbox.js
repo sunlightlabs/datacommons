@@ -316,27 +316,6 @@ $().ready(function() {
         return false;
     });
     
-    // notes
-    $('#note_control').bind('click', function() {
-        $(this).hide();
-        $('#note_form').show();
-        return false;
-    });
-    $('#note_save').bind('click', function() {
-        $.post($('#note_control')[0].href,
-            { content: $('#note_form textarea').val() },
-            function(response) {
-                $('<li class="note"></li>').append(response).prependTo('#notes');
-            });
-        $('#note_form').hide().children('textarea').val('');
-        $('#note_control').show();
-        return false;
-    });
-    $('#note_cancel').bind('click', function() {
-        $('#note_form').hide().children('textarea').val('');
-        $('#note_control').show();
-    });
-    
     // edit entity name
     $('#entity_name_container h2').bind('click', function() {
         $('#entity_name_container input[type=text]').val(

@@ -72,14 +72,6 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
 
 #sidebar ul#search_terms { margin: 0; padding: 0 0 0 15px; }
 
-#sidebar #notes { list-style: none; margin: 0; padding: 0; }
-#sidebar #notes li { margin: 20px 0; }
-#sidebar #notes li .content { background-color: #FBF9F9; border: 1px solid #CBCCCB; padding: 5px; }
-#sidebar #notes li .meta { font-size: 79%; padding: 5px 0; }
-
-#sidebar #note_form { display: none; }
-#sidebar #note_form textarea { height: 200px; }
-
 #content h2 { margin: 0 0 5px 0; }
 
 #content #entity_name_container form { display: none; }
@@ -108,16 +100,6 @@ body div#statusbar.error { background-color: #900; border: 1px solid #900; }
     text-indent: -9999em;
     height: 22px;
     width: 22px;
-}
-#content ul#entities li p.actions a.notes {
-    background: url(../images/notes.png) top left no-repeat;
-    color: #555;
-    display: inline-block;
-    font-size: 120%;
-    padding-left: 25px;
-    text-decoration: none;
-    height: 22px;
-    width: 35px;
 }
 #content ul#entities li p.actions a.transactions {
     background: url(../images/transaction.png) top right no-repeat;

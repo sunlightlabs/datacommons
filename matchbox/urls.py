@@ -24,7 +24,6 @@ urlpatterns += patterns('matchbox.views_merge',
 urlpatterns += patterns('',
     url(r'^entity/(?P<entity_id>\w+)/associate/(?P<model_name>\w+)/$', 'matchbox.views.entity_associate', name='matchbox_entity_associate'),
     url(r'^entity/(?P<entity_id>\w+)/transactions/$', 'matchbox.views.entity_transactions', name='matchbox_entity_transactions'),
-    url(r'^entity/(?P<entity_id>\w+)/notes/$', 'matchbox.views.entity_notes', name='matchbox_entity_notes'),
     url(r'^entity/(?P<entity_id>\w+)/$', 'matchbox.views.entity_detail', name='matchbox_entity'),
     url(r'^$', 'django.views.generic.simple.redirect_to', {'url': '/merge/', 'permanent': False}),
 )

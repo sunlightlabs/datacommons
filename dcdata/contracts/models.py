@@ -30,7 +30,7 @@ class Contract(DataCommonsModel):
     requesting_office_id = models.CharField(max_length=6, blank=True, null=True) # fundingRequestingOfficeID
     major_program_code = models.CharField(max_length=100, blank=True, null=True) # majorProgramCode
     #idv_id = #######
-    idv_agency_fee = models.DecimalField(default=0, max_digits=15, decimal_places=2, blank=True, null=True) # feePaidForUseOfService
+    idv_agency_fee = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True) # feePaidForUseOfService
     
     # contract information
     cotr_name = models.CharField(max_length=255, blank=True, null=True) # COTRName
@@ -60,27 +60,27 @@ class Contract(DataCommonsModel):
     cancellation_date = models.DateField(blank=True, null=True) # cancellationDate
     
     # amounts
-    obligated_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2, blank=True, null=True) # obligatedAmount
-    current_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2, blank=True, null=True) # baseAndExercisedOptionsValue
-    maximum_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2, blank=True, null=True) # baseAndAllOptionsValue
+    obligated_amount = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True) # obligatedAmount
+    current_amount = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True) # baseAndExercisedOptionsValue
+    maximum_amount = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True) # baseAndAllOptionsValue
     price_difference = models.CharField(max_length=2, blank=True, null=True) # priceEvaluationPercentDifference
     cost_data_obtained = models.CharField(max_length=1, choices=COST_OBTAINED, blank=True, null=True) # costOrPricingData
     purchase_card_as_payment = models.NullBooleanField(blank=True, null=True) # purchaseCardAsPaymentMethod
     
     # vendor
-    vendor_name = models.CharField(max_length=100, blank=True, null=True) # vendorName
-    vendor_business_name = models.CharField(max_length=60, blank=True, null=True) # vendorDoingAsBusinessName
+    vendor_name = models.CharField(max_length=255, blank=True, null=True) # vendorName
+    vendor_business_name = models.CharField(max_length=255, blank=True, null=True) # vendorDoingAsBusinessName
     vendor_employees = models.IntegerField(blank=True, null=True) # numberOfEmployees
     vendor_annual_revenue = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True) # annualRevenue
-    vendor_street_address = models.CharField(max_length=55, blank=True, null=True) # streetAddress
-    vendor_street_address2 = models.CharField(max_length=55, blank=True, null=True) # streetAddress2
-    vendor_street_address3 = models.CharField(max_length=55, blank=True, null=True) # streetAddress3
+    vendor_street_address = models.CharField(max_length=255, blank=True, null=True) # streetAddress
+    vendor_street_address2 = models.CharField(max_length=255, blank=True, null=True) # streetAddress2
+    vendor_street_address3 = models.CharField(max_length=255, blank=True, null=True) # streetAddress3
     vendor_city = models.CharField(max_length=35, blank=True, null=True) # city
     vendor_state = USStateField(blank=True, null=True) # state
     vendor_zipcode = models.CharField(max_length=10, blank=True, null=True) # ZIPCode
     vendor_district = models.CharField(max_length=4, blank=True, null=True) # vendor_cd
     vendor_country_code = models.CharField(max_length=3, blank=True, null=True) # vendorCountryCode, FIPS code
-    vendor_duns = models.CharField(max_length=12, blank=True, null=True) # DUNSNumber
+    vendor_duns = models.CharField(max_length=16, blank=True, null=True) # DUNSNumber
     vendor_parent_duns = models.CharField(max_length=9, blank=True, null=True) # parentDUNSNumber
     vender_phone = models.CharField(max_length=20, blank=True, null=True) # phoneNo
     vendor_fax = models.CharField(max_length=20, blank=True, null=True) # faxNo
