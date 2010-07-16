@@ -1,5 +1,6 @@
 
 from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
+from django.core.cache import cache
 from piston.handler import BaseHandler
 
 
@@ -358,14 +359,27 @@ class ContributionAmountHandler(BaseHandler):
     """
 
     def read(self, request, **kwargs):
-        cycle_where = '1=1'
-        if request:
-            cycle = int(request.GET.get('cycle', ALL_CYCLES))
-            if cycle != -1:
-                cycle_where = 'cycle = %d' % cycle
+        cycle = int(request.GET.get('cycle', ALL_CYCLES))
 
-        raw_result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
-        labeled_result = dict(zip(self.fields, raw_result))
+        cache_key = self.get_cache_key('pairwise', kwargs['recipient_entity'], kwargs['contributor_entity'], cycle)
+        cached = cache.get(cache_key, 'has expired')
 
-        return check_empty(labeled_result, kwargs['recipient_entity'], kwargs['contributor_entity'])
+        if cached == 'has expired':
+            cycle_where = '1=1'
+            if request:
+                if cycle != -1:
+                    cycle_where = 'cycle = %d' % cycle
+
+            raw_result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
+            labeled_result = dict(zip(self.fields, raw_result))
+
+            result = check_empty(labeled_result, kwargs['recipient_entity'], kwargs['contributor_entity'])
+            cache.set(cache_key, result)
+
+            return result
+        else:
+            return cached
+
+    def get_cache_key(self, query_name, recipient_entity, contributor_entity, cycle):
+        return "_".join([query_name, recipient_entity, contributor_entity, str(cycle)])
 
