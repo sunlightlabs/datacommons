@@ -127,4 +127,4 @@ CONTRACTS_SCHEMA = Schema(
 
 def filter_contracts(request):
     q = CONTRACTS_SCHEMA.build_filter(Contract.objects, request).order_by()
-    return q.select_related()
+    return q

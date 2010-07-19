@@ -213,6 +213,6 @@ class Command(BaseCommand):
             AgencyFilter(agency_mapping),
             ChoiceFilter(Contract),
             UnicodeFilter(),
-            #CountEmitter(every=1000),
+            CountEmitter(every=1000),
             CSVEmitter(outfile, fieldnames=outfields),
         )
