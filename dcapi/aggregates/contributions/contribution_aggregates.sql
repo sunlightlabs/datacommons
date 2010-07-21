@@ -262,7 +262,9 @@ drop table if exists agg_contribution_sparklines;
 
 select date_trunc('second', now()) || ' -- create table agg_contribution_sparklines';
 create table agg_contribution_sparklines as
-    select entity_id, cycle,
+    select
+        entity_id,
+        cycle,
         ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step,
         sum(amount) as amount
         from (
@@ -274,7 +276,25 @@ create table agg_contribution_sparklines as
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
-        group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
+        group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'))
+
+    union all
+
+    select
+        entity_id,
+        -1 as cycle,
+        rank() over (partition by entity_id order by date_trunc('quarter', c.date)) as step,
+        sum(amount) as amount
+        from (
+                select * from contributor_associations
+                union
+                select * from recipient_associations
+                union
+                select * from organization_associations
+            ) a
+            inner join contributions_all_relevant c using (transaction_id)
+        group by entity_id, date_trunc('quarter', c.date);
+;
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle)';
 create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle);
@@ -304,7 +324,23 @@ create table agg_contribution_sparklines_by_party as
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
-        group by entity_id, cycle, recipient_party, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'));
+        group by entity_id, cycle, recipient_party, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'))
+
+    union all
+
+    select
+        entity_id,
+        -1 as cycle,
+        recipient_party,
+        rank() over (partition by entity_id order by date_trunc('quarter', c.date)) as step,
+        sum(amount) as amount
+        from (
+                select * from contributor_associations
+                union
+                select * from organization_associations
+            ) a
+            inner join contributions_all_relevant c using (transaction_id)
+        group by entity_id, recipient_party, date_trunc('quarter', c.date);
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party)';
 create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party);

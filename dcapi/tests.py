@@ -1,23 +1,16 @@
-"""
-This file demonstrates two different styles of tests (one doctest and one
-unittest). These will both pass when you run "manage.py test".
+from unittest2 import TestCase
+from django.http import HttpRequest
+from dcapi.aggregates.contributions.handlers import SparklineByPartyHandler
+from django.db import DatabaseError
 
-Replace these with more appropriate tests for your application.
-"""
+class TestSparklineByPartyHandler(TestCase):
+    def test_read(self):
+        handler = SparklineByPartyHandler()
+        request = HttpRequest()
+        request.GET['cycle'] = -1
+        # we don't have the database table to call on, but we can make sure our
+        # code can get that far (i.e. it runs)
+        with self.assertRaises(DatabaseError):
+            handler.read(request, entity_id='ABCDE')
 
-from django.test import TestCase
-
-class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.failUnlessEqual(1 + 1, 2)
-
-__test__ = {"doctest": """
-Another way to test that 1 + 1 is equal to 2.
-
->>> 1 + 1 == 2
-True
-"""}
 
