@@ -1,5 +1,6 @@
 from dcapi.aggregates.handlers import execute_top
-from dcentity.models import Entity, EntityAttribute, OrganizationMetadata
+from dcentity.models import Entity, EntityAttribute, OrganizationMetadata, PoliticianMetadata
+from django.forms.models import model_to_dict
 from piston.handler import BaseHandler
 from piston.utils import rc
 from urllib import unquote_plus
@@ -29,8 +30,13 @@ def get_totals(entity_id):
 
 
 def get_type_specific_metadata(entity):
-    if entity.type == 'organization':
-        return {'lobbying_firm': bool(OrganizationMetadata.objects.filter(entity=entity.id, lobbying_firm=True))}
+    if entity.type == 'politician':
+        metadata = PoliticianMetadata.objects.get(entity=entity.id)
+        metadata_dict = model_to_dict(metadata)
+        metadata_dict['photo_url'] = metadata.photo_url()
+        return metadata_dict
+    elif entity.type == 'organization':
+        return {'lobbying_firm': bool(OrganizationMetadata.objects.filter(entity=entity.id, lobbying_firm=True))} # TODO: convert this to the more straightforward style of converting directly to dict
     else:
         return {}
 

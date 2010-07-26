@@ -142,10 +142,14 @@ class PoliticianMetadata(models.Model):
     
     entity = models.ForeignKey(Entity, related_name='politician_metadata', null=False)
 
-    state = USStateField(blank=True, null=True)
-    party = models.CharField(max_length=64, blank=True, null=True)
-    seat = models.CharField(max_length=64, blank=True, null=True)
+    state       = USStateField(blank=True, null=True)
+    party       = models.CharField(max_length=64, blank=True, null=True)
+    seat        = models.CharField(max_length=64, blank=True, null=True)
+    bioguide_id = models.CharField(max_length=7, blank=True, null=True)
 
+    def photo_url(self):
+        return "http://assets.sunlightfoundation.com/moc/100x125/%s.jpg" % self.bioguide_id if self.bioguide_id else None
+    
     class Meta:
         db_table = 'matchbox_politicianmetadata'
 
