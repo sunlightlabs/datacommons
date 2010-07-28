@@ -44,7 +44,8 @@ INSTALLED_APPS = (
     'dcdata.contribution',
     'dcdata.lobbying',
     'dcapi',
-    'dcapi.contributions'
+    'dcapi.contributions',
+    'dcentity.tools',
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
