@@ -17,6 +17,9 @@ import cStringIO as StringIO
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.encoding import smart_str
+from django.contrib.localflavor.us.us_states import STATE_CHOICES
+
+from dcentity.tools import names
 
 WIKIPEDIA_API_URL = "http://en.wikipedia.org/w/api.php"
 WIKIPEDIA_PARSER = lxml.etree.XMLParser(
@@ -26,6 +29,11 @@ WIKIPEDIA_PARSER = lxml.etree.XMLParser(
         encoding="utf-8",
         recover=True,
 )
+
+# Regular expression to match against any of the 50 states and 'america'
+AMERICA_STATE_RE = re.compile(
+        "(%s)" % ("america|" + "|".join(v for k,v in STATE_CHOICES)), 
+        re.I)
 
 def build_cache_key(*parts):
     key = u"/".join((settings.CACHE_PREFIX,) + parts)
@@ -272,3 +280,133 @@ def get_article_subject(title):
                 namespaces={'x': 'http://www.w3.org/1999/xhtml'})[0])
     except IndexError:
         return None
+
+class WikipediaArticle(object):
+    """
+    Class representing a Wikipedia Article, encapsulating properties such as
+    the name, disambiguation, categories.  Makes calls to the wikipedia API to
+    obtain data.
+
+    >>> a = WikipediaArticle("Barack Obama")
+    >>> a.is_person()
+    True
+    >>> a.is_politician()
+    True
+    >>> a.name_matches("Barack Hussein Obama III")
+    True
+    >>> a.is_american()
+    True
+
+    >>> a = WikipediaArticle("BP")
+    >>> a.is_person()
+    False
+    >>> a.is_politician()
+    False
+    >>> a.is_company()
+    True
+    
+    >>> a = WikipediaArticle("User:SomeUser (disambiguation)")
+    >>> a.namespace
+    'User'
+    >>> a.name
+    'SomeUser'
+    >>> a.disambiguator
+    'disambiguation'
+
+    >>> a = WikipediaArticle("Ralph E. Reed, Jr.")
+    >>> a.is_person()
+    True
+    >>> a.is_politician()
+    True
+    >>> a.is_american()
+    True
+
+    >>> a = WikipediaArticle("Brian Clay")
+    >>> a.is_politician()
+    False
+
+    >>> a = WikipediaArticle("Kevin Kolb")
+    >>> a.is_person()
+    True
+    >>> a.is_politician()
+    False
+
+    >>> a = WikipediaArticle("Linda Upmeyer")
+    >>> a.is_politician()
+    True
+    >>> a.is_american()
+    True
+
+    >>> a = WikipediaArticle("Donald Morrison (politician)")
+    >>> a.is_person()
+    True
+    >>> a.is_politician()
+    True
+    >>> a.is_american()
+    False
+
+    >>> WikipediaArticle("Robert Mendelsohn").is_disambiguation_page()
+    True
+
+    """
+    def __init__(self, title):
+        self.title = title
+        self.namespace, self.name, self.disambiguator = re.match(
+                r'^(?:(.*?):)?(.*?)(?:\s+\((.*?)\))?$', title).groups()
+        self.disambiguator = (self.disambiguator or "").lower()
+        self.categories = None
+        self.excerpt = None
+
+    def get_categories(self):
+        if self.categories is None:
+            self.categories = "|".join(
+                c for c in get_article_categories(self.title)
+            ).lower()
+        return self.categories
+
+    def get_excerpt(self):
+        if self.excerpt is None:
+            self.excerpt = get_article_excerpt(self.title)
+        return self.excerpt
+
+    def get_subject(self):
+        return get_article_subject(self.title)
+
+    def is_company(self):
+        if "companies" in self.get_categories():
+            return True
+        return False
+
+    def is_person(self):
+        cats = self.get_categories()
+        return bool(re.search(
+            "(category:living people|deaths|politicians|births)", cats, re.I
+        ))
+
+    def is_american(self):
+        return bool(AMERICA_STATE_RE.search(self.get_categories()))
+
+    def is_politician(self):
+        return self.is_person() and (
+            ("politician" in self.disambiguator) or
+            (self._politician_words(self.get_categories())) or
+            (self._politician_words(self.get_excerpt()))
+        )
+
+    def is_disambiguation_page(self):
+        return "disambiguation" in self.title.lower() or \
+               "disambiguation" in self.get_categories()
+
+    def _politician_words(self, string):
+        return bool(re.search(r"(politician|republican|democrat|judge|governor|president of the united states|house of representatives|senate)", string, re.I))
+
+    def name_matches(self, name):
+        if self.is_person():
+            return names.PersonName(self.name) == names.PersonName(name)
+        else:
+            return self.name == name
+
+    def __repr__(self):
+        return '<WikipediaArticle("%s")>' % self.title
+
+

@@ -1,7 +1,8 @@
 import doctest
 import unittest
 
-from tools import utils, wpapi
+from dcentity.tools import utils, wpapi, names, models
+from dcentity.tools.management.commands import entity_wikipedia_scrape
 
 # Old stale tests that used to be here were moved to `oldtests.py`.
 
@@ -22,5 +23,7 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(doctest.DocTestSuite(utils))
     suite.addTest(doctest.DocTestSuite(wpapi))
-    #suite.addTest(doctest.DocTestSuite(models))
+    suite.addTest(doctest.DocTestSuite(names))
+    suite.addTest(doctest.DocTestSuite(models))
+    suite.addTest(doctest.DocTestSuite(entity_wikipedia_scrape))
     return suite
