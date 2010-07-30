@@ -1,7 +1,4 @@
-import re
 import os
-import csv
-from collections import defaultdict
 
 from django.contrib.localflavor.us.us_states import STATE_CHOICES
 
@@ -13,6 +10,30 @@ EXPAND_STATES = dict(STATE_CHOICES)
 def expand_state(state):
     return EXPAND_STATES.get(state, state)
 
+class reopen_csv_writer:
+    """
+    `with` statement helper to read the contents of a CSV file,
+    then reopen it in 'append' mode.  Usage:
+
+        with open(filename) as (rows, writer):
+            ...
+    """
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __enter__(self):
+        rows = []
+        if os.path.exists(self.filename):
+            with open(self.filename) as fh:
+                reader = UnicodeReader(fh)
+                rows = [r for r in reader]
+        self.fh = open(self.filename, 'a')
+        writer = UnicodeWriter(self.fh)
+        return (rows, writer)
+
+    def __exit__(self):
+        self.fh.close()
 
 # The following taken from python standard library docs for unicode CSV writing
 # and reading:

@@ -1,0 +1,44 @@
+`dcentity.tools` contains tools for matching entities against wikipedia
+articles, matching entities against them selves (fuzzy name matching), and
+sampling entities for analysis.
+
+The functionality of this app is based around management commands.  See the
+`./manage.py help` for all "entity_..." functions for details.  Briefly:
+
+entity_wikipedia_scrape <output_file.csv>
+    Run through all entities and attempt to find a wikipedia entry for each.
+    Store the results in <output_file.csv>.  Any errors encountered will be
+    stored in a file named <output_file>.error.csv.  Takes about 48 hours
+    to run.
+
+entity_wikipedia_error_recovery <error_file.csv> <output_file.csv>
+    Used to debug the results of `entity_wikipedia_scrape`.  Attempts to
+    re-query each of the entities that are present in <error_file.csv>, but
+    does not catch the errors, so they can be debugged by a developer.
+
+entity_sample <output_file.csv>
+    Create a CSV file containing a sample of all possible entities.  These can
+    be coded with `entity_code_wikipedia_urls` to create test sets to tune the
+    wikipedia scraping algorithm.
+
+entity_code_wikipedia_urls <sample_file.csv> <output_file.csv>
+    Manually code wikipedia URLs for a given sample file.
+
+entity_wikipedia_test <csv_file> <csv_file> ...
+    Test to see if wikipedia URL search method's results match those of the
+    manually coded input <csv_file> files.  Returns counts of true positives,
+    false positives, true negatives and false negatives.
+
+entity_explore_duplicate_names
+    Fuzzily match politicians' names against each other to help identify
+    possible duplicate entries.  
+
+TESTING:
+
+Tests are written primarily as docstrings in all source files.  Run the tests
+using the default Django test runner.  As Django's test runner doesn't support
+directly testing sub-applications, the dcentity test file is instrumented to
+run dcentity.tools tests.  Run tests with:
+
+    $ python manage.py test dcentity
+

@@ -18,7 +18,9 @@ method to use.  It may be one of:
     'stratified' (default)
     'uniform'
 
-The data will be returned as a CSV file with one column; a list of entity ID's.
+The data will be returned as a CSV file with entity ID's in the first column,
+and a few other contextual columns to help with manually verifying that the
+file was made correctly.
 """
     def handle(self, *args, **kwargs):
         if len(args) == 0:

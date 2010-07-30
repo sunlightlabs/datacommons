@@ -19,11 +19,27 @@ class colors:
 class Command(BaseCommand):
     args = '<csv_file> <csv_file> ...'
     help = """Tests the wikipedia matching algorithm against the given CSV files
-containing coded samples."""
+containing coded samples.
+
+If you are starting from scratch, the steps to use this are:
+  1. Create a sample file using `./manage.py entity_sample`
+  2. Manually code the correct wikipedia URL using
+     `./manage.py entity_code_wikipedia_urls`
+  3. Run this command with the coded output file.
+
+The results of the URL fetching algorithm are printed, including:
+  * A list of how many of the samples fell into each category of 
+    true positives (tp), true negatives (tn), false positives (fp), and 
+    false negatives (fp)
+  * A color-coded printout of all the fp and fn results, organized by
+    contribution amount (expressed as a percentile).  False positives
+    are shown in blue, false negatives in red."""
 
     def handle(self, *args, **kwargs):
         if len(args) == 0:
-            print """Requires at least one CSV file argument, which should contain two columns:
+            print \
+"""Requires at least one CSV file argument, which should contain at least two
+columns:
 
     <entity id>, <wikipedia url or ''>
 """
@@ -45,9 +61,8 @@ containing coded samples."""
                 FROM matchbox_entity m LEFT JOIN agg_entities a ON m.id=a.entity_id
                 WHERE a.cycle=-1 AND m.id = %s
                 """, [eid])[0]
-            match = find_wikipedia_url(entity) or ['', '']
-            print(eid,url,match[0])
-            self.results[eid] = match[0]
+
+            self.results[eid] = find_wikipedia_url(entity)[0]
             self.entities[eid] = entity
 
         self.pretty_print_results()

@@ -30,21 +30,22 @@ def find_wikipedia_url(entity):
     >>> e = EntityPlus.objects.create(type='organization', name="foo2")
     >>> a = e.aliases.create(alias='No WP entry for this')
     >>> print find_wikipedia_url(e)
-    None
+    ['', '']
 
     >>> e = EntityPlus.objects.create(type='organization', name="foo4")
     >>> a = e.aliases.create(alias='159 Group')
     >>> print find_wikipedia_url(e)
-    None
+    ['', '']
 
     >>> e = EntityPlus.objects.create(type='organization', name="foo5")
     >>> a = e.aliases.create(alias='188 Claremont')
     >>> print find_wikipedia_url(e)
-    None
+    ['', '']
 
     """
+    empty_result = ['', '']
     if entity.type == 'individual':
-        return None
+        return empty_result
 
     for ename in entity.names:
         # Search for exact title matches with redirects.  Use for comparing
@@ -97,7 +98,7 @@ def find_wikipedia_url(entity):
             wikipedia_url = wpapi.article_url(article.title)
             wikipedia_excerpt = wpapi.get_article_excerpt(article.title)
             return (wikipedia_url, wikipedia_excerpt)
-    return None
+    return empty_result
 
 class Command(BaseCommand):
     args = '<output_file>'
@@ -111,6 +112,12 @@ Entries are not overridden -- if the file already contains a match for a given
 entity_id, it will not be re-queried.  It should thus be efficient to restart
 the process.  If you wish to refresh an entity, delete the row or start with a
 fresh file.
+
+If errors are encountered during the scrape (which may take as long as 48 hours
+to complete), the error messages are written to a file named
+`<output_file>.errors.csv`.  To retry the entries that encountered errors, use
+the `./manage.py entity_wikipedia_error_recovery` command which reads the error
+file.  See that command for more details.
 """
 
     def handle(self, *args, **kwargs):
@@ -120,53 +127,60 @@ fresh file.
             print self.help
             return
         output_file = args[0]
-
-        # Set up error logger
-        error_file_name = "%s.errors%s" % os.path.splitext(output_file)
-        while os.path.exists(error_file_name):
-            error_file_name += "_"
-        errors = open(error_file_name, 'w')
-        error_writer = utils.UnicodeWriter(errors)
-
-        # Retrieve previous results
-        results = {}
-        if os.path.exists(output_file):
-            with open(output_file) as fh:
-                reader = utils.UnicodeReader(fh)
-                for row in reader:
-                    results[row[0]] = row
+        error_file = "%s.errors%s" % os.path.splitext(output_file)
 
         # Fetch and record new results
-        with open(output_file, 'w') as fh:
-            writer = utils.UnicodeWriter(fh)
-            for eid, row in results.iteritems():
-                writer.writerow(row)
+        with utils.reopen_csv_writer(output_file) as (rows, writer):
+            self.results = dict((row[0], row) for row in rows)
+            self.writer = writer
+            with utils.reopen_csv_writer(error_file) as (rows, error_writer):
+                self.errors = dict((row[0], row) for row in rows)
+                self.error_writer = error_writer
 
-            start = time.time()
-            qs = EntityPlus.objects.exclude(type='individual')
-            total = qs.count()
-            count = 0
-            for c, entity in enumerate(qs):
-                if entity.id in results:
-                    continue
-                # counts the ones we're  not skipping
-                count += 1
+                qs = EntityPlus.objects.exclude(type='individual')
+                total = qs.count()
+                # This'll take up to 48 hours
+                for c, entity in enumerate(qs):
+                    self._fetch_one(entity, c, total)
+            
+            # Retry errors once; most of the time it's just an HTTP error
+            # thrown by wikipedia.
+            with open(error_file_name, 'w') as error_fh:
+                # We now have a blank error file.
+                self.error_writer = utils.UnicodeWriter(error_fh)
+                for eid, row in self.errors.iteritems():
+                    try:
+                        entity = EntityPlus.objects.get(id=eid)
+                        # Recurring errors in self._fetch_one are caught inside
+                        # and re-logged.
+                        self._fetch_one(entity, c, total)
+                        del self.errors[eid]
+                    except Exception:
+                        # Failsafe in case we get a database read error or
+                        # something.
+                        self._log_error(row)
+            if not self.errors:
+                # Get rid of the noise
+                os.remove(error_file_name)
 
-                try:
-                    result = find_wikipedia_url(entity) or ['', '']
-                    raise Exception("Hey there!")
-                except Exception as e:
-                    print "EXCEPTION", traceback.format_exc()
-                    error_writer.writerow((entity.id, entity.names[0].name,
-                        str(e.args), traceback.format_exc()))
-                else:
-                    row = (entity.id, 
-                           result[0],
-                           result[1],
-                           unicode(datetime.datetime.now()))
-                    results[row[0]] = row
-                    writer.writerow(row)
-                    print "%i/%i" % (c, total), \
-                        (entity.names[0].name, result[0]), \
-                        "average:", "%.02f" % ((time.time()-start)/count), \
-                        "seconds"
+    def _fetch_one(self, entity, c=0, total=0):
+        if entity.id in self.results:
+            return
+
+        start = time.time()
+        try:
+            url, excerpt = find_wikipedia_url(entity)
+        except Exception as e:
+            print "EXCEPTION", traceback.format_exc()
+            row = (entity.id, entity.names[0].name, str(e.args), traceback.format_exc())
+            self._log_error(row)
+        else:
+            row = (entity.id, url, excerpt, unicode(datetime.datetime.now()))
+            self.results[row[0]] = row
+            self.writer.writerow(row)
+            print "%i/%i" % (c, total), (entity.names[0].name, url), \
+                "time:", "%.02f" % (time.time()-start), "seconds"
+
+    def _log_error(self, row):
+        self.error_writer.writerow(row)
+        self.errors[row[0]] = row

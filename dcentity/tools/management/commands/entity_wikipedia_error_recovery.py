@@ -11,10 +11,14 @@ from dcentity.tools.management.commands.entity_wikipedia_scrape import find_wiki
 class Command(BaseCommand):
     args = '<error_file> <output_file>'
     help = """Debugging tool for recovering from errors that arose while
-running "wp_fetch_all".  Requires two arguments:
+running "entity_wikipedia_scrape".  Requires two arguments:
 
     <error_file> filename for error file from which to read
     <output_file> filename for output file to store results
+
+Unlike `entity_wikipedia_scrape` which catches all errors in order to get
+through all 100,000+ entities efficiently, this command allows errors to be
+thrown, allowing you to fix whatever code might be causing them.
 """
 
     def handle(self, *args, **kwargs):
