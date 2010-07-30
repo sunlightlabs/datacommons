@@ -52,9 +52,8 @@ entries; probably best redirect to less or a file to view.
                     state_checks = {
                         'same state': state1 == state2,
                         'diff state': state1 != state2,
-                        'missing one state': (not state1 or not state2) and 
-                                state1 != state2,
-                        'missing two states': not state1 and not state2
+                        'missing one state': (not state1 or not state2) and state1 != state2,
+                        'missing two states': not state1 and not state2,
                     }
                     party_checks = {
                         'same party': party1 == party2,
@@ -90,19 +89,21 @@ entries; probably best redirect to less or a file to view.
                                 if check(conds):
                                     return True
                     get_minimum_match()
-
+                    
                     for n1, c1 in state_checks.iteritems():
-                        for n2, c2 in party_checks.iteritems():
-                            for n3, c3 in name_checks.iteritems():
-                                if c1 and c2 and c3:
-                                    key = " | ".join((n1, n2, n3))
-                                    totals[key] += 1
-                                    groups[key].append((
-                                        (eid1, name1.name, state1, party1, office1),
-                                        (eid2, name2.name, state2, party2, office2)
-                                    ))
-                        # Only one name match per entity.
-                        break
+                        if c1:
+                            for n2, c2 in party_checks.iteritems():
+                                if c2:
+                                    for n3, c3 in name_checks.iteritems():
+                                        if c3:
+                                            key = " | ".join((n1, n2, n3))
+                                            totals[key] += 1
+                                            groups[key].append((
+                                                (eid1, name1.name, state1, party1, office1),
+                                                (eid2, name2.name, state2, party2, office2)
+                                            ))
+                                            # Only one name match per entity.
+                                            break
         pprint(dict(totals))
         for group in sorted(groups.keys()):
             print group, len(groups[group])
