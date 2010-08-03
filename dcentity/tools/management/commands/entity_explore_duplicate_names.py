@@ -1,9 +1,11 @@
 import re
 import os
+import csv
 import urllib
 from collections import defaultdict
 from pprint import pprint
 from itertools import combinations
+from cStringIO import StringIO
 
 from django.db import connection
 from django.core.management.base import BaseCommand
@@ -17,13 +19,63 @@ Prints a breakdown of all politicians whose names match exactly or
 fuzzily, according to just what type of fuzziness the name matches
 with, and whether the parties or states also match.
 
-Results are returned as a table of total values, followed by the full
-listing of all politicians per category.  This lists close to 40,000
-entries; probably best redirect to less or a file to view.
+Results are presented in one of two ways:
+
+    trusted:  If the argument "trusted" is provided, only those match types
+        which are coded in the source code as "trusted" will be returned.
+        Results are printed as CSV with the following format:
+
+        <-------   entity one  ------>  <------  entity two  -------->
+        id, name, state, party, office, id, name, state, party, office
+
+        Details like name, state, party, and office are included to allow
+        visual inspection of the file.
+
+    possible: Those entries which are "possibly" trusted are returned -- they
+        should receive more scrutiny.
+
+    full: If 'full' or no argument is provided, full results will be printed,
+        intended for visual inspection.  Results are printed as a table of
+        total values, followed by the full listing of all politicians per
+        category.  This lists close to 40,000 entries; probably best redirect
+        to less or a file to view.
+
 """
 
+    # Totally trusted results
+    trusted = [
+            "same state | same party | exact", 
+            "missing one state | same party | exact",
+            "same state | diff party; both 3rd | exact",
+    ]
+    # Possbly trusted results
+    possible = [
+            "same state | same party | missing_middle", # Watch out for George W Bush
+            "same state | same party | nicknames",
+            "same state | same party | initials",
+            "same state | same party | missing_suffix",
+    ]
+
+    # Any name matching exactly those in here, with the listed conditions, will be
+    # excluded from 'trusted' and 'possible', even if they would otherwise be
+    # included.
+    excluded = set([
+        "George Bush",
+    ])
+
+
     def handle(self, *args, **kwargs):
+        if len(args) > 0:
+            if args[0] in ("trusted", "possible", "full"):
+                display = args[0]
+            else:
+                print "Unexpected argument '%s'.  Options are 'trusted' or 'full'" % args[0]
+                return
+        else:
+            display = 'full'
+
         cursor = connection.cursor()
+        # ORM is way too slow for this on 100,000+ rows.
         cursor.execute("""
             SELECT DISTINCT a.entity_id,a.alias,m.state,m.party,m.seat FROM 
             matchbox_entityalias a 
@@ -104,8 +156,26 @@ entries; probably best redirect to less or a file to view.
                                             ))
                                             # Only one name match per entity.
                                             break
-        pprint(dict(totals))
-        for group in sorted(groups.keys()):
-            print group, len(groups[group])
-            for n1, n2 in groups[group]:
-                print " ", n1, n2
+        
+
+
+        if display == 'full':
+            pprint(dict(totals))
+            for group in sorted(groups.keys()):
+                print group, len(groups[group])
+                for n1, n2 in groups[group]:
+                    print " ", n1, n2
+        elif display in ('trusted', 'possible'):
+            out = StringIO()
+            writer = csv.writer(out)
+            matches = getattr(self, display)
+            for group in matches:
+                for n1, n2 in groups[group]:
+                    if not n1[1] in self.excluded and not n2[1] in self.excluded:
+                        if "federal" in n2[-1]:
+                            writer.writerow(n2 + n1)
+                        else:
+                            writer.writerow(n1 + n2)
+            print out.getvalue()
+            out.close()
+

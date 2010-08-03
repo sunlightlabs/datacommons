@@ -1,5 +1,5 @@
 `dcentity.tools` contains tools for matching entities against wikipedia
-articles, matching entities against them selves (fuzzy name matching), and
+articles, matching entities against themselves (fuzzy name matching), and
 sampling entities for analysis.
 
 The functionality of this app is based around management commands.  See the
