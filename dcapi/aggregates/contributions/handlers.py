@@ -368,12 +368,14 @@ class ContributionAmountHandler(BaseHandler):
             cycle_where = '1=1'
             if request:
                 if cycle != -1:
-                    cycle_where = 'cycle = %d' % cycle
+                    cycle_where = 'cycle is null or cycle = %d' % cycle
 
-            raw_result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
-            labeled_result = dict(zip(self.fields, raw_result))
+            result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
 
-            result = check_empty(labeled_result, kwargs['recipient_entity'], kwargs['contributor_entity'])
+            if result:
+                result = dict(zip(self.fields, result)) # add labels
+
+            result = check_empty(result, kwargs['recipient_entity'], kwargs['contributor_entity'])
             cache.set(cache_key, result)
 
             return result
