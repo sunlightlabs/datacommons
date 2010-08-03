@@ -24,7 +24,11 @@ def execute_pie(stmt, *args):
 def execute_one(stmt, *args):
     cursor = connection.cursor()
     cursor.execute(stmt, args)
-    return cursor.fetchone()
+
+    if cursor.rowcount <= 0:
+        return None
+    else:
+        return cursor.fetchone()
 
 
 def check_empty(result, *entity_ids):
