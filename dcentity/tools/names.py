@@ -12,7 +12,7 @@ from dcentity.tools import utils
 ALL_POLITICIANS = defaultdict(list)
 
 # List of nicknames, used for fuzzy name matching.
-NICKNAMES_FILE = utils.path_relative_to(__file__, "data", "nicknames.txt")
+NICKNAMES_FILE = utils.path_relative_to(__file__, "nicknames.txt")
 NICKNAMES = defaultdict(set)
 
 ABBREVIATIONS = {
