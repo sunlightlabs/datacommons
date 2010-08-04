@@ -302,83 +302,47 @@ class ContributionAmountHandler(BaseHandler):
 
     args = ['contributor_entity', 'recipient_entity']
 
-    fields = 'recipient_entity recipient_name contributor_name contributor_entity amount'.split()
+    fields = 'recipient_entity recipient_name contributor_entity contributor_name amount'.split()
 
     stmt = """
-        select
-            recipient_entity,
-            recipient_name,
-            contributor_name,
-            contributor_entity,
-            coalesce(amount, 0) as amount
-        from (
-            select
-                recipient_contributor_pair.recipient_entity,
-                recipient_contributor_pair.recipient_name,
-                recipient_contributor_pair.contributor_name,
-                recipient_contributor_pair.contributor_entity,
-                sum(amount)::integer as amount
-            from (
-                select
-                    r.name as recipient_name,
-                    r.id as recipient_entity,
-                    c.name as contributor_name,
-                    c.id as contributor_entity
-                from
-                    matchbox_entity r
-                    cross join (
-                        select
-                            c.name,
-                            c.id
-                        from
-                            matchbox_entity c
-                        where
-                            c.id = %%s
-                    ) c
-                where r.id = %%s
-            ) recipient_contributor_pair
-                left join recipient_associations recipient on recipient_entity = entity_id
-                left join (
-                    select * from contributor_associations
-                    union
-                    select * from organization_associations
-                ) contributor
-                    on contributor.entity_id = contributor_entity
-                        and recipient.transaction_id = contributor.transaction_id
-                left join contributions_all_relevant contributions
-                    on recipient.transaction_id = contributions.transaction_id
-                        and contributor.transaction_id = contributions.transaction_id
-            where
-                %s -- cycle where clause
-            group by
-                recipient_contributor_pair.recipient_entity,
-                recipient_contributor_pair.recipient_name,
-                recipient_contributor_pair.contributor_entity,
-                recipient_contributor_pair.contributor_name
-        ) x
+	select r.id, r.name, c.id, c.name,
+		(select coalesce(sum(amount), 0) 
+		from recipient_associations ra 
+		inner join (select * from contributor_associations union select * from organization_associations) ca
+			on ca.entity_id = c.id 
+		 	   and ra.entity_id = r.id
+			   and ca.transaction_id = ra.transaction_id
+		inner join contributions_all_relevant contrib
+			on contrib.transaction_id = ra.transaction_id
+		%s) as amount
+	from matchbox_entity r
+	cross join matchbox_entity c
+	where
+		c.id = %%s
+		and r.id = %%s
     """
 
     def read(self, request, **kwargs):
-        cycle = int(request.GET.get('cycle', ALL_CYCLES))
+        cycle = request.GET.get('cycle', ALL_CYCLES)
 
         cache_key = self.get_cache_key('pairwise', kwargs['recipient_entity'], kwargs['contributor_entity'], cycle)
         cached = cache.get(cache_key, 'has expired')
 
         if cached == 'has expired':
-            cycle_where = '1=1'
-            if request:
-                if cycle != -1:
-                    cycle_where = 'cycle is null or cycle = %d' % cycle
+			if cycle == ALL_CYCLES:
+				cycle_where = ''
+			else:
+				cycle_where = 'where cycle = %d' % int(cycle)
 
-            result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
+			result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
 
-            if result:
-                result = dict(zip(self.fields, result)) # add labels
+			if result:
+				result = dict(zip(self.fields, result)) # add labels
 
-            result = check_empty(result, kwargs['recipient_entity'], kwargs['contributor_entity'])
-            cache.set(cache_key, result)
+			result = check_empty(result, kwargs['recipient_entity'], kwargs['contributor_entity'])
+			cache.set(cache_key, result)
 
-            return result
+			return result
         else:
             return cached
 
