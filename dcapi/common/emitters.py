@@ -2,6 +2,7 @@ from django.core.serializers.json import DateTimeAwareJSONEncoder
 from django.http import HttpResponse
 from django.utils import simplejson
 from django.db.models import Model
+from django.db import connections
 from piston.emitters import Emitter
 from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
@@ -72,6 +73,7 @@ class StreamingLoggingEmitter(Emitter):
             nimsp_records=stats.stats.get(NIMSP_TRANSACTION_NAMESPACE, 0),
             execution_time=(end_time - start_time) * 1000,
         )
+        connections['meta'].close()
         
             
 class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
