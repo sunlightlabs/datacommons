@@ -306,7 +306,7 @@ class ContributionAmountHandler(BaseHandler):
 
     stmt = """
 	select r.id, r.name, c.id, c.name,
-		(select coalesce(sum(amount), 0) 
+		(select coalesce(sum(amount), 0)::integer
 		from recipient_associations ra 
 		inner join (select * from contributor_associations union select * from organization_associations) ca
 			on ca.entity_id = c.id 
