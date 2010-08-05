@@ -16,9 +16,12 @@ def find_wikipedia_url(entity):
     """
     Returns a tuple of (url, article excerpt) for a given entity, or None if no
     matching article is found.
-
+    
+    >>> from dcentity.models import PoliticianMetadata
     >>> e = EntityPlus.objects.create(type='politician', name="foo")
     >>> a = e.aliases.create(alias='Barack Obama')
+    >>> md = PoliticianMetadata.objects.create(entity=e, 
+    ...         state='', party='D', seat='federal:president')
     >>> find_wikipedia_url(e)[0]
     'http://en.wikipedia.org/wiki/Barack_Obama'
 
@@ -118,6 +121,14 @@ to complete), the error messages are written to a file named
 `<output_file>.errors.csv`.  To retry the entries that encountered errors, use
 the `./manage.py entity_wikipedia_error_recovery` command which reads the error
 file.  See that command for more details.
+
+Please note: This management command uses memcached to cache all communication
+with wikipedia to speed the process. If HTTP errors are encountered during a
+scrape, it may be necessary to clear the cache in order to retry them.  This
+can be accomplished from the Django shell like so:
+    $ python manage.py shell
+    >>> from django.core.cache import cache
+    >>> cache.clear()
 """
 
     def handle(self, *args, **kwargs):
@@ -145,10 +156,10 @@ file.  See that command for more details.
             
             # Retry errors once; most of the time it's just an HTTP error
             # thrown by wikipedia.
-            with open(error_file_name, 'w') as error_fh:
+            with open(error_file, 'w') as error_fh:
                 # We now have a blank error file.
                 self.error_writer = utils.UnicodeWriter(error_fh)
-                for eid, row in self.errors.iteritems():
+                for eid, row in self.errors.items():
                     try:
                         entity = EntityPlus.objects.get(id=eid)
                         # Recurring errors in self._fetch_one are caught inside
@@ -161,7 +172,7 @@ file.  See that command for more details.
                         self._log_error(row)
             if not self.errors:
                 # Get rid of the noise
-                os.remove(error_file_name)
+                os.remove(error_file)
 
     def _fetch_one(self, entity, c=0, total=0):
         if entity.id in self.results:
