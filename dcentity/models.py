@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from django.db.models import Q
+from django.forms.models import model_to_dict
 from uuid import uuid4
 import datetime
 
@@ -23,11 +24,11 @@ class EntityRefCache(dict):
         for key, value in self.iteritems():
             if key._meta.object_name.lower() == name:
                 return (key, self[key])
-       
+
 entityref_cache = EntityRefCache()
 
 class EntityRef(models.CharField):
-   
+
     def __init__(self, related_name, ignore=False, *args, **kwargs):
         kwargs['max_length'] = 32
         kwargs['blank'] = True
@@ -36,12 +37,12 @@ class EntityRef(models.CharField):
         super(EntityRef, self).__init__(*args, **kwargs)
         self._ignore = ignore
         self._label = related_name
-       
+
     def contribute_to_class(self, cls, name):
         super(EntityRef, self).contribute_to_class(cls, name)
         if not self._ignore:
             entityref_cache.register(cls, name)
-    
+
     def entity(self):
         pass
 
@@ -52,17 +53,17 @@ class EntityRef(models.CharField):
 entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
 
 class EntityManager(models.Manager):
-    
+
     def with_id(self, entity_id):
         return Entity.objects.filter(
             Q(id=entity_id) | Q(attributes__namespace=EntityAttribute.ENTITY_ID_NAMESPACE, attributes__value=entity_id))
-    
+
     def with_attribute(self, namespace, value=None):
         qs = Entity.objects.filter(attributes__namespace=namespace)
         if value:
             qs = qs.filter(attributes__value=value)
         return qs
-        
+
     # is this used?
     def merge(self, name, type_, entity_ids):
         new_entity = Entity(name=name, type=type_)
@@ -82,20 +83,59 @@ class Entity(models.Model):
 
     def __unicode__(self):
         return self.name
-    
+
+    possible_sources = 'sunlight_info wikipedia_info bioguide_info'.split()
+
+    def sourced_metadata_in_order(self):
+        sources = []
+        for attr in self.possible_sources:
+            if hasattr(self, attr):
+                sources.append(getattr(self, attr))
+
+        return sources
+
+    def _get_sourced_data_as_dict(self):
+        sources_dict = [model_to_dict(x) for x in self.sourced_metadata_in_order()]
+        sources_dict.reverse()
+        compiled_dict = None
+
+        if len(sources_dict):
+            lowest_priority = sources_dict.pop()
+            compiled_dict = lowest_priority.copy()
+            for x in sources_dict:
+                compiled_dict.update(x)
+
+        return compiled_dict
+
+    sourced_metadata = property(_get_sourced_data_as_dict)
+
+    def _get_all_metadata_as_dict(self):
+        # sourced metadata
+        metadata = self._get_sourced_data_as_dict() or {}
+
+        # our type-specific metadata
+        if self.type == 'politician' and self.politician_metadata:
+            metadata.update(model_to_dict(self.politician_metadata))
+        elif self.type == 'organization' and self.organization_metadata:
+            metadata.update(model_to_dict(self.organization_metadata))
+
+        return metadata
+
+    metadata = property(_get_all_metadata_as_dict)
+
     class Meta:
         db_table = 'matchbox_entity'
-    
+
 
 class EntityAlias(models.Model):
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
     alias = models.CharField(max_length=255, null=False)
     verified = models.BooleanField(default=False)
-    
+
     class Meta:
         ordering = ('alias',)
         db_table = 'matchbox_entityalias'
-    
+
     def __unicode__(self):
         return self.alias
 
@@ -106,54 +146,90 @@ class EntityAttribute(models.Model):
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
     verified = models.BooleanField(default=False)
-    
-    
+
+
     ENTITY_ID_NAMESPACE = 'urn:matchbox:entity_id'
-    
+
     class Meta:
         ordering = ('namespace',)
         db_table = 'matchbox_entityattribute'
-    
+
     def __unicode__(self):
         return u"%s:%s" % (self.namespace, self.value)
-    
-    
+
+
 class Normalization(models.Model):
     original = models.CharField(max_length=255, primary_key=True)
     normalized = models.CharField(max_length=255)
-    
+
     class Meta:
         ordering = ('original',)
         db_table = 'matchbox_normalization'
-    
+
     def __unicode__(self):
         return self.original
 
 
 class OrganizationMetadata(models.Model):
-    entity = models.ForeignKey(Entity, related_name='organization_metadata', null=False)
-    
+    entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False)
+
     lobbying_firm = models.BooleanField(default=False)
-    
+
     class Meta:
         db_table = 'matchbox_organizationmetadata'
 
+
 class PoliticianMetadata(models.Model):
-    
-    entity = models.ForeignKey(Entity, related_name='politician_metadata', null=False)
+    entity = models.OneToOneField(Entity, related_name='politician_metadata', null=False)
 
-    state       = USStateField(blank=True, null=True)
-    party       = models.CharField(max_length=64, blank=True, null=True)
-    seat        = models.CharField(max_length=64, blank=True, null=True)
-    bioguide_id = models.CharField(max_length=7, blank=True, null=True)
+    state = USStateField(blank=True, null=True)
+    party = models.CharField(max_length=64, blank=True, null=True)
+    seat  = models.CharField(max_length=64, blank=True, null=True)
 
-    def photo_url(self):
-        return "http://assets.sunlightfoundation.com/moc/100x125/%s.jpg" % self.bioguide_id if self.bioguide_id else None
-    
     class Meta:
         db_table = 'matchbox_politicianmetadata'
 
-    
+
+class BioguideInfo(models.Model):
+    entity = models.OneToOneField(Entity, related_name='bioguide_info', null=False)
+
+    bioguide_id      = models.CharField(max_length=7, blank=True, null=True)
+    bio              = models.TextField(null=True)
+    years_of_service = models.CharField(max_length=12, null=True)
+    photo_url        = models.URLField(null=True)
+
+    created_on       = models.DateField(auto_now_add=True)
+    updated_on       = models.DateField(auto_now=True, null=True)
+
+    class Meta:
+        db_table = 'matchbox_bioguideinfo'
+
+
+class WikipediaInfo(models.Model):
+    entity = models.OneToOneField(Entity, related_name='wikipedia_info', null=False)
+
+    bio        = models.TextField(null=True)
+    bio_url    = models.URLField(null=True)
+    created_on = models.DateField(auto_now_add=True)
+    updated_on = models.DateField(auto_now=True, null=True)
+
+    class Meta:
+        db_table = 'matchbox_wikipediainfo'
+
+
+class SunlightInfo(models.Model):
+    entity = models.OneToOneField(Entity, related_name='sunlight_info', null=False)
+
+    bio        = models.TextField(null=True)
+    photo_url  = models.URLField(null=True)
+    notes      = models.CharField(max_length=255, null=True)
+    created_on = models.DateField(auto_now_add=True)
+    updated_on = models.DateField(auto_now=True, null=True)
+
+    class Meta:
+        db_table = 'matchbox_sunlightinfo'
+
+
 #
 # merge candidate
 #
@@ -164,32 +240,32 @@ class MergeCandidateManager(models.Manager):
         return MergeCandidate.objects.filter(Q(owner_timestamp__isnull=True) | Q(owner_timestamp__lte=ago15min) | Q(owner=user))[:limit]
 
 class MergeCandidate(models.Model):
-    
+
     objects = MergeCandidateManager()
-    
+
     name = models.CharField(max_length=255)
     entity = models.ForeignKey(Entity, related_name="merge_candidates", blank=True, null=True)
     priority = models.IntegerField(default=0)
     timestamp = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, related_name="merge_candidates", blank=True, null=True)
     owner_timestamp = models.DateTimeField(blank=True, null=True)
-    
+
     class Meta:
         ordering = ('-priority','timestamp')
         db_table = 'matchbox_mergecandidate'
-    
+
     def __unicode__(self):
         return self.name
-    
+
     def lock(self, user):
-        self.owner = user 
+        self.owner = user
         self.owner_timestamp = datetime.datetime.utcnow()
         self.save()
-    
+
     def is_locked(self):
         ago15min = datetime.datetime.utcnow() - datetime.timedelta(0, 0, 0, 0, 15)
         return self.owner is not None and self.owner_timestamp >= ago15min
-    
+
 
 _entity_names = django2sql_names(Entity)
 _alias_names = django2sql_names(EntityAlias)
@@ -199,5 +275,5 @@ _merge_names = django2sql_names(MergeCandidate)
 
 assert is_disjoint(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
 sql_names = dict_union(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
- 
-    
+
+

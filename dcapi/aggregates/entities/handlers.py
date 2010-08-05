@@ -29,18 +29,6 @@ def get_totals(entity_id):
     return totals
 
 
-def get_type_specific_metadata(entity):
-    if entity.type == 'politician':
-        metadata = PoliticianMetadata.objects.get(entity=entity.id)
-        metadata_dict = model_to_dict(metadata)
-        metadata_dict['photo_url'] = metadata.photo_url()
-        return metadata_dict
-    elif entity.type == 'organization':
-        return {'lobbying_firm': bool(OrganizationMetadata.objects.filter(entity=entity.id, lobbying_firm=True))} # TODO: convert this to the more straightforward style of converting directly to dict
-    else:
-        return {}
-
-
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
@@ -55,14 +43,12 @@ class EntityHandler(BaseHandler):
 
         external_ids = [{'namespace': attr.namespace, 'id': attr.value} for attr in entity.attributes.all()]
 
-        metadata = get_type_specific_metadata(entity)
-
         result = {'name': entity.name,
                   'id': entity.id,
                   'type': entity.type,
                   'totals': totals,
                   'external_ids': external_ids,
-                  'metadata': metadata}
+                  'metadata': entity.metadata}
 
         return result
 
