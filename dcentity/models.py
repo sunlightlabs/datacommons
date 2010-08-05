@@ -97,11 +97,9 @@ class Entity(models.Model):
     def _get_sourced_data_as_dict(self):
         sources_dict = [model_to_dict(x) for x in self.sourced_metadata_in_order()]
         sources_dict.reverse()
-        compiled_dict = None
+        compiled_dict = {}
 
         if len(sources_dict):
-            lowest_priority = sources_dict.pop()
-            compiled_dict = lowest_priority.copy()
             for x in sources_dict:
                 compiled_dict.update(x)
 
@@ -111,13 +109,15 @@ class Entity(models.Model):
 
     def _get_all_metadata_as_dict(self):
         # sourced metadata
-        metadata = self._get_sourced_data_as_dict() or {}
+        metadata = {}
 
         # our type-specific metadata
-        if self.type == 'politician' and self.politician_metadata:
+        if self.type == 'politician' and hasattr(self, 'politician_metadata'):
             metadata.update(model_to_dict(self.politician_metadata))
-        elif self.type == 'organization' and self.organization_metadata:
+        elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
             metadata.update(model_to_dict(self.organization_metadata))
+
+        metadata.update(self._get_sourced_data_as_dict())
 
         return metadata
 
