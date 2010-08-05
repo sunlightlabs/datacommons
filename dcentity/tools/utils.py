@@ -22,7 +22,7 @@ class reopen_csv_writer:
     def __init__(self, filename):
         self.filename = filename
 
-    def __enter__(self):
+    def __enter__(self, *args, **kwargs):
         rows = []
         if os.path.exists(self.filename):
             with open(self.filename) as fh:
@@ -32,7 +32,7 @@ class reopen_csv_writer:
         writer = UnicodeWriter(self.fh)
         return (rows, writer)
 
-    def __exit__(self):
+    def __exit__(self, *args, **kwargs):
         self.fh.close()
 
 # The following taken from python standard library docs for unicode CSV writing
