@@ -16,9 +16,12 @@ def find_wikipedia_url(entity):
     """
     Returns a tuple of (url, article excerpt) for a given entity, or None if no
     matching article is found.
-
+    
+    >>> from dcentity.models import PoliticianMetadata
     >>> e = EntityPlus.objects.create(type='politician', name="foo")
     >>> a = e.aliases.create(alias='Barack Obama')
+    >>> md = PoliticianMetadata.objects.create(entity=e, 
+    ...         state='', party='D', seat='federal:president')
     >>> find_wikipedia_url(e)[0]
     'http://en.wikipedia.org/wiki/Barack_Obama'
 

@@ -111,12 +111,9 @@ class EntityPlus(Entity):
 
         search_terms = [name.search_string()]
         if pol_entity:
-            try:
-                search_terms.append(
-                    expand_state(pol_entity.politician_metadata.all()[0].state)
-                )
-            except IndexError:
-                pass
+            search_terms.append(
+                expand_state(pol_entity.politician_metadata.state)
+            )
         return " ".join(search_terms)
 
     def first_matching_name(self, entity):
