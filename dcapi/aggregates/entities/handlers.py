@@ -91,7 +91,7 @@ class EntitySearchHandler(BaseHandler):
         from matchbox_entity e
         inner join (select distinct entity_id
             from matchbox_entityalias ea
-            where to_tsvector('datacommons', ea.alias) @@ to_tsquery('datacommons', %s)) ft_match
+            where to_tsvector('datacommons', ea.alias) @@ to_tsquery('datacommons', quote_literal(%s))) ft_match
             on e.id = ft_match.entity_id
         left join matchbox_politicianmetadata pm
             on e.id = pm.entity_id
