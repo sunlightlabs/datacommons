@@ -235,12 +235,15 @@ class SparklineHandler(EntityTopListHandler):
     fields = ['step', 'amount']
 
     stmt = """
-        select step, amount
-        from agg_contribution_sparklines
-        where
-            entity_id = %s
-            and cycle = %s
-        order by step
+        select step, coalesce(amount, 0)::integer
+        from generate_series(0,24) as all_steps(step)
+        left join (select step, amount
+            from agg_contribution_sparklines
+            where
+                entity_id = %s
+                and cycle = %s) sparkline
+            using (step)
+        order by step;
     """
 
 class SparklineByPartyHandler(BaseHandler):
@@ -257,10 +260,10 @@ class SparklineByPartyHandler(BaseHandler):
             select
                 recipient_party,
                 step,
-                coalesce(amount, 0) as amount
+                coalesce(amount, 0)::integer as amount
             from (
                 select *
-                from generate_series(1,24) as all_steps(step)
+                from generate_series(0,24) as all_steps(step)
                 cross join (
                     select recipient_party from (values ('D'), ('R'), ('O')) as parties(recipient_party)
                 ) x
