@@ -154,9 +154,13 @@ union
         on c.contributor_ext_id = a.value and a.value != ''
     where
         a.verified = 't'
-        and ((a.namespace in ('urn:crp:individual', 'urn:crp:organization') and c.transaction_namespace = 'urn:fec:transaction')
-            or (a.namespace in ('urn:nimsp:individual', 'urn:nimsp:organization') and c.transaction_namespace = 'urn:nimsp:transaction'));
-
+        and (
+            (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
+            or (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'C')
+            or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
+            or (a.namespace = 'urn:nismp:organization' and c.transaction_namespace = 'urn:nimsp:transaction' and c.contributor_type = 'C')    
+        );
+        
 select date_trunc('second', now()) || ' -- create index contributor_associations_entity_id on contributor_associations (entity_id)';
 create index contributor_associations_entity_id on contributor_associations (entity_id);
 select date_trunc('second', now()) || ' -- create index contributor_associations_transaction_id on contributor_associations (transaction_id)';
@@ -233,16 +237,18 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         a.verified = 't'
-        and e.type in ('organization')
+        and e.type in ('organization') -- name matching only for organizations; politicians should all have IDs
 union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
         on c.recipient_ext_id = a.value and a.value != ''
+    inner join matchbox_entity e
+        on e.id = a.entity_id
     where
         a.verified = 't'
-        and ((a.namespace = 'urn:crp:recipient' and c.transaction_namespace = 'urn:fec:transaction')
-            or (a.namespace = 'urn:nimsp:recipient' and c.transaction_namespace = 'urn:nimsp:transaction'));
+        and ((a.namespace = 'urn:crp:recipient' and c.transaction_namespace = 'urn:fec:transaction' and c.recipient_type = 'P')
+            or (a.namespace = 'urn:nimsp:recipient' and c.transaction_namespace = 'urn:nimsp:transaction' and c.recipient_type = 'P'));
 
 
 select date_trunc('second', now()) || ' -- create index recipient_associations_entity_id on recipient_associations (entity_id)';
