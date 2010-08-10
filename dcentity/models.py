@@ -90,18 +90,19 @@ class Entity(models.Model):
         sources = []
         for attr in self.possible_sources:
             if hasattr(self, attr):
-                sources.append(getattr(self, attr))
+                sources.append((attr, getattr(self, attr)))
 
         return sources
 
     def _get_sourced_data_as_dict(self):
-        sources_dict = [model_to_dict(x) for x in self.sourced_metadata_in_order()]
+        sources_dict = [(name, model_to_dict(x)) for (name, x) in self.sourced_metadata_in_order()]
         sources_dict.reverse()
         compiled_dict = {}
 
         if len(sources_dict):
-            for x in sources_dict:
-                compiled_dict.update(x)
+            for (source_name, source_dict) in sources_dict:
+                source_dict['source_name'] = source_name
+                compiled_dict.update(source_dict)
 
         return compiled_dict
 
@@ -195,6 +196,7 @@ class BioguideInfo(models.Model):
 
     bioguide_id      = models.CharField(max_length=7, blank=True, null=True)
     bio              = models.TextField(null=True)
+    bio_url          = models.URLField(null=True)
     years_of_service = models.CharField(max_length=12, null=True)
     photo_url        = models.URLField(null=True)
 
@@ -228,7 +230,6 @@ class SunlightInfo(models.Model):
 
     class Meta:
         db_table = 'matchbox_sunlightinfo'
-
 
 #
 # merge candidate
