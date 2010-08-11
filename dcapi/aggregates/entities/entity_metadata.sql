@@ -3,7 +3,7 @@
 
 
 
--- Organization Metadat
+-- Organization Metadata
 
 delete from matchbox_organizationmetadata;
 
