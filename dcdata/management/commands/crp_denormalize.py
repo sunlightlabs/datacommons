@@ -75,6 +75,7 @@ class RecipientFilter(Filter):
             record['recipient_type'] = 'committee'
             record['seat_result'] = RecipientFilter.get_recip_code_result(committee['recip_code'])
             record['recipient_ext_id'] = committee['cmte_id']
+            record['recipient_category'] = committee['prim_code']
 
 
 def load_catcodes(dataroot):
