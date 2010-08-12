@@ -271,7 +271,7 @@ create table agg_contribution_sparklines as
     select
         entity_id,
         cycle,
-        ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step,
+        rank() over (partition by entity_id order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
@@ -282,7 +282,7 @@ create table agg_contribution_sparklines as
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
-        group by entity_id, cycle, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'))
+        group by entity_id, cycle, date_trunc('month', c.date)
 
     union all
 
@@ -321,7 +321,7 @@ create table agg_contribution_sparklines_by_party as
         entity_id,
         cycle,
         recipient_party,
-        ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01')) as step,
+        rank() over (partition by entity_id order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
@@ -330,7 +330,7 @@ create table agg_contribution_sparklines_by_party as
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
-        group by entity_id, cycle, recipient_party, ((c.date - date(cycle-1 || '-01-01')) * :sparkline_resolution) / (date(cycle || '-12-31') - date(cycle-1 || '-01-01'))
+        group by entity_id, cycle, recipient_party, date_trunc('month', c.date)
 
     union all
 
