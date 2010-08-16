@@ -1,5 +1,5 @@
 from dcapi.aggregates.handlers import execute_top
-from dcentity.models import Entity, EntityAttribute, OrganizationMetadata, PoliticianMetadata
+from dcentity.models import Entity, EntityAttribute, OrganizationMetadata, PoliticianMetadata, BioguideInfo
 from django.forms.models import model_to_dict
 from piston.handler import BaseHandler
 from piston.utils import rc
@@ -7,11 +7,9 @@ from urllib import unquote_plus
 
 
 
-
-
 get_totals_stmt = """
      select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount, lobbying_count, firm_income, non_firm_spending
-     from 
+     from
          (select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount
          from agg_entities
          where entity_id = %s) c
@@ -59,16 +57,20 @@ class EntityAttributeHandler(BaseHandler):
 
     def read(self, request):
         namespace = request.GET.get('namespace', None)
+        bioguide_id = request.GET.get('bioguide_id', None)
         id = request.GET.get('id', None)
 
-        if not id or not namespace:
+        if (not id or not namespace) and not bioguide_id:
             error_response = rc.BAD_REQUEST
-            error_response.write("Must include a 'namespace' and an 'id' parameter.")
+            error_response.write("Must include a 'namespace' and an 'id' parameter or a 'bioguide_id' parameter.")
             return error_response
 
-        attributes = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
+        if bioguide_id:
+            entities = BioguideInfo.objects.filter(bioguide_id = bioguide_id)
+        else:
+            entities = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
 
-        return [{'id': a.entity_id} for a in attributes]
+        return [{'id': e.entity_id} for e in entities]
 
 
 class EntitySearchHandler(BaseHandler):
