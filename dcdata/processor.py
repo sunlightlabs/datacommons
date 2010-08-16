@@ -43,15 +43,11 @@ def load_data(input_iterator, record_processor, output_func):
                 traceback.print_tb(e.traceback)
             sys.stderr.flush()
             if TERMINATE_ON_ERROR:
-                return
+                raise
             
         except TerminateProcessingException as e:
             sys.stderr.write('Terminating processing on input record: "%s"\n' % record)
-            sys.stderr.write('Message: %s\n' % e.message)
-            if e.traceback:
-                traceback.print_tb(e.traceback)
-            sys.stderr.flush()
-            return
+            raise
 
 
 
