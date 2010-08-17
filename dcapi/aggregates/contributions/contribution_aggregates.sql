@@ -425,40 +425,6 @@ select date_trunc('second', now()) || ' -- create index agg_sectors_to_cand_idx 
 create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle);
 
 
-
--- Industry Category Orders to Candidate
-
-
-select date_trunc('second', now()) || ' -- drop table if exists agg_cat_orders_to_cand';
-drop table if exists agg_cat_orders_to_cand;
-
-select date_trunc('second', now()) || ' -- create table agg_cat_orders_to_cand';
-create table agg_cat_orders_to_cand as
-    select top.recipient_entity, top.sector, top.contributor_category_order, top.cycle, top.count, top.amount
-    from
-        (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, c.contributor_category_order, c.cycle, count(*), sum(amount) as amount,
-            rank() over (partition by ra.entity_id, substring(c.contributor_category_order for 1), c.cycle order by sum(amount) desc) as rank
-        from (select * from contributions_individual union select * from contributions_organization) c
-        inner join recipient_associations ra using (transaction_id)
-        group by ra.entity_id, substring(c.contributor_category_order for 1), c.contributor_category_order, c.cycle) top
-    where
-        rank <= :agg_top_n
-union
-    select top.recipient_entity, top.sector, top.contributor_category_order, -1, top.count, top.amount
-    from
-        (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, c.contributor_category_order, count(*), sum(amount) as amount,
-            rank() over (partition by ra.entity_id, substring(c.contributor_category_order for 1) order by sum(amount) desc) as rank
-        from (select * from contributions_individual union select * from contributions_organization) c
-        inner join recipient_associations ra using (transaction_id)
-        group by ra.entity_id, substring(c.contributor_category_order for 1), c.contributor_category_order) top
-    where
-        rank <= :agg_top_n;
-
-select date_trunc('second', now()) || ' -- create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, sector, cycle)';
-create index agg_cat_orders_to_cand_idx on agg_cat_orders_to_cand (recipient_entity, sector, cycle);
-
-
-
 -- Candidates from Individual
 
 

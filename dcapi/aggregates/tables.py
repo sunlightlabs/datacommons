@@ -189,7 +189,6 @@ def build_pie_table(table, source, primary, features, measures):
 
 ### Top List Tables ###
 'agg_sectors_to_cand'
-'agg_cat_orders_to_cand'
 'agg_orgs_to_cand'
 'agg_cands_from_indiv'
 'agg_orgs_from_inidv'
@@ -281,14 +280,6 @@ agg_sectors_to_cand_stmt = build_ranked_table(
     from_='(select * from contributions_individual union select * from contributions_organization) source inner join recipient_associations recipient using (transaction_id)',
     primary_terms={'recipient_entity': 'recipient.entity_id'},
     secondary_terms={'sector': "substring(contributor_category_order for 1)"},
-    measures=COUNT_AND_AMOUNT,
-    rank_order=['amount'])
-
-agg_cat_orders_to_cand_stmt = build_ranked_table(
-    table='agg_cat_orders_to_cand',
-    from_="(select * from contributions_individual union select * from contributions_organization) source inner join recipient_associations recipient using (transaction_id)",
-    primary_terms=ODict([('recipient_entity', 'recipient.entity_id'), ('sector', "substring(contributor_category_order for 1)")]),
-    secondary_terms={'category_order': 'contributor_category_order'},
     measures=COUNT_AND_AMOUNT,
     rank_order=['amount'])
 

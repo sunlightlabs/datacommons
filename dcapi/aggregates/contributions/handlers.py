@@ -154,24 +154,6 @@ class SectorsHandler(EntityTopListHandler):
     """
 
 
-class IndustriesBySectorHandler(EntityTopListHandler):
-
-    args = ['entity_id', 'sector', 'cycle', 'limit']
-
-    fields = ['industry', 'count', 'amount']
-
-    stmt = """
-        select contributor_category_order, count, amount
-        from agg_cat_orders_to_cand
-        where
-            recipient_entity = %s
-            and sector = %s
-            and cycle = %s
-        order by amount desc
-        limit %s
-    """
-
-
 class TopPoliticiansByReceiptsHandler(TopListHandler):
 
     args = ['cycle', 'limit']
