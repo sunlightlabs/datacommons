@@ -42,7 +42,7 @@ select date_trunc('second', now()) || ' -- create view contributions_even_cycles
 create view contributions_even_cycles as
     select transaction_id, transaction_namespace, transaction_type, amount,
         case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle, date,
-        contributor_name, contributor_type, contributor_category, contributor_category_order, contributor_state,
+        contributor_name, contributor_type, contributor_category, contributor_state,
         organization_name, parent_organization_name,
         recipient_name, recipient_type, recipient_party, recipient_state
     from contribution_contribution;
@@ -403,21 +403,23 @@ select date_trunc('second', now()) || ' -- create table agg_sectors_to_cand';
 create table agg_sectors_to_cand as
     select top.recipient_entity, top.sector, top.cycle, top.count, top.amount
     from
-        (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, c.cycle, count(*), sum(amount) as amount,
+        (select ra.entity_id as recipient_entity, coalesce(substring(codes.catorder for 1), 'Y') as sector, c.cycle, count(*), sum(amount) as amount,
             rank() over (partition by ra.entity_id, cycle order by sum(amount) desc) as rank
         from (select * from contributions_individual union select * from contributions_organization) c
         inner join recipient_associations ra using (transaction_id)
-        group by ra.entity_id, substring(c.contributor_category_order for 1), c.cycle) top
+        left join agg_cat_map codes on c.contributor_category = codes.catcode
+        group by ra.entity_id, coalesce(substring(codes.catorder for 1), 'Y'), c.cycle) top
     where
         rank <= :agg_top_n
 union
     select top.recipient_entity, top.sector, -1, top.count, top.amount
     from
-        (select ra.entity_id as recipient_entity, substring(c.contributor_category_order for 1) as sector, count(*), sum(amount) as amount,
+        (select ra.entity_id as recipient_entity, coalesce(substring(codes.catorder for 1), 'Y') as sector, count(*), sum(amount) as amount,
             rank() over (partition by ra.entity_id order by sum(amount) desc) as rank
         from (select * from contributions_individual union select * from contributions_organization) c
         inner join recipient_associations ra using (transaction_id)
-        group by ra.entity_id, substring(c.contributor_category_order for 1)) top
+        left join agg_cat_map codes on c.contributor_category = codes.catcode        
+        group by ra.entity_id, coalesce(substring(codes.catorder for 1), 'Y')) top
     where
         rank <= :agg_top_n;
 

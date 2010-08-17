@@ -275,13 +275,16 @@ agg_cands_from_indiv_stmt = build_standard_ranked_table(
     secondary='recipient',
     measures=COUNT_AND_AMOUNT)
 
-agg_sectors_to_cand_stmt = build_ranked_table(
-    table='agg_sectors_to_cand',
-    from_='(select * from contributions_individual union select * from contributions_organization) source inner join recipient_associations recipient using (transaction_id)',
-    primary_terms={'recipient_entity': 'recipient.entity_id'},
-    secondary_terms={'sector': "substring(contributor_category_order for 1)"},
-    measures=COUNT_AND_AMOUNT,
-    rank_order=['amount'])
+# this is now out-of-date, since we removed the contributor_category_order field.
+# to update, need to join on agg_cat_map
+
+# agg_sectors_to_cand_stmt = build_ranked_table(
+#     table='agg_sectors_to_cand',
+#     from_='(select * from contributions_individual union select * from contributions_organization) source inner join recipient_associations recipient using (transaction_id)',
+#     primary_terms={'recipient_entity': 'recipient.entity_id'},
+#     secondary_terms={'sector': "substring(contributor_category_order for 1)"},
+#     measures=COUNT_AND_AMOUNT,
+#     rank_order=['amount'])
 
 agg_lobbying_registrants_for_client_stmt = build_standard_ranked_table(
     table='agg_lobbying_registrants_for_client', 
