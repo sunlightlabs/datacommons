@@ -223,7 +223,7 @@ create table agg_lobbying_registrants_for_client as
         from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
-        where registrant_name != client_name
+        where lower(registrant_name) != lower(client_name)
         group by ca.entity_id, cycle, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n
@@ -234,7 +234,7 @@ union
         from lobbying_report r
         inner join assoc_lobbying_client as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
-        where registrant_name != client_name
+        where lower(registrant_name) != lower(client_name)
         group by ca.entity_id, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n;
