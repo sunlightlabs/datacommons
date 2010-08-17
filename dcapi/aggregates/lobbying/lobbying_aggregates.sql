@@ -27,7 +27,7 @@ create table assoc_lobbying_client as
     inner join matchbox_entity e
         on e.id = a.entity_id
     inner join lobbying_lobbying l
-        on lower(a.alias) = lower(l.client_name) or lower(a.alias) = lower(l.client_parent_name)
+        on lower(a.alias) = lower(l.client_name)
     where
         a.verified = 't'
         and e.type = 'organization'
@@ -44,6 +44,29 @@ select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_en
 create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id);
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_transaction_id on assoc_lobbying_client (transaction_id)';
 create index assoc_lobbying_client_transaction_id on assoc_lobbying_client (transaction_id);
+
+
+-- Lobbying Client Parent Associations
+
+select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_client_parent';
+drop table if exists assoc_lobbying_client_parent;
+
+select date_trunc('second', now()) || ' -- create table assoc_lobbying_client_parent as';
+create table assoc_lobbying_client_parent as
+    select a.entity_id, l.transaction_id
+    from matchbox_entityalias a
+    inner join matchbox_entity e
+        on e.id = a.entity_id
+    inner join lobbying_lobbying l
+        lower(a.alias) = lower(l.client_parent_name)
+    where
+        a.verified = 't'
+        and e.type = 'organization';
+
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_parent_entity_id on assoc_lobbying_client_parent (entity_id)';
+create index assoc_lobbying_client_parent_entity_id on assoc_lobbying_client_parent (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_parent_transaction_id on assoc_lobbying_client_parent (transaction_id)';
+create index assoc_lobbying_client_parent_transaction_id on assoc_lobbying_client_parent (transaction_id);
 
 
 -- Lobbying Registrant Associations
@@ -221,7 +244,7 @@ create table agg_lobbying_registrants_for_client as
     from (select ca.entity_id as client_entity, r.cycle, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, count(r), sum(amount) as amount,
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
-        inner join assoc_lobbying_client as ca using (transaction_id)
+        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
         where lower(registrant_name) != lower(client_name)
         group by ca.entity_id, cycle, r.registrant_name, coalesce(ra.entity_id, '')) top
@@ -232,7 +255,7 @@ union
     from (select ca.entity_id as client_entity, r.registrant_name, coalesce(ra.entity_id, '') as registrant_entity, count(r), sum(amount) as amount,
             rank() over (partition by ca.entity_id order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
-        inner join assoc_lobbying_client as ca using (transaction_id)
+        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
         where lower(registrant_name) != lower(client_name)
         group by ca.entity_id, r.registrant_name, coalesce(ra.entity_id, '')) top
@@ -255,7 +278,7 @@ create table agg_lobbying_issues_for_client as
             rank() over (partition by ca.entity_id, r.cycle order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
-        inner join assoc_lobbying_client ca using (transaction_id)
+        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
         group by ca.entity_id, r.cycle, i.general_issue) top
     where
         rank <= :agg_top_n
@@ -265,7 +288,7 @@ union
             rank() over (partition by ca.entity_id order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
-        inner join assoc_lobbying_client ca using (transaction_id)
+        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
         group by ca.entity_id, i.general_issue) top
     where
         rank <= :agg_top_n;
@@ -286,7 +309,7 @@ create table agg_lobbying_lobbyists_for_client as
             rank() over (partition by ca.entity_id, r.cycle order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
-        inner join assoc_lobbying_client ca using (transaction_id)
+        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
         left join assoc_lobbying_lobbyist la using (id)
         group by ca.entity_id, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '')) top
     where
@@ -297,7 +320,7 @@ union
             rank() over (partition by ca.entity_id order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
-        inner join assoc_lobbying_client ca using (transaction_id)
+        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
         left join assoc_lobbying_lobbyist la using (id)
         group by ca.entity_id, l.lobbyist_name, coalesce(la.entity_id, '')) top
     where

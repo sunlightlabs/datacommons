@@ -167,9 +167,7 @@ select date_trunc('second', now()) || ' -- create index contributor_associations
 create index contributor_associations_transaction_id on contributor_associations (transaction_id);
 
 
-
 -- Organization Associations
-
 
 select date_trunc('second', now()) || ' -- drop table if exists organization_associations';
 drop table if exists organization_associations;
@@ -187,28 +185,9 @@ create table organization_associations as
         and e.type = 'organization'
 union
     select a.entity_id, c.transaction_id
-        from contribution_contribution c
-        inner join matchbox_entityalias a
-            on lower(c.parent_organization_name) = lower(a.alias)
-        inner join matchbox_entity e
-            on e.id = a.entity_id
-        where
-            a.verified = 't'
-            and e.type = 'organization'
-union
-    select a.entity_id, c.transaction_id
     from contribution_contribution c
     inner join matchbox_entityattribute a
         on c.organization_ext_id = a.value and a.value != ''
-    where
-        a.verified = 't'
-        and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
-            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'))
-union
-    select a.entity_id, c.transaction_id
-    from contribution_contribution c
-    inner join matchbox_entityattribute a
-        on c.parent_organization_ext_id = a.value and a.value != ''
     where
         a.verified = 't'
         and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
@@ -219,6 +198,36 @@ create index organization_associations_entity_id on organization_associations (e
 select date_trunc('second', now()) || ' -- create index organization_associations_transaction_id on organization_associations (transaction_id)';
 create index organization_associations_transaction_id on organization_associations (transaction_id);
 
+-- Parent Organization Associations
+
+select date_trunc('second', now()) || ' -- drop table if exists parent_organization_associations';
+drop table if exists parent_organization_associations;
+
+select date_trunc('second', now()) || ' -- create table parent_organization_associations';
+    create table parent_organization_associations as
+        select a.entity_id, c.transaction_id
+            from contribution_contribution c
+            inner join matchbox_entityalias a
+                on lower(c.parent_organization_name) = lower(a.alias)
+            inner join matchbox_entity e
+                on e.id = a.entity_id
+            where
+                a.verified = 't'
+                and e.type = 'organization'
+    union
+        select a.entity_id, c.transaction_id
+        from contribution_contribution c
+        inner join matchbox_entityattribute a
+            on c.parent_organization_ext_id = a.value and a.value != ''
+        where
+            a.verified = 't'
+            and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
+                or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'));
+
+select date_trunc('second', now()) || ' -- create index parent_organization_associations_entity_id on parent_organization_associations (entity_id)';
+create index parent_organization_associations_entity_id on parent_organization_associations (entity_id);
+select date_trunc('second', now()) || ' -- create index parent_organization_associations_transaction_id on parent_organization_associations (transaction_id)';
+create index parent_organization_associations_transaction_id on parent_organization_associations (transaction_id);
 
 
 -- Recipient Associations
@@ -279,6 +288,8 @@ create table agg_contribution_sparklines as
                 select * from recipient_associations
                 union
                 select * from organization_associations
+                union
+                select * from parent_organization_associations
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
@@ -297,6 +308,8 @@ create table agg_contribution_sparklines as
                 select * from recipient_associations
                 union
                 select * from organization_associations
+                union
+                select * from parent_organization_associations
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         group by entity_id, date_trunc('quarter', c.date);
@@ -327,6 +340,8 @@ create table agg_contribution_sparklines_by_party as
                 select * from contributor_associations
                 union
                 select * from organization_associations
+                union
+                select * from parent_organization_associations                
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
@@ -344,6 +359,8 @@ create table agg_contribution_sparklines_by_party as
                 select * from contributor_associations
                 union
                 select * from organization_associations
+                union
+                select * from parent_organization_associations                
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         group by entity_id, recipient_party, date_trunc('quarter', c.date);
@@ -365,8 +382,10 @@ create table agg_entities as
         coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
     from
         (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
-        from (select * from contributor_associations union select * from organization_associations) a
-            inner join contributions_all_relevant transaction using (transaction_id)
+        from (select * from contributor_associations 
+            union select * from organization_associations
+            union select * from parent_organization_associations) a
+        inner join contributions_all_relevant transaction using (transaction_id)
         group by a.entity_id, transaction.cycle) as contrib_aggs
     full outer join
         (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
@@ -379,8 +398,10 @@ union
         coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
     from
         (select a.entity_id, count(transaction), sum(transaction.amount)
-        from (select * from contributor_associations union select * from organization_associations) a
-            inner join contributions_all_relevant transaction using (transaction_id)
+        from (select * from contributor_associations 
+            union select * from organization_associations
+            union select * from parent_organization_associations) a
+        inner join contributions_all_relevant transaction using (transaction_id)
         group by a.entity_id) as contrib_aggs
     full outer join
         (select a.entity_id, count(transaction), sum(transaction.amount)
@@ -589,14 +610,14 @@ create table agg_cands_from_org as
                 (select ca.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
                     cycle, count(*), sum(c.amount) as amount
                 from contributions_organization c
-                inner join organization_associations ca using (transaction_id)
+                inner join (select * from organization_associations union select * from parent_organization_associations) ca using (transaction_id)
                 left join recipient_associations ra using (transaction_id)
                 group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top_direct
             full outer join
                 (select oa.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
                     cycle, count(*), sum(amount) as amount
                 from contributions_individual c
-                inner join organization_associations oa using (transaction_id)
+                inner join (select * from organization_associations union select * from parent_organization_associations) oa using (transaction_id)
                 left join recipient_associations ra using (transaction_id)
                 group by oa.entity_id, c.recipient_name, coalesce(ra.entity_id, ''), cycle) top_indivs
             using (organization_entity, recipient_name, recipient_entity, cycle)) top
@@ -614,14 +635,14 @@ union
                 (select ca.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
                     count(*), sum(c.amount) as amount
                 from contributions_organization c
-                inner join contributor_associations ca using (transaction_id)
+                inner join (select * from organization_associations union select * from parent_organization_associations) ca using (transaction_id)
                 left join recipient_associations ra using (transaction_id)
                 group by ca.entity_id, c.recipient_name, coalesce(ra.entity_id, '')) top_direct
             full outer join
                 (select oa.entity_id as organization_entity, c.recipient_name as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
                     count(*), sum(amount) as amount
                 from contributions_individual c
-                inner join organization_associations oa using (transaction_id)
+                inner join (select * from organization_associations union select * from parent_organization_associations) oa using (transaction_id)
                 left join recipient_associations ra using (transaction_id)
                 group by oa.entity_id, c.recipient_name, coalesce(ra.entity_id, '')) top_indivs
             using (organization_entity, recipient_name, recipient_entity)) top
@@ -666,12 +687,12 @@ select date_trunc('second', now()) || ' -- create table agg_party_from_org';
 create table agg_party_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
     from contributions_all_relevant c
-    inner join organization_associations oa using (transaction_id)
+    inner join (select * from organization_associations union select * from parent_organization_associations) oa using (transaction_id)
     group by oa.entity_id, c.cycle, c.recipient_party
 union
     select oa.entity_id as organization_entity, -1, c.recipient_party, count(*), sum(amount) as amount
     from contributions_all_relevant c
-    inner join organization_associations oa using (transaction_id)
+    inner join (select * from organization_associations union select * from parent_organization_associations) oa using (transaction_id)
     group by oa.entity_id, c.recipient_party;
 
 select date_trunc('second', now()) || ' -- create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle)';
@@ -689,12 +710,12 @@ select date_trunc('second', now()) || ' -- create table agg_namespace_from_org';
 create table agg_namespace_from_org as
     select oa.entity_id as organization_entity, c.cycle, c.transaction_namespace, count(*), sum(amount) as amount
     from contributions_all_relevant c
-    inner join organization_associations oa using (transaction_id)
+    inner join (select * from organization_associations union select * from parent_organization_associations) oa using (transaction_id)
     group by oa.entity_id, c.cycle, c.transaction_namespace
 union
     select oa.entity_id as organization_entity, -1, c.transaction_namespace, count(*), sum(amount) as amount
     from contributions_all_relevant c
-    inner join organization_associations oa using (transaction_id)
+    inner join (select * from organization_associations union select * from parent_organization_associations) oa using (transaction_id)
     group by oa.entity_id, c.transaction_namespace;
 
 select date_trunc('second', now()) || ' -- create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle)';
