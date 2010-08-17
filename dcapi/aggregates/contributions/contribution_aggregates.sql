@@ -521,19 +521,15 @@ create table agg_orgs_to_cand as
                 left join contributor_associations ca using (transaction_id)
                 group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, ''), cycle) top_pacs
             full outer join
-                (select ra.entity_id as recipient_entity,
-                    case when parent_organization_name != '' then parent_organization_name
-                        else organization_name end as organization_name,
+                (select ra.entity_id as recipient_entity, organization_name,
                     coalesce(oa.entity_id, '') as organization_entity,
                     cycle, count(*) as count, sum(amount) as amount
                 from contributions_individual c
                 inner join recipient_associations ra using (transaction_id)
                 left join organization_associations oa using (transaction_id)
                 where
-                    organization_name != '' or parent_organization_name != ''
-                group by ra.entity_id,
-                    case when parent_organization_name != '' then parent_organization_name
-                        else organization_name end,
+                    organization_name != ''
+                group by ra.entity_id, organization_name,
                     coalesce(oa.entity_id, ''), cycle) top_indivs
             using (recipient_entity, organization_name, organization_entity, cycle)
         ) top
@@ -555,19 +551,15 @@ union
                 left join contributor_associations ca using (transaction_id)
                 group by ra.entity_id, c.contributor_name, coalesce(ca.entity_id, '')) top_pacs
             full outer join
-                (select ra.entity_id as recipient_entity,
-                    case when parent_organization_name != '' then parent_organization_name
-                        else organization_name end as organization_name,
+                (select ra.entity_id as recipient_entity, organization_name,
                     coalesce(oa.entity_id, '') as organization_entity,
                     count(*) as count, sum(amount) as amount
                 from contributions_individual c
                 inner join recipient_associations ra using (transaction_id)
                 left join organization_associations oa using (transaction_id)
                 where
-                    organization_name != '' or parent_organization_name != ''
-                group by ra.entity_id,
-                    case when parent_organization_name != '' then parent_organization_name
-                        else organization_name end,
+                    organization_name != ''
+                group by ra.entity_id, organization_name,
                     coalesce(oa.entity_id, '')) top_indivs
                 using (recipient_entity, organization_name, organization_entity)) top
     where
