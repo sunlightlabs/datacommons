@@ -44,7 +44,7 @@ create view contributions_even_cycles as
         case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle, date,
         contributor_name, contributor_type, contributor_category, contributor_state,
         organization_name, parent_organization_name,
-        recipient_name, recipient_type, recipient_party, recipient_state
+        recipient_name, recipient_type, recipient_party, recipient_state, recipient_category
     from contribution_contribution;
 
 
@@ -82,6 +82,7 @@ create table contributions_individual_to_organization as
     where
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'C'
+        and substring(c.recipient_category for 2) != 'Z4' 
         and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
