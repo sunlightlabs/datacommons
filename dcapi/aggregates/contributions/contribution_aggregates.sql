@@ -15,7 +15,6 @@ create table agg_cycles as
 -- Top N: the number of rows to generate for each aggregate
 
 \set agg_top_n 10
---\set agg_top_n 100
 
 
 -- CatCodes that should not be included in totals.
@@ -146,7 +145,7 @@ create table contributor_associations as
         on e.id = a.entity_id
     where
         a.verified = 't'
-        and e.type in ('individual', 'organization')
+        and e.type = 'organization' -- organizations can match by name; individuals should all have IDs
 union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
@@ -237,7 +236,7 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         a.verified = 't'
-        and e.type in ('organization') -- name matching only for organizations; politicians should all have IDs
+        and e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
 union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
