@@ -42,9 +42,9 @@ create index contribution_contribution_recipient_name on contribution_contributi
 
 -- case-insensitive names
 
-drop if exists contribution_contribution_contributor_name_lower;
-drop if exists contribution_contribution_organization_name_lower;
-drop if exists contribution_contribution_parent_organization_name_lower;
+drop index if exists contribution_contribution_contributor_name_lower;
+drop index if exists contribution_contribution_organization_name_lower;
+drop index if exists contribution_contribution_parent_organization_name_lower;
 
 create index contribution_contribution_contributor_name_lower on contribution_contribution (lower(contributor_name));
 create index contribution_contribution_organization_name_lower on contribution_contribution (lower(organization_name));
