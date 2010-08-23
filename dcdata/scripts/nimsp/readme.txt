@@ -4,7 +4,7 @@ NIMSP:
 
 Database setup:
 
-	PostreSQL server with the following databases:
+	PostgreSQL server with the following databases:
 		- datacommons
 		- salts
 		- util
