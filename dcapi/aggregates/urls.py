@@ -1,7 +1,7 @@
 
 from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
-    SectorsHandler, IndustriesBySectorHandler, PolLocalBreakdownHandler, \
+    SectorsHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
     SparklineByPartyHandler, \
@@ -45,10 +45,6 @@ urlpatterns = patterns('',
     # contributions to a single politician, broken down by industry
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/sectors\.(?P<emitter_format>.+)$',
         Resource(SectorsHandler, **ad)),
-
-    # contributions to a single politician, broken down by industry sector
-    url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/sector/(?P<sector>.+)/industries\.(?P<emitter_format>.+)$',
-        Resource(IndustriesBySectorHandler, **ad)),
 
     # contributions to a single politician, broken down to show percentages
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/local_breakdown\.(?P<emitter_format>.+)$',
