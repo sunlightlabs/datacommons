@@ -266,7 +266,6 @@ select date_trunc('second', now()) || ' -- create index recipient_associations_t
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
 
-
 -- Sparklines
 
 \set sparkline_resolution 24
@@ -280,7 +279,7 @@ create table agg_contribution_sparklines as
     select
         entity_id,
         cycle,
-        rank() over (partition by entity_id order by date_trunc('month', c.date)) as step,
+        rank() over (partition by entity_id, cycle order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
@@ -334,7 +333,7 @@ create table agg_contribution_sparklines_by_party as
         entity_id,
         cycle,
         recipient_party,
-        rank() over (partition by entity_id order by date_trunc('month', c.date)) as step,
+        rank() over (partition by entity_id, cycle order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
