@@ -506,7 +506,7 @@ create table agg_orgs_from_indiv as
         inner join contributor_associations ca using(transaction_id)
         left join recipient_associations ra using (transaction_id)
         left join matchbox_entity re on re.id = ra.entity_id
-        group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle) top
+        group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
     )
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount
     from individual_to_org_contributions_by_cycle
