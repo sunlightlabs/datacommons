@@ -126,6 +126,11 @@ class Entity(models.Model):
             metadata.update(model_to_dict(self.politician_metadata))
         elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
             metadata.update(self.organization_metadata.to_dict())
+        elif self.type == 'individual':
+            # in the future, individuals should probably have their own metadata table,
+            # just like the other entity types, but since it would essentially be a
+            # dummy table and we only have one attribute (on its own table), leaving it out for now
+            metadata.update({'affiliated_organizations': [x.organization_entity for x in self.affiliated_organizations.all()]})
 
         metadata.update(self._get_sourced_data_as_dict())
 
@@ -207,6 +212,14 @@ class PoliticianMetadata(models.Model):
 
     class Meta:
         db_table = 'matchbox_politicianmetadata'
+
+
+class IndivOrgAffiliations(models.Model):
+    individual_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_organizations")
+    organization_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_individuals")
+
+    class Meta:
+        db_table = 'matchbox_indivorgaffiliations'
 
 
 class BioguideInfo(models.Model):

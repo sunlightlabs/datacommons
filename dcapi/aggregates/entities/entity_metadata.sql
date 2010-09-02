@@ -49,3 +49,18 @@ insert into matchbox_politicianmetadata (entity_id, state, party, seat)
     order by entity_id, cycle desc;
 
 
+-- Indiv/Org Affiliations
+
+delete from matchbox_indivorgaffiliations;
+
+insert into matchbox_indivorgaffiliations (individual_entity_id, organization_entity_id)
+    select distinct
+        ca.entity_id as individual_entity_id, oa.entity_id as organization_entity_id
+    from
+        contributor_associations ca
+        inner join organization_associations oa using (transaction_id)
+        inner join matchbox_entity me on me.id = ca.entity_id
+    where me.type = 'individual';
+
+
+
