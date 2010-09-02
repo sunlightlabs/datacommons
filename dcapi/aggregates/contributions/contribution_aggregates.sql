@@ -266,7 +266,6 @@ select date_trunc('second', now()) || ' -- create index recipient_associations_t
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
 
-
 -- Sparklines
 
 \set sparkline_resolution 24
@@ -280,7 +279,7 @@ create table agg_contribution_sparklines as
     select
         entity_id,
         cycle,
-        rank() over (partition by entity_id order by date_trunc('month', c.date)) as step,
+        rank() over (partition by entity_id, cycle order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
@@ -334,7 +333,7 @@ create table agg_contribution_sparklines_by_party as
         entity_id,
         cycle,
         recipient_party,
-        rank() over (partition by entity_id order by date_trunc('month', c.date)) as step,
+        rank() over (partition by entity_id, cycle order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
@@ -506,7 +505,7 @@ create table agg_orgs_from_indiv as
         inner join contributor_associations ca using(transaction_id)
         left join recipient_associations ra using (transaction_id)
         left join matchbox_entity re on re.id = ra.entity_id
-        group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle) top
+        group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
     )
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount
     from individual_to_org_contributions_by_cycle

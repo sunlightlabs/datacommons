@@ -58,7 +58,7 @@ create table assoc_lobbying_client_parent as
     inner join matchbox_entity e
         on e.id = a.entity_id
     inner join lobbying_lobbying l
-        lower(a.alias) = lower(l.client_parent_name)
+        on lower(a.alias) = lower(l.client_parent_name)
     where
         a.verified = 't'
         and e.type = 'organization';
