@@ -232,7 +232,6 @@ create index parent_organization_associations_transaction_id on parent_organizat
 
 -- Recipient Associations
 
-
 select date_trunc('second', now()) || ' -- drop table if exists recipient_associations';
 drop table if exists recipient_associations;
 

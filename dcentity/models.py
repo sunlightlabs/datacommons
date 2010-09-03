@@ -9,6 +9,15 @@ from uuid import uuid4
 import datetime
 
 
+class ExtensibleModel(models.Model):
+    def to_dict(self):
+        dict = model_to_dict(self)
+        for p in self.extended_properties:
+            dict[p] = getattr(self, p)
+        return dict
+
+    class Meta:
+        abstract = True
 
 #
 # entity reference field
@@ -116,7 +125,12 @@ class Entity(models.Model):
         if self.type == 'politician' and hasattr(self, 'politician_metadata'):
             metadata.update(model_to_dict(self.politician_metadata))
         elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
-            metadata.update(model_to_dict(self.organization_metadata))
+            metadata.update(self.organization_metadata.to_dict())
+        elif self.type == 'individual':
+            # in the future, individuals should probably have their own metadata table,
+            # just like the other entity types, but since it would essentially be a
+            # dummy table and we only have one attribute (on its own table), leaving it out for now
+            metadata.update({'affiliated_organizations': [x.organization_entity for x in self.affiliated_organizations.all()]})
 
         metadata.update(self._get_sourced_data_as_dict())
 
@@ -171,10 +185,19 @@ class Normalization(models.Model):
         return self.original
 
 
-class OrganizationMetadata(models.Model):
-    entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False)
+class OrganizationMetadata(ExtensibleModel):
+    extended_properties = ['parent_entity', 'child_entities']
+    # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
+
+    entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False, unique=True)
 
     lobbying_firm = models.BooleanField(default=False)
+    parent_entity = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
+
+    def _child_entities(self):
+        return [ x.entity for x in self.entity.child_entity_set.all() ]
+
+    child_entities = property(_child_entities)
 
     class Meta:
         db_table = 'matchbox_organizationmetadata'
@@ -191,6 +214,14 @@ class PoliticianMetadata(models.Model):
         db_table = 'matchbox_politicianmetadata'
 
 
+class IndivOrgAffiliations(models.Model):
+    individual_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_organizations")
+    organization_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_individuals")
+
+    class Meta:
+        db_table = 'matchbox_indivorgaffiliations'
+
+
 class BioguideInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='bioguide_info', null=False)
 
@@ -205,7 +236,6 @@ class BioguideInfo(models.Model):
 
     class Meta:
         db_table = 'matchbox_bioguideinfo'
-
 
 class WikipediaInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='wikipedia_info', null=False)
