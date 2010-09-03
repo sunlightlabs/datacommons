@@ -73,6 +73,7 @@ INSTALLED_APPS = (
     'dcapi',
     'dcapi.aggregates',
     'dcapi.rapportive',
+    'dcapi.pg_rapportive',
     'dc_web.public',
 )
 

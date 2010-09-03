@@ -1,0 +1,23 @@
+.pg-wrapper {
+    position: relative;
+}
+.pg-insert {
+    background: #ffffff;
+    padding: 10px;
+    border: 1px solid #cccccc;
+    position: absolute;
+    top: 1em;
+    left: 0px;
+    width: 250px;
+    display: none;
+    z-index: 1000;
+}
+.pg-highlighted {
+    background: #ccccff;
+}
+.pg-fetching {
+    background: #eeeeee url('/media/images/poligraft-slider.gif') no-repeat center center;
+}
+.pg-rendered {
+    background: #ffffff url('/media/images/pglogo-gray.png') no-repeat center center;
+}

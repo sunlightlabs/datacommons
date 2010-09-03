@@ -20,6 +20,7 @@ urlpatterns = patterns('',
     url(r'^grants', include('dcapi.grants.urls')),
     url(r'^lobbying', include('dcapi.lobbying.urls')),
     url(r'^meta/', include('dcapi.meta.urls')),
-    url(r'^aggregates/', include('dcapi.aggregates.urls')), 
+    url(r'^aggregates/', include('dcapi.aggregates.urls')),
+    url(r'^poligraft/', include('dcapi.pg_rapportive.urls')), 
     url(r'^', include('dcapi.rapportive.urls')),
 )
