@@ -148,7 +148,7 @@ create table contributor_associations as
         a.verified = 't'
         -- use name matching for all organizations and state level individuals
         and (e.type = 'organization'
-            (or e.type = 'individual' and c.transaction_namespace = 'urn:nimsp:transaction')) 
+            or (e.type = 'individual' and c.transaction_namespace = 'urn:nimsp:transaction')) 
 union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
