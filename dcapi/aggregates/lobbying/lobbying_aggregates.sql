@@ -145,7 +145,7 @@ create table agg_lobbying_totals as
         left join matchbox_organizationmetadata m using (entity_id)
         where
             coalesce(m.lobbying_firm, 'f') = 'f'
-            and r.registrant_name = r.client_name
+            and lower(r.registrant_name) = lower(r.client_name)
         group by entity_id, cycle) as non_firm_registrant
     using (entity_id, cycle)
     full outer join
@@ -183,7 +183,7 @@ union
         left join matchbox_organizationmetadata m using (entity_id)
         where
             coalesce(m.lobbying_firm, 'f') = 'f'
-            and r.registrant_name = r.client_name
+            and lower(r.registrant_name) = lower(r.client_name)
         group by entity_id) as non_firm_registrant
     using (entity_id)
     full outer join
