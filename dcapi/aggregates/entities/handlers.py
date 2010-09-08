@@ -4,6 +4,7 @@ from django.forms.models import model_to_dict
 from piston.handler import BaseHandler
 from piston.utils import rc
 from urllib import unquote_plus
+from django.core.exceptions import ObjectDoesNotExist
 
 
 
@@ -35,7 +36,10 @@ class EntityHandler(BaseHandler):
 
     def read(self, request, entity_id):
 
-        entity = Entity.objects.select_related().get(id=entity_id)
+        try:
+            entity = Entity.objects.select_related().get(id=entity_id)
+        except ObjectDoesNotExist:
+            return rc.NOT_FOUND
 
         totals = get_totals(entity_id)
 
