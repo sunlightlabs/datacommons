@@ -100,16 +100,6 @@ drop table if exists assoc_lobbying_lobbyist;
 select date_trunc('second', now()) || ' -- create table assoc_lobbying_lobbyist as';
 create table assoc_lobbying_lobbyist as
     select a.entity_id, l.id
-    from matchbox_entityalias a
-    inner join matchbox_entity e
-        on e.id = a.entity_id
-    inner join lobbying_lobbyist l
-        on lower(a.alias) = lower(l.lobbyist_name)
-    where
-        a.verified = 't'
-        and e.type = 'individual'
-union
-    select a.entity_id, l.id
     from matchbox_entityattribute a
     inner join lobbying_lobbyist l
         on a.value = l.lobbyist_ext_id
@@ -121,27 +111,6 @@ select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_
 create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entity_id);
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id)';
 create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id);
-
-
--- Lobbyist Candidate Associations
-
-select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_lobbyist_candidate';
-drop table if exists assoc_lobbying_lobbyist_candidate;
-
-select date_trunc('second', now()) || ' -- create table assoc_lobbying_lobbyist_candidate as';
-create table assoc_lobbying_lobbyist_candidate as
-    select a.entity_id, l.id
-    from matchbox_entityattribute a
-    inner join lobbying_lobbyist l
-        on a.value = l.candidate_ext_id
-    where
-        a.verified = 't'
-        and a.namespace = 'urn:crp:recipient';
-
-select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id)';
-create index assoc_lobbying_lobbyist_candidate_entity_id on assoc_lobbying_lobbyist_candidate (entity_id);
-select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id)';
-create index assoc_lobbying_lobbyist_candidate_id on assoc_lobbying_lobbyist_candidate (id);
 
     
 -- Total Spent
@@ -176,7 +145,7 @@ create table agg_lobbying_totals as
         left join matchbox_organizationmetadata m using (entity_id)
         where
             coalesce(m.lobbying_firm, 'f') = 'f'
-            and r.registrant_name = r.client_name
+            and lower(r.registrant_name) = lower(r.client_name)
         group by entity_id, cycle) as non_firm_registrant
     using (entity_id, cycle)
     full outer join
@@ -214,7 +183,7 @@ union
         left join matchbox_organizationmetadata m using (entity_id)
         where
             coalesce(m.lobbying_firm, 'f') = 'f'
-            and r.registrant_name = r.client_name
+            and lower(r.registrant_name) = lower(r.client_name)
         group by entity_id) as non_firm_registrant
     using (entity_id)
     full outer join
