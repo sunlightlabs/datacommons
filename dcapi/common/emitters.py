@@ -4,6 +4,7 @@ from django.utils import simplejson
 from django.db.models import Model
 from django.db import connections
 from piston.emitters import Emitter
+from piston.utils import HttpStatusCode
 from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
 from dcapi.validate_jsonp import is_valid_jsonp_callback_value
@@ -38,6 +39,11 @@ class StreamingLoggingEmitter(Emitter):
         raise NotImplementedError('please implement this method')
     
     def stream_render(self, request):
+        if isinstance(self.data, HttpResponse):
+            raise HttpStatusCode(self.data)
+        return self.stream_render_generator(request)
+    
+    def stream_render_generator(self, request):
         
         stats = self.handler.statslogger() if hasattr(self.handler, 'statslogger') else StatsLogger()
         
