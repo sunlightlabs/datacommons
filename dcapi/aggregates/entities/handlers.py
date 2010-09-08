@@ -122,4 +122,45 @@ class EntitySearchHandler(BaseHandler):
 
         return [dict(zip(self.fields, row)) for row in raw_result]
 
+class EntitySimpleHandler(BaseHandler):
+    allowed_methods = ('GET',)
 
+    fields = [
+        'id', 'name', 'type',
+    ]
+
+    def read(self, request):
+        entity_type = request.GET.get('type', None)
+        count = request.GET.get('count', None)
+        
+        start = request.GET.get('start', None)
+        end = request.GET.get('end', None)
+        
+        qs = Entity.objects.all().order_by('id')
+        
+        if entity_type:
+            qs = qs.filter(type=entity_type)
+        
+        if count:
+            return {'count': qs.count()}
+        else:
+            if start is not None and end is not None:
+                try:
+                    start = int(start)
+                    end = int(end)
+                except:
+                    error_response = rc.BAD_REQUEST
+                    error_response.write("Must provide integers for start and end.")
+                    return error_response
+            else:
+                error_response = rc.BAD_REQUEST
+                error_response.write("Must specify valid start and end parameters.")
+                return error_response
+            
+            if (end < start or end - start > 10000):
+                error_response = rc.BAD_REQUEST
+                error_response.write("Only 10,000 entities can be retrieved at a time.")
+                return error_response
+            
+            result = qs[start:end]
+            return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
