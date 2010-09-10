@@ -8,16 +8,48 @@
     position: absolute;
     top: 1em;
     left: 0px;
-    width: 250px;
+    width: 160px;
     display: none;
     z-index: 1000;
 }
+.pg-insert h3 {
+    margin: 0px;
+    padding: 0px;
+}
+.pg-insert ul {
+    padding: 0px !important;
+    margin-top: 4px !important;
+    margin-bottom: 0px !important;
+    margin-right: 0px !important;
+    margin-left: 0px !important;
+    list-style: square !important;
+}
+.pg-insert ul li {
+    padding: 0px !important;
+    margin-left: 15px !important;
+}
+.pg-info {
+    border-top: 1px solid #cccccc;
+    margin-top: 8px;
+    padding-top: 8px;
+}
 .pg-highlighted {
-    background: #ccccff;
+    background: #cceeff;
+}
+.pg-insert .pg-highlighted {
+    background: none;
 }
 .pg-fetching {
     background: #eeeeee url('/media/images/poligraft-slider.gif') no-repeat center center;
 }
 .pg-rendered {
     background: #ffffff url('/media/images/pglogo-gray.png') no-repeat center center;
+}
+
+.pg-wrapper a {
+    text-decoration: none;
+    color: #228899;
+}
+.pg-wrapper a:hover {
+    text-decoration: underline;
 }
