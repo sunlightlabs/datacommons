@@ -24,6 +24,6 @@ entitysimple_handler = Resource(EntitySimpleHandler, **ad)
 urlpatterns = patterns('',
     url(r'^/id_lookup.json$', entity_attribute_handler, name='api_entity_attribute'),
     url(r'^/(?P<entity_id>[a-f0-9]+).(?P<emitter_format>.+)$', entity_handler, name='api_entities'),
-    url(r'^_simple.(?P<emitter_format>.+)$', entitysimple_handler, name='api_entities_simple'),
+    url(r'^/list.(?P<emitter_format>.+)$', entitysimple_handler, name='api_entities_simple'),
     url(r'^.(?P<emitter_format>.+)$', entityfilter_handler, name='api_entities_filter'),
 )
