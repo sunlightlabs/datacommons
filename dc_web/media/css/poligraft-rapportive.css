@@ -11,6 +11,9 @@
     width: 160px;
     display: none;
     z-index: 1000;
+    font-weight: normal;
+    font-style: normal;
+    text-decoration: none;
 }
 .pg-insert h3 {
     margin: 0px;
