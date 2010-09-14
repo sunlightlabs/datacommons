@@ -212,13 +212,12 @@ class TopIndividualsByContributionsHandler(TopListHandler):
 
 class SparklineHandler(EntityTopListHandler):
 
-    args = ['entity_id', 'cycle']
-
+    args   = ['entity_id', 'cycle', 'entity_id', 'cycle']
     fields = ['step', 'amount']
 
     stmt = """
         select step, coalesce(amount, 0)::integer
-        from generate_series(0,24) as all_steps(step)
+        from generate_series(1,(select greatest(max(step), 24) from agg_contribution_sparklines where entity_id = %s and cycle = %s)) as all_steps(step)
         left join (select step, amount
             from agg_contribution_sparklines
             where
@@ -230,7 +229,7 @@ class SparklineHandler(EntityTopListHandler):
 
 class SparklineByPartyHandler(BaseHandler):
 
-    args   = ['entity_id', 'cycle']
+    args   = ['entity_id', 'cycle', 'entity_id', 'cycle']
     fields = ['step', 'amount']
 
     stmt = """
@@ -245,7 +244,7 @@ class SparklineByPartyHandler(BaseHandler):
                 coalesce(amount, 0)::integer as amount
             from (
                 select *
-                from generate_series(0,24) as all_steps(step)
+                from generate_series(1,(select greatest(max(step), 24) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s)) as all_steps(step)
                 cross join (
                     select recipient_party from (values ('D'), ('R'), ('O')) as parties(recipient_party)
                 ) x
@@ -290,21 +289,21 @@ class ContributionAmountHandler(BaseHandler):
     fields = 'recipient_entity recipient_name contributor_entity contributor_name amount'.split()
 
     stmt = """
-	select r.id, r.name, c.id, c.name,
-		(select coalesce(sum(amount), 0)::integer
-		from recipient_associations ra 
-		inner join (select * from contributor_associations union select * from organization_associations) ca
-			on ca.entity_id = c.id 
-		 	   and ra.entity_id = r.id
-			   and ca.transaction_id = ra.transaction_id
-		inner join contributions_all_relevant contrib
-			on contrib.transaction_id = ra.transaction_id
-		%s) as amount
-	from matchbox_entity r
-	cross join matchbox_entity c
-	where
-		c.id = %%s
-		and r.id = %%s
+    select r.id, r.name, c.id, c.name,
+        (select coalesce(sum(amount), 0)::integer
+        from recipient_associations ra
+        inner join (select * from contributor_associations union select * from organization_associations) ca
+            on ca.entity_id = c.id
+                and ra.entity_id = r.id
+               and ca.transaction_id = ra.transaction_id
+        inner join contributions_all_relevant contrib
+            on contrib.transaction_id = ra.transaction_id
+        %s) as amount
+    from matchbox_entity r
+    cross join matchbox_entity c
+    where
+        c.id = %%s
+        and r.id = %%s
     """
 
     def read(self, request, **kwargs):
@@ -314,20 +313,20 @@ class ContributionAmountHandler(BaseHandler):
         cached = cache.get(cache_key, 'has expired')
 
         if cached == 'has expired':
-			if cycle == ALL_CYCLES:
-				cycle_where = ''
-			else:
-				cycle_where = 'where cycle = %d' % int(cycle)
+            if cycle == ALL_CYCLES:
+                cycle_where = ''
+            else:
+                cycle_where = 'where cycle = %d' % int(cycle)
 
-			result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
+            result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
 
-			if result:
-				result = dict(zip(self.fields, result)) # add labels
+            if result:
+                result = dict(zip(self.fields, result)) # add labels
 
-			result = check_empty(result, kwargs['recipient_entity'], kwargs['contributor_entity'])
-			cache.set(cache_key, result)
+            result = check_empty(result, kwargs['recipient_entity'], kwargs['contributor_entity'])
+            cache.set(cache_key, result)
 
-			return result
+            return result
         else:
             return cached
 
