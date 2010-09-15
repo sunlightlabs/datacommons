@@ -269,9 +269,6 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 
 -- Sparklines
 
-\set sparkline_resolution 24
-
-
 select date_trunc('second', now()) || ' -- drop table if exists agg_contribution_sparklines';
 drop table if exists agg_contribution_sparklines;
 
@@ -322,9 +319,6 @@ create index agg_contribution_sparklines_idx on agg_contribution_sparklines (ent
 
 -- Sparklines by Party
 
-\set sparkline_resolution 24
-
-
 select date_trunc('second', now()) || ' -- drop table if exists agg_contribution_sparklines_by_party';
 drop table if exists agg_contribution_sparklines_by_party;
 
@@ -334,7 +328,7 @@ create table agg_contribution_sparklines_by_party as
         entity_id,
         cycle,
         recipient_party,
-        rank() over (partition by entity_id, cycle order by date_trunc('month', c.date)) as step,
+        rank() over (partition by entity_id, cycle, recipient_party order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
@@ -353,7 +347,7 @@ create table agg_contribution_sparklines_by_party as
         entity_id,
         -1 as cycle,
         recipient_party,
-        rank() over (partition by entity_id order by date_trunc('quarter', c.date)) as step,
+        rank() over (partition by entity_id, recipient_party order by date_trunc('quarter', c.date)) as step,
         sum(amount) as amount
         from (
                 select * from contributor_associations
