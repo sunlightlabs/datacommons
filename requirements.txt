@@ -1,4 +1,4 @@
--e svn+http://code.djangoproject.com/svn/django/trunk/#egg=django
+django==1.2.3
 django-debug-toolbar
 django-piston
 -e git://github.com/sunlightlabs/django-locksmith.git#egg=locksmith
