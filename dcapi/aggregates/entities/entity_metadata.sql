@@ -5,11 +5,12 @@
 
 delete from matchbox_organizationmetadata;
 
-insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_entity_id)
+insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_entity_id, industry_entity_id)
     select
         entity_id,
-        bool_or(lobbying_firm) as lobbying_firm,
-        max(parent_entity_id) as parent_entity_id
+        bool_or(coalesce(lobbying_firm, 'f')) as lobbying_firm,
+        max(parent_entity_id) as parent_entity_id,
+        max(industry_entity_id) as industry_entity_id
     from (
         select
             entity_id,
@@ -23,14 +24,16 @@ insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_enti
     full outer join (
         select
             oa.entity_id,
-            max(p.entity_id) as parent_entity_id
+            max(p.entity_id) as parent_entity_id,
+            max(ia.entity_id) as industry_entity_id
         from
             organization_associations oa
-            inner join parent_organization_associations p using (transaction_id)
+            left join parent_organization_associations p using (transaction_id)
+            left join industry_associations ia using (transaction_id)
         group by
             oa.entity_id
         having
-            oa.entity_id != max(p.entity_id)
+            max(p.entity_id) is null or oa.entity_id != max(p.entity_id)
     ) contributing_orgs using (entity_id)
     group by entity_id;
 
