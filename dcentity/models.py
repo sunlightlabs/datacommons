@@ -143,6 +143,10 @@ class Entity(models.Model):
 
         metadata.update(self._get_sourced_data_as_dict())
 
+        # don't show the primary key of the metadata object, as it is meaningless
+        if metadata.has_key('id'):
+            del metadata['id']
+
         return metadata
 
     metadata = property(_get_all_metadata_as_dict)
