@@ -5,7 +5,7 @@ from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from uuid import uuid4
+from common.db.fields.uuid import UUIDField
 import datetime
 
 
@@ -90,7 +90,7 @@ class EntityManager(models.Manager):
 
 
 class Entity(models.Model):
-    id = models.CharField(max_length=32, primary_key=True, default=lambda: uuid4().hex)
+    id = UUIDField(primary_key=True, auto=True)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)

@@ -5,6 +5,7 @@ from piston.handler import BaseHandler
 from piston.utils import rc
 from urllib import unquote_plus
 from django.core.exceptions import ObjectDoesNotExist
+from uuid import UUID
 
 
 
@@ -43,6 +44,8 @@ class EntityHandler(BaseHandler):
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
+
+        entity_id = UUID(entity_id)
 
         try:
             entity = Entity.objects.select_related().get(id=entity_id)

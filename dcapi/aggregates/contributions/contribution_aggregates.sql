@@ -524,14 +524,14 @@ drop table if exists agg_cands_from_indiv;
 select date_trunc('second', now()) || ' -- create table agg_cands_from_indiv';
 create table agg_cands_from_indiv as
     with individual_contributions_by_cycle as (
-        select ca.entity_id as contributor_entity, coalesce(re.name, c.recipient_name) as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
+        select ca.entity_id as contributor_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
             cycle, count(*), sum(c.amount) as amount,
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
         from contributions_individual c
         inner join contributor_associations ca using (transaction_id)
         left join recipient_associations ra using (transaction_id)
         left join matchbox_entity re on re.id = ra.entity_id
-        group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
+        group by ca.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
     )
 
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount
@@ -563,14 +563,14 @@ drop table if exists agg_orgs_from_indiv;
 select date_trunc('second', now()) || ' -- create table agg_orgs_from_indiv';
 create table agg_orgs_from_indiv as
     with individual_to_org_contributions_by_cycle as (
-    select ca.entity_id as contributor_entity, coalesce(re.name, c.recipient_name) as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
+    select ca.entity_id as contributor_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
             cycle, count(*), sum(c.amount) as amount,
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
         from contributions_individual_to_organization c
         inner join contributor_associations ca using(transaction_id)
         left join recipient_associations ra using (transaction_id)
         left join matchbox_entity re on re.id = ra.entity_id
-        group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
+        group by ca.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
     )
 
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount
@@ -613,22 +613,22 @@ create table agg_orgs_to_cand as
             rank() over (partition by recipient_entity, cycle order by (coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
         from (
             select ra.entity_id as recipient_entity, coalesce(oe.name, c.contributor_name) as organization_name,
-                    coalesce(ca.entity_id, '') as organization_entity, cycle, count(*), sum(c.amount) as amount
+                    ca.entity_id as organization_entity, cycle, count(*), sum(c.amount) as amount
                 from contributions_organization c
                 inner join recipient_associations ra using (transaction_id)
                 left join contributor_associations ca using (transaction_id)
                 left join matchbox_entity oe on oe.id = ca.entity_id
-                group by ra.entity_id, coalesce(oe.name, c.contributor_name), coalesce(ca.entity_id, ''), cycle
+                group by ra.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, cycle
             ) top_pacs
             full outer join (
                 select ra.entity_id as recipient_entity, coalesce(oe.name, c.organization_name) as organization_name,
-                    coalesce(oa.entity_id, '') as organization_entity, cycle, count(*) as count, sum(amount) as amount
+                    oa.entity_id as organization_entity, cycle, count(*) as count, sum(amount) as amount
                 from contributions_individual c
                 inner join recipient_associations ra using (transaction_id)
                 left join organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
                 where organization_name != ''
-                group by ra.entity_id, coalesce(oe.name, c.organization_name), coalesce(oa.entity_id, ''), cycle
+                group by ra.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, cycle
             ) top_indivs
             using (recipient_entity, organization_name, organization_entity, cycle)
     )
@@ -681,22 +681,22 @@ create table agg_cands_from_org as
             coalesce(top_indivs.amount, 0) as indivs_amount,
             rank() over (partition by organization_entity, cycle order by (coalesce(top_direct.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
         from (
-            select ca.entity_id as organization_entity, coalesce(re.name, c.recipient_name) as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
+            select ca.entity_id as organization_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
                 cycle, count(*), sum(c.amount) as amount
             from contributions_organization c
             inner join (table organization_associations union table parent_organization_associations union all table industry_associations) ca using (transaction_id)
             left join recipient_associations ra using (transaction_id)
             left join matchbox_entity re on re.id = ra.entity_id
-            group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
+            group by ca.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
         ) top_direct
         full outer join (
-            select oa.entity_id as organization_entity, coalesce(re.name, c.recipient_name) as recipient_name, coalesce(ra.entity_id, '') as recipient_entity,
+            select oa.entity_id as organization_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
                 cycle, count(*), sum(amount) as amount
             from contributions_individual c
             inner join (table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
             left join recipient_associations ra using (transaction_id)
             left join matchbox_entity re on re.id = ra.entity_id
-            group by oa.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
+            group by oa.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
         ) top_indivs using (organization_entity, recipient_name, recipient_entity, cycle)
     )
 
