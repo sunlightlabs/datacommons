@@ -1,3 +1,5 @@
+\set agg_top_n 10
+
 
 drop table if exists assoc_spending_grants;
 
@@ -5,7 +7,7 @@ create table assoc_spending_grants as
     select e.id as entity_id, g.id as transaction_id
     from grants_grant g
     inner join matchbox_entity e
-        on to_tsvector('datacommons', g.recipient_name) @@ to_tsquery('datacommons', e.name)
+        on to_tsvector('datacommons', g.recipient_name) @@ plainto_tsquery('datacommons', e.name)
     where
         e.type = 'organization';
 
@@ -19,7 +21,7 @@ create table assoc_spending_contracts as
     select e.id as entity_id, c.id as transaction_id
     from contracts_contract c
     inner join matchbox_entity e
-        on to_tsvector('datacommons', c.vendor_name) @@ to_tsquery('datacommons', e.name)
+        on to_tsvector('datacommons', c.vendor_name) @@ plainto_tsquery('datacommons', e.name)
     where
         e.type = 'organization';
         
