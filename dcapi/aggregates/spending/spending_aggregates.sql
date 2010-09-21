@@ -25,8 +25,8 @@ create table assoc_spending_contracts as
     where
         e.type = 'organization';
         
-create index assoc_spending_contracts as assoc_spending_contracts (entity_id);
-create index assoc_spending_contracts as assoc_spending_contracts (transaction_id);
+create index assoc_spending_contracts_entity_id on assoc_spending_contracts (entity_id);
+create index assoc_spending_contracts_transaction_id on assoc_spending_contracts (transaction_id);
 
 
 drop table if exists agg_spending_org;
