@@ -17,10 +17,10 @@ def build_industries(csv_rows):
             source = source.strip()
             order = order.strip()
 
-            if industries_seen.has_key(industry) or industry == 'industry':
+            if industries_seen.has_key("_".join([industry, order])) or industry == 'industry':
                 continue
             else:
-                industries_seen[industry] = 1
+                industries_seen["_".join([industry, order])] = 1
 
             print 'Generating entity for %s, %s, %s' % (source, industry, order)
 

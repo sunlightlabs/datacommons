@@ -1,0 +1,5 @@
+drop index contribution_contribution_committee_ext_id;
+drop index contribution_contribution_committee_name;
+drop index contribution_contribution_committee_name_ft;
+drop index contribution_contribution_contributor_employer;
+drop index contribution_contribution_recipient_name;

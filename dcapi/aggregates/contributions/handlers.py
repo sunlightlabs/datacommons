@@ -139,6 +139,21 @@ class OrgRecipientsHandler(EntityTopListHandler):
     """
 
 
+class IndustriesHandler(EntityTopListHandler):
+
+    fields = ['industry', 'count', 'amount']
+
+    stmt = """
+        select industry as industry, count, amount
+        from agg_industries_to_cand
+        where
+            recipient_entity = %s
+            and cycle = %s
+        order by amount desc
+        limit %s
+    """
+
+
 class SectorsHandler(EntityTopListHandler):
 
     fields = ['sector', 'count', 'amount']
@@ -206,6 +221,24 @@ class TopIndividualsByContributionsHandler(TopListHandler):
          where cycle     = %s
            and type      = 'individual'
          order by contributor_amount desc, contributor_count desc
+         limit %s
+    """
+
+
+class TopOrganizationsByIndustryHandler(TopListHandler):
+
+    args = ['entity_id', 'cycle', 'limit']
+
+    fields = ['industry_entity', 'organization_entity', 'organization_name', 'count', 'amount']
+
+    stmt = """
+        select industry_entity, organization_entity, name as organization_name, count, amount
+          from agg_top_orgs_by_industry
+         inner join matchbox_entity
+            on id = organization_entity
+         where industry_entity = %s
+            and cycle = %s
+         order by count desc, amount desc
          limit %s
     """
 
