@@ -13,7 +13,13 @@ class ExtensibleModel(models.Model):
     def to_dict(self):
         dict = model_to_dict(self)
         for p in self.extended_properties:
-            dict[p] = getattr(self, p)
+            obj = getattr(self, p)
+
+            try:
+                dict[p] = obj.public_representation()
+            except AttributeError:
+                dict[p] = obj
+
         return dict
 
     class Meta:
@@ -95,6 +101,9 @@ class Entity(models.Model):
 
     possible_sources = 'sunlight_info wikipedia_info bioguide_info'.split()
 
+    def public_representation(self):
+        return { 'name': self.name, 'id': self.id, 'type': self.type }
+
     def sourced_metadata_in_order(self):
         sources = []
         for attr in self.possible_sources:
@@ -130,9 +139,13 @@ class Entity(models.Model):
             # in the future, individuals should probably have their own metadata table,
             # just like the other entity types, but since it would essentially be a
             # dummy table and we only have one attribute (on its own table), leaving it out for now
-            metadata.update({'affiliated_organizations': [x.organization_entity for x in self.affiliated_organizations.all()]})
+            metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
 
         metadata.update(self._get_sourced_data_as_dict())
+
+        # don't show the primary key of the metadata object, as it is meaningless
+        if metadata.has_key('id'):
+            del metadata['id']
 
         return metadata
 
@@ -195,7 +208,7 @@ class OrganizationMetadata(ExtensibleModel):
     parent_entity = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
 
     def _child_entities(self):
-        return [ x.entity for x in self.entity.child_entity_set.all() ]
+        return [ x.entity.public_representation() for x in self.entity.child_entity_set.all() ]
 
     child_entities = property(_child_entities)
 
