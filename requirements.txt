@@ -6,4 +6,4 @@ xlwt
 psycopg2
 python-memcached
 boto
-django-mediasync==1.0.1
+-e git+http://github.com/sunlightlabs/django-mediasync.git#egg=mediasync

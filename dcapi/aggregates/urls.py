@@ -1,12 +1,12 @@
 
 from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
-    SectorsHandler, PolLocalBreakdownHandler, \
+    SectorsHandler, IndustriesHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
-    SparklineByPartyHandler, \
-    TopPoliticiansByReceiptsHandler, TopIndividualsByContributionsHandler, \
-    TopOrganizationsByContributionsHandler, ContributionAmountHandler
+    SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
+    TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
+    TopOrganizationsByIndustryHandler, ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
     IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
@@ -43,9 +43,13 @@ urlpatterns = patterns('',
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors\.(?P<emitter_format>.+)$',
         Resource(PolContributorsHandler, **ad)),
 
-    # contributions to a single politician, broken down by industry
+    # contributions to a single politician, broken down by sector
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/sectors\.(?P<emitter_format>.+)$',
         Resource(SectorsHandler, **ad)),
+
+    # contributions to a single politician, broken down by industry
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/industries\.(?P<emitter_format>.+)$',
+        Resource(IndustriesHandler, **ad)),
 
     # contributions to a single politician, broken down to show percentages
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/local_breakdown\.(?P<emitter_format>.+)$',
@@ -124,6 +128,9 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/fed_spending\.(?P<emitter_format>.+)',
         Resource(OrgFedSpendingHandler, **ad)),
 
+    # top N organizations by contributions for a cycle
+    url(r'^industry/(?P<entity_id>[a-f0-9]+)/orgs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopOrganizationsByIndustryHandler, **ad)),
 )
 
 

@@ -206,6 +206,7 @@ class OrganizationMetadata(ExtensibleModel):
 
     lobbying_firm = models.BooleanField(default=False)
     parent_entity = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
+    industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
 
     def _child_entities(self):
         return [ x.entity.public_representation() for x in self.entity.child_entity_set.all() ]
