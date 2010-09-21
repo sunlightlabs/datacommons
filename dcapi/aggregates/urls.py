@@ -11,6 +11,7 @@ from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
     IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
     RegistrantClientsHandler, RegistrantLobbyistsHandler
+from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
@@ -118,6 +119,10 @@ urlpatterns = patterns('',
     # top N organizations by contributions for a cycle
     url(r'^orgs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopOrganizationsByContributionsHandler, **ad)),
+
+    # Grants and Contracts Spending
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/fed_spending\.(?P<emitter_format>.+)',
+        Resource(OrgFedSpendingHandler, **ad)),
 
 )
 
