@@ -207,6 +207,24 @@ class TopOrganizationsByContributionsHandler(TopListHandler):
     """
 
 
+class TopIndustriesByContributionsHandler(TopListHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'count', 'amount']
+
+    stmt = """
+        select name, id, contributor_count, contributor_amount
+          from agg_entities
+         inner join matchbox_entity
+            on entity_id = id
+         where cycle     = %s
+           and type      = 'industry'
+         order by contributor_amount desc, contributor_count desc
+         limit %s
+    """
+
+
 class TopIndividualsByContributionsHandler(TopListHandler):
 
     args = ['cycle', 'limit']

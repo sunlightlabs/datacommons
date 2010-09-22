@@ -6,7 +6,8 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
     SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
-    TopOrganizationsByIndustryHandler, ContributionAmountHandler
+    TopIndustriesByContributionsHandler, TopOrganizationsByIndustryHandler, \
+    ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
     IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
@@ -124,11 +125,15 @@ urlpatterns = patterns('',
     url(r'^orgs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopOrganizationsByContributionsHandler, **ad)),
 
+    # top N industries by contributions for a cycle
+    url(r'^industries/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndustriesByContributionsHandler, **ad)),
+
     # Grants and Contracts Spending
     url(r'^org/(?P<entity_id>[a-f0-9]+)/fed_spending\.(?P<emitter_format>.+)',
         Resource(OrgFedSpendingHandler, **ad)),
 
-    # top N organizations by contributions for a cycle
+    # top N organizations by contributions for a cycle, per industry
     url(r'^industry/(?P<entity_id>[a-f0-9]+)/orgs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopOrganizationsByIndustryHandler, **ad)),
 )
