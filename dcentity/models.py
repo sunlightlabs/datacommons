@@ -176,7 +176,7 @@ class EntityAttribute(models.Model):
     verified = models.BooleanField(default=False)
 
 
-    ENTITY_ID_NAMESPACE = 'urn:matchbox:entity_id'
+    ENTITY_ID_NAMESPACE = 'urn:transparencydata:entity_id'
 
     class Meta:
         ordering = ('namespace',)

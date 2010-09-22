@@ -1,43 +1,14 @@
 
-
-from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE,\
-    CRP_TRANSACTION_NAMESPACE
-from dcentity.queries import recompute_aggregates
-
-
-from django.db import transaction, connection
-
 from dcentity.models import *
 
-# to do: delete, only used in unit tests.
-def build_recipient_entity(name, namespace, id):
-    e = Entity.objects.create(name=name, type='politician')
-
-    EntityAlias.objects.create(entity=e, alias=name, verified=True)
-    EntityAttribute.objects.create(entity=e, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value = e.id, verified=True)
-    if id:
-        if namespace == NIMSP_TRANSACTION_NAMESPACE:
-            attr_namespace = 'urn:nimsp:recipient'
-        elif namespace == CRP_TRANSACTION_NAMESPACE:
-            attr_namespace = 'urn:crp:recipient'
-        EntityAttribute.objects.create(entity=e, namespace=attr_namespace, value=id, verified=True)
-    
-    build_entity()
-
-
-# to do: delete, only used in unit tests.
-def build_org_entity(name, crp_id, nimsp_id):
-    e = Entity.objects.create(name=name, type='organization')
-        
-    EntityAlias.objects.create(entity=e, alias=name, verified=True)
-    EntityAttribute.objects.create(entity=e, namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value = e.id, verified=True)
-    if crp_id:
-        EntityAttribute.objects.create(entity=e, namespace='urn:crp:organization', value=crp_id, verified=True)
-    if nimsp_id:
-        EntityAttribute.objects.create(entity=e, namespace='urn:nimsp:organization', value=nimsp_id, verified=True)    
-    
 
 def build_entity(name, type, attributes):
+    """ 
+    Create an Entity and its associated aliases and attributes.
+    
+    Writes changes to DB but doesn't do any transaction management.
+    """
+    
     e = Entity.objects.create(name=name, type=type)
     
     EntityAlias.objects.create(entity=e, alias=name, verified=True)
@@ -45,36 +16,37 @@ def build_entity(name, type, attributes):
     for (namespace, value) in attributes:
         if namespace and value:
             EntityAttribute.objects.create(entity=e, namespace=namespace, value=value, verified=True)
-    
-    
-# currently unused
 
-def _execute(cursor, stmt, args):     
-    try:
-        cursor.execute(stmt, args)
-    except:
-        print "build_entity(): Error executing query: '%s' %% (%s)" % (stmt, args)
-        raise
+
+def merge_entities(merge_ids, target_id):
     
-def _associate_ids(cursor, entity_id, namespace, ext_id, column_prefixes):
-    for column in column_prefixes:
-        stmt = """
-           update contribution_contribution set %s = %%s
-           where
-               transaction_namespace = %%s
-               and %s = %%s
-           """ % (column + '_entity', column + '_ext_id')                
-        _execute(cursor, stmt, [entity_id, namespace, ext_id])    
+    # error checking first: all entities exist and are of same type
+    target = Entity.objects.get(id=target_id)
+    
+    if len(merge_ids) != Entity.objects.filter(id__in=merge_ids, type=target.type).count():
+        raise "All merge IDs must exist and be of same type as target."
+    
+    # update aliases
+    aliases = EntityAlias.objects.filter(entity__in=merge_ids + [target_id])
+    distinct_aliases = set([a.alias for a in aliases])
+
+    aliases.delete()
+
+    for alias in distinct_aliases:
+        target.aliases.create(alias=alias)
         
-def _associate_names(cursor, entity_id, name, column_prefixes):
-    normalized_name = basic_normalizer(name)
-    for column in column_prefixes:
-        stmt = """
-           update contribution_contribution set %s = %%s
-           from matchbox_normalization  
-           where 
-               matchbox_normalization.original = contribution_contribution.%s 
-               and matchbox_normalization.normalized = %%s
-           """ % (column + '_entity',  column + '_name')
-        _execute(cursor, stmt, [entity_id, normalized_name])
+    # update attributes
+    attributes = EntityAttribute.objects.filter(entity__in=merge_ids + [target_id])
+    distinct_attributes = set([(a.namespace, a.value) for a in attributes])
+
+    attributes.delete()
     
+    for (namespace, value) in distinct_attributes:
+        target.attributes.create(namespace=namespace, value=value) 
+    
+    # add in old entity IDs
+    for old_id in merge_ids:
+        target.attributes.create(namespace='urn:sunlight:entity_id', value=old_id)
+        
+    # remove old entities
+    Entity.objects.filter(id__in=merge_ids).delete()
