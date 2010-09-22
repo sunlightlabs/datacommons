@@ -385,37 +385,53 @@ drop table if exists agg_entities;
 
 select date_trunc('second', now()) || ' -- create table agg_entities';
 create table agg_entities as
-    select entity_id, coalesce(contrib_aggs.cycle, recip_aggs.cycle) as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count,
-        coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
-    from
-        (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
-        from (table contributor_associations
-            union table organization_associations
-            union table parent_organization_associations) a
-        inner join contributions_all_relevant transaction using (transaction_id)
-        group by a.entity_id, transaction.cycle) as contrib_aggs
-    full outer join
-        (select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
-        from recipient_associations a
+    with contribs_by_cycle as (
+        select
+            entity_id,
+            coalesce(contrib_aggs.cycle, recip_aggs.cycle) as cycle,
+            coalesce(contrib_aggs.count, 0)                as contributor_count,
+            coalesce(recip_aggs.count, 0)                  as recipient_count,
+            coalesce(contrib_aggs.sum, 0)                  as contributor_amount,
+            coalesce(recip_aggs.sum, 0)                    as recipient_amount
+        from (
+            select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
+            from (
+                table contributor_associations
+                union table organization_associations
+                union table parent_organization_associations
+                union table industry_associations
+            ) a
             inner join contributions_all_relevant transaction using (transaction_id)
-        group by a.entity_id, transaction.cycle) as recip_aggs
-    using (entity_id, cycle)
-union all
-    select entity_id, -1 as cycle, coalesce(contrib_aggs.count, 0) as contributor_count, coalesce(recip_aggs.count, 0) as recipient_count,
-        coalesce(contrib_aggs.sum, 0) as contributor_amount, coalesce(recip_aggs.sum, 0) as recipient_amount
-    from
-        (select a.entity_id, count(transaction), sum(transaction.amount)
-        from (table contributor_associations
-            union table organization_associations
-            union table parent_organization_associations) a
-        inner join contributions_all_relevant transaction using (transaction_id)
-        group by a.entity_id) as contrib_aggs
-    full outer join
-        (select a.entity_id, count(transaction), sum(transaction.amount)
-        from recipient_associations a
+            group by a.entity_id, transaction.cycle
+        ) as contrib_aggs
+        full outer join (
+            select a.entity_id, transaction.cycle, count(transaction), sum(transaction.amount)
+            from recipient_associations a
             inner join contributions_all_relevant transaction using (transaction_id)
-        group by a.entity_id) as recip_aggs
-    using (entity_id);
+            group by a.entity_id, transaction.cycle
+        ) as recip_aggs using (entity_id, cycle)
+    )
+
+    select
+        entity_id,
+        cycle,
+        contributor_count,
+        recipient_count,
+        contributor_amount,
+        recipient_amount
+    from contribs_by_cycle
+
+    union all
+
+    select
+        entity_id,
+        -1                      as cycle,
+        sum(contributor_count)  as contributor_count,
+        sum(recipient_count)    as recipient_count,
+        sum(contributor_amount) as contributor_amount,
+        sum(recipient_amount)   as recipient_amount
+    from contribs_by_cycle
+    group by entity_id;
 
 select date_trunc('second', now()) || ' -- create index agg_entities_idx on agg_entities (entity_id)';
 create index agg_entities_idx on agg_entities (entity_id);
