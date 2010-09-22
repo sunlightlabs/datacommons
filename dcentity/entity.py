@@ -22,7 +22,8 @@ def merge_entities(merge_ids, target_id):
     
     # error checking first: all entities exist and are of same type
     target = Entity.objects.get(id=target_id)
-    
+    if target_id in merge_ids:
+        raise "Target entity should not be in merge entities."
     if len(merge_ids) != Entity.objects.filter(id__in=merge_ids, type=target.type).count():
         raise "All merge IDs must exist and be of same type as target."
     
@@ -46,7 +47,7 @@ def merge_entities(merge_ids, target_id):
     
     # add in old entity IDs
     for old_id in merge_ids:
-        target.attributes.create(namespace='urn:sunlight:entity_id', value=old_id)
+        target.attributes.create(namespace=EntityAttribute.ENTITY_ID_NAMESPACE, value=old_id)
         
     # remove old entities
     Entity.objects.filter(id__in=merge_ids).delete()
