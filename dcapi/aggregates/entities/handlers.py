@@ -11,7 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 get_totals_stmt = """
      select cycle, 
             contributor_count, recipient_count, contributor_amount, recipient_amount, 
-            lobbying_count, firm_income, non_firm_spending,
+            l.count, firm_income, non_firm_spending,
             grants_count, contracts_count, grants_amount, contracts_amount
      from
          (select *
@@ -21,10 +21,11 @@ get_totals_stmt = """
          (select *
          from agg_lobbying_totals
          where entity_id = %s) l
+     using (cycle)
      full outer join
          (select *
          from agg_spending_totals
-         where entity_id = %s) s
+         where recipient_entity = %s) s
      using (cycle)
 """
 
