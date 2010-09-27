@@ -87,7 +87,7 @@ create table agg_spending_totals as
     from totals_by_cycle
     group by recipient_name, recipient_entity;
 
-create index agg_spending_totals_idx on agg_spending_totals (recipient_entity, cycle);
+create index agg_spending_totals_idx on agg_spending_totals (recipient_entity);
 
 
 -- Top Grants & Contracts

@@ -9,21 +9,29 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 get_totals_stmt = """
-     select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount, lobbying_count, firm_income, non_firm_spending
+     select cycle, 
+            contributor_count, recipient_count, contributor_amount, recipient_amount, 
+            l.count, firm_income, non_firm_spending,
+            grants_count, contracts_count, grants_amount, contracts_amount
      from
-         (select cycle, contributor_count, recipient_count, contributor_amount, recipient_amount
+         (select *
          from agg_entities
          where entity_id = %s) c
      full outer join
-         (select cycle, count as lobbying_count, firm_income, non_firm_spending
+         (select *
          from agg_lobbying_totals
          where entity_id = %s) l
+     using (cycle)
+     full outer join
+         (select *
+         from agg_spending_totals
+         where recipient_entity = %s) s
      using (cycle)
 """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id, entity_id):
+    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -31,7 +39,7 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grants_count', 'contracts_count', 'grants_amount', 'contracts_amount']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
