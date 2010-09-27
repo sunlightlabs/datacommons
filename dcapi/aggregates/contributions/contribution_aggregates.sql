@@ -8,7 +8,7 @@ drop table if exists agg_cycles cascade;
 
 select date_trunc('second', now()) || ' -- create table agg_cycles';
 create table agg_cycles as
---    values (2005), (2006), (2007), (2008), (2009), (2010);
+    -- values (2005), (2006), (2007), (2008), (2009), (2010);
     select distinct cycle from contribution_contribution;
 
 
@@ -355,7 +355,7 @@ create table agg_contribution_sparklines_by_party as
         recipient_party,
         rank() over (partition by entity_id, cycle, recipient_party order by date_trunc('month', c.date)) as step,
         sum(amount) as amount
-        from (table contributor_associations union table organization_associations union table parent_organization_associations union table industry_associations) a
+        from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, recipient_party, date_trunc('month', c.date)
@@ -368,7 +368,7 @@ create table agg_contribution_sparklines_by_party as
         recipient_party,
         rank() over (partition by entity_id, recipient_party order by date_trunc('quarter', c.date)) as step,
         sum(amount) as amount
-        from (table contributor_associations union table organization_associations union table parent_organization_associations union table industry_associations) a
+        from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
             inner join contributions_all_relevant c using (transaction_id)
         group by entity_id, recipient_party, date_trunc('quarter', c.date);
 
@@ -399,7 +399,7 @@ create table agg_entities as
                 table contributor_associations
                 union table organization_associations
                 union table parent_organization_associations
-                union table industry_associations
+                union all table industry_associations
             ) a
             inner join contributions_all_relevant transaction using (transaction_id)
             group by a.entity_id, transaction.cycle
@@ -444,29 +444,30 @@ drop table if exists agg_sectors_to_cand;
 
 select date_trunc('second', now()) || ' -- create table agg_sectors_to_cand';
 create table agg_sectors_to_cand as
-    select top.recipient_entity, top.sector, top.cycle, top.count, top.amount
-    from
-        (select ra.entity_id as recipient_entity, coalesce(substring(codes.catorder for 1), 'Y') as sector, c.cycle, count(*), sum(amount) as amount,
+    with contribs_by_cycle as (
+        select ra.entity_id as recipient_entity, coalesce(substring(codes.catorder for 1), 'Y') as sector, c.cycle, count(*), sum(amount) as amount,
             rank() over (partition by ra.entity_id, cycle order by sum(amount) desc) as rank
         from (table contributions_individual union table contributions_organization) c
         inner join recipient_associations ra using (transaction_id)
         left join agg_cat_map codes on c.contributor_category = codes.catcode
-        group by ra.entity_id, coalesce(substring(codes.catorder for 1), 'Y'), c.cycle) top
-    where
-        rank <= :agg_top_n
+        group by ra.entity_id, coalesce(substring(codes.catorder for 1), 'Y'), c.cycle
+    )
+
+    select recipient_entity, sector, cycle, count, amount
+    from contribs_by_cycle
+    where rank <= :agg_top_n
 
     union all
 
-    select top.recipient_entity, top.sector, -1, top.count, top.amount
-    from
-        (select ra.entity_id as recipient_entity, coalesce(substring(codes.catorder for 1), 'Y') as sector, count(*), sum(amount) as amount,
-            rank() over (partition by ra.entity_id order by sum(amount) desc) as rank
-        from (table contributions_individual union table contributions_organization) c
-        inner join recipient_associations ra using (transaction_id)
-        left join agg_cat_map codes on c.contributor_category = codes.catcode
-        group by ra.entity_id, coalesce(substring(codes.catorder for 1), 'Y')) top
-    where
-        rank <= :agg_top_n;
+    select recipient_entity, sector, -1, count, amount
+    from (
+        select recipient_entity, sector, sum(count) as count, sum(amount) as amount,
+            rank() over (partition by recipient_entity order by sum(amount) desc) as rank
+        from contribs_by_cycle
+        group by recipient_entity, sector
+    )x
+    where rank <= :agg_top_n
+;
 
 select date_trunc('second', now()) || ' -- create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle)';
 create index agg_sectors_to_cand_idx on agg_sectors_to_cand (recipient_entity, cycle);
@@ -501,10 +502,14 @@ create table agg_industries_to_cand as
 
     union all
 
-    select recipient_entity, industry_entity, industry, -1, sum(count) as count, sum(amount) as amount
-    from contribs_by_cycle
-    where rank <= :agg_top_n
-    group by recipient_entity, industry_entity, industry;
+    select recipient_entity, industry_entity, industry, -1, count, amount
+    from (
+        select recipient_entity, industry_entity, industry, sum(count) as count, sum(amount) as amount,
+            rank() over (partition by recipient_entity order by sum(amount) desc) as rank
+        from contribs_by_cycle
+        group by recipient_entity, industry_entity, industry
+    ) x
+    where rank <= :agg_top_n;
 
 select date_trunc('second', now()) || ' -- create index agg_industries_to_cand_idx on agg_industries_to_cand (recipient_entity, cycle)';
 create index agg_industries_to_cand_idx on agg_industries_to_cand (recipient_entity, cycle);
@@ -567,6 +572,7 @@ create table agg_orgs_from_indiv as
         left join matchbox_entity re on re.id = ra.entity_id
         group by ca.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
     )
+
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount
     from individual_to_org_contributions_by_cycle
     where rank <= :agg_top_n
@@ -575,11 +581,11 @@ create table agg_orgs_from_indiv as
 
     select contributor_entity, recipient_name, recipient_entity, -1, count, amount
     from (
-        select
-            contributor_entity, recipient_name, recipient_entity, sum(count) as count, sum(amount) as amount,
+        select contributor_entity, recipient_name, recipient_entity, sum(count) as count, sum(amount) as amount,
             rank() over (partition by contributor_entity order by sum(amount) desc) as rank
         from individual_to_org_contributions_by_cycle
-        group by contributor_entity, recipient_name, recipient_entity) x
+        group by contributor_entity, recipient_name, recipient_entity
+    ) x
     where rank <= :agg_top_n;
 
 select date_trunc('second', now()) || ' -- create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle)';
@@ -638,17 +644,17 @@ create table agg_orgs_to_cand as
         recipient_entity, organization_name, organization_entity, -1, total_count,
         pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
     from (
-            select
-                recipient_entity, organization_name, organization_entity, -1,
-                sum(total_count) as total_count,
-                sum(pacs_count) as pacs_count,
-                sum(indivs_count) as indivs_count,
-                sum(total_amount) as total_amount,
-                sum(pacs_amount) as pacs_amount,
-                sum(indivs_amount) as indivs_amount,
-                rank() over (partition by recipient_entity order by sum(total_amount) desc) as rank
-            from org_contributions_by_cycle
-            group by recipient_entity, organization_name, organization_entity
+        select
+            recipient_entity, organization_name, organization_entity,
+            sum(total_count) as total_count,
+            sum(pacs_count) as pacs_count,
+            sum(indivs_count) as indivs_count,
+            sum(total_amount) as total_amount,
+            sum(pacs_amount) as pacs_amount,
+            sum(indivs_amount) as indivs_amount,
+            rank() over (partition by recipient_entity order by sum(total_amount) desc) as rank
+        from org_contributions_by_cycle
+        group by recipient_entity, organization_name, organization_entity
     ) x
     where rank <= :agg_top_n;
 
@@ -693,6 +699,7 @@ create table agg_cands_from_org as
             group by oa.entity_id, coalesce(re.name, c.recipient_name), coalesce(ra.entity_id, ''), cycle
         ) top_indivs using (organization_entity, recipient_name, recipient_entity, cycle)
     )
+
     select organization_entity, recipient_name, recipient_entity, cycle,
         total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
     from top_direct_and_indiv_contributions_by_cycle
@@ -726,15 +733,21 @@ drop table if exists agg_party_from_indiv;
 
 select date_trunc('second', now()) || ' -- create table agg_party_from_indiv';
 create table agg_party_from_indiv as
-    select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
-    from (table contributions_individual union all table contributions_individual_to_organization) c
-    inner join contributor_associations ca using (transaction_id)
-    group by ca.entity_id, c.cycle, c.recipient_party
-union all
-    select ca.entity_id as contributor_entity, -1, c.recipient_party, count(*), sum(c.amount) as amount
-    from (table contributions_individual union all table contributions_individual_to_organization) c
-    inner join contributor_associations ca using (transaction_id)
-    group by ca.entity_id, c.recipient_party;
+    with contribs_by_cycle as (
+        select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
+        from (table contributions_individual union all table contributions_individual_to_organization) c
+        inner join contributor_associations ca using (transaction_id)
+        group by ca.entity_id, c.cycle, c.recipient_party
+    )
+
+    select contributor_entity, cycle, recipient_party, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select contributor_entity, -1, recipient_party, sum(count) as count, sum(amount) as amount
+    from contribs_by_cycle
+    group by contributor_entity, recipient_party;
 
 select date_trunc('second', now()) || ' -- create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entity, cycle)';
 create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entity, cycle);
@@ -809,19 +822,22 @@ drop table if exists agg_local_to_politician;
 
 select date_trunc('second', now()) || ' -- create table agg_local_to_politician';
 create table agg_local_to_politician as
-    select ra.entity_id as recipient_entity, c.cycle,
-        case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
-        count(*), sum(amount) as amount
-    from (table contributions_individual union table contributions_organization) c
-    inner join recipient_associations ra using (transaction_id)
-    group by ra.entity_id, c.cycle, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end
-union all
-    select ra.entity_id as recipient_entity, -1,
-        case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
-        count(*), sum(amount) as amount
-    from (table contributions_individual union table contributions_organization) c
-    inner join recipient_associations ra using (transaction_id)
-    group by ra.entity_id, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end;
+    with contribs_by_cycle as (
+        select ra.entity_id as recipient_entity, c.cycle,
+            case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
+            count(*), sum(amount) as amount
+        from (table contributions_individual union table contributions_organization) c
+        inner join recipient_associations ra using (transaction_id)
+        group by ra.entity_id, c.cycle, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end
+    )
+    select recipient_entity, cycle, local, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select recipient_entity, -1, local, sum(count) as count, sum(amount) amount
+    from contribs_by_cycle
+    group by recipient_entity, local;
 
 select date_trunc('second', now()) || ' -- create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle)';
 create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle);
@@ -836,15 +852,20 @@ drop table if exists agg_contributor_type_to_politician;
 
 select date_trunc('second', now()) || ' -- create table agg_contributor_type_to_politician';
 create table agg_contributor_type_to_politician as
-    select ra.entity_id as recipient_entity, c.cycle, coalesce(c.contributor_type, '') as contributor_type, count(*), sum(amount) as amount
-    from (table contributions_individual union table contributions_organization) c
-    inner join recipient_associations ra using (transaction_id)
-    group by ra.entity_id, c.cycle, coalesce(c.contributor_type, '')
-union all
-    select ra.entity_id as recipient_entity, -1, coalesce(c.contributor_type, '') as contributor_type, count(*), sum(amount) as amount
-    from (table contributions_individual union table contributions_organization) c
-    inner join recipient_associations ra using (transaction_id)
-    group by ra.entity_id, coalesce(c.contributor_type, '');
+    with contribs_by_cycle as (
+        select ra.entity_id as recipient_entity, c.cycle, coalesce(c.contributor_type, '') as contributor_type, count(*), sum(amount) as amount
+        from (table contributions_individual union table contributions_organization) c
+        inner join recipient_associations ra using (transaction_id)
+        group by ra.entity_id, c.cycle, coalesce(c.contributor_type, '')
+    )
+    select recipient_entity, cycle, contributor_type, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select recipient_entity, -1, contributor_type, sum(count) as count, sum(amount) as amount
+    from contribs_by_cycle
+    group by recipient_entity, contributor_type;
 
 select date_trunc('second', now()) || ' -- create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle)';
 create index agg_contributor_type_to_politician_idx on agg_contributor_type_to_politician (recipient_entity, cycle);
