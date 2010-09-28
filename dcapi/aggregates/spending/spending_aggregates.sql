@@ -61,31 +61,31 @@ drop table if exists agg_spending_totals;
 
 create table agg_spending_totals as
     with totals_by_cycle as (
-        select recipient_name, recipient_entity, cycle,
-                grants.count as grants_count, grants.amount as grants_amount,
-                contracts.count as contracts_count, contracts.amount as contracts_amount
+        select recipient_entity, cycle,
+                grants.count as grant_count, grants.amount as grant_amount,
+                contracts.count as contract_count, contracts.amount as contract_amount
         from (
-            select recipient_name, entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
+            select entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
             from grants_record
             inner join assoc_spending_grants on (id = transaction_id)
-            group by recipient_name, entity_id, cycle) as grants
+            group by entity_id, cycle) as grants
         full outer join (
-            select recipient_name, entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
+            select entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
             from contracts_record
             inner join assoc_spending_contracts on (id = transaction_id)
-            group by recipient_name, entity_id, cycle) as contracts
-        using (recipient_name, recipient_entity, cycle)
+            group by entity_id, cycle) as contracts
+        using (recipient_entity, cycle)
     )
 
     select * from totals_by_cycle
 
     union all
 
-    select recipient_name, recipient_entity, -1,
-            sum(grants_count) as grants_count, sum(grants_amount) as grants_amount,
-            sum(contracts_count) as contracts_count, sum(contracts_amount) as contracts_amount
+    select recipient_entity, -1,
+            sum(grants_count) as grant_count, sum(grants_amount) as grant_amount,
+            sum(contracts_count) as contract_count, sum(contracts_amount) as contract_amount
     from totals_by_cycle
-    group by recipient_name, recipient_entity;
+    group by recipient_entity;
 
 create index agg_spending_totals_idx on agg_spending_totals (recipient_entity);
 
