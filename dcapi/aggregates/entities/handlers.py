@@ -40,7 +40,7 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grants_count', 'contracts_count', 'grants_amount', 'contracts_amount']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'grant_amount', 'contract_amount']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
