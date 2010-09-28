@@ -82,8 +82,8 @@ create table agg_spending_totals as
     union all
 
     select recipient_entity, -1,
-            sum(grants_count) as grant_count, sum(grants_amount) as grant_amount,
-            sum(contracts_count) as contract_count, sum(contracts_amount) as contract_amount
+            sum(grant_count) as grant_count, sum(grant_amount) as grant_amount,
+            sum(contract_count) as contract_count, sum(contract_amount) as contract_amount
     from totals_by_cycle
     group by recipient_entity;
 
