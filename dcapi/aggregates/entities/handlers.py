@@ -13,7 +13,7 @@ get_totals_stmt = """
      select cycle, 
             contributor_count, recipient_count, contributor_amount, recipient_amount, 
             l.count, firm_income, non_firm_spending,
-            grants_count, contracts_count, grants_amount, contracts_amount
+            grant_count, contract_count, grant_amount, contract_amount
      from
          (select *
          from agg_entities
