@@ -166,6 +166,7 @@ create table tmp_indiv_names as
 create index tmp_indiv_names_entity on tmp_indiv_names (entity_id);
 create index tmp_indiv_names_name on tmp_indiv_names (lower(name));
 
+
 drop table if exists tmp_indiv_locations;
 
 select date_trunc('second', now()) || ' -- create table tmp_indiv_locations';
@@ -205,6 +206,8 @@ union
             (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction' )
             or (a.namespace = 'urn:nismp:organization' and c.transaction_namespace = 'urn:nimsp:transaction')
         )
+union
+    select * from tmp_assoc_indiv_id
 union
     select entity_id, transaction_id
     from contribution_contribution c
@@ -254,6 +257,7 @@ select date_trunc('second', now()) || ' -- create index organization_association
 create index organization_associations_entity_id on organization_associations (entity_id);
 select date_trunc('second', now()) || ' -- create index organization_associations_transaction_id on organization_associations (transaction_id)';
 create index organization_associations_transaction_id on organization_associations (transaction_id);
+
 
 -- Parent Organization Associations
 
