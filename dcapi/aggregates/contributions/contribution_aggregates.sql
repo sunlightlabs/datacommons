@@ -133,6 +133,52 @@ create index contributions_all_relevant__transaction_id__idx on contributions_al
 -- Contributor Associations
 
 
+drop table if exists tmp_assoc_indiv_id;
+
+select date_trunc('second', now()) || ' -- create table tmp_assoc_indiv_id';
+create table tmp_assoc_indiv_id as
+    select entity_id, transaction_id
+    from contribution_contribution c
+    inner join matchbox_entityattribute a
+        on a.value = c.contributor_ext_id
+    inner join matchbox_entity e
+        on e.id = a.entity_id
+    where
+        e.type = 'individual'
+        and (
+            (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
+            or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
+        );
+        
+create index tmp_assoc_indiv_id_entity on tmp_assoc_indiv_id (entity_id);
+create index tmp_assoc_indiv_id_transaction on tmp_assoc_indiv_id (transaction_id);
+
+
+drop table if exists tmp_indiv_names;
+
+select date_trunc('second', now()) || ' -- create table tmp_indiv_names';
+create table tmp_indiv_names as
+    select entity_id, contributor_name as name
+    from contribution_contribution c
+    inner join tmp_assoc_indiv_id a using (transaction_id)
+    group by entity_id, contributor_name;
+    
+create index tmp_indiv_names_entity on tmp_indiv_names (entity_id);
+create index tmp_indiv_names_name on tmp_indiv_names (lower(name));
+
+drop table if exists tmp_indiv_locations;
+
+select date_trunc('second', now()) || ' -- create table tmp_indiv_locations';
+create table tmp_indiv_locations as
+    select entity_id, msa_name
+    from contribution_contribution c
+    inner join tmp_assoc_indiv_id a using (transaction_id)
+    inner join zip_msa on c.contributor_zipcode = zipcode
+    group by entity_id, msa_name;
+
+create index tmp_indiv_locations_entity on tmp_indiv_locations (entity_id);
+
+
 select date_trunc('second', now()) || ' -- drop table if exists contributor_associations';
 drop table if exists contributor_associations;
 
@@ -146,9 +192,7 @@ create table contributor_associations as
         on e.id = a.entity_id
     where
         a.verified = 't'
-        -- use name matching for all organizations and state level individuals
-        and (e.type = 'organization'
-            or (e.type = 'individual' and c.transaction_namespace = 'urn:nimsp:transaction'))
+        and e.type = 'organization'
 union
     select a.entity_id, c.transaction_id
     from contribution_contribution c
@@ -156,12 +200,23 @@ union
         on c.contributor_ext_id = a.value and a.value != ''
     where
         a.verified = 't'
+        and c.contributor_type = 'C'
         and (
-            (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
-            or (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'C')
-            or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
-            or (a.namespace = 'urn:nismp:organization' and c.transaction_namespace = 'urn:nimsp:transaction' and c.contributor_type = 'C')
-        );
+            (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction' )
+            or (a.namespace = 'urn:nismp:organization' and c.transaction_namespace = 'urn:nimsp:transaction')
+        )
+union
+    select entity_id, transaction_id
+    from contribution_contribution c
+    inner join tmp_indiv_names n
+        on lower(name) = lower(c.contributor_name)
+    where exists
+        (select * from tmp_indiv_locations l
+        where 
+            a.entity_id = l.entity_id
+            and l.msa_name = (select msa_name from zip_msa where zipcode = c.contributor_zipcode));
+    group by entity_id, transaction_id;
+    
 
 select date_trunc('second', now()) || ' -- create index contributor_associations_entity_id on contributor_associations (entity_id)';
 create index contributor_associations_entity_id on contributor_associations (entity_id);
