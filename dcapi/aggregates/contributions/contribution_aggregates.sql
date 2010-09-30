@@ -42,15 +42,14 @@ select date_trunc('second', now()) || ' -- create view contributions_even_cycles
 create view contributions_even_cycles as
     select transaction_id, transaction_namespace, transaction_type, amount,
         case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle, date,
-        contributor_name, contributor_type, contributor_category, contributor_state,
-        organization_name, parent_organization_name,
-        recipient_name, recipient_type, recipient_party, recipient_state, recipient_category
+        contributor_name, contributor_ext_id, contributor_type, contributor_category, contributor_state, contributor_zipcode,
+        organization_name, organization_ext_id, parent_organization_name, parent_organization_ext_id,
+        recipient_name, recipient_ext_id, recipient_type, recipient_party, recipient_state, recipient_category
     from contribution_contribution;
 
 
 
 -- Only contributions that should be included in totals from individuals to politicians
-
 
 select date_trunc('second', now()) || ' -- drop table if exists contributions_individual';
 drop table if exists contributions_individual;
@@ -128,17 +127,16 @@ create table contributions_all_relevant as
 
 select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
-
-
+     
+            
 -- Contributor Associations
-
 
 drop table if exists tmp_assoc_indiv_id;
 
 select date_trunc('second', now()) || ' -- create table tmp_assoc_indiv_id';
 create table tmp_assoc_indiv_id as
     select entity_id, transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join matchbox_entityattribute a
         on a.value = c.contributor_ext_id
     inner join matchbox_entity e
@@ -159,7 +157,7 @@ drop table if exists tmp_indiv_names;
 select date_trunc('second', now()) || ' -- create table tmp_indiv_names';
 create table tmp_indiv_names as
     select entity_id, contributor_name as name
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join tmp_assoc_indiv_id a using (transaction_id)
     group by entity_id, contributor_name;
     
@@ -172,7 +170,7 @@ drop table if exists tmp_indiv_locations;
 select date_trunc('second', now()) || ' -- create table tmp_indiv_locations';
 create table tmp_indiv_locations as
     select entity_id, msa_name
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join tmp_assoc_indiv_id a using (transaction_id)
     inner join zip_msa on c.contributor_zipcode = zipcode
     group by entity_id, msa_name;
@@ -186,22 +184,23 @@ drop table if exists contributor_associations;
 select date_trunc('second', now()) || ' -- create table contributor_associations';
 create table contributor_associations as
     select a.entity_id, c.transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join matchbox_entityalias a
         on lower(c.contributor_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
-        a.verified = 't'
-        and e.type = 'organization'
+        e.type = 'organization'
+        and (a.namespace is null
+            or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
+                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join matchbox_entityattribute a
         on c.contributor_ext_id = a.value and a.value != ''
     where
-        a.verified = 't'
-        and c.contributor_type = 'C'
+        c.contributor_type = 'C'
         and (
             (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction' )
             or (a.namespace = 'urn:nismp:organization' and c.transaction_namespace = 'urn:nimsp:transaction')
@@ -210,14 +209,14 @@ union
     select * from tmp_assoc_indiv_id
 union
     select entity_id, transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join tmp_indiv_names n
         on lower(name) = lower(c.contributor_name)
     where exists
         (select * from tmp_indiv_locations l
         where 
-            a.entity_id = l.entity_id
-            and l.msa_name = (select msa_name from zip_msa where zipcode = c.contributor_zipcode));
+            n.entity_id = l.entity_id
+            and l.msa_name = (select msa_name from zip_msa where zipcode = c.contributor_zipcode))
     group by entity_id, transaction_id;
     
 
@@ -235,23 +234,24 @@ drop table if exists organization_associations;
 select date_trunc('second', now()) || ' -- create table organization_associations';
 create table organization_associations as
     select a.entity_id, c.transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join matchbox_entityalias a
         on lower(c.organization_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
-        a.verified = 't'
-        and e.type = 'organization'
+        e.type = 'organization'
+        and (a.namespace is null
+            or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
+                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
 union
     select a.entity_id, c.transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join matchbox_entityattribute a
         on c.organization_ext_id = a.value and a.value != ''
     where
-        a.verified = 't'
-        and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
-            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'));
+        (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
+            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction');
 
 select date_trunc('second', now()) || ' -- create index organization_associations_entity_id on organization_associations (entity_id)';
 create index organization_associations_entity_id on organization_associations (entity_id);
@@ -267,23 +267,24 @@ drop table if exists parent_organization_associations;
 select date_trunc('second', now()) || ' -- create table parent_organization_associations';
     create table parent_organization_associations as
         select a.entity_id, c.transaction_id
-            from contribution_contribution c
+            from contributions_all_relevant c
             inner join matchbox_entityalias a
                 on lower(c.parent_organization_name) = lower(a.alias)
             inner join matchbox_entity e
                 on e.id = a.entity_id
             where
-                a.verified = 't'
-                and e.type = 'organization'
+                e.type = 'organization'
+                and (a.namespace is null
+                    or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
+                        or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))                
     union
         select a.entity_id, c.transaction_id
-        from contribution_contribution c
+        from contributions_all_relevant c
         inner join matchbox_entityattribute a
             on c.parent_organization_ext_id = a.value and a.value != ''
         where
-            a.verified = 't'
-            and ((a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction'));
+            (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction')
+                or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction');
 
 select date_trunc('second', now()) || ' -- create index parent_organization_associations_entity_id on parent_organization_associations (entity_id)';
 create index parent_organization_associations_entity_id on parent_organization_associations (entity_id);
@@ -299,7 +300,7 @@ drop table if exists industry_associations;
 select date_trunc('second', now()) || ' -- create table industry_associations';
 create table industry_associations as
     select a.entity_id, c.transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join agg_cat_map cm
         on lower(c.contributor_category) = lower(cm.catcode)
     inner join matchbox_entityattribute a
@@ -307,8 +308,7 @@ create table industry_associations as
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
-        a.verified = 't'
-        and e.type = 'industry';
+        e.type = 'industry';
 
 select date_trunc('second', now()) || ' -- create index industry_associations_entity_id on industry_associations (entity_id)';
 create index industry_associations_entity_id on industry_associations (entity_id);
@@ -324,25 +324,26 @@ drop table if exists recipient_associations;
 select date_trunc('second', now()) || ' -- create table recipient_associations';
 create table recipient_associations as
     select a.entity_id, c.transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join matchbox_entityalias a
         on lower(c.recipient_name) = lower(a.alias)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
-        a.verified = 't'
-        and e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
+        e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
+        and (a.namespace is null
+            or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
+                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
 union
     select a.entity_id, c.transaction_id
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join matchbox_entityattribute a
         on c.recipient_ext_id = a.value and a.value != ''
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
-        a.verified = 't'
-        and ((a.namespace = 'urn:crp:recipient' and c.transaction_namespace = 'urn:fec:transaction' and c.recipient_type = 'P')
-            or (a.namespace = 'urn:nimsp:recipient' and c.transaction_namespace = 'urn:nimsp:transaction' and c.recipient_type = 'P'));
+        (a.namespace = 'urn:crp:recipient' and c.transaction_namespace = 'urn:fec:transaction' and c.recipient_type = 'P')
+            or (a.namespace = 'urn:nimsp:recipient' and c.transaction_namespace = 'urn:nimsp:transaction' and c.recipient_type = 'P');
 
 
 select date_trunc('second', now()) || ' -- create index recipient_associations_entity_id on recipient_associations (entity_id)';
