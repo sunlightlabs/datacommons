@@ -938,25 +938,77 @@ drop table if exists agg_top_orgs_by_industry;
 select date_trunc('second', now()) || ' -- create table agg_top_orgs_by_industry';
 create table agg_top_orgs_by_industry as
     with contribs_by_cycle as (
-        select ia.entity_id as industry_entity, oa.entity_id as organization_entity, c.cycle, count(*), sum(amount) as amount,
-            rank() over (partition by oa.entity_id, c.cycle order by sum(amount)) as rank
-        from (table contributions_organization union table contributions_individual) c
-        inner join organization_associations oa using (transaction_id)
-        inner join industry_associations ia using (transaction_id)
-        group by ia.entity_id, oa.entity_id, c.cycle
+        select
+            industry_entity, organization_name, organization_entity, cycle,
+            coalesce(top_pacs.count, 0) + coalesce(top_indivs.count, 0) as total_count,
+            coalesce(top_pacs.count, 0) as pacs_count,
+            coalesce(top_indivs.count, 0) as indivs_count,
+            coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0) as total_amount,
+            coalesce(top_pacs.amount, 0) as pacs_amount,
+            coalesce(top_indivs.amount, 0) as indivs_amount,
+            rank() over (partition by industry_entity, cycle order by (coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
+        from (
+            -- in progress
+            select
+                ia.entity_id as industry_entity,
+                coalesce(oe.name, c.contributor_name) as organization_name,
+                ca.entity_id as organization_entity,
+                c.cycle,
+                count(*),
+                sum(amount) as amount
+            from
+                contributions_organization c -- organization contributions (PACs)
+                inner join industry_associations ia using (transaction_id) -- get the industry
+                left join contributor_associations ca using (transaction_id) -- this is just the direct contributor (PAC)
+                left join matchbox_entity oe on oe.id = ca.entity_id -- get the entity associated with the contributor
+            group by
+                ia.entity_id, ca.entity_id, c.cycle
+            ) top_pacs
+            full outer join (
+                select
+                    ia.entity_id as industry_entity,
+                    coalesce(oe.name, c.organization_name) as organization_name,
+                    oa.entity_id as organization_entity,
+                    c.cycle,
+                    count(*),
+                    sum(amount) as amount,
+                    rank() over (partition by oa.entity_id, c.cycle order by sum(amount)) as rank
+                from
+                    contributions_individual c -- individual contributions
+                    inner join industry_associations ia using (transaction_id) -- get the industry
+                    left join organization_associations oa using (transaction_id) -- this is the org associated with the individual
+                    left join matchbox_entity oe on oe.id = oa.entity_id -- get the entity associated with the org
+                where c.organization_name != ''
+                group by
+                    ia.entity_id, oa.entity_id, c.cycle
+            ) top_indivs
+            using (industry_entity, organization_name, organization_entity, cycle)
     )
-
-    select industry_entity, organization_entity, cycle, count, amount, rank
+    select
+        industry_entity, organization_name, organization_entity, cycle, total_count,
+        pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
     from contribs_by_cycle
     where rank <= :agg_top_n
 
     union all
 
-    select industry_entity, organization_entity, -1, sum(count) as count, sum(amount) as amount,
-        rank() over (partition by industry_entity order by sum(amount)) as rank
-    from contribs_by_cycle
-    where rank <= :agg_top_n
-    group by industry_entity, organization_entity;
+    select
+        industry_entity, organization_name, organization_entity, -1, total_count,
+        pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+    from (
+        select
+            industry_entity, organization_name, organization_entity,
+            sum(total_count) as total_count,
+            sum(pacs_count) as pacs_count,
+            sum(indivs_count) as indivs_count,
+            sum(total_amount) as total_amount,
+            sum(pacs_amount) as pacs_amount,
+            sum(indivs_amount) as indivs_amount,
+            rank() over (partition by industry_entity order by sum(total_amount) desc) as rank
+        from contribs_by_cycle
+        group by industry_entity, organization_name, organization_entity
+    ) x
+    where rank <= :agg_top_n;
 
 select date_trunc('second', now()) || ' -- create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (recipient_entity, cycle)';
 create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (industry_entity, cycle);

@@ -161,7 +161,7 @@ class LoadContributions(BaseCommand):
             
             output_func = chain_filters(
                 LoaderEmitter(loader),
-                Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
+                #Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
                 Every(self.COMMIT_FREQUENCY, progress_tick))
             
             record_processor = self.get_record_processor(loader.import_session)
@@ -169,8 +169,13 @@ class LoadContributions(BaseCommand):
             load_data(input_iterator, record_processor, output_func)
 
             transaction.commit()
+        except KeyboardInterrupt:
+            traceback.print_exception(*sys.exc_info())
+            transaction.rollback()
+            raise
         except:
             traceback.print_exception(*sys.exc_info())
+            transaction.rollback()
             raise
         finally:
             sys.stdout.flush()
