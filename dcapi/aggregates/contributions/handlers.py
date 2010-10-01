@@ -223,6 +223,7 @@ class TopIndustriesByContributionsHandler(TopListHandler):
             using (entity_id)
          where cycle = %s
            and type  = 'industry'
+           and coalesce(should_show_entity, 't')
          order by contributor_amount desc, contributor_count desc
          limit %s
     """
