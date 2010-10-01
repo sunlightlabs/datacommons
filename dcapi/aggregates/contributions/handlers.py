@@ -141,11 +141,12 @@ class OrgRecipientsHandler(EntityTopListHandler):
 
 class IndustriesHandler(EntityTopListHandler):
 
-    fields = ['industry', 'count', 'amount']
+    fields = ['industry', 'count', 'amount', 'should_show_entity']
 
     stmt = """
-        select industry as industry, count, amount
+        select industry as industry, count, amount, coalesce(should_show_entity, 't') as should_show_entity
         from agg_industries_to_cand
+        left join matchbox_industrymetadata on industry_entity = entity_id
         where
             recipient_entity = %s
             and cycle = %s
@@ -211,15 +212,17 @@ class TopIndustriesByContributionsHandler(TopListHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'count', 'amount']
+    fields = ['name', 'id', 'count', 'amount', 'should_show_entity']
 
     stmt = """
-        select name, id, contributor_count, contributor_amount
-          from agg_entities
-         inner join matchbox_entity
-            on entity_id = id
-         where cycle     = %s
-           and type      = 'industry'
+        select name, me.id, contributor_count, contributor_amount, coalesce(should_show_entity, 't') as should_show_entity
+          from agg_entities ae
+         inner join matchbox_entity me
+            on ae.entity_id = me.id
+         left join matchbox_industrymetadata mim
+            using (entity_id)
+         where cycle = %s
+           and type  = 'industry'
          order by contributor_amount desc, contributor_count desc
          limit %s
     """
