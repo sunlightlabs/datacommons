@@ -140,6 +140,8 @@ class Entity(models.Model):
             # just like the other entity types, but since it would essentially be a
             # dummy table and we only have one attribute (on its own table), leaving it out for now
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
+        elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
+            metadata.update(model_to_dict(self.industry_metadata))
 
         metadata.update(self._get_sourced_data_as_dict())
 
@@ -174,7 +176,6 @@ class EntityAttribute(models.Model):
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
     verified = models.BooleanField(default=False)
-
 
     ENTITY_ID_NAMESPACE = 'urn:transparencydata:entity_id'
 
@@ -226,6 +227,13 @@ class PoliticianMetadata(models.Model):
 
     class Meta:
         db_table = 'matchbox_politicianmetadata'
+
+class IndustryMetadata(models.Model):
+    entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
+    should_show_entity = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'matchbox_industrymetadata'
 
 
 class IndivOrgAffiliations(models.Model):
