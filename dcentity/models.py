@@ -140,7 +140,7 @@ class Entity(models.Model):
             # just like the other entity types, but since it would essentially be a
             # dummy table and we only have one attribute (on its own table), leaving it out for now
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
-        elif self.type == 'industry':
+        elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
             metadata.update(model_to_dict(self.industry_metadata))
 
         metadata.update(self._get_sourced_data_as_dict())
