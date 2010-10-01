@@ -1,4 +1,4 @@
-from dcapi.aggregates.handlers import execute_top
+from dcapi.aggregates.handlers import execute_top, TopListHandler
 from dcentity.models import Entity, EntityAttribute, OrganizationMetadata, PoliticianMetadata, BioguideInfo
 from django.forms.models import model_to_dict
 from piston.handler import BaseHandler
@@ -179,3 +179,19 @@ class EntitySimpleHandler(BaseHandler):
             
             result = qs[start:end]
             return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
+
+
+class CurrentRaceHandler(TopListHandler):
+
+    args = ['district', 'district']
+
+    fields = "id name state election_type district seat seat_status seat_result".split()
+
+    stmt = """
+        select id, name, state, election_type, district, seat, seat_status, seat_result
+        from matchbox_currentrace
+        where
+            lower(district) = lower(%s)
+            or (district = '' and lower(state) = lower(substring(%s for 2)))
+    """
+
