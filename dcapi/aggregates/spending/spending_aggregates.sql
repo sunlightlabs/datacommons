@@ -8,6 +8,7 @@ drop view if exists grants_record;
 create view grants_record as
     select id, recipient_name,
         case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year + 1 end as cycle,
+        case when assistance_category in ('l', 'i') then 'l' else 'g' end as spending_type,
         fiscal_year, agency_name, project_description as description, amount_total as amount
     from grants_grant;
 
@@ -96,7 +97,7 @@ drop table if exists agg_spending_org;
 
 create table agg_spending_org as
     with spending_to_org as (
-        select entity_id as recipient_entity, recipient_name, 'g' as spending_type,
+        select entity_id as recipient_entity, recipient_name, spending_type,
                 cycle, fiscal_year, agency_name, description, amount
         from grants_record
         inner join assoc_spending_grants on (id = transaction_id)
