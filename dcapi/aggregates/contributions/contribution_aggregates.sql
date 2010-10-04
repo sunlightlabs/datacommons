@@ -61,7 +61,7 @@ create table contributions_individual as
     where
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'P'
-        and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
+        and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
@@ -82,7 +82,7 @@ create table contributions_individual_to_organization as
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'C'
         and substring(c.recipient_category for 2) != 'Z4'
-        and c.transaction_type in ('', '11', '15', '15e', '15j', '22y')
+        and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
