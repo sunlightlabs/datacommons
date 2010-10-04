@@ -1,0 +1,44 @@
+#!/bin/bash
+
+server="http://my.followthemoney.org/sunlight/"
+date=2009-12-01
+
+if [ -n "$1" ]; then
+   date=$1
+else
+    echo "You must include the latest release date as an argument (YYYY-MM-DD)"
+    exit
+fi
+
+if [ -n "$2" ]; then
+   user=$2
+else
+    echo "The second argument must be the NIMSP username"
+    exit
+fi
+
+if [ -n "$3" ]; then
+   passwd=$3
+else
+    echo "The third argument must be the NIMSP password"
+    exit
+fi
+
+dest=/home/datacommons/data/download/nimsp
+final_dest=$dest/my.followthemoney.org/sunlight/$date
+
+
+if [ ! -d "$dest" ]; then
+  mkdir $dest || exit 1
+fi
+
+cd $dest
+
+# this will put the files recursively in directories: my.followthemoney.org/sunlight/2010-09-22
+wget --user $user --password $passwd -r -l1 --no-parent -A.gz,.sql --reject "index.html" http://my.followthemoney.org/sunlight/$date/
+
+for f in $final_dest/*.gz; do
+    echo "Unzipping $f"
+    gunzip $f
+done
+
