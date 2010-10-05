@@ -80,6 +80,7 @@ create table agg_spending_totals as
             where
                 spending_type = 'l'
             group by entity_id, cycle) as loans
+        using (recipient_entity, cycle)
         full outer join (
             select entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
             from contracts_record
