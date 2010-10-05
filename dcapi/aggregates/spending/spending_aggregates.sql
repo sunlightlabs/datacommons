@@ -64,12 +64,22 @@ create table agg_spending_totals as
     with totals_by_cycle as (
         select recipient_entity, cycle,
                 grants.count as grant_count, grants.amount as grant_amount,
-                contracts.count as contract_count, contracts.amount as contract_amount
+                contracts.count as contract_count, contracts.amount as contract_amount,
+                loans.count as loan_count, loans.amount as loan_amount
         from (
             select entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
             from grants_record
             inner join assoc_spending_grants on (id = transaction_id)
+            where
+                spending_type = 'g'
             group by entity_id, cycle) as grants
+        full outer join (
+            select entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
+            from grants_record
+            inner join assoc_spending_grants on (id = transaction_id)
+            where
+                spending_type = 'l'
+            group by entity_id, cycle) as loans
         full outer join (
             select entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
             from contracts_record
@@ -84,7 +94,8 @@ create table agg_spending_totals as
 
     select recipient_entity, -1,
             sum(grant_count) as grant_count, sum(grant_amount) as grant_amount,
-            sum(contract_count) as contract_count, sum(contract_amount) as contract_amount
+            sum(contract_count) as contract_count, sum(contract_amount) as contract_amount,
+            sum(loan_count) as loan_count, sum(loan_amount) as loan_amount
     from totals_by_cycle
     group by recipient_entity;
 
