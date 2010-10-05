@@ -159,6 +159,7 @@ class Entity(models.Model):
 
 class EntityAlias(models.Model):
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
+    namespace = models.CharField(max_length=255, null=False)
     alias = models.CharField(max_length=255, null=False)
     verified = models.BooleanField(default=False)
 
