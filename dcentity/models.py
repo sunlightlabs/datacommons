@@ -5,7 +5,7 @@ from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from common.db.fields.uuid import UUIDField
+from common.db.fields.uuid_field import UUIDField
 import datetime
 
 
