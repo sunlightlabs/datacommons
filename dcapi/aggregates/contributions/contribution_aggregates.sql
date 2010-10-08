@@ -208,16 +208,15 @@ union
 union
     select * from tmp_assoc_indiv_id
 union
-    select entity_id, transaction_id
+    select n.entity_id, c.transaction_id
     from contributions_all_relevant c
     inner join tmp_indiv_names n
-        on lower(name) = lower(c.contributor_name)
-    where exists
-        (select * from tmp_indiv_locations l
-        where 
-            n.entity_id = l.entity_id
-            and l.msa_name = (select msa_name from zip_msa where zipcode = c.contributor_zipcode))
-    group by entity_id, transaction_id;
+        on lower(n.name) = lower(c.contributor_name)
+    inner join tmp_indiv_locations l
+        on n.entity_id = l.entity_id
+    inner join zip_msa z
+        on c.contributor_zipcode = z.zipcode and l.msa_name = z.msa_name
+    group by n.entity_id, c.transaction_id;
     
 
 select date_trunc('second', now()) || ' -- create index contributor_associations_entity_id on contributor_associations (entity_id)';
