@@ -242,7 +242,7 @@ create table organization_associations as
         e.type = 'organization'
         and (a.namespace is null
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
+                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
