@@ -10,8 +10,8 @@ from uuid import UUID
 
 
 get_totals_stmt = """
-     select cycle, 
-            contributor_count, recipient_count, contributor_amount, recipient_amount, 
+     select cycle,
+            contributor_count, recipient_count, contributor_amount, recipient_amount,
             l.count, firm_income, non_firm_spending,
             grant_count, contract_count, grant_amount, contract_amount
      from
@@ -147,15 +147,15 @@ class EntitySimpleHandler(BaseHandler):
     def read(self, request):
         entity_type = request.GET.get('type', None)
         count = request.GET.get('count', None)
-        
+
         start = request.GET.get('start', None)
         end = request.GET.get('end', None)
-        
+
         qs = Entity.objects.all().order_by('id')
-        
+
         if entity_type:
             qs = qs.filter(type=entity_type)
-        
+
         if count:
             return {'count': qs.count()}
         else:
@@ -171,12 +171,12 @@ class EntitySimpleHandler(BaseHandler):
                 error_response = rc.BAD_REQUEST
                 error_response.write("Must specify valid start and end parameters.")
                 return error_response
-            
+
             if (end < start or end - start > 10000):
                 error_response = rc.BAD_REQUEST
                 error_response.write("Only 10,000 entities can be retrieved at a time.")
                 return error_response
-            
+
             result = qs[start:end]
             return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
 
@@ -185,13 +185,15 @@ class CurrentRaceHandler(TopListHandler):
 
     args = ['district', 'district']
 
-    fields = "id name state election_type district seat seat_status seat_result".split()
+    fields = "entity_id name state election_type district seat seat_status seat_result votesmart_id".split()
 
     stmt = """
-        select id, name, state, election_type, district, seat, seat_status, seat_result
-        from matchbox_currentrace
+        select entity_id, name, state, election_type, district, seat, seat_status, seat_result, votesmart_id
+        from matchbox_currentrace cr
+        inner join matchbox_votesmartinfo vsi on cr.id = vsi.entity_id
         where
-            lower(district) = lower(%s)
-            or (district = '' and lower(state) = lower(substring(%s for 2)))
+            (lower(district) = lower(%s)
+            or (district = '' and lower(state) = lower(substring(%s for 2))))
+            and election_type = 'G'
     """
 

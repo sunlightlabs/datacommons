@@ -236,7 +236,6 @@ class IndustryMetadata(models.Model):
     class Meta:
         db_table = 'matchbox_industrymetadata'
 
-
 class IndivOrgAffiliations(models.Model):
     individual_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_organizations")
     organization_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_individuals")
@@ -244,6 +243,14 @@ class IndivOrgAffiliations(models.Model):
     class Meta:
         db_table = 'matchbox_indivorgaffiliations'
 
+class VotesmartInfo(models.Model):
+    entity = models.OneToOneField(Entity, related_name='votesmart_info', null=False)
+
+    votesmart_id = models.IntegerField()
+    photo_url = models.URLField(null=True)
+
+    class Meta:
+        db_table = 'matchbox_votesmartinfo'
 
 class BioguideInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='bioguide_info', null=False)

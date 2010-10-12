@@ -1,3 +1,5 @@
+drop table matchbox_currentrace;
+
 create table matchbox_currentrace as
     select e.id, e.name, recipient_state as state, election_type, district, seat, seat_status, seat_result
     from recipient_associations a
