@@ -143,6 +143,7 @@ create table tmp_assoc_indiv_id as
         on e.id = a.entity_id
     where
         e.type = 'individual'
+        and a.value != ''
         and (
             (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
             or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
