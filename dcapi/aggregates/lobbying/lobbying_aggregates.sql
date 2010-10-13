@@ -31,14 +31,31 @@ create table assoc_lobbying_client as
     where
         a.verified = 't'
         and e.type = 'organization'
-union
+
+    union
+
     select a.entity_id, l.transaction_id
     from matchbox_entityattribute a
     inner join lobbying_lobbying l
         on a.value = l.client_ext_id
     where
         a.verified = 't'
-        and a.namespace = 'urn:crp:organization';
+        and a.namespace = 'urn:crp:organization'
+
+    union all
+
+    select ea.entity_id, l.transaction_id
+    from matchbox_entityattribute ea
+    inner join matchbox_entity e
+        on e.id = ea.entity_id
+    inner join agg_cat_map cm
+        on ea.value = cm.catorder
+    inner join lobbying_lobbying l
+        on lower(cm.catcode) = lower(l.client_category)
+    where
+        ea.verified = 't'
+        and e.type = 'industry'
+;
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id)';
 create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id);
@@ -112,7 +129,7 @@ create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entit
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id)';
 create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id);
 
-    
+
 -- Total Spent
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_totals';
@@ -120,7 +137,7 @@ drop table if exists agg_lobbying_totals;
 
 select date_trunc('second', now()) || ' -- create table agg_lobbying_totals as';
 create table agg_lobbying_totals as
-    select entity_id, coalesce(lobbyist.cycle, coalesce(firm.cycle, coalesce(non_firm_registrant.cycle, non_firm_client.cycle))) as cycle, 
+    select entity_id, coalesce(lobbyist.cycle, coalesce(firm.cycle, coalesce(non_firm_registrant.cycle, non_firm_client.cycle))) as cycle,
         coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm_registrant.count, coalesce(non_firm_client.count, 0)))) as count,
         coalesce(non_firm_registrant.amount, coalesce(non_firm_client.amount, 0)) as non_firm_spending, coalesce(firm.amount, 0) as firm_income
     from
@@ -153,12 +170,14 @@ create table agg_lobbying_totals as
         from lobbying_report r
         inner join assoc_lobbying_client ca using (transaction_id)
         left join matchbox_organizationmetadata m using (entity_id)
+        left join matchbox_entity e on e.id = ca.entity_id
         where
             coalesce(m.lobbying_firm, 'f') = 'f'
+            and case when e.type = 'industry' then r.include_in_industry_totals else 't' end
         group by entity_id, cycle) as non_firm_client
     using (entity_id, cycle)
-union
-    select entity_id, -1, 
+union all
+    select entity_id, -1,
         coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm_registrant.count, coalesce(non_firm_client.count, 0)))) as count,
         coalesce(non_firm_registrant.amount, coalesce(non_firm_client.amount, 0)) as non_firm_spending, coalesce(firm.amount, 0) as firm_income
     from
@@ -191,8 +210,10 @@ union
         from lobbying_report r
         inner join assoc_lobbying_client ca using (transaction_id)
         left join matchbox_organizationmetadata m using (entity_id)
+        left join matchbox_entity e on e.id = ca.entity_id
         where
             coalesce(m.lobbying_firm, 'f') = 'f'
+            and case when e.type = 'industry' then r.include_in_industry_totals else 't' end
         group by entity_id) as non_firm_client
     using (entity_id);
 
@@ -213,21 +234,25 @@ create table agg_lobbying_registrants_for_client as
     from (select ca.entity_id as client_entity, r.cycle, r.registrant_name, ra.entity_id as registrant_entity, count(r), sum(amount) as amount,
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
-        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) as ca using (transaction_id)
+        inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent) as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
+        left join matchbox_entity ce on ce.id = ca.entity_id
         where lower(registrant_name) != lower(client_name)
-        group by ca.entity_id, cycle, r.registrant_name, ra.entity_id) top
+            and case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by ca.entity_id, cycle, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n
-union
+union all
     select client_entity, -1, registrant_name, registrant_entity, count, amount
     from (select ca.entity_id as client_entity, r.registrant_name, ra.entity_id as registrant_entity, count(r), sum(amount) as amount,
             rank() over (partition by ca.entity_id order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
-        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) as ca using (transaction_id)
+        inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent) as ca using (transaction_id)
         left join assoc_lobbying_registrant as ra using (transaction_id)
+        left join matchbox_entity ce on ce.id = ca.entity_id
         where lower(registrant_name) != lower(client_name)
-        group by ca.entity_id, r.registrant_name, ra.entity_id) top
+            and case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by ca.entity_id, r.registrant_name, coalesce(ra.entity_id, '')) top
     where
         top.rank <= :agg_top_n;
 
@@ -247,17 +272,21 @@ create table agg_lobbying_issues_for_client as
             rank() over (partition by ca.entity_id, r.cycle order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
-        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
+        inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent) ca using (transaction_id)
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
         group by ca.entity_id, r.cycle, i.general_issue) top
     where
         rank <= :agg_top_n
-union
+union all
     select client_entity, -1, issue, count
     from (select ca.entity_id as client_entity, i.general_issue as issue, count(*),
             rank() over (partition by ca.entity_id order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
-        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
+        inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent) ca using (transaction_id)
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
         group by ca.entity_id, i.general_issue) top
     where
         rank <= :agg_top_n;
@@ -278,20 +307,24 @@ create table agg_lobbying_lobbyists_for_client as
             rank() over (partition by ca.entity_id, r.cycle order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
-        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
+        inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent) ca using (transaction_id)
         left join assoc_lobbying_lobbyist la using (id)
-        group by ca.entity_id, r.cycle, l.lobbyist_name, la.entity_id) top
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by ca.entity_id, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '')) top
     where
         rank <= :agg_top_n
-union
+union all
     select client_entity, -1, lobbyist_name, lobbyist_entity, count
     from (select ca.entity_id as client_entity, l.lobbyist_name, la.entity_id as lobbyist_entity, count(*),
             rank() over (partition by ca.entity_id order by count(*) desc) as rank
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
-        inner join (select * from assoc_lobbying_client union select * from assoc_lobbying_client_parent) ca using (transaction_id)
+        inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent) ca using (transaction_id)
         left join assoc_lobbying_lobbyist la using (id)
-        group by ca.entity_id, l.lobbyist_name, la.entity_id) top
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by ca.entity_id, l.lobbyist_name, coalesce(la.entity_id, '')) top
     where
         rank <= :agg_top_n;
 
@@ -316,7 +349,7 @@ create table agg_lobbying_registrants_for_lobbyist as
         group by la.entity_id, cycle, r.registrant_name, ra.entity_id) top
     where
         top.rank <= :agg_top_n
-union
+union all
     select top.lobbyist_entity, -1, top.registrant_name, top.registrant_entity, top.count
     from (select la.entity_id as lobbyist_entity, r.registrant_name, ra.entity_id as registrant_entity, count(r),
             rank() over (partition by la.entity_id order by count(r) desc) as rank
@@ -349,7 +382,7 @@ create table agg_lobbying_issues_for_lobbyist as
         group by la.entity_id, r.cycle, i.general_issue) top
     where
         rank <= :agg_top_n
-union
+union all
     select lobbyist_entity, -1, issue, count
     from (select la.entity_id as lobbyist_entity, i.general_issue as issue, count(r),
             rank() over (partition by la.entity_id order by count(r) desc) as rank
@@ -379,10 +412,12 @@ create table agg_lobbying_clients_for_lobbyist as
         inner join lobbying_lobbyist l using (transaction_id)
         inner join assoc_lobbying_lobbyist la using (id)
         left join assoc_lobbying_client ca using (transaction_id)
-        group by la.entity_id, r.cycle, r.client_name, ca.entity_id) top
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by la.entity_id, r.cycle, r.client_name, coalesce(ca.entity_id, '')) top
     where
         rank <= :agg_top_n
-union
+union all
     select lobbyist_entity, -1, client_name, client_entity, count
     from (select la.entity_id as lobbyist_entity, r.client_name, ca.entity_id as client_entity, count(r),
             rank() over (partition by la.entity_id order by count(r) desc) as rank
@@ -390,7 +425,9 @@ union
         inner join lobbying_lobbyist l using (transaction_id)
         inner join assoc_lobbying_lobbyist la using (id)
         left join assoc_lobbying_client ca using (transaction_id)
-        group by la.entity_id, r.client_name, ca.entity_id) top
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by la.entity_id, r.client_name, coalesce(ca.entity_id, '')) top
     where
         rank <= :agg_top_n;
 
@@ -412,17 +449,21 @@ create table agg_lobbying_clients_for_registrant as
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
         left join assoc_lobbying_client ca using (transaction_id)
-        group by ra.entity_id, r.cycle, r.client_name, ca.entity_id) top
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by ra.entity_id, r.cycle, r.client_name, coalesce(ca.entity_id, '')) top
     where
         rank <= :agg_top_n
-union
+union all
     select registrant_entity, -1, client_name, client_entity, count, amount
     from (select ra.entity_id as registrant_entity, r.client_name, ca.entity_id as client_entity, count(r), sum(amount) as amount,
             rank() over (partition by ra.entity_id order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
         left join assoc_lobbying_client ca using (transaction_id)
-        group by ra.entity_id, r.client_name, ca.entity_id) top
+        left join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by ra.entity_id, r.client_name, coalesce(ca.entity_id, '')) top
     where
         rank <= :agg_top_n;
 
@@ -446,7 +487,7 @@ create table agg_lobbying_issues_for_registrant as
         group by ra.entity_id, r.cycle, i.general_issue) top
     where
         rank <= :agg_top_n
-union
+union all
     select registrant_entity, -1, issue, count
     from (select ra.entity_id as registrant_entity, i.general_issue as issue, count(r),
             rank() over (partition by ra.entity_id order by count(r) desc) as rank
@@ -478,7 +519,7 @@ create table agg_lobbying_lobbyists_for_registrant as
         group by ra.entity_id, cycle, l.lobbyist_name, la.entity_id) top
     where
         top.rank <= :agg_top_n
-union
+union all
     select registrant_entity, -1, lobbyist_name, lobbyist_entity, count
     from (select ra.entity_id as registrant_entity, l.lobbyist_name, la.entity_id as lobbyist_entity, count(r),
             rank() over (partition by ra.entity_id order by count(r) desc) as rank

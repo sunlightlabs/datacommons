@@ -27,3 +27,4 @@ dc_web/build
 .pydevproject
 
 .DS_Store
+nationwide_candidates.pkl
