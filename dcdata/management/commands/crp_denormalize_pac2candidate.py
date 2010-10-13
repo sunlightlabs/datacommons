@@ -33,54 +33,55 @@ class ContributorFilter(Filter):
         if committee:
             record['contributor_name'] = committee['pac_short']
             record['organization_name'] = record['contributor_name']
+            record['organization_ext_id'] = record['contributor_ext_id']
             record['contributor_party'] = committee['party']
         return record
 
 
 class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
-    
+
     @staticmethod
     def get_record_processor(catcodes, candidates, committees):
         return chain_filters(
             CSVFieldVerifier(),
-                             
+
             # transaction filters
             FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),
             FieldMerger({'transaction_id': ('cycle','fec_rec_no')}, lambda cycle, fecid: 'pac2cand:%s:%s' % (cycle, fecid), keep_fields=True),
             FieldMerger({'transaction_type': ('type',)}, lambda t: t.strip().lower()),
-            
+
             # date stamp
             FieldModifier('date', parse_date_iso),
-            
+
             # contributor and recipient fields
             ContributorFilter(committees),
             FieldRenamer({'contributor_ext_id': 'pac_id'}),
             FieldAdder('contributor_type', 'committee'),
-            
+
             Pac2CandRecipientFilter(candidates),
             FieldAdder('recipient_type', 'politician'),
-            
+
             # catcode
             CatCodeFilter('contributor', catcodes),
-            
+
             # add static fields
             FieldAdder('is_amendment', False),
             FieldAdder('election_type', 'G'),
-            
+
             # filter through spec
             SpecFilter(SPEC))
-            
+
     def denormalize(self, data_path, cycles, catcodes, candidates, committees):
         input_files = Files(*[os.path.join(data_path, 'raw', 'crp', 'pacs%s.txt' % cycle) for cycle in cycles])
         outfile = open(os.path.join(data_path, 'denormalized', 'denorm_pac2cand.txt'), 'w')
-        
+
         source = VerifiedCSVSource(input_files, fieldnames=FILE_TYPES['pacs'], quotechar="|")
         output_func = CSVEmitter(outfile, fieldnames=FIELDNAMES).process_record
-        
+
         processor_func = self.get_record_processor(catcodes, candidates, committees)
 
         load_data(source, processor_func, output_func)
-            
+
 
 Command = CRPDenormalizePac2Candidate
-            
+
