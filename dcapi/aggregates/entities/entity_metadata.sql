@@ -10,8 +10,8 @@ insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_
     select
         entity_id,
         bool_or(coalesce(lobbying_firm, 'f')) as lobbying_firm,
-        max(parent_entity_id) as parent_entity_id,
-        max(industry_entity_id) as industry_entity_id
+        max(parent_entity_id::text)::uuid as parent_entity_id,
+        max(industry_entity_id::text)::uuid as industry_entity_id
     from (
         select
             entity_id,
@@ -25,8 +25,8 @@ insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_
     full outer join (
         select
             oa.entity_id,
-            max(p.entity_id) as parent_entity_id,
-            max(ia.entity_id) as industry_entity_id
+            max(p.entity_id::text) as parent_entity_id,
+            max(ia.entity_id::text) as industry_entity_id
         from
             organization_associations oa
             left join parent_organization_associations p using (transaction_id)
@@ -34,7 +34,7 @@ insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_
         group by
             oa.entity_id
         having
-            max(p.entity_id) is null or oa.entity_id != max(p.entity_id)
+            max(p.entity_id::text) is null or oa.entity_id::text != max(p.entity_id::text)
     ) contributing_orgs using (entity_id)
     group by entity_id;
 
