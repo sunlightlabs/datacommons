@@ -185,15 +185,29 @@ class CurrentRaceHandler(TopListHandler):
 
     args = ['district', 'district']
 
-    fields = "entity_id name state election_type district seat seat_status seat_result votesmart_id".split()
+    fields = "entity_id name state election_type district seat seat_status seat_result votesmart_id party".split()
 
     stmt = """
-        select entity_id, name, state, election_type, district, seat, seat_status, seat_result, votesmart_id
+        select entity_id, name, state, election_type, district, seat, seat_status, seat_result, votesmart_id, party
         from matchbox_currentrace cr
         inner join matchbox_votesmartinfo vsi on cr.id = vsi.entity_id
+        inner join matchbox_politicianmetadata pm using (entity_id)
         where
             (lower(district) = lower(%s)
             or (district = '' and lower(state) = lower(substring(%s for 2))))
             and election_type = 'G'
+    """
+
+class CurrentRaceDistrictsHandler(TopListHandler):
+
+    args = []
+
+    fields = ['district']
+
+    stmt = """
+        select distinct district
+        from matchbox_currentrace cr
+        where election_type = 'G' and district != '' and district is not null
+        order by district
     """
 
