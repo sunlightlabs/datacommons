@@ -188,7 +188,7 @@ class CurrentRaceHandler(TopListHandler):
     fields = "entity_id name state election_type district seat seat_status seat_result votesmart_id party".split()
 
     stmt = """
-        select entity_id, name, state, election_type, district, seat, seat_status, seat_result, votesmart_id, party
+        select entity_id, name, cr.state, election_type, district, cr.seat, seat_status, seat_result, votesmart_id, party
         from matchbox_currentrace cr
         inner join matchbox_votesmartinfo vsi on cr.id = vsi.entity_id
         inner join matchbox_politicianmetadata pm using (entity_id)
