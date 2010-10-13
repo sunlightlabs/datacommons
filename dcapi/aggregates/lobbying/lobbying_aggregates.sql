@@ -239,7 +239,7 @@ create table agg_lobbying_registrants_for_client as
         left join matchbox_entity ce on ce.id = ca.entity_id
         where lower(registrant_name) != lower(client_name)
             and case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by ca.entity_id, cycle, r.registrant_name, coalesce(ra.entity_id, '')) top
+        group by ca.entity_id, cycle, r.registrant_name, ra.entity_id) top
     where
         top.rank <= :agg_top_n
 union all
@@ -252,7 +252,7 @@ union all
         left join matchbox_entity ce on ce.id = ca.entity_id
         where lower(registrant_name) != lower(client_name)
             and case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by ca.entity_id, r.registrant_name, coalesce(ra.entity_id, '')) top
+        group by ca.entity_id, r.registrant_name, ra.entity_id) top
     where
         top.rank <= :agg_top_n;
 
@@ -311,7 +311,7 @@ create table agg_lobbying_lobbyists_for_client as
         left join assoc_lobbying_lobbyist la using (id)
         left join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by ca.entity_id, r.cycle, l.lobbyist_name, coalesce(la.entity_id, '')) top
+        group by ca.entity_id, r.cycle, l.lobbyist_name, la.entity_id) top
     where
         rank <= :agg_top_n
 union all
@@ -324,7 +324,7 @@ union all
         left join assoc_lobbying_lobbyist la using (id)
         left join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by ca.entity_id, l.lobbyist_name, coalesce(la.entity_id, '')) top
+        group by ca.entity_id, l.lobbyist_name, la.entity_id) top
     where
         rank <= :agg_top_n;
 
@@ -414,7 +414,7 @@ create table agg_lobbying_clients_for_lobbyist as
         left join assoc_lobbying_client ca using (transaction_id)
         left join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by la.entity_id, r.cycle, r.client_name, coalesce(ca.entity_id, '')) top
+        group by la.entity_id, r.cycle, r.client_name, ca.entity_id) top
     where
         rank <= :agg_top_n
 union all
@@ -427,7 +427,7 @@ union all
         left join assoc_lobbying_client ca using (transaction_id)
         left join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by la.entity_id, r.client_name, coalesce(ca.entity_id, '')) top
+        group by la.entity_id, r.client_name, ca.entity_id) top
     where
         rank <= :agg_top_n;
 
@@ -451,7 +451,7 @@ create table agg_lobbying_clients_for_registrant as
         left join assoc_lobbying_client ca using (transaction_id)
         left join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by ra.entity_id, r.cycle, r.client_name, coalesce(ca.entity_id, '')) top
+        group by ra.entity_id, r.cycle, r.client_name, ca.entity_id) top
     where
         rank <= :agg_top_n
 union all
@@ -463,7 +463,7 @@ union all
         left join assoc_lobbying_client ca using (transaction_id)
         left join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by ra.entity_id, r.client_name, coalesce(ca.entity_id, '')) top
+        group by ra.entity_id, r.client_name, ca.entity_id) top
     where
         rank <= :agg_top_n;
 

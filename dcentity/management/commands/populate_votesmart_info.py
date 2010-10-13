@@ -15,6 +15,9 @@ class Command(BaseCommand):
 
     help = 'Populate VoteSmart info'
 
+    no_match = []
+    too_many = []
+
     def __init__(self):
         self.set_up_logger()
         votesmart.apikey = '52b1e53c3d62bf531e8dd482067d043a'
@@ -57,7 +60,10 @@ class Command(BaseCommand):
         politicians = cursor.fetchall()
         transaction.rollback()
 
-        self.log.info("Chunk of {0} federal politicians located to find VoteSmart ids for".format(len(politicians)))
+        self.log.info("{0} federal politicians located to find VoteSmart ids for".format(len(politicians)))
+
+        cursor.execute("update matchbox_currentrace set election_type = null")
+        cursor.execute("delete from matchbox_votesmartinfo")
 
         for (entity_id, name, state, district, seat) in politicians:
             if '-' in district:
@@ -88,6 +94,11 @@ class Command(BaseCommand):
         transaction.commit()
 
         self.log.info("Done.")
+        self.log.info("Names with too many matches:")
+        print self.too_many
+
+        self.log.info("Names with no matches:")
+        print self.no_match
 
 
     def get_all_congressional_candidates(self):
@@ -132,8 +143,6 @@ class Command(BaseCommand):
 
         cache_file.close()
 
-        #self.pp.pprint(candidates)
-
         return candidates
 
     def filter_candidates(self, candidates):
@@ -159,18 +168,21 @@ class Command(BaseCommand):
         try:
             cands_for_seat = self.candidates[state][seat]
         except:
-            print "No candidates could be found for: {0} {1} {2} {3}".format(name, state, district, seat)
+            #print "No candidates could be found for: {0} {1} {2} {3}".format(name, state, district, seat)
             return None
 
         # narrow down by district (if approppriate?)
-        print "{0} {1} {2} {3}".format(name, state, district, seat)
+        #print "{0} {1} {2} {3}".format(name, state, district, seat)
         possibilities = [ x for x in cands_for_seat if x.electionDistrictName in [str(district), 'At-Large'] and x.electionStage == 'General' ]
 
         name_obj = name_parser.standardize_politician_name_to_objs(name)
         if isinstance(name_obj, name_parser.RunningMatesNames):
             name_obj = name_obj.mate1 # just use the governor, not lt. governor (this is the only case where it's a list
 
-        name_possibilities = [ x for x in possibilities if x.lastName.lower() == name_obj.last.lower() ]
+        name_possibilities = [ x for x in possibilities if \
+                x.lastName.lower() == name_obj.last.lower() \
+                and name_obj.first.lower() in [ x.firstName.lower(), x.preferredName.lower(), x.nickName.lower() ] \
+                and x.electionStatus == 'Running' ]
 
         if len(name_possibilities) == 1:
             cand = name_possibilities[0]
@@ -179,11 +191,9 @@ class Command(BaseCommand):
             else:
                 return None
         elif len(name_possibilities) > 1:
-            print "Our name: |%s|" % name_obj.last
-            print [ x.lastName for x in name_possibilities ]
-            return None
+            self.too_many.append([(name_obj.first, name_obj.last)] + [ (x.firstName, x.lastName) for x in name_possibilities ])
         else:
-            print "Our name: |%s|" % name_obj.last
-            print [ x.lastName for x in possibilities ]
-            return None
+            self.no_match.append([(name_obj.first, name_obj.last)] + [ (x.firstName, x.lastName) for x in name_possibilities ])
+
+
 

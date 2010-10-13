@@ -3,14 +3,15 @@
 
 -- Organization Metadata
 
-delete from matchbox_organizationmetadata;
+begin;
+create temp table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
-insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_entity_id, industry_entity_id)
+insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_entity_id, industry_entity_id)
     select
         entity_id,
         bool_or(coalesce(lobbying_firm, 'f')) as lobbying_firm,
-        max(parent_entity_id) as parent_entity_id,
-        max(industry_entity_id) as industry_entity_id
+        max(parent_entity_id::text)::uuid as parent_entity_id,
+        max(industry_entity_id::text)::uuid as industry_entity_id
     from (
         select
             entity_id,
@@ -24,8 +25,8 @@ insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_enti
     full outer join (
         select
             oa.entity_id,
-            max(p.entity_id) as parent_entity_id,
-            max(ia.entity_id) as industry_entity_id
+            max(p.entity_id::text) as parent_entity_id,
+            max(ia.entity_id::text) as industry_entity_id
         from
             organization_associations oa
             left join parent_organization_associations p using (transaction_id)
@@ -33,16 +34,23 @@ insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_enti
         group by
             oa.entity_id
         having
-            max(p.entity_id) is null or oa.entity_id != max(p.entity_id)
+            max(p.entity_id::text) is null or oa.entity_id::text != max(p.entity_id::text)
     ) contributing_orgs using (entity_id)
     group by entity_id;
+
+delete from matchbox_organizationmetadata;
+
+insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_entity_id, industry_entity_id)
+    select entity_id, lobbying_firm, parent_entity_id, industry_entity_id from tmp_matchbox_organizationmetadata;
+commit;
 
 
 -- Politician Metadata
 
-delete from matchbox_politicianmetadata;
+begin;
+create temp table tmp_matchbox_politicianmetadata as select * from matchbox_politicianmetadata limit 0;
 
-insert into matchbox_politicianmetadata (entity_id, state, party, seat)
+insert into tmp_matchbox_politicianmetadata (entity_id, state, party, seat)
     select distinct on (entity_id) entity_id, recipient_state, recipient_party, seat
     from contribution_contribution c
     inner join recipient_associations ra using (transaction_id)
@@ -51,12 +59,19 @@ insert into matchbox_politicianmetadata (entity_id, state, party, seat)
         e.type = 'politician'
     order by entity_id, cycle desc;
 
+delete from matchbox_politicianmetadata;
+
+insert into matchbox_politicianmetadata (entity_id, state, party, seat)
+    select entity_id, state, party, seat from tmp_matchbox_politicianmetadata;
+commit;
+
 
 -- Indiv/Org Affiliations
 
-delete from matchbox_indivorgaffiliations;
+begin;
+create temp table tmp_matchbox_indivorgaffiliations as select * from matchbox_indivorgaffiliations limit 0;
 
-insert into matchbox_indivorgaffiliations (individual_entity_id, organization_entity_id)
+insert into tmp_matchbox_indivorgaffiliations (individual_entity_id, organization_entity_id)
     select distinct
         ca.entity_id as individual_entity_id, oa.entity_id as organization_entity_id
     from
@@ -64,6 +79,12 @@ insert into matchbox_indivorgaffiliations (individual_entity_id, organization_en
         inner join organization_associations oa using (transaction_id)
         inner join matchbox_entity me on me.id = ca.entity_id
     where me.type = 'individual';
+
+delete from matchbox_indivorgaffiliations;
+
+insert into matchbox_indivorgaffiliations (individual_entity_id, organization_entity_id)
+    select individual_entity_id, organization_entity_id from tmp_matchbox_indivorgaffiliations;
+commit;
 
 
 
