@@ -143,6 +143,7 @@ create table tmp_assoc_indiv_id as
         on e.id = a.entity_id
     where
         e.type = 'individual'
+        and a.value != ''
         and (
             (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
             or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
@@ -191,7 +192,7 @@ create table contributor_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace is null
+        and (a.namespace = ''
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                 or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
@@ -240,7 +241,7 @@ create table organization_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace is null
+        and (a.namespace = ''
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                 or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
 union
@@ -273,7 +274,7 @@ select date_trunc('second', now()) || ' -- create table parent_organization_asso
                 on e.id = a.entity_id
             where
                 e.type = 'organization'
-                and (a.namespace is null
+                and (a.namespace = ''
                     or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                         or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))                
     union
@@ -330,7 +331,7 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
-        and (a.namespace is null
+        and (a.namespace = ''
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                 or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
 union
