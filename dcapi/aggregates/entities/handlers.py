@@ -194,7 +194,7 @@ class CurrentRaceHandler(TopListHandler):
         inner join matchbox_politicianmetadata pm using (entity_id)
         where
             (lower(district) = lower(%s)
-            or (district = '' and lower(state) = lower(substring(%s for 2))))
+            or (district = '' and lower(cr.state) = lower(substring(%s for 2))))
             and election_type = 'G'
     """
 
