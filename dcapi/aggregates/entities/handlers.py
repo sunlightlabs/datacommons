@@ -183,7 +183,7 @@ class EntitySimpleHandler(BaseHandler):
 
 class CurrentRaceHandler(TopListHandler):
 
-    args = ['district', 'district']
+    args = ['district', 'district', 'district']
 
     fields = "entity_id name state election_type district seat seat_status seat_result votesmart_id party".split()
 
@@ -194,7 +194,7 @@ class CurrentRaceHandler(TopListHandler):
         inner join matchbox_politicianmetadata pm using (entity_id)
         where
             (lower(district) = lower(%s)
-            or (district = '' and lower(cr.state) = lower(substring(%s for 2))))
+            or (char_length(%s) = 2 and lower(cr.state) = lower(substring(%s for 2))))
             and election_type = 'G'
     """
 
