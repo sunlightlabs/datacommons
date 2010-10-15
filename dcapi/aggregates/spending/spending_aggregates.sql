@@ -63,9 +63,12 @@ drop table if exists agg_spending_totals;
 create table agg_spending_totals as
     with totals_by_cycle as (
         select recipient_entity, cycle,
-                grants.count as grant_count, grants.amount as grant_amount,
-                contracts.count as contract_count, contracts.amount as contract_amount,
-                loans.count as loan_count, loans.amount as loan_amount
+                coalesce(grants.count, 0) as grant_count, 
+                coalesce(grants.amount, 0) as grant_amount,
+                coalesce(contracts.count, 0) as contract_count, 
+                coalesce(contracts.amount, 0) as contract_amount,
+                coalesce(loans.count, 0) as loan_count, 
+                coalesce(loans.amount, 0) as loan_amount
         from (
             select entity_id as recipient_entity, cycle, count(*), sum(amount) as amount
             from grants_record

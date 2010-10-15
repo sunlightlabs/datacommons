@@ -79,18 +79,6 @@ class PolContributorsHandler(EntityTopListHandler):
         limit %s
     """
 
-class PolOrgContributorHandler(EntityTopListHandler):
-    fields = ['total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
-
-    stmt = """
-        select total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-        from agg_orgs_to_cand
-        where
-            recipient_entity = %s
-            and cycle = %s
-        order by total_amount desc
-        limit %s
-    """
 
 class IndivOrgRecipientsHandler(EntityTopListHandler):
 
@@ -246,22 +234,17 @@ class TopIndividualsByContributionsHandler(TopListHandler):
          limit %s
     """
 
-
-class TopOrganizationsByIndustryHandler(TopListHandler):
-
-    args = ['entity_id', 'cycle', 'limit']
-
-    fields = ['industry_entity', 'organization_entity', 'organization_name', 'count', 'amount']
+class IndustryOrgHandler(EntityTopListHandler):
+    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
 
     stmt = """
-        select industry_entity, organization_entity, name as organization_name, count, amount
-          from agg_top_orgs_by_industry
-         inner join matchbox_entity
-            on id = organization_entity
-         where industry_entity = %s
+        select organization_name, organization_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+        from agg_top_orgs_by_industry
+        where
+            industry_entity = %s
             and cycle = %s
-         order by count desc, amount desc
-         limit %s
+        order by total_amount desc
+        limit %s
     """
 
 

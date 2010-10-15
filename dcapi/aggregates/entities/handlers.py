@@ -11,9 +11,19 @@ from uuid import UUID
 
 get_totals_stmt = """
      select cycle,
-            contributor_count, recipient_count, contributor_amount, recipient_amount,
-            l.count, firm_income, non_firm_spending,
-            grant_count, contract_count, grant_amount, contract_amount
+            coalesce(contributor_count,  0),
+            coalesce(recipient_count,    0),
+            coalesce(contributor_amount, 0),
+            coalesce(recipient_amount,   0),
+            coalesce(l.count,            0),
+            coalesce(firm_income,        0),
+            coalesce(non_firm_spending,  0),
+            coalesce(grant_count,        0),
+            coalesce(contract_count,     0),
+            coalesce(loan_count,         0),
+            coalesce(grant_amount,       0),
+            coalesce(contract_amount,    0),
+            coalesce(loan_amount,        0)
      from
          (select *
          from agg_entities
@@ -40,7 +50,7 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'grant_amount', 'contract_amount']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
