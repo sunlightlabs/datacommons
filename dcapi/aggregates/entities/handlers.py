@@ -116,10 +116,6 @@ class EntitySearchHandler(BaseHandler):
             coalesce(l.firm_income, 0), coalesce(l.non_firm_spending, 0),
             pm.state, pm.party, pm.seat, om.lobbying_firm
         from matchbox_entity e
-        inner join (select distinct entity_id
-            from matchbox_entityalias ea
-            where to_tsvector('datacommons', ea.alias) @@ to_tsquery('datacommons', quote_literal(%s))) ft_match
-            on e.id = ft_match.entity_id
         left join matchbox_politicianmetadata pm
             on e.id = pm.entity_id
         left join matchbox_organizationmetadata om
@@ -129,9 +125,11 @@ class EntitySearchHandler(BaseHandler):
         left join agg_entities a
             on e.id = a.entity_id
         where
-            (a.cycle = -1 and l.cycle = -1)
-            or (a.cycle = -1 and l.cycle is null)
-            or (a.cycle is null and l.cycle = -1)
+            to_tsvector('datacommons', e.name) @@ to_tsquery('datacommons', quote_literal(%s))
+            and (
+                (a.cycle = -1 and l.cycle = -1)
+                or (a.cycle = -1 and l.cycle is null)
+                or (a.cycle is null and l.cycle = -1))
     """
 
     def read(self, request):
