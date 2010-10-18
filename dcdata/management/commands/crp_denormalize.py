@@ -17,7 +17,7 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
               'organization_name', 'organization_ext_id', 'organization_entity', 'parent_organization_name', 'parent_organization_ext_id',
               'parent_organization_entity', 'recipient_name', 'recipient_ext_id', 'recipient_entity',
               'recipient_party', 'recipient_type', 'recipient_state', 'recipient_category', 'recipient_category_order',
-              'committee_name', 'committee_ext_id', 'committee_entity', 'committee_party', 'election_type',
+              'committee_name', 'committee_ext_id', 'committee_party', 'election_type',
               'district', 'seat', 'seat_status', 'seat_result']
 
 SPEC = dict(((fn, None) for fn in FIELDNAMES))

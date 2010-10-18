@@ -3,7 +3,6 @@ drop index if exists contribution_contribution_contributor_category_order;
 drop index if exists contribution_contribution_contributor_entity;
 drop index if exists contribution_contribution_organization_entity;
 drop index if exists contribution_contribution_parent_organization_entity;
-drop index if exists contribution_contribution_committee_entity;
 drop index if exists contribution_contribution_recipient_entity;
 drop index if exists contribution_contribution_contributor_ext_id;
 drop index if exists contribution_contribution_organization_ext_id;

@@ -40,13 +40,7 @@
     		    {% endif %}
     		</td>
     		<td>
-    		    {% if contrib.committee_entity %}
-        		    <a href="{% url matchbox_entity contrib.committee_entity %}">
-        		        {{ contrib.committee_name }}
-        		    </a>
-    		    {% else %}
-    		        {{ contrib.committee_name }}
-    		    {% endif %}
+                {{ contrib.committee_name }}
     		</td>
     		<td>
     		    {% if contrib.organization_entity %}

@@ -201,16 +201,10 @@ def _recipient_ft_generator(query, *searches):
 fields.append(InclusionField('recipient_ft', _recipient_ft_generator))
 
 # entity fields
-# def _committee_in_generator(query, *entities):    
-#     return query.filter(committee_entity__in=entities)
 # def _contributor_in_generator(query, *entities):    
 #     return query.filter(Q(contributor_entity__in=entities) | Q(organization_entity__in=entities) | Q(parent_organization_entity__in=entities))
-# def _recipient_in_generator(query, *entities):
-#     return query.filter(Q(recipient_entity__in=entities) | Q(committee_entity__in=entities))    
 # def _organization_in_generator(query, *entities):
 #     return query.filter(Q(organization_entity__in=entities) | Q(parent_organization_entity__in=entities))
-# def _entity_in_generator(query, *entities):
-#     return query.filter(Q(contributor_entity__in=entities) | Q(organization_entity__in=entities) | Q(parent_organization_entity__in=entities) | Q(recipient_entity__in=entities) | Q(committee_entity__in=entities))
 
 # the final search schema
 

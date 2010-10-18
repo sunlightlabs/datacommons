@@ -17,7 +17,6 @@ class SimpleTest(TestCase):
         self.create_contribution(parent_organization_entity='5678')        
         self.create_contribution(recipient_entity='abcd')
         self.create_contribution(recipient_entity='efgh')
-        self.create_contribution(committee_entity='efgh')  
         
     def assert_num_results(self, expected_num, request):
         self.assertEqual(expected_num, filter_contributions(request).count())
