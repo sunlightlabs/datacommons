@@ -46,9 +46,11 @@ INSTALLED_APPS = (
     'dcapi',
     'dcapi.contributions',
     'dcentity.tools',
+    'django_nose',
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 try:
     from local_settings import *
