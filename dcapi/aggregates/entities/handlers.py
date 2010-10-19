@@ -1,4 +1,4 @@
-from dcapi.aggregates.handlers import execute_top
+from dcapi.aggregates.handlers import execute_top, TopListHandler
 from dcentity.models import Entity, EntityAttribute, OrganizationMetadata, PoliticianMetadata, BioguideInfo
 from django.forms.models import model_to_dict
 from piston.handler import BaseHandler
@@ -136,15 +136,15 @@ class EntitySimpleHandler(BaseHandler):
     def read(self, request):
         entity_type = request.GET.get('type', None)
         count = request.GET.get('count', None)
-        
+
         start = request.GET.get('start', None)
         end = request.GET.get('end', None)
-        
+
         qs = Entity.objects.all().order_by('id')
-        
+
         if entity_type:
             qs = qs.filter(type=entity_type)
-        
+
         if count:
             return {'count': qs.count()}
         else:
@@ -160,11 +160,48 @@ class EntitySimpleHandler(BaseHandler):
                 error_response = rc.BAD_REQUEST
                 error_response.write("Must specify valid start and end parameters.")
                 return error_response
-            
+
             if (end < start or end - start > 10000):
                 error_response = rc.BAD_REQUEST
                 error_response.write("Only 10,000 entities can be retrieved at a time.")
                 return error_response
-            
+
             result = qs[start:end]
             return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
+
+
+class CurrentRaceHandler(TopListHandler):
+
+    args = ['district', 'district', 'district', 'district']
+
+    fields = "entity_id name state election_type district seat seat_status seat_result votesmart_id party".split()
+
+    stmt = """
+        select entity_id, name, cr.state, election_type, district, cr.seat, seat_status, seat_result, votesmart_id, party
+        from matchbox_currentrace cr
+        inner join matchbox_votesmartinfo vsi on cr.id = vsi.entity_id
+        inner join matchbox_politicianmetadata pm using (entity_id)
+        where
+            case
+                when district is null then lower(substring(%s for 2)) = lower(cr.state)
+                else case
+                        when char_length(%s) = 5 then lower(%s) = lower(district)
+                        else lower(substring(%s for 2)) = lower(cr.state)
+                     end
+            end
+            and election_type = 'G'
+    """
+
+class CurrentRaceDistrictsHandler(TopListHandler):
+
+    args = []
+
+    fields = ['district']
+
+    stmt = """
+        select distinct district
+        from matchbox_currentrace cr
+        where election_type = 'G' and district != '' and district is not null
+        order by district
+    """
+
