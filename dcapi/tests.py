@@ -12,6 +12,6 @@ class TestSparklineByPartyHandler(TestCase):
         # we don't have the database table to call on, but we can make sure our
         # code can get that far (i.e. it runs)
         with self.assertRaises(DatabaseError):
-            handler.read(request, entity_id=uuid.UUID('ABCDE'))
+            handler.read(request, entity_id=uuid.uuid4())
 
 
