@@ -129,10 +129,10 @@ class OrgRecipientsHandler(EntityTopListHandler):
 
 class IndustriesHandler(EntityTopListHandler):
 
-    fields = ['industry', 'count', 'amount', 'should_show_entity']
+    fields = ['name', 'id', 'count', 'amount', 'should_show_entity']
 
     stmt = """
-        select industry as industry, count, amount, coalesce(should_show_entity, 't') as should_show_entity
+        select industry as name, industry_entity as id, count, amount, coalesce(should_show_entity, 't') as should_show_entity
         from agg_industries_to_cand
         left join matchbox_industrymetadata on industry_entity = entity_id
         where
