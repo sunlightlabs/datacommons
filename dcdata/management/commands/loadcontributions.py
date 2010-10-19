@@ -29,7 +29,6 @@ class ContributorFilter(Filter):
     type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
     def process_record(self, record):
         record['contributor_type'] = self.type_mapping.get(record['contributor_type'], None)
-        #record['contributor_entity'] = None
         return record
 
 class OrganizationFilter(Filter):
