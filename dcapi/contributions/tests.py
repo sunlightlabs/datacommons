@@ -125,7 +125,7 @@ class SimpleTest(TestCase):
         self.assert_num_results(1, {'recipient_ft': 'john'})
         self.assert_num_results(1, {'recipient_ft': 'barry'})
 
-        self.create_contribution(committee_name='Committe to Commit')
+        self.create_contribution(committee_name='Committee to Commit')
 
         self.assert_num_results(1, {'committee_ft': 'to'})
         self.assert_num_results(1, {'committee_ft': 'commit'})
