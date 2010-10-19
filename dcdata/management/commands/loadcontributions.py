@@ -5,7 +5,7 @@ from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
     EntityFilter
 from dcdata.processor import chain_filters, load_data, Every, progress_tick
-from dcdata.utils.dryrub import CountEmitter, MD5Filter, CSVFieldVerifier,\
+from dcdata.utils.dryrub import CountEmitter, CSVFieldVerifier,\
     VerifiedCSVSource
 from decimal import Decimal
 from django.core.exceptions import ImproperlyConfigured
