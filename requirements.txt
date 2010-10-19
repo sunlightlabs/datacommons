@@ -7,3 +7,6 @@ psycopg2
 python-memcached
 boto
 -e git+http://github.com/sunlightlabs/django-mediasync.git#egg=mediasync
+nose
+django-nose
+
