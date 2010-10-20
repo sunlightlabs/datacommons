@@ -2,8 +2,7 @@
 
 
 from dcdata.contribution.models import Contribution
-from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
-    EntityFilter
+from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter
 from dcdata.processor import chain_filters, load_data, Every, progress_tick
 from dcdata.utils.dryrub import CountEmitter, CSVFieldVerifier,\
     VerifiedCSVSource
