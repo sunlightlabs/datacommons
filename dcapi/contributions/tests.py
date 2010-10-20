@@ -3,6 +3,7 @@ from datetime import date
 
 from django.test import TestCase
 from django.db import connection
+from nose.plugins.skip import Skip, SkipTest
 
 from dcdata.contribution.models import Contribution,\
     UNITTEST_TRANSACTION_NAMESPACE
@@ -194,8 +195,8 @@ class SimpleTest(TestCase):
         self.assert_num_results(2, {'recipient_ft': 'John R'})
 
         # failing right now: 'and' should be a stop word, but isn't
-        # self.assert_num_results(3, {'recipient_ft': 'pg and e'})
-
+        raise SkipTest
+        self.assert_num_results(3, {'recipient_ft': 'pg and e'})
 
 # not an actual test case because there are no Contribution records in the test database.
 # instead, copy this code to a Django shell and run it there.
