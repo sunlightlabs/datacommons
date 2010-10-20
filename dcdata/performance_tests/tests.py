@@ -27,7 +27,9 @@ class InsertPerformanceTests(TransactionTestCase):
     
     def setUp(self):
         self.cursor = connections['default'].cursor()
-        
+
+    def tearDown(self):
+        transaction.rollback()
         
     def django_insert(self, i):
         DummyModel.objects.create(a = str(i), b = str(i), c = str(i), d = str(i))
