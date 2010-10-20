@@ -9,4 +9,5 @@ boto
 -e git+http://github.com/sunlightlabs/django-mediasync.git#egg=mediasync
 nose
 django-nose
+lxml
 

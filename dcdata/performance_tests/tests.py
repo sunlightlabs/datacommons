@@ -2,10 +2,11 @@
 from time import time
 import subprocess
 import logging
+from nose.plugins.skip import Skip, SkipTest
 
 from django.test.testcases import TransactionTestCase
 from django.db.transaction import commit_manually
-from django.db import connection, transaction
+from django.db import connections, transaction
 
 from models import DummyModel
 
@@ -25,7 +26,7 @@ class InsertPerformanceTests(TransactionTestCase):
         return (str(i), str(i), str(i), str(i))
     
     def setUp(self):
-        self.cursor = connection.cursor()
+        self.cursor = connections['default'].cursor()
         
         
     def django_insert(self, i):
@@ -52,16 +53,19 @@ class InsertPerformanceTests(TransactionTestCase):
             
         
     def testDjangoInserts(self):
+        raise SkipTest
         logging.info('Running Django insert tests...')
         
         self.run_inserts(self.django_insert, transaction.commit)
         
     def testSQLInserts(self):
+        raise SkipTest
         logging.info('Running SQL insert tests...')
         
         self.run_inserts(self.sql_insert, transaction.commit)
         
     def testSQLManyInserts(self):
+        raise SkipTest
         logging.info('Running SQL many-insert tests...')
         
         self.inserts = list()
@@ -69,6 +73,7 @@ class InsertPerformanceTests(TransactionTestCase):
         self.run_inserts(self.sql_insertmany, transaction.commit)
         
     def testSQLDumpAndLoadInserts(self):
+        raise SkipTest
         logging.info('Running SQL dump and load tests...')
         
         dump_file = open('/tmp/performance_tests.dump', 'w')
