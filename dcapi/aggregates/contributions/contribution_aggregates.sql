@@ -797,6 +797,7 @@ create table agg_party_from_indiv as
         select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
         from (table contributions_individual union all table contributions_individual_to_organization) c
         inner join contributor_associations ca using (transaction_id)
+        where recipient_party != ''
         group by ca.entity_id, c.cycle, c.recipient_party
     )
 
@@ -826,6 +827,7 @@ create table agg_party_from_org as
         select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
         from contributions_all_relevant c
         inner join (table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
+        where recipient_party != ''
         group by oa.entity_id, c.cycle, c.recipient_party
     )
 
