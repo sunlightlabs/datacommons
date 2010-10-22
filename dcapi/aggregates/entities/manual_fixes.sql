@@ -1,0 +1,2 @@
+-- Quest Diagnostics is incorrectly listed as being the parent of Qwest Communications
+update matchbox_organizationmetadata set parent_entity_id = null where entity_id = 'e8d0b02cf65b4816bca8eb8c15c0bb26';
