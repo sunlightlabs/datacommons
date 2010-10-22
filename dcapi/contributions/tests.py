@@ -31,10 +31,6 @@ class SimpleTest(TestCase):
         c.save()
         
     def setUp(self):
-        print "Deleting database..."
-        Import.objects.all().delete()
-        Contribution.objects.all().delete()
-        
         self.import_ = Import()
         self.import_.save()
         

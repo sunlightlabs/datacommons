@@ -1,16 +1,12 @@
-import unittest
+from django.test import TestCase
 
 from dcentity.models import *
 from dcentity.entity import merge_entities
 
-class TestQueries(unittest.TestCase):
+class TestQueries(TestCase):
 
     def setUp(self):
         super(TestQueries, self).setUp()
-
-        EntityAlias.objects.all().delete()
-        EntityAttribute.objects.all().delete()
-        Entity.objects.all().delete()
 
         apple = Entity.objects.create(name="Apple")
         apple.aliases.create(alias="Apple")
