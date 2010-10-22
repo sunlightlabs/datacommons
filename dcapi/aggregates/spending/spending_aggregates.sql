@@ -9,7 +9,8 @@ create view grants_record as
     select id, recipient_name,
         case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year + 1 end as cycle,
         case when assistance_category in ('l', 'i') then 'l' else 'g' end as spending_type,
-        fiscal_year, agency_name, project_description as description, amount_total as amount
+        fiscal_year, agency_name, project_description as description, 
+        case when assistance_category in ('l', 'i') then amount_loan else amount_federal end as amount
     from grants_grant;
 
 
