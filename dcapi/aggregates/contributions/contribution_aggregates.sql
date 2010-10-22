@@ -888,7 +888,7 @@ create table agg_local_to_politician as
         select ra.entity_id as recipient_entity, c.cycle,
             case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
             count(*), sum(amount) as amount
-        from (table contributions_individual union table contributions_organization) c
+        from contributions_individual c
         inner join recipient_associations ra using (transaction_id)
         group by ra.entity_id, c.cycle, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end
     )
