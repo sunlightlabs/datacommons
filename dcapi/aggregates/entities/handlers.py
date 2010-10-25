@@ -11,19 +11,19 @@ from uuid import UUID
 
 get_totals_stmt = """
      select cycle,
-            coalesce(contributor_count,  0),
-            coalesce(recipient_count,    0),
-            coalesce(contributor_amount, 0),
-            coalesce(recipient_amount,   0),
-            coalesce(l.count,            0),
-            coalesce(firm_income,        0),
-            coalesce(non_firm_spending,  0),
-            coalesce(grant_count,        0),
-            coalesce(contract_count,     0),
-            coalesce(loan_count,         0),
-            coalesce(grant_amount,       0),
-            coalesce(contract_amount,    0),
-            coalesce(loan_amount,        0)
+            coalesce(contributor_count,  0)::integer,
+            coalesce(recipient_count,    0)::integer,
+            coalesce(contributor_amount, 0)::float,
+            coalesce(recipient_amount,   0)::float,
+            coalesce(l.count,            0)::integer,
+            coalesce(firm_income,        0)::float,
+            coalesce(non_firm_spending,  0)::float,
+            coalesce(grant_count,        0)::integer,
+            coalesce(contract_count,     0)::integer,
+            coalesce(loan_count,         0)::integer,
+            coalesce(grant_amount,       0)::float,
+            coalesce(contract_amount,    0)::float,
+            coalesce(loan_amount,        0)::float
      from
          (select *
          from agg_entities
