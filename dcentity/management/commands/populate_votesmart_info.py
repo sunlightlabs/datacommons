@@ -66,7 +66,9 @@ class Command(BaseCommand):
         cursor.execute("delete from matchbox_votesmartinfo")
 
         for (entity_id, name, state, district, seat) in politicians:
-            if '-' in district:
+            if not district:
+                district = ''
+            elif '-' in district:
                 district = int(district.split('-')[1])
 
             # we'll only return the ID if the candidate is in the general election
@@ -95,10 +97,14 @@ class Command(BaseCommand):
 
         self.log.info("Done.")
         self.log.info("Names with too many matches:")
-        print self.too_many
+        too_many_file = open("/home/akr/work/datacommons/too_many_matches.txt", "w")
+        too_many_file.write(self.pp.pformat(self.too_many))
+        too_many_file.close()
 
         self.log.info("Names with no matches:")
-        print self.no_match
+        no_match_file = open("/home/akr/work/datacommons/no_match.txt", "w")
+        no_match_file.write(self.pp.pformat(self.no_match))
+        no_match_file.close()
 
 
     def get_all_congressional_candidates(self):
@@ -180,7 +186,14 @@ class Command(BaseCommand):
             name_obj = name_obj.mate1 # just use the governor, not lt. governor (this is the only case where it's a list
 
         name_possibilities = [ x for x in possibilities if \
-                x.lastName.lower() == name_obj.last.lower() \
+                (x.lastName.lower() == name_obj.last.lower() \
+                    or (name_obj.middle \
+                            and ( \
+                                x.lastName.lower() == ' '.join([name_obj.middle.lower(), name_obj.last.lower()]) \
+                                or x.lastName.lower() == '-'.join([name_obj.middle.lower(), name_obj.last.lower()]) \
+                            )\
+                        ) \
+                )
                 and name_obj.first.lower() in [ x.firstName.lower(), x.preferredName.lower(), x.nickName.lower() ] \
                 and x.electionStatus == 'Running' ]
 
@@ -191,9 +204,9 @@ class Command(BaseCommand):
             else:
                 return None
         elif len(name_possibilities) > 1:
-            self.too_many.append([(name_obj.first, name_obj.last)] + [ (x.firstName, x.lastName) for x in name_possibilities ])
+            self.too_many.append([(name_obj.first, name_obj.middle, name_obj.last), [ (x.firstName, x.preferredName, x.nickName, x.lastName) for x in possibilities ]])
         else:
-            self.no_match.append([(name_obj.first, name_obj.last)] + [ (x.firstName, x.lastName) for x in name_possibilities ])
+            self.no_match.append([(name_obj.first, name_obj.middle, name_obj.last), [ (x.firstName, x.preferredName, x.nickName, x.lastName) for x in possibilities ]])
 
 
 

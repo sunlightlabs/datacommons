@@ -394,6 +394,7 @@ create table agg_contribution_sparklines as
                 table parent_organization_associations
             ) a
             inner join contributions_all_relevant c using (transaction_id)
+        where c.date between '19890101' and '20111231'
         group by entity_id, date_trunc('quarter', c.date);
 ;
 
@@ -430,6 +431,7 @@ create table agg_contribution_sparklines_by_party as
         sum(amount) as amount
         from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
             inner join contributions_all_relevant c using (transaction_id)
+        where c.date between '19890101' and '20111231'
         group by entity_id, recipient_party, date_trunc('quarter', c.date);
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party)';
@@ -797,6 +799,7 @@ create table agg_party_from_indiv as
         select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
         from (table contributions_individual union all table contributions_individual_to_organization) c
         inner join contributor_associations ca using (transaction_id)
+        where recipient_party != ''
         group by ca.entity_id, c.cycle, c.recipient_party
     )
 
@@ -826,6 +829,7 @@ create table agg_party_from_org as
         select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
         from contributions_all_relevant c
         inner join (table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
+        where recipient_party != ''
         group by oa.entity_id, c.cycle, c.recipient_party
     )
 
@@ -886,7 +890,7 @@ create table agg_local_to_politician as
         select ra.entity_id as recipient_entity, c.cycle,
             case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
             count(*), sum(amount) as amount
-        from (table contributions_individual union table contributions_organization) c
+        from contributions_individual c
         inner join recipient_associations ra using (transaction_id)
         group by ra.entity_id, c.cycle, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end
     )
@@ -948,21 +952,21 @@ create table agg_top_orgs_by_industry as
             coalesce(top_indivs.amount, 0) as indivs_amount,
             rank() over (partition by industry_entity, cycle order by (coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
         from (
-            -- in progress
-            select
-                ia.entity_id as industry_entity,
-                coalesce(oe.name, c.contributor_name) as organization_name,
-                ca.entity_id as organization_entity,
-                c.cycle,
-                count(*),
-                sum(amount) as amount
-            from
-                contributions_organization c -- organization contributions (PACs)
-                inner join industry_associations ia using (transaction_id) -- get the industry
-                left join contributor_associations ca using (transaction_id) -- this is just the direct contributor (PAC)
-                left join matchbox_entity oe on oe.id = ca.entity_id -- get the entity associated with the contributor
-            group by
-                ia.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, c.cycle
+                select
+                    ia.entity_id as industry_entity,
+                    coalesce(oe.name, c.contributor_name) as organization_name,
+                    ca.entity_id as organization_entity,
+                    c.cycle,
+                    count(*),
+                    sum(amount) as amount
+                from
+                    contributions_organization c -- organization contributions (PACs)
+                    inner join industry_associations ia using (transaction_id) -- get the industry
+                    left join organization_associations ca using (transaction_id) -- this is just the direct contributor (PAC)
+                    left join matchbox_entity oe on oe.id = ca.entity_id -- get the entity associated with the contributor
+                where coalesce(oe.name, c.contributor_name) != ''
+                group by
+                    ia.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, c.cycle
             ) top_pacs
             full outer join (
                 select
@@ -971,14 +975,13 @@ create table agg_top_orgs_by_industry as
                     oa.entity_id as organization_entity,
                     c.cycle,
                     count(*),
-                    sum(amount) as amount,
-                    rank() over (partition by oa.entity_id, c.cycle order by sum(amount)) as rank
+                    sum(amount) as amount
                 from
-                    contributions_individual c -- individual contributions
+                    (table contributions_individual union table contributions_individual_to_organization) c -- individual contributions
                     inner join industry_associations ia using (transaction_id) -- get the industry
                     left join organization_associations oa using (transaction_id) -- this is the org associated with the individual
                     left join matchbox_entity oe on oe.id = oa.entity_id -- get the entity associated with the org
-                where c.organization_name != ''
+                where coalesce(oe.name, c.organization_name) != ''
                 group by
                     ia.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, c.cycle
             ) top_indivs
