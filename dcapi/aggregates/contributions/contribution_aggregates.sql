@@ -394,6 +394,7 @@ create table agg_contribution_sparklines as
                 table parent_organization_associations
             ) a
             inner join contributions_all_relevant c using (transaction_id)
+        where c.date between '19890101' and '20111231'
         group by entity_id, date_trunc('quarter', c.date);
 ;
 
@@ -430,6 +431,7 @@ create table agg_contribution_sparklines_by_party as
         sum(amount) as amount
         from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
             inner join contributions_all_relevant c using (transaction_id)
+        where c.date between '19890101' and '20111231'
         group by entity_id, recipient_party, date_trunc('quarter', c.date);
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party)';
