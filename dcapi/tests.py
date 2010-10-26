@@ -1,7 +1,7 @@
 from unittest2 import TestCase
 from django.http import HttpRequest
 from dcapi.aggregates.contributions.handlers import SparklineByPartyHandler
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 import uuid
 
 class TestSparklineByPartyHandler(TestCase):
@@ -14,4 +14,5 @@ class TestSparklineByPartyHandler(TestCase):
         with self.assertRaises(DatabaseError):
             handler.read(request, entity_id=uuid.uuid4())
 
+        transaction.rollback()
 
