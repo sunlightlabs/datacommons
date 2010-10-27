@@ -111,9 +111,13 @@ class EntitySearchHandler(BaseHandler):
     stmt = """
         select
             e.id, e.name, e.type,
-            coalesce(a.contributor_count, 0), coalesce(a.recipient_count, 0), coalesce(l.count, 0),
-            coalesce(a.contributor_amount, 0), coalesce(a.recipient_amount, 0),
-            coalesce(l.firm_income, 0), coalesce(l.non_firm_spending, 0),
+            coalesce(a.contributor_count,   0)::integer,
+            coalesce(a.recipient_count,     0)::integer,
+            coalesce(l.count,               0)::integer,
+            coalesce(a.contributor_amount,  0)::float,
+            coalesce(a.recipient_amount,    0)::float,
+            coalesce(l.firm_income,         0)::float,
+            coalesce(l.non_firm_spending,   0)::float,
             pm.state, pm.party, pm.seat, om.lobbying_firm
         from matchbox_entity e
         inner join (select distinct entity_id
