@@ -99,7 +99,6 @@ class Contribution(DataCommonsModel):
     # contributor fields
     contributor_name = models.CharField(max_length=255, blank=True, null=True)
     contributor_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    contributor_entity = EntityRef('contributor_transactions')
     contributor_type = models.CharField(max_length=1, choices=CONTRIBUTOR_TYPES, blank=True, null=True)
     contributor_occupation = models.CharField(max_length=64, blank=True, null=True)
     contributor_employer = models.CharField(max_length=64, blank=True, null=True)
@@ -116,17 +115,14 @@ class Contribution(DataCommonsModel):
     # organization
     organization_name = models.CharField(max_length=255, blank=True, null=True)
     organization_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    organization_entity = EntityRef('organization_transactions')
     
     # parent organization
     parent_organization_name = models.CharField(max_length=255, blank=True, null=True)
     parent_organization_ext_id =  models.CharField(max_length=128, blank=True, null=True)
-    parent_organization_entity = EntityRef('parent_organization_transactions')
     
     # recipient fields
     recipient_name = models.CharField(max_length=255, blank=True, null=True)
     recipient_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    recipient_entity = EntityRef('recipient_transactions')
     recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
     recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True, null=True)
     recipient_state = USStateField(blank=True, null=True)
@@ -137,7 +133,6 @@ class Contribution(DataCommonsModel):
     # committee fields
     committee_name = models.CharField(max_length=255, blank=True, null=True)
     committee_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    committee_entity = EntityRef('committee_transactions')
     committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
         
     # election and seat fields

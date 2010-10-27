@@ -16,11 +16,6 @@ class BooleanFilter(FieldFilter):
     def process_field(self, item):
         return item == 'True'
 
-class EntityFilter(FieldFilter):
-    def process_field(self, item):
-        if item and isinstance(item, basestring):
-            return Entity.objects.get(pk=item)
-
 #
 # utility method to get field names from Django models
 #
