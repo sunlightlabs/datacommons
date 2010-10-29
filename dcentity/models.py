@@ -1,4 +1,3 @@
-from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.localflavor.us.models import USStateField
@@ -326,15 +325,5 @@ class MergeCandidate(models.Model):
     def is_locked(self):
         ago15min = datetime.datetime.utcnow() - datetime.timedelta(0, 0, 0, 0, 15)
         return self.owner is not None and self.owner_timestamp >= ago15min
-
-
-_entity_names = django2sql_names(Entity)
-_alias_names = django2sql_names(EntityAlias)
-_attribute_names = django2sql_names(EntityAttribute)
-_normalization_names = django2sql_names(Normalization)
-_merge_names = django2sql_names(MergeCandidate)
-
-assert is_disjoint(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
-sql_names = dict_union(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
 
 
