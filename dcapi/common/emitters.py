@@ -8,7 +8,6 @@ from piston.utils import HttpStatusCode
 from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
 from dcapi.validate_jsonp import is_valid_jsonp_callback_value
-from dcentity.models import entityref_cache
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE, CRP_TRANSACTION_NAMESPACE
 from time import time
 import csv

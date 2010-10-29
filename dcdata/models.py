@@ -14,7 +14,6 @@ class Import(models.Model):
         return self.timestamp.isoformat()
 
 class DataCommonsModel(models.Model):
-    objects = DataCommonsModelManager()
     import_reference = models.ForeignKey(Import)
     
     class Meta:
