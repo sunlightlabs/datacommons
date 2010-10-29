@@ -13,8 +13,3 @@ class Import(models.Model):
     def __unicode__(self):
         return self.timestamp.isoformat()
 
-class DataCommonsModel(models.Model):
-    import_reference = models.ForeignKey(Import)
-    
-    class Meta:
-        abstract = True

@@ -1,6 +1,6 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
-from dcdata.models import DataCommonsModel
+from dcdata.models import Import
 
 RECORD_TYPES = (
     ('1', "County aggregate reporting"),
@@ -115,7 +115,9 @@ AGENCY_CATEGORIES = (
 )
 
 
-class Grant(DataCommonsModel):
+class Grant(models.Model):
+    import_reference = models.ForeignKey(Import)
+    
     fiscal_year = models.IntegerField()
     record_type = models.CharField(max_length=1, blank=True, choices=RECORD_TYPES)
     record_flag = models.CharField(max_length=1, blank=True)

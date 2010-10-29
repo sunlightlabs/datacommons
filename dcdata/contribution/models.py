@@ -1,6 +1,6 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
-from dcdata.models import DataCommonsModel
+from dcdata.models import Import
 
 
 NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
@@ -80,7 +80,9 @@ GENDERS = (
     ('U','Unknown'),
 )
 
-class Contribution(DataCommonsModel):
+class Contribution(models.Model):
+    import_reference = models.ForeignKey(Import)
+    
     
     # cycle and basic transaction fields
     cycle = models.IntegerField()
