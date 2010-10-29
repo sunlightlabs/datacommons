@@ -83,7 +83,6 @@ GENDERS = (
 class Contribution(models.Model):
     import_reference = models.ForeignKey(Import)
     
-    
     # cycle and basic transaction fields
     cycle = models.IntegerField()
     transaction_namespace = models.CharField(max_length=64)
