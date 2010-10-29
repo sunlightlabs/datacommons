@@ -57,11 +57,7 @@ class StreamingLoggingEmitter(Emitter):
         else:
             fields = []
         
-        if request.session.get(RETURN_ENTITIES_KEY, False):
-            entity_fields = entityref_cache.get(self.handler.model, [])
-            final_fields = fields + entity_fields
-        else:
-            final_fields = fields
+        final_fields = fields
         
         start_time = time()
         

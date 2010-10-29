@@ -25,67 +25,10 @@ class ExtensibleModel(models.Model):
         abstract = True
 
 #
-# entity reference field
-#
-
-class EntityRefCache(dict):
-    def register(self, model, field):
-        if not model in self:
-            self[model] = []
-        self[model].append(field)
-    def for_model_name(self, name):
-        name = name.lower()
-        for key, value in self.iteritems():
-            if key._meta.object_name.lower() == name:
-                return (key, self[key])
-
-entityref_cache = EntityRefCache()
-
-class EntityRef(models.CharField):
-
-    def __init__(self, related_name, ignore=False, *args, **kwargs):
-        kwargs['max_length'] = 32
-        kwargs['blank'] = True
-        kwargs['null'] = True
-        kwargs['db_index'] = True
-        super(EntityRef, self).__init__(*args, **kwargs)
-        self._ignore = ignore
-        self._label = related_name
-
-    def contribute_to_class(self, cls, name):
-        super(EntityRef, self).contribute_to_class(cls, name)
-        if not self._ignore:
-            entityref_cache.register(cls, name)
-
-    def entity(self):
-        pass
-
-#
 # models
 #
 
 entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
-
-class EntityManager(models.Manager):
-
-    def with_id(self, entity_id):
-        return Entity.objects.filter(
-            Q(id=entity_id) | Q(attributes__namespace=EntityAttribute.ENTITY_ID_NAMESPACE, attributes__value=entity_id))
-
-    def with_attribute(self, namespace, value=None):
-        qs = Entity.objects.filter(attributes__namespace=namespace)
-        if value:
-            qs = qs.filter(attributes__value=value)
-        return qs
-
-    # is this used?
-    def merge(self, name, type_, entity_ids):
-        new_entity = Entity(name=name, type=type_)
-        for entity_id in entity_ids:
-            old_entity = Entity.objects.get(pk=entity_id)
-            for model, fields in entityref_cache.iteritems():
-                for field in fields:
-                    model.objects.filter(**{field: old_entity}).update(**{field: new_entity})
 
 
 class Entity(models.Model):

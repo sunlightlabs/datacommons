@@ -1,7 +1,6 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from dcdata.models import DataCommonsModel
-from dcentity.models import EntityRef
 
 
 NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
