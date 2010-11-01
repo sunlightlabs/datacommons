@@ -161,7 +161,6 @@ class EntityAlias(models.Model):
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
     namespace = models.CharField(max_length=255, null=False)
     alias = models.CharField(max_length=255, null=False)
-    verified = models.BooleanField(default=False)
 
     class Meta:
         ordering = ('alias',)
@@ -176,7 +175,6 @@ class EntityAttribute(models.Model):
     entity = models.ForeignKey(Entity, related_name='attributes', null=False)
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
-    verified = models.BooleanField(default=False)
 
     ENTITY_ID_NAMESPACE = 'urn:transparencydata:entity_id'
 

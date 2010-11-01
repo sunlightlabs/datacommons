@@ -11,11 +11,11 @@ def build_entity(name, type, attributes):
     
     e = Entity.objects.create(name=name, type=type)
     
-    EntityAlias.objects.create(entity=e, alias=name, verified=True)
+    EntityAlias.objects.create(entity=e, alias=name)
     
     for (namespace, value) in attributes:
         if namespace and value:
-            EntityAttribute.objects.create(entity=e, namespace=namespace, value=value, verified=True)
+            EntityAttribute.objects.create(entity=e, namespace=namespace, value=value)
 
 
 def merge_entities(merge_ids, target_id):

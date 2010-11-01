@@ -93,7 +93,7 @@ class EntityAttributeHandler(BaseHandler):
         if bioguide_id:
             entities = BioguideInfo.objects.filter(bioguide_id = bioguide_id)
         else:
-            entities = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
+            entities = EntityAttribute.objects.filter(namespace = namespace, value = id)
 
         return [{'id': e.entity_id} for e in entities]
 
