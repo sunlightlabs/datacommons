@@ -1,6 +1,6 @@
 from dcdata.loading import Loader, LoaderEmitter
 from dcdata.lobbying.models import Lobbying, Lobbyist, Agency, Issue
-from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
+from dcdata.lobbying.sources.crp import FILE_TYPES
 from decimal import Decimal
 from django.core.management.base import CommandError, BaseCommand
 from optparse import make_option
