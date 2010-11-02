@@ -1,6 +1,6 @@
 from dcdata.loading import Loader, LoaderEmitter
 from dcdata.lobbying.models import Lobbying, Lobbyist, Agency, Issue
-from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
+from dcdata.lobbying.sources.crp import FILE_TYPES
 from decimal import Decimal
 from django.core.management.base import CommandError, BaseCommand
 from optparse import make_option
@@ -32,14 +32,6 @@ class NoneFilter(Filter):
                 record[key] = None
         return record
 
-class YearFilter(Filter):
-    def __init__(self, year, field='year'):
-        self.year = year
-        self.field = field
-    def process_record(self, record):
-        if not self.year or (self.year and self.year == record[self.field]):
-            return record
-
 class TransactionFilter(Filter):
     def __init__(self):
         self._cache = {}
@@ -64,7 +56,7 @@ class LobbyingLoader(Loader):
     model = Lobbying
     def __init__(self, *args, **kwargs):
         super(LobbyingLoader, self).__init__(*args, **kwargs)
-        
+
     def get_instance(self, record):
         #try:
         #    return self.model.objects.get(transaction_id=record['transaction_id'])
@@ -90,12 +82,12 @@ class LobbyistLoader(Loader):
     model = Lobbyist
     def __init__(self, *args, **kwargs):
         super(LobbyistLoader, self).__init__(*args, **kwargs)
-        
+
     def get_instance(self, record):
-        
+
         if record['transaction'] is None:
             return
-        
+
         #try:
         #    return self.model.objects.get(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
         #except Lobbyist.DoesNotExist:
@@ -105,10 +97,9 @@ class LobbyistLoader(Loader):
 
 transaction_filter = TransactionFilter()
 
-def lobbying_handler(inpath, year=None):
+def lobbying_handler(inpath):
     run_recipe(
         CSVSource(open(inpath)),
-        YearFilter(year),
         FieldModifier('year', lambda x: int(x) if x else None),
         FieldModifier('amount', lambda x: Decimal(x) if x else None),
         FieldModifier((
@@ -125,7 +116,7 @@ def lobbying_handler(inpath, year=None):
         )),
     )
 
-def agency_handler(inpath, year=None):
+def agency_handler(inpath):
     Agency.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
@@ -143,11 +134,10 @@ def agency_handler(inpath, year=None):
     )
 
 
-def lobbyist_handler(inpath, year=None):
+def lobbyist_handler(inpath):
     Lobbyist.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
-        YearFilter(year),
         FieldModifier('year', lambda x: int(x) if x else None),
         FieldModifier('member_of_congress', lambda x: x == 'True'),
         NoneFilter(),
@@ -162,11 +152,10 @@ def lobbyist_handler(inpath, year=None):
         ), commit_every=10000),
     )
 
-def issue_handler(inpath, year=None):
+def issue_handler(inpath):
     Issue.objects.all().delete()
     run_recipe(
         CSVSource(open(inpath)),
-        YearFilter(year),
         FieldModifier('year', lambda x: int(x) if x else None),
         NoneFilter(),
         FieldModifier('specific_issue', lambda x: '' if x is None else x),
@@ -180,7 +169,7 @@ def issue_handler(inpath, year=None):
             imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
         ), commit_every=10000),
     )
-    
+
 
 HANDLERS = {
     "lob_lobbying": lobbying_handler,
@@ -197,7 +186,6 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
         make_option("-f", "--files", dest="files", help="source files", metavar="FILE[,FILE]"),
-        make_option("-y", "--year", dest="year", help="year to load", metavar="YEAR"),
     )
 
     def handle(self, *args, **options):
@@ -206,19 +194,18 @@ class Command(BaseCommand):
             raise CommandError("path to dataroot is required")
 
         dataroot = os.path.abspath(options['dataroot'])
-        year = options.get('year', None)
         tables = options.get('files', '').split(',') or SOURCE_FILES
 
         for table in tables:
-            
+
             infields = FILE_TYPES[table]
             inpath = os.path.join(dataroot, "denorm_%s.csv" % table)
 
             if os.path.exists(inpath):
                 handler = HANDLERS.get(table, None)
-                
+
                 if handler is None:
                     print "!!! no handler for %s" % table
                 else:
                     print "loading records for %s" % table
-                    handler(inpath, year)
+                    handler(inpath)

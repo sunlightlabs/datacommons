@@ -29,8 +29,7 @@ create table assoc_lobbying_client as
     inner join lobbying_lobbying l
         on lower(a.alias) = lower(l.client_name)
     where
-        a.verified = 't'
-        and e.type = 'organization'
+        e.type = 'organization'
 
     union
 
@@ -39,8 +38,7 @@ create table assoc_lobbying_client as
     inner join lobbying_lobbying l
         on a.value = l.client_ext_id
     where
-        a.verified = 't'
-        and a.namespace = 'urn:crp:organization'
+        a.namespace = 'urn:crp:organization'
 
     union all
 
@@ -53,8 +51,7 @@ create table assoc_lobbying_client as
     inner join lobbying_lobbying l
         on lower(cm.catcode) = lower(l.client_category)
     where
-        ea.verified = 't'
-        and e.type = 'industry'
+        e.type = 'industry'
 ;
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id)';
@@ -77,8 +74,7 @@ create table assoc_lobbying_client_parent as
     inner join lobbying_lobbying l
         on lower(a.alias) = lower(l.client_parent_name)
     where
-        a.verified = 't'
-        and e.type = 'organization';
+        e.type = 'organization';
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_parent_entity_id on assoc_lobbying_client_parent (entity_id)';
 create index assoc_lobbying_client_parent_entity_id on assoc_lobbying_client_parent (entity_id);
@@ -100,8 +96,7 @@ create table assoc_lobbying_registrant as
     inner join lobbying_lobbying l
         on lower(a.alias) = lower(l.registrant_name)
     where
-        a.verified = 't'
-        and e.type = 'organization';
+        e.type = 'organization';
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_registrant_entity_id on assoc_lobbying_registrant (entity_id)';
 create index assoc_lobbying_registrant_entity_id on assoc_lobbying_registrant (entity_id);
@@ -121,8 +116,7 @@ create table assoc_lobbying_lobbyist as
     inner join lobbying_lobbyist l
         on a.value = l.lobbyist_ext_id
     where
-        a.verified = 't'
-        and a.namespace = 'urn:crp:individual';
+        a.namespace = 'urn:crp:individual';
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entity_id)';
 create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entity_id);

@@ -29,3 +29,6 @@ dc_web/build
 .DS_Store
 nationwide_candidates.pkl
 .coverage
+postgresql.conf.*
+pgexperts.conf.*
+sysctl.conf.*

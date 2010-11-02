@@ -250,60 +250,87 @@ class IndustryOrgHandler(EntityTopListHandler):
 
 class SparklineHandler(EntityTopListHandler):
 
-    args   = ['entity_id', 'cycle', 'entity_id', 'cycle']
+    args   = 'cycle entity_id cycle entity_id cycle entity_id cycle'.split()
     fields = ['step', 'amount']
 
     stmt = """
-        select step, coalesce(amount, 0)::integer
-        from generate_series(1,(select greatest(max(step), 24) from agg_contribution_sparklines where entity_id = %s and cycle = %s)) as all_steps(step)
-        left join (select step, amount
-            from agg_contribution_sparklines
+        select
+            all_steps_and_dates.step,
+            coalesce(amounts_by_date.amount, 0) as amount
+        from (
+            select
+                rank() over (order by date_step) as step,
+                date_step
+            from (
+                select distinct
+                    case when %s != -1 then generate_series else date_trunc('quarter', generate_series) end as date_step
+                from generate_series(
+                    (select date_trunc('year', min(date_step)) from agg_contribution_sparklines where entity_id = %s and cycle = %s),
+                    (select max(date_step) from agg_contribution_sparklines where entity_id = %s and cycle = %s),
+                    '1 month'
+                )
+            ) x
+        ) all_steps_and_dates
+        left join (
+            select
+                date_step,
+                amount
+            from
+                agg_contribution_sparklines
             where
                 entity_id = %s
-                and cycle = %s) sparkline
-            using (step)
-        order by step;
+                and cycle = %s
+        ) amounts_by_date using (date_step)
+        order by
+            step
     """
 
 class SparklineByPartyHandler(BaseHandler):
 
-    args   = ['entity_id', 'cycle', 'entity_id', 'cycle']
+    args   = 'cycle entity_id cycle entity_id cycle entity_id cycle'.split()
     fields = ['step', 'amount']
 
     stmt = """
         select
             recipient_party,
-            step,
-            sum(amount)
+            all_steps_parties_and_dates.step,
+            coalesce(amounts_by_date.amount, 0) as amount
         from (
             select
                 recipient_party,
-                step,
-                coalesce(amount, 0)::integer as amount
+                rank() over (partition by recipient_party order by date_step) as step,
+                date_step
             from (
-                select *
-                from generate_series(1,(select greatest(max(step), 24) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s)) as all_steps(step)
+                select distinct
+                    case when %s != -1 then generate_series else date_trunc('quarter', generate_series) end as date_step,
+                    recipient_party
+                from generate_series(
+                    (select date_trunc('year', min(date_step)) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s),
+                    (select max(date_step) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s),
+                    '1 month'
+                )
                 cross join (
                     select recipient_party from (values ('D'), ('R'), ('O')) as parties(recipient_party)
                 ) x
-            ) steps_and_parties
-            left join (
-                select
-                    case
-                        when recipient_party in('D', 'R') then recipient_party
-                        else 'O'
-                    end as recipient_party,
-                    step,
-                    amount
-                from
-                    agg_contribution_sparklines_by_party
-                where
-                    entity_id = %s
-                    and cycle = %s
-            ) contribution_data using (step, recipient_party)
-        ) grouped
-        group by recipient_party, step
-        order by step, recipient_party
+            ) y
+        ) all_steps_parties_and_dates
+        left join (
+            select
+                case
+                    when recipient_party in('D', 'R') then recipient_party
+                    else 'O'
+                end as recipient_party,
+                date_step,
+                amount
+            from
+                agg_contribution_sparklines_by_party
+            where
+                entity_id = %s
+                and cycle = %s
+        ) amounts_by_date using (date_step, recipient_party)
+        order by
+            step,
+            recipient_party
     """
 
     def read(self, request, **kwargs):

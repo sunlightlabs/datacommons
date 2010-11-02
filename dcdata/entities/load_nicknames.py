@@ -46,9 +46,9 @@ class NicknameImporter(object):
         num_before = cursor.fetchone()[0]
 
         cursor.execute("""
-            insert into matchbox_entityalias (entity_id, alias, verified)
+            insert into matchbox_entityalias (entity_id, alias)
                 select
-                    entity_id, nick || ' ' || last, 't'::boolean
+                    entity_id, nick || ' ' || last
                 from
                     tmp_legislator_nicknames
                 where
