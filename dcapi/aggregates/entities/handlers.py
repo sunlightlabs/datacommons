@@ -55,11 +55,12 @@ class EntityHandler(BaseHandler):
 
     def read(self, request, entity_id):
 
-        entity_id = UUID(entity_id)
-
         try:
+            entity_id = UUID(entity_id)
             entity = Entity.objects.select_related().get(id=entity_id)
         except ObjectDoesNotExist:
+            return rc.NOT_FOUND
+        except ValueError:
             return rc.NOT_FOUND
 
         totals = get_totals(entity_id)
