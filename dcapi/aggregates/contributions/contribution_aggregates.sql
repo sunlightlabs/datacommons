@@ -192,7 +192,7 @@ create table contributor_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                 or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
@@ -241,7 +241,7 @@ create table organization_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                 or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
@@ -274,7 +274,7 @@ select date_trunc('second', now()) || ' -- create table parent_organization_asso
                 on e.id = a.entity_id
             where
                 e.type = 'organization'
-                and (a.namespace = ''
+                and ((a.namespace = '' or a.namespace is null)
                     or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                         or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
     union
@@ -331,7 +331,7 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                 or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
