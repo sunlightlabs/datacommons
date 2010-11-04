@@ -496,13 +496,13 @@ class TestEarmarks(TestCase):
     ]
     
     def test_load_earmarks(self):
-        source = VerifiedCSVSource(self.csv2008, EARMARK_FIELDS)
-        processor = LoadTCSEarmarks.get_record_processor(2008, None)
+        source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
         output = list()
         
         load_data(source, processor, output.append)
         
-        self.assertEqual(3, len(output))
+        self.assertEqual(9, len(output))
 
 
 # tests the experimental 'updates' module

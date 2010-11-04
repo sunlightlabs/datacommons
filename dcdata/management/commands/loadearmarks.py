@@ -1,8 +1,8 @@
 
-from django.core.management.base import CommandError, BaseCommand
-from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover, Filter
-from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier, VerifiedCSVSource
-from dcdata.earmarks.models import Earmark, Member
+from django.core.management.base import BaseCommand
+from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover
+from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
+from dcdata.earmarks.models import Member
 from dcdata.processor import chain_filters
 
 
@@ -57,7 +57,7 @@ def split_and_transpose(separator, *strings):
 def _normalize_chamber(chamber, names, parties, states, districts=None):
     
     def create_member(values):
-        return Member(chamber=values[0], raw_name=values[1], party=values[2], state=values[3], district=values[4] if len(values)==4 else None)
+        return Member(chamber=chamber, raw_name=values[0], party=values[1], state=values[2], district=values[3] if len(values)==4 else None)
     
     if districts:
         split = split_and_transpose(';', names, parties, states, districts)
