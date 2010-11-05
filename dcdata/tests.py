@@ -11,7 +11,7 @@ from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.loading import model_fields, LoaderEmitter
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
-from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, LoadTCSEarmarks
+from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, LoadTCSEarmarks, save_earmark
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
 #from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
@@ -31,6 +31,8 @@ from saucebrush.sources import CSVSource
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
 import sqlite3
 import sys
+from dcdata.earmarks.models import Earmark, Member
+from dcdata.models import Import
 
 
 dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
@@ -495,7 +497,7 @@ class TestEarmarks(TestCase):
         ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
     ]
     
-    def test_load_earmarks(self):
+    def test_process_earmarks(self):
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, None)
         output = list()
@@ -503,6 +505,19 @@ class TestEarmarks(TestCase):
         load_data(source, processor, output.append)
         
         self.assertEqual(9, len(output))
+        
+    def test_save_earmarks(self):
+        Earmark.objects.all().delete()
+        Member.objects.all().delete()
+        import_ref = Import.objects.create()
+        
+        source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
+        
+        load_data(source, processor, save_earmark)
+        
+        self.assertEqual(9, Earmark.objects.count())
+        self.assertEqual(18, Member.objects.count())
 
 
 # tests the experimental 'updates' module

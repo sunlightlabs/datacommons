@@ -1,9 +1,10 @@
 
 from django.core.management.base import BaseCommand
-from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover
+from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover,\
+    FieldRenamer, FieldModifier
 from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
-from dcdata.earmarks.models import Member
-from dcdata.processor import chain_filters
+from dcdata.earmarks.models import Member, Earmark, Location
+from dcdata.processor import chain_filters, load_data
 
 
 FIELDS = [
@@ -34,6 +35,11 @@ FIELDS = [
     'notes'
 ]
 
+
+def fill_missing_zeros(value):
+    return value if value else 0
+
+
 def _prepend(prefix, suffix):
     return "%s -- %s" % (prefix, suffix) if prefix else suffix
 
@@ -46,12 +52,41 @@ def split_and_transpose(separator, *strings):
     """
 
     splits = [[value.strip() for value in s.split(separator)] for s in strings]
-    #splits = map(lambda s: map(str.strip, s.split(c)), strings)
 
     if not all([len(split) == len(splits[0]) for split in splits]):
         raise
 
     return map(None, *splits)
+
+
+def _normalize_locations(city_string, state_string):
+    
+    def create_location(city, state):
+        return Location(city=city, state=state)
+    
+    cities = [city.strip() for city in city_string.split(';')]
+    states = [state.strip() for state in state_string.split(';')]
+    states = ['' if state == 'UNK' else state for state in states]
+    
+    # allow city/state pairs
+    if len(cities) == len(states):
+        return map(create_location, cities, states)
+    
+    # allow only cities
+    if len(states) == 0:
+        return map(create_location, cities, '' * len(cities))
+    
+    # allow only states
+    if len(cities) == 0:
+        return map(create_location, '' * len(states), states)
+    
+    # allow multiple cities in single state
+    if len(states) == 1:
+        return map(create_location, cities, states * len(cities))
+    
+    # from here there must be multiple states and a different number of cities
+    print "WARNING: dropping cities from ambiguous location: '%s', '%s" % (city_string, state_string)
+    return []
 
 
 def _normalize_chamber(chamber, names, parties, states, districts=None):
@@ -72,6 +107,13 @@ def _normalize_members(house_names, house_parties, house_states, house_districts
         _normalize_chamber('s', senate_names, senate_parties, senate_states)
 
 
+def save_earmark(earmark_dict):   
+    members = earmark_dict.pop('members', [])
+    locations = earmark_dict.pop('locations', [])
+    e = Earmark.objects.create(**earmark_dict)
+    e.members = members
+    e.locations = locations
+
 
 class LoadTCSEarmarks(BaseCommand):
     
@@ -81,10 +123,14 @@ class LoadTCSEarmarks(BaseCommand):
             CSVFieldVerifier(),
 
             FieldRemover('id'),
+            FieldRemover('county'),
+            FieldRenamer({'raw_recipient': 'recipient'}),
+            FieldModifier(['budget_amount', 'senate_amount', 'house_amount', 'omni_amount', 'final_amount'], fill_missing_zeros),
             FieldMerger({'description': ('project_heading', 'description')}, _prepend),
             FieldAdder('fiscal_year', year),
             FieldAdder('import_reference', import_ref),
 
+            FieldMerger({'locations': ('city', 'state')}, _normalize_locations),
             FieldMerger({'members': ('house_members', 'house_parties', 'house_states', 'house_districts',
                                         'senate_members', 'senate_parties', 'senate_states')},
                             _normalize_members),
@@ -94,4 +140,6 @@ class LoadTCSEarmarks(BaseCommand):
         input_file = open(input_path, 'r')
         
         input_source = VerifiedCSVSource(input_file, FIELDS, skiprows=1)
-
+        processor = LoadTCSEarmarks.get_record_processor(0, None) # todo: real year and import_ref
+        
+        load_data(input_source, processor, save_earmark)

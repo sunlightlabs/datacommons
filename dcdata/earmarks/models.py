@@ -99,11 +99,6 @@ class Earmark(models.Model):
     omni_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     final_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     
-    # should we call it 'location' instead?
-    city = models.CharField(max_length=128, blank=True)
-    count = models.CharField(max_length=64, blank=True)
-    state = USStateField(blank=True)
-    
     bill = models.CharField(max_length=64, choices=bill_choices, blank=False)
     bill_section = models.CharField(max_length=255, blank=True)
     bill_subsection = models.CharField(max_length=255, blank=True)
@@ -129,11 +124,14 @@ class Member(models.Model):
     chamber = models.CharField(max_length=1, choices=chamber_choices)    
     party = models.CharField(max_length=1, choices=party_choices)
     state = USStateField(blank=True)
-    district = models.IntegerField()
+    district = models.IntegerField(null=True)
 
     def __unicode__(self):
         return "%s %s (%s-%s)" % ("Sen." if self.chamber == 's' else 'Rep.', self.raw_name, self.party.upper(), self.state)
         
         
-        
+class Location(models.Model):
+    earmark = models.ForeignKey(Earmark, related_name='locations')
     
+    city = models.CharField(max_length=128, blank=True)
+    state = USStateField(blank=True)    
