@@ -313,8 +313,8 @@ create table agg_lobbying_lobbyists_for_client as
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
         inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) as ca using (transaction_id)
-        inner join matchbox_entity ce on ce.id = ca.entity_id
         left join assoc_lobbying_lobbyist la using (id)
+        inner join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
         group by ca.entity_id, r.cycle, l.lobbyist_name, la.entity_id) top
     where
@@ -326,8 +326,8 @@ union all
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
         inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) as ca using (transaction_id)
-        inner join matchbox_entity ce on ce.id = ca.entity_id
         left join assoc_lobbying_lobbyist la using (id)
+        inner join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
         group by ca.entity_id, l.lobbyist_name, la.entity_id) top
     where
