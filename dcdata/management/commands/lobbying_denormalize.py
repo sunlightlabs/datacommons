@@ -23,11 +23,8 @@ def lobbying_handler(inpath, outpath, infields, outfields):
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldRemover('Source'),
-        FieldAdder('registrant_entity', ''),
         FieldMerger({'registrant_name': ('Registrant','RegistrantRaw')}, name_proc),
         FieldMerger({'registrant_is_firm': ('IsFirm',)}, yn_proc),
-        FieldAdder('client_entity', ''),
-        FieldAdder('client_parent_entity', ''),
         FieldMerger({'client_name': ('Client','Client_raw')}, name_proc),
         FieldMerger({'amount': ('Amount',)}, lambda x: float(x or 0)),
         FieldMerger({'affiliate': ('Affiliate',)}, yn_proc),
@@ -53,8 +50,6 @@ def lobbyist_handler(inpath, outpath, infields, outfields):
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldAdder('id', ''),
-        FieldAdder('lobbyist_entity', ''),
-        FieldAdder('candidate_entity', ''),
         FieldMerger({'lobbyist_name': ('Lobbyist','Lobbyist_raw')}, name_proc),
         FieldMerger({'member_of_congress': ('FormerCongMem',)}, yn_proc),
         FieldRenamer({
@@ -73,7 +68,6 @@ def agency_handler(inpath, outpath, infields, outfields):
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldAdder('id', ''),
-        FieldAdder('agency_entity', ''),
         FieldRenamer({
             'transaction': 'UniqID',
             'agency_name': 'Agency',
