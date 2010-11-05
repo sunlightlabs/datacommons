@@ -534,3 +534,5 @@ union all
 
 select date_trunc('second', now()) || ' -- create index agg_lobbying_lobbyists_for_registrant_idx on agg_lobbying_lobbyists_for_registrant (lobbyist_entity, cycle)';
 create index agg_lobbying_lobbyists_for_registrant_idx on agg_lobbying_lobbyists_for_registrant (lobbyist_entity, cycle);
+
+select date_trunc('second', now()) || ' -- Done computing lobbying aggregates.'
