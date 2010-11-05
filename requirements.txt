@@ -10,4 +10,6 @@ boto
 nose
 django-nose
 lxml
-
+django-indexer
+django-paging
+django-sentry
