@@ -38,7 +38,7 @@ def load_data(input_iterator, record_processor, output_func):
                 
         except SkipRecordException as e:
             sys.stderr.write('Skipping processing of input record: "%s"\n' % record)
-            sys.stderr.write('Message: %s\n' % e.message)
+            sys.stderr.write('Exception: %s', e)
             if e.traceback:
                 traceback.print_tb(e.traceback)
             sys.stderr.flush()
@@ -87,15 +87,13 @@ class SkipRecordException(Exception):
     """ An exception that tells the data loader to skip all output records from the current input record. """
     
     def __init__(self, message, traceback=None):    
-        super(SkipRecordException, self).__init__()
-        self.message = message
+        super(SkipRecordException, self).__init__(message)
         self.traceback = traceback
     
 class TerminateProcessingException(Exception):
     """ An exception that tells the data loader to skip all output records from the current input record. """
     
     def __init__(self, message, traceback=None):    
-        super(TerminateProcessingException, self).__init__()
-        self.message = message
+        super(TerminateProcessingException, self).__init__(message)
         self.traceback = traceback    
 

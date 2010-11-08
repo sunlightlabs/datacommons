@@ -1,38 +1,39 @@
 
 
-from decimal import Decimal
-import os
-from django.test import TestCase
-from nose.plugins.skip import Skip, SkipTest
-import shutil
-
+from dcdata import processor
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
-from dcdata.loading import model_fields, LoaderEmitter
+from dcdata.earmarks.models import Earmark, Member
+from dcdata.loading import model_fields, LoaderEmitter, SkipRecordException
+from dcdata.management.commands.crp_denormalize import load_candidates, \
+    load_committees
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
-from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, LoadTCSEarmarks, save_earmark, _normalize_locations
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
-#from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
-from dcdata.processor import load_data, chain_filters, compose_one2many,\
+from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, \
+    LoadTCSEarmarks, save_earmark, _normalize_locations, split_and_transpose
+from dcdata.models import Import
+from dcdata.processor import load_data, chain_filters, compose_one2many, \
     SkipRecordException
+from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource, \
+    CSVFieldVerifier
+from decimal import Decimal
 from django.core.management import call_command
 from django.db import connection
+from django.test import TestCase
+from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
-from scripts.nimsp.common import CSV_SQL_MAPPING
-from updates import edits, update
-from dcdata.management.commands.crp_denormalize import load_candidates,\
-    load_committees
-from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource,\
-    CSVFieldVerifier
-from dcdata import processor
 from saucebrush.sources import CSVSource
+from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
+from updates import edits, update
+import os
+import shutil
 import sqlite3
 import sys
-from dcdata.earmarks.models import Earmark, Member
-from dcdata.models import Import
+
+#from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 
 
 dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
@@ -577,8 +578,29 @@ class TestEarmarks(TestCase):
         self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
         self.assertEqual(("Corvallis", "OR"), (r[1].city, r[1].state))
         
-        r = _normalize_locations("Portland", "OR; WA")
-        self.assertEqual(0, len(r))
+        try:
+            r = _normalize_locations("Portland", "OR; WA")
+            self.asserFail() # should not make it here
+        except SkipRecordException:
+            pass
+
+    def test_split_and_transpose(self):
+        s = split_and_transpose(';')
+        self.assertEqual([], s)
+        
+        # Python's map is retarded and has different behavior on a single list than on multiple lists.
+        # so this doesn't work as expected, but never occurs in practice.
+#        s = split_and_transpose(';', 'a; b; c')
+#        self.assertEqual([['a'], ['b'], ['c']], s)
+        
+        s = split_and_transpose(';', 'a; b; c', '1; 2; 3')
+        self.assertEqual([('a', '1'), ('b', '2'), ('c', '3')], s)
+        
+        try:
+            s = split_and_transpose(';', 'a; b', '1')
+            self.assertFail() # should not make it here
+        except SkipRecordException:
+            pass
 
         
 # tests the experimental 'updates' module

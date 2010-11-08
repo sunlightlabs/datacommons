@@ -1,10 +1,13 @@
 
-from django.core.management.base import BaseCommand
-from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover,\
-    FieldRenamer, FieldModifier
+from dcdata.earmarks.models import Member, Earmark, Location, presidential_raw, \
+    undisclosed_raw
+from dcdata.models import Import
+from dcdata.processor import chain_filters, load_data, SkipRecordException
 from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
-from dcdata.earmarks.models import Member, Earmark, Location, presidential_raw, undisclosed_raw
-from dcdata.processor import chain_filters, load_data
+from django.core.management.base import BaseCommand
+from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover, \
+    FieldModifier
+from sys import stderr
 
 
 FIELDS = [
@@ -58,7 +61,7 @@ def split_and_transpose(separator, *strings):
     splits = [[value.strip() for value in s.split(separator)] for s in strings]
 
     if not all([len(split) == len(splits[0]) for split in splits]):
-        raise
+        raise SkipRecordException("Could not split strings into equal length lists: %s" % (strings,))
 
     return map(None, *splits)
 
@@ -70,7 +73,7 @@ def _normalize_locations(city_string, state_string):
     
     cities = [city.strip() for city in city_string.split(';')]
     states = [state.strip() for state in state_string.split(';')]
-    states = ['' if state == 'UNK' else state for state in states]
+    states = [state if len(state) == 2 else '' for state in states]
     
     # if they're all empty strings then return nothing
     if not any(cities) and not any(states):
@@ -93,14 +96,14 @@ def _normalize_locations(city_string, state_string):
         return map(create_location, cities, states * len(cities))
     
     # from here there must be multiple states and a different number of cities
-    print "WARNING: dropping cities from ambiguous location: '%s', '%s" % (city_string, state_string)
-    return []
+    raise SkipRecordException('Could not parse city and state: (%s, %s)' % (city_string, state_string))
+
 
 
 def _normalize_chamber(chamber, names, parties, states, districts=None):
     
     def create_member(values):
-        return Member(chamber=chamber, raw_name=values[0], party=values[1], state=values[2], district=values[3] if len(values)==4 else None)
+        return Member(chamber=chamber, raw_name=values[0], party=values[1], state=values[2], district=values[3] if len(values) == 4 else None)
     
     if districts:
         split = split_and_transpose(';', names, parties, states, districts)
@@ -114,12 +117,7 @@ def _normalize_chamber(chamber, names, parties, states, districts=None):
 def _normalize_members(house_names, house_parties, house_states, house_districts, senate_names, senate_parties, senate_states):
     return _normalize_chamber('h', house_names, house_parties, house_states, house_districts) + \
         _normalize_chamber('s', senate_names, senate_parties, senate_states)
-
-
-def _presidential_filter(presidential_raw):
-    return 
-    
-
+ 
 
 def save_earmark(earmark_dict):   
     members = earmark_dict.pop('members', [])
@@ -155,10 +153,14 @@ class LoadTCSEarmarks(BaseCommand):
                             _normalize_members),
         )    
     
-    def handle(self, input_path, **options):
+    def handle(self, input_path, year, **options):
+        imp = Import.objects.create(source=input_path, imported_by=__file__)
+        
         input_file = open(input_path, 'r')
         
         input_source = VerifiedCSVSource(input_file, FIELDS, skiprows=1)
-        processor = LoadTCSEarmarks.get_record_processor(0, None) # todo: real year and import_ref
+        processor = LoadTCSEarmarks.get_record_processor(int(year), imp) # todo: real year and import_ref
         
         load_data(input_source, processor, save_earmark)
+
+Command = LoadTCSEarmarks
