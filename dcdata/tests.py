@@ -519,6 +519,37 @@ class TestEarmarks(TestCase):
         self.assertEqual(9, Earmark.objects.count())
         self.assertEqual(18, Member.objects.count())
 
+    def test_choice_maps(self):
+        variants = [
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo,Undisclosed,,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo & Und.,Undisclosed (President),,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President and Member(s),O & M-Disclosed,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",Judiciary,O & M-Undisclosed,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",something wrong,Something else entirely,,',                        
+        ]
+
+        Earmark.objects.all().delete()
+        Member.objects.all().delete()
+        import_ref = Import.objects.create()
+        
+        source = VerifiedCSVSource(variants, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
+        load_data(source, processor, save_earmark)
+
+        self.assertEqual(5, Earmark.objects.count())
+        
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='u').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='p').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='o').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='m').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='').count())
+        
+        self.assertEqual(1, Earmark.objects.filter(presidential='p').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='u').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='m').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='j').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='').count())
+
 
     def test_locations(self):
         r = _normalize_locations("", "")

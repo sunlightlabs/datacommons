@@ -138,3 +138,4 @@ class Location(models.Model):
     
     city = models.CharField(max_length=128, blank=True)
     state = USStateField(blank=True)    
+

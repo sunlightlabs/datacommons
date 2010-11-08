@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover,\
     FieldRenamer, FieldModifier
 from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
-from dcdata.earmarks.models import Member, Earmark, Location
+from dcdata.earmarks.models import Member, Earmark, Location, presidential_raw, undisclosed_raw
 from dcdata.processor import chain_filters, load_data
 
 
@@ -31,7 +31,7 @@ FIELDS = [
     'senate_states',
     'presidential',
     'undisclosed',
-    'recipient',
+    'raw_recipient',
     'notes'
 ]
 
@@ -116,6 +116,11 @@ def _normalize_members(house_names, house_parties, house_states, house_districts
         _normalize_chamber('s', senate_names, senate_parties, senate_states)
 
 
+def _presidential_filter(presidential_raw):
+    return 
+    
+
+
 def save_earmark(earmark_dict):   
     members = earmark_dict.pop('members', [])
     locations = earmark_dict.pop('locations', [])
@@ -133,11 +138,16 @@ class LoadTCSEarmarks(BaseCommand):
 
             FieldRemover('id'),
             FieldRemover('county'),
-            FieldRenamer({'raw_recipient': 'recipient'}),
-            FieldModifier(['budget_amount', 'senate_amount', 'house_amount', 'omni_amount', 'final_amount'], fill_missing_zeros),
-            FieldMerger({'description': ('project_heading', 'description')}, _prepend),
+
             FieldAdder('fiscal_year', year),
             FieldAdder('import_reference', import_ref),
+            
+            FieldModifier(['budget_amount', 'senate_amount', 'house_amount', 'omni_amount', 'final_amount'], fill_missing_zeros),
+            
+            FieldMerger({'description': ('project_heading', 'description')}, _prepend),
+
+            FieldModifier(['presidential'], lambda p: presidential_raw.get(p, '')),
+            FieldModifier(['undisclosed'], lambda u: undisclosed_raw.get(u, '')),
 
             FieldMerger({'locations': ('city', 'state')}, _normalize_locations),
             FieldMerger({'members': ('house_members', 'house_parties', 'house_states', 'house_districts',
