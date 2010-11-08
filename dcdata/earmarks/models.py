@@ -112,6 +112,9 @@ class Earmark(models.Model):
     
     raw_recipient = models.CharField(max_length=128, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
+    
+    def __unicode__(self):
+        return "%s. %s: %s" % ("; ".join(map(str,self.members.all())), self.final_amount, self.description[:16])
 
 
 class Member(models.Model):

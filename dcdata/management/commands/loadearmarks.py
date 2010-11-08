@@ -50,6 +50,10 @@ def split_and_transpose(separator, *strings):
 
         Raises an error if the lists don't all have same number of elements.
     """
+    
+    # all empty strings returns empty list
+    if not any(strings):
+        return []
 
     splits = [[value.strip() for value in s.split(separator)] for s in strings]
 
@@ -98,6 +102,7 @@ def _normalize_chamber(chamber, names, parties, states, districts=None):
         split = split_and_transpose(';', names, parties, states, districts)
     else:
         split = split_and_transpose(';', names, parties, states)
+    
     
     return map(create_member, split)
 
