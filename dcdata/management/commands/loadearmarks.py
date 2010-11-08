@@ -72,6 +72,10 @@ def _normalize_locations(city_string, state_string):
     states = [state.strip() for state in state_string.split(';')]
     states = ['' if state == 'UNK' else state for state in states]
     
+    # if they're all empty strings then return nothing
+    if not any(cities) and not any(states):
+        return []
+    
     # allow city/state pairs
     if len(cities) == len(states):
         return map(create_location, cities, states)

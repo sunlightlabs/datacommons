@@ -11,7 +11,7 @@ from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.loading import model_fields, LoaderEmitter
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
-from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, LoadTCSEarmarks, save_earmark
+from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, LoadTCSEarmarks, save_earmark, _normalize_locations
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
 #from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
@@ -520,6 +520,36 @@ class TestEarmarks(TestCase):
         self.assertEqual(18, Member.objects.count())
 
 
+    def test_locations(self):
+        r = _normalize_locations("", "")
+        self.assertEqual([], r)
+        
+        r = _normalize_locations("Portland", "")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("Portland", ""), (r[0].city, r[0].state))
+
+        r = _normalize_locations("", "OR")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("","OR"), (r[0].city, r[0].state))
+        
+        r = _normalize_locations("Portland", "OR")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        
+        r = _normalize_locations("Portland; Seattle", "OR; WA")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("Seattle", "WA"), (r[1].city, r[1].state))
+        
+        r = _normalize_locations("Portland; Corvallis", "OR")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("Corvallis", "OR"), (r[1].city, r[1].state))
+        
+        r = _normalize_locations("Portland", "OR; WA")
+        self.assertEqual(0, len(r))
+
+        
 # tests the experimental 'updates' module
 class TestUpdates(TestCase):
     def create_table(self, table_name):
