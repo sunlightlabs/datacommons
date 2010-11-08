@@ -1,8 +1,6 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
-from dcdata.models import DataCommonsModel
-from dcentity.models import EntityRef
-from dcdata.utils.sql import django2sql_names
+from dcdata.models import Import
 
 
 NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
@@ -82,7 +80,8 @@ GENDERS = (
     ('U','Unknown'),
 )
 
-class Contribution(DataCommonsModel):
+class Contribution(models.Model):
+    import_reference = models.ForeignKey(Import)
     
     # cycle and basic transaction fields
     cycle = models.IntegerField()
@@ -99,7 +98,6 @@ class Contribution(DataCommonsModel):
     # contributor fields
     contributor_name = models.CharField(max_length=255, blank=True, null=True)
     contributor_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    contributor_entity = EntityRef('contributor_transactions')
     contributor_type = models.CharField(max_length=1, choices=CONTRIBUTOR_TYPES, blank=True, null=True)
     contributor_occupation = models.CharField(max_length=64, blank=True, null=True)
     contributor_employer = models.CharField(max_length=64, blank=True, null=True)
@@ -116,17 +114,14 @@ class Contribution(DataCommonsModel):
     # organization
     organization_name = models.CharField(max_length=255, blank=True, null=True)
     organization_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    organization_entity = EntityRef('organization_transactions')
     
     # parent organization
     parent_organization_name = models.CharField(max_length=255, blank=True, null=True)
     parent_organization_ext_id =  models.CharField(max_length=128, blank=True, null=True)
-    parent_organization_entity = EntityRef('parent_organization_transactions')
     
     # recipient fields
     recipient_name = models.CharField(max_length=255, blank=True, null=True)
     recipient_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    recipient_entity = EntityRef('recipient_transactions')
     recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
     recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True, null=True)
     recipient_state = USStateField(blank=True, null=True)
@@ -137,7 +132,6 @@ class Contribution(DataCommonsModel):
     # committee fields
     committee_name = models.CharField(max_length=255, blank=True, null=True)
     committee_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    committee_entity = EntityRef('committee_transactions')
     committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
         
     # election and seat fields
@@ -180,7 +174,3 @@ class Contribution(DataCommonsModel):
         
         # save if all checks passed
         super(Contribution, self).save(**kwargs)
-    
-
-
-sql_names = django2sql_names(Contribution)

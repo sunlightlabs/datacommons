@@ -55,11 +55,12 @@ class EntityHandler(BaseHandler):
 
     def read(self, request, entity_id):
 
-        entity_id = UUID(entity_id)
-
         try:
+            entity_id = UUID(entity_id)
             entity = Entity.objects.select_related().get(id=entity_id)
         except ObjectDoesNotExist:
+            return rc.NOT_FOUND
+        except ValueError:
             return rc.NOT_FOUND
 
         totals = get_totals(entity_id)
@@ -93,7 +94,7 @@ class EntityAttributeHandler(BaseHandler):
         if bioguide_id:
             entities = BioguideInfo.objects.filter(bioguide_id = bioguide_id)
         else:
-            entities = EntityAttribute.objects.filter(namespace = namespace, value = id, verified = 't')
+            entities = EntityAttribute.objects.filter(namespace = namespace, value = id)
 
         return [{'id': e.entity_id} for e in entities]
 

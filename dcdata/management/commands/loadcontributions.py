@@ -2,19 +2,14 @@
 
 
 from dcdata.contribution.models import Contribution
-from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter, \
-    EntityFilter
+from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter
 from dcdata.processor import chain_filters, load_data, Every, progress_tick
-from dcdata.utils.dryrub import CountEmitter, MD5Filter, CSVFieldVerifier,\
-    VerifiedCSVSource
+from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 from decimal import Decimal
-from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from optparse import make_option
-from saucebrush.emitters import DebugEmitter
 from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier
-from dcdata.utils.strings.normalizer import basic_normalizer
 import os
 import saucebrush
 import sys
@@ -29,7 +24,6 @@ class ContributorFilter(Filter):
     type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
     def process_record(self, record):
         record['contributor_type'] = self.type_mapping.get(record['contributor_type'], None)
-        #record['contributor_entity'] = None
         return record
 
 class OrganizationFilter(Filter):

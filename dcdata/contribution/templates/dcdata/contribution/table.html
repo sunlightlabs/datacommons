@@ -19,52 +19,22 @@
     		<td>{{ contrib.date|date:"M d, Y" }}</td>
     		<td>${{ contrib.amount }}</td>
     		<td>
-    		    {% if contrib.contributor_entity %}
-    		        <a href="{% url matchbox_entity contrib.contributor_entity %}">
-    		            {{ contrib.contributor_name }}
-    		        </a>
-    		    {% else %}
-    		        {{ contrib.contributor_name }}
-    		    {% endif %}
+                {{ contrib.contributor_name }}
     		</td>
     		<td>{{ contrib.contributor_address }}</td>
     		<td>{{ contrib.contributor_city }}</td>
     		<td>{{ contrib.contributor_state }}</td>
     		<td>
-    		    {% if contrib.recipient_entity %}
-    		        <a href="{% url matchbox_entity contrib.recipient_entity %}">
-    		            {{ contrib.recipient_name }}
-    		        </a>
-    		    {% else %}
-    		        {{ contrib.recipient_name }}
-    		    {% endif %}
+                {{ contrib.recipient_name }}
     		</td>
     		<td>
-    		    {% if contrib.committee_entity %}
-        		    <a href="{% url matchbox_entity contrib.committee_entity %}">
-        		        {{ contrib.committee_name }}
-        		    </a>
-    		    {% else %}
-    		        {{ contrib.committee_name }}
-    		    {% endif %}
+                {{ contrib.committee_name }}
     		</td>
     		<td>
-    		    {% if contrib.organization_entity %}
-        		    <a href="{% url matchbox_entity contrib.organization_entity %}">
-        		        {{ contrib.organization_name }}
-        		    </a>
-    		    {% else %}
-    		        {{ contrib.organization_name }}
-    		    {% endif %}
+                {{ contrib.organization_name }}
     		</td>
     		<td>
-    		    {% if contrib.parent_organization_entity %}
-        		    <a href="{% url matchbox_entity contrib.parent_organization_entity %}">
-        		        {{ contrib.parent_organization_name }}
-        		    </a>
-    		    {% else %}
-    		        {{ contrib.parent_organization_name }}
-    		    {% endif %}
+                {{ contrib.parent_organization_name }}
     		</td>
     	</tr>
     {% endfor %}

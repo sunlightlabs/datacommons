@@ -127,8 +127,8 @@ create table contributions_all_relevant as
 
 select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
-     
-            
+
+
 -- Contributor Associations
 
 drop table if exists tmp_assoc_indiv_id;
@@ -148,7 +148,7 @@ create table tmp_assoc_indiv_id as
             (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
             or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
         );
-        
+
 create index tmp_assoc_indiv_id_entity on tmp_assoc_indiv_id (entity_id);
 create index tmp_assoc_indiv_id_transaction on tmp_assoc_indiv_id (transaction_id);
 
@@ -161,7 +161,7 @@ create table tmp_indiv_names as
     from contributions_all_relevant c
     inner join tmp_assoc_indiv_id a using (transaction_id)
     group by entity_id, contributor_name;
-    
+
 create index tmp_indiv_names_entity on tmp_indiv_names (entity_id);
 create index tmp_indiv_names_name on tmp_indiv_names (lower(name));
 
@@ -192,7 +192,7 @@ create table contributor_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
                 or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
@@ -218,7 +218,7 @@ union
     inner join zip_msa z
         on c.contributor_zipcode = z.zipcode and l.msa_name = z.msa_name
     group by n.entity_id, c.transaction_id;
-    
+
 
 select date_trunc('second', now()) || ' -- create index contributor_associations_entity_id on contributor_associations (entity_id)';
 create index contributor_associations_entity_id on contributor_associations (entity_id);
@@ -241,9 +241,9 @@ create table organization_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
+                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
@@ -274,9 +274,9 @@ select date_trunc('second', now()) || ' -- create table parent_organization_asso
                 on e.id = a.entity_id
             where
                 e.type = 'organization'
-                and (a.namespace = ''
+                and ((a.namespace = '' or a.namespace is null)
                     or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                        or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))                
+                        or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
     union
         select a.entity_id, c.transaction_id
         from contributions_all_relevant c
@@ -331,9 +331,9 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
+                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
@@ -359,31 +359,12 @@ drop table if exists agg_contribution_sparklines;
 
 select date_trunc('second', now()) || ' -- create table agg_contribution_sparklines';
 create table agg_contribution_sparklines as
-    select
-        entity_id,
-        cycle,
-        rank() over (partition by entity_id, cycle order by date_trunc('month', c.date)) as step,
-        sum(amount) as amount
-        from (
-                table contributor_associations
-                union
-                table recipient_associations
-                union
-                table organization_associations
-                union
-                table parent_organization_associations
-            ) a
-            inner join contributions_all_relevant c using (transaction_id)
-        where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
-        group by entity_id, cycle, date_trunc('month', c.date)
-
-    union all
-
-    select
-        entity_id,
-        -1 as cycle,
-        rank() over (partition by entity_id order by date_trunc('quarter', c.date)) as step,
-        sum(amount) as amount
+    with by_cycle_sparks as (
+        select
+            entity_id,
+            cycle,
+            date_trunc('month', c.date) as date_step,
+            sum(amount) as amount
         from (
                 table contributor_associations
                 union
@@ -395,7 +376,22 @@ create table agg_contribution_sparklines as
             ) a
             inner join contributions_all_relevant c using (transaction_id)
         where c.date between '19890101' and '20111231'
-        group by entity_id, date_trunc('quarter', c.date);
+            and c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
+        group by entity_id, cycle, date_trunc('month', c.date)
+    )
+
+    select entity_id, cycle, date_step::date, amount
+    from by_cycle_sparks
+
+    union all
+
+    select
+        entity_id,
+        -1 as cycle,
+        date_trunc('quarter', date_step)::date as date_step,
+        sum(amount) as amount
+    from by_cycle_sparks
+    group by entity_id, date_trunc('quarter', date_step)
 ;
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle)';
@@ -410,16 +406,30 @@ drop table if exists agg_contribution_sparklines_by_party;
 
 select date_trunc('second', now()) || ' -- create table agg_contribution_sparklines_by_party';
 create table agg_contribution_sparklines_by_party as
-    select
-        entity_id,
-        cycle,
-        recipient_party,
-        rank() over (partition by entity_id, cycle, recipient_party order by date_trunc('month', c.date)) as step,
-        sum(amount) as amount
-        from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
+    with by_cycle_sparks as (
+        select
+            entity_id,
+            cycle,
+            recipient_party,
+            date_trunc('month', c.date) as date_step,
+            sum(amount) as amount
+        from (
+                table contributor_associations
+                union
+                table organization_associations
+                union
+                table parent_organization_associations
+                union all
+                table industry_associations
+            ) a
             inner join contributions_all_relevant c using (transaction_id)
-        where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
+        where c.date between '19890101' and '20111231'
+            and c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, recipient_party, date_trunc('month', c.date)
+    )
+
+    select entity_id, cycle, recipient_party, date_step::date, amount
+    from by_cycle_sparks
 
     union all
 
@@ -427,12 +437,10 @@ create table agg_contribution_sparklines_by_party as
         entity_id,
         -1 as cycle,
         recipient_party,
-        rank() over (partition by entity_id, recipient_party order by date_trunc('quarter', c.date)) as step,
+        date_trunc('quarter', date_step)::date as date_step,
         sum(amount) as amount
-        from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
-            inner join contributions_all_relevant c using (transaction_id)
-        where c.date between '19890101' and '20111231'
-        group by entity_id, recipient_party, date_trunc('quarter', c.date);
+    from by_cycle_sparks
+    group by entity_id, recipient_party, date_trunc('quarter', date_step);
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party)';
 create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party);

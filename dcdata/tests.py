@@ -11,6 +11,7 @@ from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.loading import model_fields, LoaderEmitter
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
+from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, LoadTCSEarmarks
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
 #from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
@@ -473,6 +474,35 @@ class TestProcessor(TestCase):
         self.assertEqual('12345', result['contributor_zipcode'])
         self.assertEqual('1111111111222222222233333333334444444444555555555566666666667777', result['contributor_employer'])
         self.assertEqual('too short', result['contributor_occupation'])
+
+
+class TestEarmarks(TestCase):
+    csv2008 = [
+        '1214,38777000,6305310,38041000,38200000,,"Arts in Education Program (VSA Arts and John F. Kennedy Center for the Performing Arts) for model arts education and other activities",,,"UNK","Labor-HHS-Education","Department of Education","Innovation and Improvement",,"Abercrombie","D","HI",,"Bingaman; Cochran; Kennedy","D; R; D","NM; MS; MA",,,,',
+        '1,300000,,425000,414000,,"Boys & Girls Club of Hawaii, Honolulu, HI for a multi-media center, which may include equipment","Honolulu",,"HI","Labor-HHS-Education","Department of Education","Fund for the Improvement of Education",,"Abercrombie","D","HI",,,,,,,,',
+        '1,,1500000,1500000,1476000,,"Cellular Bioengineering, Inc., Continue development of polymeric hydrogels for radiation decontamination","Honolulu",,"HI","Energy & Water","Department of Energy","Defense Environmental Cleanup",,"Abercrombie","D","HI",,"Inouye","D","HI",,,,'
+    ]
+
+    csv2009 = [
+        ',,,,2000000,,"101st Airborne Injury Prevention & Performance Enhancement Research Initiative",,,"KY","Defense","RDTE","Army",,,,,,"Alexander, Lamar; Corker","R; R","TN; TN",,,,',
+        ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",,,,',
+        ',,,,3200000,,"11th Air Force Critical Communications Infrastructure",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",,,,'
+    ]
+
+    csv2010 = [
+        ',,3000000,,3000000,,"101st Airborne/Air Assault Injury Prevention and Performance Enhancement Initiative","Fort Campbell",,"KY","Defense","Research, Development, Test & Evaluation","Army",,,,,,"Corker; Specter","R; D","TN; PA",,,"University of Pittsburgh",',
+        ',,500000,,500000,,"10th Avenue South Corridor Extension, Waverly, IA","Waverly",,"IA","Transportation-Housing and Urban Development","Federal Highway Administration","Surface Transportation Priorities",,"Braley","D","IA",,"Grassley; Harkin","R; D","IA; IA",,,,',
+        ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
+    ]
+    
+    def test_load_earmarks(self):
+        source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(9, len(output))
 
 
 # tests the experimental 'updates' module

@@ -70,7 +70,7 @@ class InclusionField(Field):
 class Schema(object):
     """
     The set of fields that may be used in a query, and the functionality to 
-    transform an HTTP request-like object into a Djanog query.
+    transform an HTTP request-like object into a Django query.
     """
     
     VALUE_DELIMITER = '|'
