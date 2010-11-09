@@ -578,6 +578,12 @@ class TestEarmarks(TestCase):
         self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
         self.assertEqual(("Corvallis", "OR"), (r[1].city, r[1].state))
         
+        r = _normalize_locations("", "OR; WA")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("", "WA"), (r[1].city, r[1].state))
+        
+        
         try:
             r = _normalize_locations("Portland", "OR; WA")
             self.asserFail() # should not make it here
@@ -588,19 +594,40 @@ class TestEarmarks(TestCase):
         s = split_and_transpose(';')
         self.assertEqual([], s)
         
-        # Python's map is retarded and has different behavior on a single list than on multiple lists.
-        # so this doesn't work as expected, but never occurs in practice.
-#        s = split_and_transpose(';', 'a; b; c')
-#        self.assertEqual([['a'], ['b'], ['c']], s)
+        s = split_and_transpose(';', 'a; b; c')
+        self.assertEqual([['a'], ['b'], ['c']], s)
         
         s = split_and_transpose(';', 'a; b; c', '1; 2; 3')
         self.assertEqual([('a', '1'), ('b', '2'), ('c', '3')], s)
         
-        try:
-            s = split_and_transpose(';', 'a; b', '1')
-            self.assertFail() # should not make it here
-        except SkipRecordException:
-            pass
+        s = split_and_transpose(';', 'a; b', '1')
+        self.assertEqual([('a', ''), ('b', '')], s)
+        
+        s = split_and_transpose(';', 'a; b', '1')
+        self.assertEqual([('a', ''), ('b', '')], s)   
+        
+        s = split_and_transpose(';', 'a; b', '1', 'x; y; z')
+        self.assertEqual([('a', '', ''), ('b', '', '')], s)  
+        
+        s = split_and_transpose(';', 'a; b', '1', 'x; y')
+        self.assertEqual([('a', '', 'x'), ('b', '', 'y')], s)  
+        
+
+    def test_filters(self):
+        csv = [
+               '293,1500000,15000000,,1200000,,"Space Situational Awareness","College Station",,"TX","Defense","RDTE","Air Force","Advanced Spacecraft Technology","Edwards","D","TX",,"Committee Initiative","N/A","N/A",,,"Texas A&M University",'
+        ]
+        
+        source = VerifiedCSVSource(csv, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(1, len(output))
+        self.assertEqual(2, len(output[0]['members']))
+        self.assertEqual('', output[0]['members'][1].party)
+        self.assertEqual('', output[0]['members'][1].state)
 
         
 # tests the experimental 'updates' module

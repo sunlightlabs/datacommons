@@ -38,7 +38,7 @@ def load_data(input_iterator, record_processor, output_func):
                 
         except SkipRecordException as e:
             sys.stderr.write('Skipping processing of input record: "%s"\n' % record)
-            sys.stderr.write('Exception: %s', e)
+            sys.stderr.write('Exception: %s\n' % e)
             if e.traceback:
                 traceback.print_tb(e.traceback)
             sys.stderr.flush()

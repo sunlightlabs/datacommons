@@ -105,7 +105,7 @@ class Earmark(models.Model):
     
     # possible that we'll need to increase the length if we see long values
     description = models.CharField(max_length=255, blank=True)
-    notes = models.CharField(max_length=255, blank=True)
+    notes = models.CharField(max_length=512, blank=True)
     
     presidential = models.CharField(max_length=1, choices=presidential_choices, blank=True)
     undisclosed = models.CharField(max_length=1, choices=undisclosed_choices, blank=True)
