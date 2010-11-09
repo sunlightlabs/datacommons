@@ -99,24 +99,22 @@ class Earmark(models.Model):
     omni_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     final_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     
-    # should we call it 'location' instead?
-    city = models.CharField(max_length=128, blank=True)
-    count = models.CharField(max_length=64, blank=True)
-    state = USStateField(blank=True)
-    
     bill = models.CharField(max_length=64, choices=bill_choices, blank=False)
-    bill_section = models.CharField(max_length=255, blank=True)
-    bill_subsection = models.CharField(max_length=255, blank=True)
+    bill_section = models.CharField(max_length=256, blank=True)
+    bill_subsection = models.CharField(max_length=256, blank=True)
     
     # possible that we'll need to increase the length if we see long values
-    description = models.CharField(max_length=255, blank=True)
-    notes = models.CharField(max_length=255, blank=True)
+    description = models.CharField(max_length=512, blank=True)
+    notes = models.CharField(max_length=512, blank=True)
     
     presidential = models.CharField(max_length=1, choices=presidential_choices, blank=True)
     undisclosed = models.CharField(max_length=1, choices=undisclosed_choices, blank=True)
     
     raw_recipient = models.CharField(max_length=128, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
+    
+    def __unicode__(self):
+        return "%s. %s: %s" % ("; ".join(map(str,self.members.all())), self.final_amount, self.description[:16])
 
 
 class Member(models.Model):
@@ -129,11 +127,15 @@ class Member(models.Model):
     chamber = models.CharField(max_length=1, choices=chamber_choices)    
     party = models.CharField(max_length=1, choices=party_choices)
     state = USStateField(blank=True)
-    district = models.IntegerField()
+    district = models.IntegerField(null=True)
 
     def __unicode__(self):
         return "%s %s (%s-%s)" % ("Sen." if self.chamber == 's' else 'Rep.', self.raw_name, self.party.upper(), self.state)
         
         
-        
+class Location(models.Model):
+    earmark = models.ForeignKey(Earmark, related_name='locations')
     
+    city = models.CharField(max_length=128, blank=True)
+    state = USStateField(blank=True)    
+
