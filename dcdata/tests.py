@@ -1,36 +1,39 @@
 
 
-from decimal import Decimal
-import os
-from django.test import TestCase
-from nose.plugins.skip import Skip, SkipTest
-import shutil
-
+from dcdata import processor
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
-from dcdata.loading import model_fields, LoaderEmitter
+from dcdata.earmarks.models import Earmark, Member
+from dcdata.loading import model_fields, LoaderEmitter, SkipRecordException
+from dcdata.management.commands.crp_denormalize import load_candidates, \
+    load_committees
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
-from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, LoadTCSEarmarks
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
-#from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
-from dcdata.processor import load_data, chain_filters, compose_one2many,\
+from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, \
+    LoadTCSEarmarks, save_earmark, _normalize_locations, split_and_transpose
+from dcdata.models import Import
+from dcdata.processor import load_data, chain_filters, compose_one2many, \
     SkipRecordException
+from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource, \
+    CSVFieldVerifier
+from decimal import Decimal
 from django.core.management import call_command
 from django.db import connection
+from django.test import TestCase
+from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
-from scripts.nimsp.common import CSV_SQL_MAPPING
-from updates import edits, update
-from dcdata.management.commands.crp_denormalize import load_candidates,\
-    load_committees
-from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource,\
-    CSVFieldVerifier
-from dcdata import processor
 from saucebrush.sources import CSVSource
+from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
+from updates import edits, update
+import os
+import shutil
 import sqlite3
 import sys
+
+#from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 
 
 dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
@@ -495,7 +498,7 @@ class TestEarmarks(TestCase):
         ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
     ]
     
-    def test_load_earmarks(self):
+    def test_process_earmarks(self):
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, None)
         output = list()
@@ -503,8 +506,130 @@ class TestEarmarks(TestCase):
         load_data(source, processor, output.append)
         
         self.assertEqual(9, len(output))
+        
+    def test_save_earmarks(self):
+        Earmark.objects.all().delete()
+        Member.objects.all().delete()
+        import_ref = Import.objects.create()
+        
+        source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
+        
+        load_data(source, processor, save_earmark)
+        
+        self.assertEqual(9, Earmark.objects.count())
+        self.assertEqual(18, Member.objects.count())
+
+    def test_choice_maps(self):
+        variants = [
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo,Undisclosed,,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo & Und.,Undisclosed (President),,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President and Member(s),O & M-Disclosed,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",Judiciary,O & M-Undisclosed,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",something wrong,Something else entirely,,',                        
+        ]
+
+        Earmark.objects.all().delete()
+        Member.objects.all().delete()
+        import_ref = Import.objects.create()
+        
+        source = VerifiedCSVSource(variants, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
+        load_data(source, processor, save_earmark)
+
+        self.assertEqual(5, Earmark.objects.count())
+        
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='u').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='p').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='o').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='m').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='').count())
+        
+        self.assertEqual(1, Earmark.objects.filter(presidential='p').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='u').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='m').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='j').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='').count())
 
 
+    def test_locations(self):
+        r = _normalize_locations("", "")
+        self.assertEqual([], r)
+        
+        r = _normalize_locations("Portland", "")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("Portland", ""), (r[0].city, r[0].state))
+
+        r = _normalize_locations("", "OR")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("","OR"), (r[0].city, r[0].state))
+        
+        r = _normalize_locations("Portland", "OR")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        
+        r = _normalize_locations("Portland; Seattle", "OR; WA")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("Seattle", "WA"), (r[1].city, r[1].state))
+        
+        r = _normalize_locations("Portland; Corvallis", "OR")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("Corvallis", "OR"), (r[1].city, r[1].state))
+        
+        r = _normalize_locations("", "OR; WA")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("", "WA"), (r[1].city, r[1].state))
+        
+        
+        try:
+            r = _normalize_locations("Portland", "OR; WA")
+            self.asserFail() # should not make it here
+        except SkipRecordException:
+            pass
+
+    def test_split_and_transpose(self):
+        s = split_and_transpose(';')
+        self.assertEqual([], s)
+        
+        s = split_and_transpose(';', 'a; b; c')
+        self.assertEqual([('a',), ('b',), ('c',)], s)
+        
+        s = split_and_transpose(';', 'a; b; c', '1; 2; 3')
+        self.assertEqual([('a', '1'), ('b', '2'), ('c', '3')], s)
+        
+        s = split_and_transpose(';', 'a; b', '1')
+        self.assertEqual([('a', ''), ('b', '')], s)
+        
+        s = split_and_transpose(';', 'a; b', '1')
+        self.assertEqual([('a', ''), ('b', '')], s)   
+        
+        s = split_and_transpose(';', 'a; b', '1', 'x; y; z')
+        self.assertEqual([('a', '', ''), ('b', '', '')], s)  
+        
+        s = split_and_transpose(';', 'a; b', '1', 'x; y')
+        self.assertEqual([('a', '', 'x'), ('b', '', 'y')], s)  
+        
+
+    def test_filters(self):
+        csv = [
+               '293,1500000,15000000,,1200000,,"Space Situational Awareness","College Station",,"TX","Defense","RDTE","Air Force","Advanced Spacecraft Technology","Edwards","D","TX",,"Committee Initiative","N/A","N/A",,,"Texas A&M University",'
+        ]
+        
+        source = VerifiedCSVSource(csv, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(1, len(output))
+        self.assertEqual(2, len(output[0]['members']))
+        self.assertEqual('', output[0]['members'][1].party)
+        self.assertEqual('', output[0]['members'][1].state)
+
+        
 # tests the experimental 'updates' module
 class TestUpdates(TestCase):
     def create_table(self, table_name):
