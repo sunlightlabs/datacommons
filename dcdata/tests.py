@@ -595,7 +595,7 @@ class TestEarmarks(TestCase):
         self.assertEqual([], s)
         
         s = split_and_transpose(';', 'a; b; c')
-        self.assertEqual([['a'], ['b'], ['c']], s)
+        self.assertEqual([('a',), ('b',), ('c',)], s)
         
         s = split_and_transpose(';', 'a; b; c', '1; 2; 3')
         self.assertEqual([('a', '1'), ('b', '2'), ('c', '3')], s)

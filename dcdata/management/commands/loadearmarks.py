@@ -41,8 +41,9 @@ FIELDS = [
 ]
 
 
-def integer_filter(value):
+def district_filter(value):
     try:
+        value = value.replace('st', '').replace('nd', '').replace('rd', '').replace('th', '')
         return int(value) if value else 0
     except ValueError:
         raise SkipRecordException("Could not parse integer: %s" % value)
@@ -70,7 +71,7 @@ def state_filter(state_string):
         return state_string
     
     if state_string not in ('UNK', 'INT', 'Int', 'UST', 'N/A', 'I', 'National', 'USVI', 'Multi'):
-         # we know we're ignoring these; others are worth a warning
+        # we know we're ignoring these; others are worth a warning
         stderr.write("WARNING: Dropping unknown state: %s\n" % state_string)
     return ''
 
@@ -98,15 +99,13 @@ def split_and_transpose(separator, *strings):
         return []
 
     splits = [[value.strip() for value in s.split(separator)] if s else [] for s in strings]
+            
 
-#    for s in splits[1:]:
-#        if len(s) != 
-
-    if not all([len(split) == len(splits[0]) for split in splits]):
-        stderr.write("WARNING: Could not split strings into equal length lists: %s\n" % (strings,))
-        return map(None, splits[0], *([[''] * len(splits[0])] * (len(splits) - 1)))
-
-    return map(None, *splits)
+    if len(splits) == 1:
+        return [(s,) for s in splits[0]]
+    else:
+        splits = [s if len(s) == len(splits[0]) else [''] * len(splits[0]) for s in splits]
+        return map(None, *splits)
 
 
 def _normalize_locations(city_string, state_string):
@@ -145,7 +144,7 @@ def _normalize_locations(city_string, state_string):
 def _normalize_chamber(chamber, names, parties, states, districts=None):
     
     def create_member(values):
-        district = integer_filter(values[3]) if len(values) == 4 else None
+        district = district_filter(values[3]) if len(values) == 4 else None
         state = state_filter(values[2])
         party = party_filter(values[1])
         
@@ -188,7 +187,8 @@ class LoadTCSEarmarks(BaseCommand):
             FieldAdder('fiscal_year', year),
             FieldAdder('import_reference', import_ref),
             
-            FieldModifier(['bill_section', 'bill_subsection', 'description', 'notes'], lambda s: string_filter(s, 255)),
+            FieldModifier(['description', 'notes'], lambda s: string_filter(s, 512)),
+            FieldModifier(['bill_section', 'bill_subsection'], lambda s: string_filter(s, 256)),
             FieldModifier(['raw_recipient'], lambda s: string_filter(s, 128)),
             
             FieldModifier(['budget_amount', 'senate_amount', 'house_amount', 'omni_amount', 'final_amount'], decimal_filter),
