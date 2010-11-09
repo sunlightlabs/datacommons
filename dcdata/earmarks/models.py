@@ -100,11 +100,11 @@ class Earmark(models.Model):
     final_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     
     bill = models.CharField(max_length=64, choices=bill_choices, blank=False)
-    bill_section = models.CharField(max_length=255, blank=True)
-    bill_subsection = models.CharField(max_length=255, blank=True)
+    bill_section = models.CharField(max_length=256, blank=True)
+    bill_subsection = models.CharField(max_length=256, blank=True)
     
     # possible that we'll need to increase the length if we see long values
-    description = models.CharField(max_length=255, blank=True)
+    description = models.CharField(max_length=512, blank=True)
     notes = models.CharField(max_length=512, blank=True)
     
     presidential = models.CharField(max_length=1, choices=presidential_choices, blank=True)
