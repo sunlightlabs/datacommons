@@ -582,13 +582,13 @@ class TestEarmarks(TestCase):
         self.assertEqual(2, len(r))
         self.assertEqual(("", "OR"), (r[0].city, r[0].state))
         self.assertEqual(("", "WA"), (r[1].city, r[1].state))
-        
-        
-        try:
-            r = _normalize_locations("Portland", "OR; WA")
-            self.asserFail() # should not make it here
-        except SkipRecordException:
-            pass
+
+        r = _normalize_locations("Portland", "OR; WA")
+        self.assertEqual(3, len(r))
+        self.assertEqual(("Portland", ""), (r[0].city, r[0].state))
+        self.assertEqual(("", "OR"), (r[1].city, r[1].state))
+        self.assertEqual(("", "WA"), (r[2].city, r[2].state))
+
 
     def test_split_and_transpose(self):
         s = split_and_transpose(';')

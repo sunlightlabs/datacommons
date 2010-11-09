@@ -40,29 +40,34 @@ FIELDS = [
     'notes'
 ]
 
+def _warn(message):
+    stderr.write("WARNING: %s\n" % message)
+
 
 def district_filter(value):
     try:
         value = value.replace('st', '').replace('nd', '').replace('rd', '').replace('th', '')
         return int(value) if value else 0
     except ValueError:
-        raise SkipRecordException("Could not parse integer: %s" % value)
+        _warn("Could not parse district: %s" % value)
 
 
-def decimal_filter(value):
+def amount_filter(value):
     value = value.strip().replace('$', '').replace(',', '')
     
-    if value == '' or value == 'Intel (No Numbers)':
+    if value == '' or value in ('(see note)', 'Intel (No Numbers)'):
         return Decimal(0)
     
     try:
-        return Decimal(value) if value else Decimal(0)
+        return Decimal(value)
     except InvalidOperation:
-        raise SkipRecordException("Could not parse amount: %s" % value)
-    
+        _warn("Could not parse amount: %s" % value)
+        return Decimal(0)
+
+
 def string_filter(s, max_length):
     if len(s) > max_length:
-        stderr.write("WARNING: Truncating string: %s\n" % s[:max_length])
+        _warn("Truncating string: %s" % s[:max_length])
         
     return s[:max_length]
 
@@ -72,7 +77,7 @@ def state_filter(state_string):
     
     if state_string not in ('UNK', 'INT', 'Int', 'UST', 'N/A', 'I', 'National', 'USVI', 'Multi'):
         # we know we're ignoring these; others are worth a warning
-        stderr.write("WARNING: Dropping unknown state: %s\n" % state_string)
+        _warn("Dropping unknown state: %s" % state_string)
     return ''
 
 def party_filter(party_string):
@@ -80,7 +85,7 @@ def party_filter(party_string):
         return party_string.upper()
     
     if party_string not in ('N/A'):
-        stderr.write("WARNING: Dropping unknown party: %s\n" % party_string)
+        _warn("Dropping unknown party: %s" % party_string)
     return ''
 
 
@@ -136,9 +141,8 @@ def _normalize_locations(city_string, state_string):
     if len(states) == 1:
         return map(create_location, cities, states * len(cities))
     
-    # from here there must be multiple states and a different number of cities
-    raise SkipRecordException('Could not parse city and state: (%s, %s)' % (city_string, state_string))
-
+    # when multiple states and a different number of cities, don't make any associations
+    return map(create_location, cities, [''] * len(cities)) + map(create_location, [''] * len(states), states)
 
 
 def _normalize_chamber(chamber, names, parties, states, districts=None):
@@ -188,10 +192,9 @@ class LoadTCSEarmarks(BaseCommand):
             FieldAdder('import_reference', import_ref),
             
             FieldModifier(['description', 'notes'], lambda s: string_filter(s, 512)),
-            FieldModifier(['bill_section', 'bill_subsection'], lambda s: string_filter(s, 256)),
-            FieldModifier(['raw_recipient'], lambda s: string_filter(s, 128)),
+            FieldModifier(['bill_section', 'bill_subsection', 'raw_recipient'], lambda s: string_filter(s, 256)),
             
-            FieldModifier(['budget_amount', 'senate_amount', 'house_amount', 'omni_amount', 'final_amount'], decimal_filter),
+            FieldModifier(['budget_amount', 'senate_amount', 'house_amount', 'omni_amount', 'final_amount'], amount_filter),
                         
             FieldMerger({'description': ('project_heading', 'description')}, _prepend),
 

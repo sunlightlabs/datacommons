@@ -110,7 +110,7 @@ class Earmark(models.Model):
     presidential = models.CharField(max_length=1, choices=presidential_choices, blank=True)
     undisclosed = models.CharField(max_length=1, choices=undisclosed_choices, blank=True)
     
-    raw_recipient = models.CharField(max_length=128, blank=True)
+    raw_recipient = models.CharField(max_length=256, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
     
     def __unicode__(self):
