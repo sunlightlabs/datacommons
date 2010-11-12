@@ -112,6 +112,18 @@ class EntityAlias(models.Model):
         return self.alias
 
 
+class EntityNameParts(models.Model):
+    alias  = models.OneToOneField(EntityAlias, related_name='name_parts', null=False)
+    prefix = models.CharField(max_length=3, null=True)
+    first  = models.CharField(max_length=32, null=True)
+    middle = models.CharField(max_length=32, null=True)
+    last   = models.CharField(max_length=32, null=True)
+    suffix = models.CharField(max_length=3, null=True)
+
+    class Meta:
+        db_table = 'matchbox_entitynameparts'
+
+
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
     entity = models.ForeignKey(Entity, related_name='attributes', null=False)
