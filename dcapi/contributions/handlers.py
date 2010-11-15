@@ -1,12 +1,9 @@
 
-from urllib import unquote_plus
-from piston.handler import BaseHandler
-from dcdata.contribution.models import Contribution
+from dcapi.common.handlers import FilterHandler
 from dcapi.contributions import filter_contributions
+from dcdata.contribution.models import Contribution
+from urllib import unquote_plus
 
-RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
-DEFAULT_PER_PAGE = 100
-MAX_PER_PAGE = 100000
 
 CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment',
               'amount', 'date', 'contributor_name', 'contributor_ext_id', 'contributor_type', 'contributor_occupation', 
@@ -16,28 +13,6 @@ CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'tran
               'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state', 'recipient_category', 'recipient_category_order',
               'committee_name', 'committee_ext_id', 'committee_party', 'election_type', 'district', 'seat', 'seat_status',
               'seat_result']
-
-def load_contributions(params, nolimit=False, ordering=True):
-    
-
-    per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
-    page = int(params.get('page', 1)) - 1
-    
-    offset = page * per_page
-    limit = offset + per_page
-    
-    for param in RESERVED_PARAMS:
-        if param in params:
-            del params[param]
-            
-    unquoted_params = dict([(param, unquote_plus(quoted_value)) for (param, quoted_value) in params.iteritems()])
-    result = filter_contributions(unquoted_params)
-    if ordering:
-        result = result.order_by('-cycle','-amount')
-    if not nolimit:
-        result = result[offset:limit]
-          
-    return result
 
 
 class ContributionStatsLogger(object):
@@ -51,12 +26,13 @@ class ContributionStatsLogger(object):
         self.stats[ns] = self.stats.get(ns, 0) + 1
         self.stats['total'] += 1
 
-class ContributionFilterHandler(BaseHandler):
-    allowed_methods = ('GET',)
+
+class ContributionFilterHandler(FilterHandler):
     fields = CONTRIBUTION_FIELDS
     model = Contribution
     statslogger = ContributionStatsLogger
+    order = ['-cycle','-amount']
     
-    def read(self, request):
-        params = request.GET.copy()
-        return load_contributions(params)
+    def queryset(self, params):
+        print "called queryset!!!!!!"
+        return filter_contributions(self._unquote(params))
