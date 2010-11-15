@@ -105,20 +105,20 @@ class Earmark(models.Model):
     
     # possible that we'll need to increase the length if we see long values
     description = models.CharField(max_length=512, blank=True)
-    notes = models.CharField(max_length=512, blank=True)
+    notes = models.CharField(max_length=1024, blank=True)
     
     presidential = models.CharField(max_length=1, choices=presidential_choices, blank=True)
     undisclosed = models.CharField(max_length=1, choices=undisclosed_choices, blank=True)
     
-    house_members = models.CharField(max_length=512, blank=True)
-    house_parties = models.CharField(max_length=256, blank=True)
-    house_states = models.CharField(max_length=256, blank=True)
-    house_districts = models.CharField(max_length=256, blank=True)
-    senate_members = models.CharField(max_length=512, blank=True)
-    senate_parties = models.CharField(max_length=256, blank=True)
-    senate_states = models.CharField(max_length=256, blank=True)
+    house_members = models.CharField(max_length=1024, blank=True)
+    house_parties = models.CharField(max_length=512, blank=True)
+    house_states = models.CharField(max_length=512, blank=True)
+    house_districts = models.CharField(max_length=512, blank=True)
+    senate_members = models.CharField(max_length=1024, blank=True)
+    senate_parties = models.CharField(max_length=512, blank=True)
+    senate_states = models.CharField(max_length=512, blank=True)
     
-    raw_recipient = models.CharField(max_length=256, blank=True)
+    raw_recipient = models.CharField(max_length=512, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
     
     def __unicode__(self):

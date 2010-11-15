@@ -191,8 +191,10 @@ class LoadTCSEarmarks(BaseCommand):
             FieldAdder('fiscal_year', year),
             FieldAdder('import_reference', import_ref),
             
-            FieldModifier(['description', 'notes'], lambda s: string_filter(s, 512)),
-            FieldModifier(['bill_section', 'bill_subsection', 'raw_recipient'], lambda s: string_filter(s, 256)),
+            FieldModifier(['notes', 'house_members', 'senate_members'], lambda s: string_filter(s, 1024)),
+            FieldModifier(['description', 'house_parties', 'house_states', 'house_districts', 'senate_parties', 'senate_states', 'raw_recipient'], lambda s: string_filter(s, 512)),
+            FieldModifier(['bill_section', 'bill_subsection'],
+                           lambda s: string_filter(s, 256)),
             
             FieldModifier(['budget_amount', 'senate_amount', 'house_amount', 'omni_amount', 'final_amount'], amount_filter),
                         
