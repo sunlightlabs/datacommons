@@ -118,7 +118,7 @@ class Earmark(models.Model):
     senate_parties = models.CharField(max_length=512, blank=True)
     senate_states = models.CharField(max_length=512, blank=True)
     
-    raw_recipient = models.CharField(max_length=256, blank=True)
+    raw_recipient = models.CharField(max_length=512, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
     
     def __unicode__(self):
