@@ -111,12 +111,12 @@ class Earmark(models.Model):
     undisclosed = models.CharField(max_length=1, choices=undisclosed_choices, blank=True)
     
     house_members = models.CharField(max_length=512, blank=True)
-    house_parties = models.CharField(max_length=128, blank=True)
-    house_states = models.CharField(max_length=128, blank=True)
-    house_districts = models.CharField(max_length=128, blank=True)
+    house_parties = models.CharField(max_length=256, blank=True)
+    house_states = models.CharField(max_length=256, blank=True)
+    house_districts = models.CharField(max_length=256, blank=True)
     senate_members = models.CharField(max_length=512, blank=True)
-    senate_parties = models.CharField(max_length=128, blank=True)
-    senate_states = models.CharField(max_length=128, blank=True)
+    senate_parties = models.CharField(max_length=256, blank=True)
+    senate_states = models.CharField(max_length=256, blank=True)
     
     raw_recipient = models.CharField(max_length=256, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
