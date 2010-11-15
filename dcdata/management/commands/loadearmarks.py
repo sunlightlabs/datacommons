@@ -204,7 +204,7 @@ class LoadTCSEarmarks(BaseCommand):
             FieldMerger({'locations': ('city', 'state')}, _normalize_locations),
             FieldMerger({'members': ('house_members', 'house_parties', 'house_states', 'house_districts',
                                         'senate_members', 'senate_parties', 'senate_states')},
-                            _normalize_members),
+                            _normalize_members, keep_fields=True),
         )    
     
     def handle(self, input_path, year, **options):

@@ -498,6 +498,23 @@ class TestEarmarks(TestCase):
         ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
     ]
     
+    def test_raw_fields(self):
+        source = VerifiedCSVSource(self.csv2008[0:1], EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(1, len(output))
+        self.assertEqual("Abercrombie", output[0]['house_members'])
+        self.assertEqual("D", output[0]['house_parties'])
+        self.assertEqual("HI", output[0]['house_states'])
+        self.assertEqual("", output[0]['house_districts'])
+        self.assertEqual("Bingaman; Cochran; Kennedy", output[0]['senate_members'])
+        self.assertEqual("D; R; D", output[0]['senate_parties'])
+        self.assertEqual("NM; MS; MA", output[0]['senate_states'])
+        
+    
     def test_process_earmarks(self):
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, None)
