@@ -1,5 +1,6 @@
 from base64 import b64encode
-from dcapi.contributions.handlers import load_contributions
+from dcapi.contributions.handlers import load_contributions, \
+    ContributionFilterHandler
 from dcapi.lobbying.handlers import load_lobbying
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -30,12 +31,13 @@ class RapletHandler(BaseHandler):
             return rc.BAD_REQUEST('name and callback parameters are required')
         
         # get contributions and create link hash for each contributor
-        contributors = load_contributions({
+        handler = ContributionFilterHandler()
+        contributors = handler.read({
             'contributor_ft': name,
             'cycle': str(CYCLE),
             'for_against': 'for',
             'per_page': 10,
-        }, ordering='contributor_name').values('contributor_name','contributor_state','organization_name').distinct()
+        }).values('contributor_name','contributor_state','organization_name').distinct()
         
         for contrib in contributors:
             contrib['hash'] = make_hash({
