@@ -24,7 +24,7 @@ class LobbyingFilterHandler(FilterHandler):
     fields = LOBBYING_FIELDS
     model = Lobbying
     statslogger = LobbyingStatsLogger
-    order = ['-year','-amount']
+    ordering = ['-year','-amount']
     
     def queryset(self, params):
         return filter_lobbying(self._unquote(params))

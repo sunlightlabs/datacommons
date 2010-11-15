@@ -31,8 +31,7 @@ class ContributionFilterHandler(FilterHandler):
     fields = CONTRIBUTION_FIELDS
     model = Contribution
     statslogger = ContributionStatsLogger
-    order = ['-cycle','-amount']
+    ordering = ['-cycle','-amount']
     
     def queryset(self, params):
-        print "called queryset!!!!!!"
         return filter_contributions(self._unquote(params))
