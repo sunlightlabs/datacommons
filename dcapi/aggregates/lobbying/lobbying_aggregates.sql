@@ -146,7 +146,7 @@ create table agg_lobbying_totals as
         select
             entity_id,
             coalesce(lobbyist.cycle, coalesce(firm.cycle, coalesce(non_firm_registrant.cycle, non_firm_client.cycle))) as cycle,
-            coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm_registrant.count, coalesce(non_firm_client.count, 0)))) as count,
+            coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm_registrant.count, coalesce(non_firm_client.count, 0))))::integer as count,
             coalesce(non_firm_registrant.amount, coalesce(non_firm_client.amount, 0)) as non_firm_spending,
             coalesce(firm.amount, 0) as firm_income
         from
@@ -224,7 +224,7 @@ drop table if exists agg_lobbying_registrants_for_client;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_registrants_for_client as';
 create table agg_lobbying_registrants_for_client as
     with lobbying_by_cycle as (
-        select ca.entity_id as client_entity, r.cycle, r.registrant_name, ra.entity_id as registrant_entity, count(r), sum(amount) as amount,
+        select ca.entity_id as client_entity, r.cycle, r.registrant_name, ra.entity_id as registrant_entity, count(r)::integer, sum(amount) as amount,
             rank() over (partition by ca.entity_id, cycle order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
         inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) as ca using (transaction_id)
@@ -267,7 +267,7 @@ create table agg_lobbying_issues_for_client as
             ca.entity_id as client_entity,
             r.cycle,
             i.general_issue as issue,
-            count(*),
+            count(*)::integer,
             rank() over (partition by ca.entity_id, r.cycle order by count(*) desc, i.general_issue) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
@@ -305,7 +305,7 @@ drop table if exists agg_lobbying_lobbyists_for_client;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_lobbyists_for_client as';
 create table agg_lobbying_lobbyists_for_client as
     with lobbying_by_cycle as (
-        select ca.entity_id as client_entity, r.cycle, l.lobbyist_name, la.entity_id as lobbyist_entity, count(*),
+        select ca.entity_id as client_entity, r.cycle, l.lobbyist_name, la.entity_id as lobbyist_entity, count(*)::integer,
             rank() over (partition by ca.entity_id, r.cycle order by count(*) desc, l.lobbyist_name) as rank
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
@@ -343,7 +343,7 @@ drop table if exists agg_lobbying_registrants_for_lobbyist;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_registrants_for_lobbyist as';
 create table agg_lobbying_registrants_for_lobbyist as
     with lobbying_by_cycle as (
-        select la.entity_id as lobbyist_entity, r.cycle, r.registrant_name, ra.entity_id as registrant_entity, count(r),
+        select la.entity_id as lobbyist_entity, r.cycle, r.registrant_name, ra.entity_id as registrant_entity, count(r)::integer,
             rank() over (partition by la.entity_id, cycle order by count(r) desc, r.registrant_name) as rank
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
@@ -380,7 +380,7 @@ drop table if exists agg_lobbying_issues_for_lobbyist;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_issues_for_lobbyist as';
 create table agg_lobbying_issues_for_lobbyist as
     with lobbying_by_cycle as (
-        select la.entity_id as lobbyist_entity, r.cycle, i.general_issue as issue, count(r),
+        select la.entity_id as lobbyist_entity, r.cycle, i.general_issue as issue, count(r)::integer,
             rank() over (partition by la.entity_id, r.cycle order by count(r) desc, i.general_issue) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
@@ -417,7 +417,7 @@ drop table if exists agg_lobbying_clients_for_lobbyist;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_clients_for_lobbyist as';
 create table agg_lobbying_clients_for_lobbyist as
     with lobbying_by_cycle as (
-        select la.entity_id as lobbyist_entity, r.cycle, r.client_name, ca.entity_id as client_entity, count(r),
+        select la.entity_id as lobbyist_entity, r.cycle, r.client_name, ca.entity_id as client_entity, count(r)::integer,
             rank() over (partition by la.entity_id, r.cycle order by count(r) desc, r.client_name) as rank
         from lobbying_report r
         inner join lobbying_lobbyist l using (transaction_id)
@@ -453,7 +453,7 @@ drop table if exists agg_lobbying_clients_for_registrant;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_clients_for_registrant as';
 create table agg_lobbying_clients_for_registrant as
     with lobbying_by_cycle as (
-        select ra.entity_id as registrant_entity, r.cycle, r.client_name, ca.entity_id as client_entity, count(r), sum(amount) as amount,
+        select ra.entity_id as registrant_entity, r.cycle, r.client_name, ca.entity_id as client_entity, count(r)::integer, sum(amount) as amount,
             rank() over (partition by ra.entity_id, r.cycle order by sum(amount) desc, count(r) desc) as rank
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
@@ -489,7 +489,7 @@ drop table if exists agg_lobbying_issues_for_registrant;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_issues_for_registrant as';
 create table agg_lobbying_issues_for_registrant as
     with lobbying_by_cycle as (
-        select ra.entity_id as registrant_entity, r.cycle, i.general_issue as issue, count(r),
+        select ra.entity_id as registrant_entity, r.cycle, i.general_issue as issue, count(r)::integer,
             rank() over (partition by ra.entity_id, r.cycle order by count(r) desc, i.general_issue) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
@@ -524,7 +524,7 @@ drop table if exists agg_lobbying_lobbyists_for_registrant;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_lobbyists_for_registrant as';
 create table agg_lobbying_lobbyists_for_registrant as
     with lobbying_by_cycle as (
-        select ra.entity_id as registrant_entity, r.cycle, l.lobbyist_name, la.entity_id as lobbyist_entity, count(r),
+        select ra.entity_id as registrant_entity, r.cycle, l.lobbyist_name, la.entity_id as lobbyist_entity, count(r)::integer,
             rank() over (partition by ra.entity_id, cycle order by count(r) desc, l.lobbyist_name) as rank
         from lobbying_report r
         inner join assoc_lobbying_registrant ra using (transaction_id)
