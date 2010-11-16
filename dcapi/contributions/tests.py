@@ -1,17 +1,16 @@
 
 from datetime import date
-
-from django.test import TestCase
-from django.db import connection
-from nose.plugins.skip import Skip, SkipTest
-
-from dcdata.contribution.models import Contribution,\
+from dcapi.contributions.handlers import filter_contributions
+from dcdata.contribution.models import Contribution, \
     UNITTEST_TRANSACTION_NAMESPACE
 from dcdata.models import Import
-from dcapi.contributions import filter_contributions
+from django.db import connection
+from django.test import TestCase
+from nose.plugins.skip import SkipTest
 
 
-class SimpleTest(TestCase):
+class Tests(TestCase):           
+    
     def create_entities(self):
         self.create_contribution(contributor_name='1234')
         self.create_contribution(organization_name='1234')
@@ -197,19 +196,4 @@ class SimpleTest(TestCase):
         # failing right now: 'and' should be a stop word, but isn't
         raise SkipTest
         self.assert_num_results(3, {'recipient_ft': 'pg and e'})
-
-# not an actual test case because there are no Contribution records in the test database.
-# instead, copy this code to a Django shell and run it there.
-
-#class MemoryTests(TestCase):
-#    def test_streaming(self):
-#        self.assertEqual()
-#
-#        i = 0;
-#        for c in filter_contributions({'cycle': "2006"})[:1000000].iterator():
-#
-#            i += 1
-#            if i % 100000 == 0:
-#                gc.collect()
-#                raw_input("At %s records streamed...press any key to continue." % i)
 

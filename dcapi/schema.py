@@ -52,19 +52,18 @@ class OperatorField(Field):
     def apply(self, query, op_name, *args):
         return self._name_to_op[op_name].apply(query, *args)
     
-class InclusionField(Field):
-    """
-    A field where the only operation is inclusion.
     
-    The arguments to apply should be a delimited list of values.
+class FunctionField(Field):
+    """
+    A utility class that allows the apply method to be passed to the constructor, rather than having to subclass Field.
     """
     
-    def __init__(self, name, inclusion_op):
-        super(InclusionField, self).__init__(name)
-        self._inclusion_op = inclusion_op
+    def __init__(self, name, op):
+        super(FunctionField, self).__init__(name)
+        self.op = op
       
     def apply(self, query, *args):
-        return self._inclusion_op(query, *args)
+        return self.op(query, *args)
         
         
 class Schema(object):

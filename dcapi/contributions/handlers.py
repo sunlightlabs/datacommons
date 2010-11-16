@@ -1,8 +1,73 @@
 
 from dcapi.common.handlers import FilterHandler
-from dcapi.contributions import filter_contributions
+from dcapi.common.schema import InclusionField, ComparisonField, FulltextField
+from dcapi.schema import Schema, FunctionField
 from dcdata.contribution.models import Contribution
+from dcdata.utils.sql import parse_date
+from django.db.models.query_utils import Q
 from urllib import unquote_plus
+
+
+def _contributor_industry_in_generator(query, *industry):
+    ors = Q()
+    for ind in industry:
+        if len(ind) == 5:
+            ors = ors | Q(contributor_category=ind)
+        elif len(ind) == 3:
+            ors = ors | Q(contributor_category_order=ind)
+        else:
+            (catorder, catcode) = ind.split(',')
+            if catcode:
+                ors = ors | Q(contributor_category=catcode)
+            else:
+                ors = ors | Q(contributor_category_order=catorder)
+    return query.filter(ors)
+
+
+def _contributor_state_in_generator(query, *states):
+    return query.filter(contributor_state__in=[state.upper() for state in states])
+    
+
+def _cycle_in_generator(query, *cycles):
+    def dual_cycles(cycles):
+        for cycle in cycles:
+            yield int(cycle) - 1
+            yield int(cycle)
+    return query.filter(cycle__in=[cycle for cycle in dual_cycles(cycles)])
+    
+    
+def _for_against_generator(query, for_against):
+    if for_against == 'for':
+        query = query.exclude(transaction_type__in=('24a','24n'))
+    elif for_against == 'against':
+        query = query.filter(transaction_type__in=('24a','24n'))
+    return query
+
+
+def _recipient_state_in_generator(query, *states):
+    return query.filter(recipient_state__in=[state.upper() for state in states])
+
+
+CONTRIBUTION_SCHEMA = Schema(
+    FunctionField('contributor_industry', _contributor_industry_in_generator),
+    FunctionField('contributor_state', _contributor_state_in_generator),
+    FunctionField('recipient_state', _recipient_state_in_generator),
+    FunctionField('cycle', _cycle_in_generator),
+    FunctionField('for_against', _for_against_generator),
+    InclusionField('seat'),
+    InclusionField('transaction_namespace'),
+    InclusionField('transaction_type'),
+    ComparisonField('date', cast=parse_date),
+    ComparisonField('amount', cast=int),
+    FulltextField('committee_ft', ['committee_name']),                                                        
+    FulltextField('contributor_ft', ['organization_name', 'parent_organization_name', 'contributor_employer', 'contributor_name']),
+    FulltextField('employer_ft', ['organization_name', 'parent_organization_name', 'contributor_employer']), # deprecated!!!!                  
+    FulltextField('organization_ft', ['organization_name', 'parent_organization_name', 'contributor_employer']),
+    FulltextField('recipient_ft', ['recipient_name']),
+)
+
+def filter_contributions(request):    
+    return CONTRIBUTION_SCHEMA.build_filter(Contribution.objects, request).order_by()
 
 
 CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment',
@@ -36,3 +101,4 @@ class ContributionFilterHandler(FilterHandler):
     
     def queryset(self, params):
         return filter_contributions(self._unquote(params))
+
