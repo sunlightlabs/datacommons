@@ -32,6 +32,7 @@ class ContributionFilterHandler(FilterHandler):
     model = Contribution
     statslogger = ContributionStatsLogger
     ordering = ['-cycle','-amount']
+    filename = 'contributions'
     
     def queryset(self, params):
         return filter_contributions(self._unquote(params))

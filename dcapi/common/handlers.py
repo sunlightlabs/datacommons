@@ -11,6 +11,7 @@ class FilterHandler(BaseHandler):
     # To be overriden by subclasses
     model = None    
     ordering = []
+    filename = 'download'
         
     def queryset(self, params):
         raise NotImplementedError

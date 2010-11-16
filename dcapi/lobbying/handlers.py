@@ -25,6 +25,7 @@ class LobbyingFilterHandler(FilterHandler):
     model = Lobbying
     statslogger = LobbyingStatsLogger
     ordering = ['-year','-amount']
+    filename = 'lobbying'
     
     def queryset(self, params):
         return filter_lobbying(self._unquote(params))

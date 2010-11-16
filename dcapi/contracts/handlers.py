@@ -6,6 +6,7 @@ from dcdata.contracts.models import Contract
 class ContractsFilterHandler(FilterHandler):
     model = Contract
     ordering = ['-fiscal_year','-current_amount']
+    filename = 'contracts'
         
     def queryset(self, params):
         return filter_contracts(self._unquote(params))
