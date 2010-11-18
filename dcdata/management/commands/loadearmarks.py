@@ -1,8 +1,8 @@
 
 from dcdata.earmarks.models import Member, Earmark, Location, presidential_raw, \
-    undisclosed_raw
+    undisclosed_raw, Recipient
 from dcdata.models import Import
-from dcdata.processor import chain_filters, load_data, SkipRecordException, \
+from dcdata.processor import chain_filters, load_data, \
     TerminateProcessingException
 from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 from decimal import Decimal, InvalidOperation
@@ -113,6 +113,15 @@ def split_and_transpose(separator, *strings):
         return map(None, *splits)
 
 
+def _normalize_recipients(recipient_string):
+    def create_recipient(recipient):
+        return Recipient(raw_recipient=recipient)
+    
+    recipients = [recipient.strip() for recipient in recipient_string.split(';')] if recipient_string else []
+    
+    return [create_recipient(recipient) for recipient in recipients]
+    
+
 def _normalize_locations(city_string, state_string):
     
     def create_location(city, state):
@@ -172,9 +181,11 @@ def save_earmark(earmark_dict):
     try:
         members = earmark_dict.pop('members', [])
         locations = earmark_dict.pop('locations', [])
+        recipients = earmark_dict.pop('recipients', [])
         e = Earmark.objects.create(**earmark_dict)
         e.members = members
         e.locations = locations
+        e.recipients = recipients
     except DatabaseError as e:
         raise TerminateProcessingException(e)
 
@@ -207,6 +218,7 @@ class LoadTCSEarmarks(BaseCommand):
             FieldMerger({'members': ('house_members', 'house_parties', 'house_states', 'house_districts',
                                         'senate_members', 'senate_parties', 'senate_states')},
                             _normalize_members, keep_fields=True),
+            FieldMerger({'recipients': ('raw_recipient',)}, _normalize_recipients),
         )    
     
     def handle(self, input_path, year, **options):
