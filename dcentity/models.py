@@ -73,15 +73,32 @@ class Entity(models.Model):
         metadata = {}
 
         # our type-specific metadata
-        if self.type == 'politician' and hasattr(self, 'politician_metadata'):
-            metadata.update(model_to_dict(self.politician_metadata))
+        if self.type == 'politician' and hasattr(self, 'politician_metadata_by_cycle'):
+            for data_by_cycle in self.politician_metadata_by_cycle.all():
+                metadata[data_by_cycle.cycle] = model_to_dict(data_by_cycle)
+                del(metadata[data_by_cycle.cycle]['cycle'])
+                del(metadata[data_by_cycle.cycle]['id'])
+                del(metadata[data_by_cycle.cycle]['entity'])
+
+            # assign latest cycle to old fields for backwards compatibility
+            # (might not need this going forward)
+            all_cycles = metadata.keys()
+            all_cycles.sort()
+            latest_cycle = all_cycles.pop()
+
+            metadata['seat'] = metadata[latest_cycle]['seat']
+            metadata['party'] = metadata[latest_cycle]['party']
+            metadata['state'] = metadata[latest_cycle]['state']
+
         elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
             metadata.update(self.organization_metadata.to_dict())
+
         elif self.type == 'individual':
             # in the future, individuals should probably have their own metadata table,
             # just like the other entity types, but since it would essentially be a
             # dummy table and we only have one attribute (on its own table), leaving it out for now
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
+
         elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
             metadata.update(model_to_dict(self.industry_metadata))
 
@@ -158,8 +175,8 @@ class OrganizationMetadata(ExtensibleModel):
 
     entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False, unique=True)
 
-    lobbying_firm = models.BooleanField(default=False)
-    parent_entity = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
+    lobbying_firm   = models.BooleanField(default=False)
+    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
     industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
 
     def _child_entities(self):
@@ -172,11 +189,15 @@ class OrganizationMetadata(ExtensibleModel):
 
 
 class PoliticianMetadata(models.Model):
-    entity = models.OneToOneField(Entity, related_name='politician_metadata', null=False)
+    entity = models.ForeignKey(Entity, related_name='politician_metadata_by_cycle', null=False)
 
-    state = USStateField(blank=True, null=True)
-    party = models.CharField(max_length=64, blank=True, null=True)
-    seat  = models.CharField(max_length=64, blank=True, null=True)
+    cycle = models.PositiveSmallIntegerField()
+
+    state       = USStateField(blank=True, null=True)
+    party       = models.CharField(max_length=64, blank=True, null=True)
+    seat        = models.CharField(max_length=64, blank=True, null=True)
+    seat_status = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
+    seat_result = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
 
     class Meta:
         db_table = 'matchbox_politicianmetadata'

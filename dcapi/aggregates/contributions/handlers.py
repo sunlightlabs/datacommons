@@ -171,7 +171,7 @@ class TopPoliticiansByReceiptsHandler(TopListHandler):
             on ae.entity_id = id
          left join matchbox_politicianmetadata mpm
             on me.id = mpm.entity_id
-         where cycle     = %s
+         where ae.cycle  = %s
            and type      = 'politician'
          order by recipient_amount desc, recipient_count desc
          limit %s
