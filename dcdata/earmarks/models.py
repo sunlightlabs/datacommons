@@ -148,5 +148,5 @@ class Location(models.Model):
 class Recipient(models.Model):
     earmark = models.ForeignKey(Earmark, related_name='recipients')
 
-    raw_recipient = models.CharField(max_length=512, blank=True)
+    raw_recipient = models.CharField(max_length=256, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
