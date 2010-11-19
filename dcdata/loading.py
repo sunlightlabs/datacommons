@@ -1,6 +1,5 @@
 from dcdata.models import Import
 from dcdata.processor import TerminateProcessingException, SkipRecordException
-from dcentity.models import Entity
 from django.db import transaction
 from django.db.models import get_app, get_model, get_models
 from saucebrush.emitters import Emitter

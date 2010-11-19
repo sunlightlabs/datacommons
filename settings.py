@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     'dcdata',
     'dcdata.contribution',
     'dcdata.lobbying',
+    'dcdata.earmarks',
     'dcapi',
     'dcapi.contributions',
     'dcentity.tools',
@@ -54,5 +55,5 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 try:
     from local_settings import *
-except ImportError:
-    pass
+except ImportError as e:
+    print e

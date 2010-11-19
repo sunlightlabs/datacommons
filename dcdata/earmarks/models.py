@@ -117,10 +117,7 @@ class Earmark(models.Model):
     senate_members = models.CharField(max_length=1024, blank=True)
     senate_parties = models.CharField(max_length=512, blank=True)
     senate_states = models.CharField(max_length=512, blank=True)
-    
-    raw_recipient = models.CharField(max_length=512, blank=True)
-    standardized_recipient = models.CharField(max_length=128, blank=True)
-    
+        
     def __unicode__(self):
         return "%s. %s: %s" % ("; ".join(map(str,self.members.all())), self.final_amount, self.description[:16])
 
@@ -147,3 +144,9 @@ class Location(models.Model):
     city = models.CharField(max_length=128, blank=True)
     state = USStateField(blank=True)    
 
+
+class Recipient(models.Model):
+    earmark = models.ForeignKey(Earmark, related_name='recipients')
+
+    raw_recipient = models.CharField(max_length=256, blank=True)
+    standardized_recipient = models.CharField(max_length=128, blank=True)
