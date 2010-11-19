@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from dcentity.models             import Entity, EntityAlias, EntityNameParts
+from dcentity.models             import EntityAlias, EntityNameParts
 from name_cleaver.name_cleaver   import PoliticianNameCleaver
 import sys
 
@@ -10,11 +10,27 @@ class Command(BaseCommand):
     help = 'Breaks up CRP politician names into their respective parts'
 
     def handle(self, *args, **options):
-        for alias in EntityAlias.objects.filter(entity__type='politician', entity__attributes__namespace='urn:crp:recipient'):
+        aliases = EntityAlias.objects.filter(
+            entity__type='politician',
+            entity__attributes__namespace='urn:crp:recipient',
+        ).exclude(
+            name_parts__isnull=False
+        )
+
+        print aliases.query
+        print '----------------------------------------------\n\n'
+
+        for alias in aliases:
+            if DEBUG:
+                print alias.alias
+                print alias.id
+
             name_obj = PoliticianNameCleaver(alias.alias).parse()
-            if name_obj.suffix and len(name_obj.suffix) > 3:
-                print name_obj
-                print name_obj.suffix
+
+            if DEBUG:
+                print str(name_obj)
+                print '--------------------'
+
             name_parts = EntityNameParts.objects.get_or_create(
                 alias  = alias,
                 first  = name_obj.first,
@@ -22,6 +38,8 @@ class Command(BaseCommand):
                 last   = name_obj.last,
                 suffix = name_obj.suffix,
             )
-            sys.stdout.write('.')
+
+            if not DEBUG:
+                sys.stdout.write('.')
 
 
