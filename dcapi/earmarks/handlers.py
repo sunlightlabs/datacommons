@@ -24,19 +24,39 @@ def filter_earmarks(request):
     return EARMARKS_SCHEMA.build_filter(Earmark.objects, request).order_by().select_related()
     
 
-EARMARK_FIELDS = [
+SIMPLE_FIELDS = [
     'fiscal_year',
     'final_amount',
     'bill',
-    'description'
+    'description',
 ]
 
+RELATION_FIELDS = [
+    'members',
+    'locations',
+    'recipients'
+]
+
+EARMARK_FIELDS = SIMPLE_FIELDS + RELATION_FIELDS
+
+
 class EarmarkFilterHandler(FilterHandler):
-    model = Earmark
     ordering = ['-fiscal_year', '-final_amount']
     filename = 'earmarks'
     fields = EARMARK_FIELDS
     
+    def _denormalize(self, earmark):
+        result = dict((field, getattr(earmark, field)) for field in SIMPLE_FIELDS)
+        
+        for relation in RELATION_FIELDS:
+            result[relation] = "; ".join(str(o) for o in getattr(earmark, relation).all())
+        
+        return result
+        
     def queryset(self, params):
         return filter_earmarks(self._unquote(params))
+
+    def read(self, request):
+        for earmark in super(EarmarkFilterHandler, self).read(request):
+            yield self._denormalize(earmark)
 

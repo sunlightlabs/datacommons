@@ -142,7 +142,13 @@ class Location(models.Model):
     earmark = models.ForeignKey(Earmark, related_name='locations')
     
     city = models.CharField(max_length=128, blank=True)
-    state = USStateField(blank=True)    
+    state = USStateField(blank=True)
+    
+    def __unicode__(self):
+        if self.city and self.state:
+            return "%s, %s" % (self.city, self.state)
+        else:
+            return self.city + self.state # only one or none will be returned
 
 
 class Recipient(models.Model):
@@ -150,3 +156,7 @@ class Recipient(models.Model):
 
     raw_recipient = models.CharField(max_length=256, blank=True)
     standardized_recipient = models.CharField(max_length=128, blank=True)
+    
+    def __unicode__(self):
+        return self.standardized_recipient if self.standardized_recipient else self.raw_recipient 
+
