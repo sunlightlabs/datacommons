@@ -9,7 +9,10 @@ MAX_PER_PAGE = 100000
 class FilterHandler(BaseHandler):
     
     # To be overriden by subclasses
-    model = None    
+    
+    # must have either a model or fields (or both)
+    model = None 
+    fields = None   
     ordering = []
     filename = 'download'
         
@@ -18,6 +21,16 @@ class FilterHandler(BaseHandler):
     
             
     # Base class functionality
+    
+    def __init__(self):
+        """ If fields not present, then fill in based on model. """
+        
+        if not self.fields:
+            self.fields = self.model._meta.get_all_field_names()
+            if 'id' in self.fields:
+                self.fields.remove('id')
+            if 'import_reference' in self.fields:
+                self.fields.remove('import_reference')
     
     allowed_methods = ('GET',)
     
