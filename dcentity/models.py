@@ -83,12 +83,18 @@ class Entity(models.Model):
             # assign latest cycle to old fields for backwards compatibility
             # (might not need this going forward)
             all_cycles = metadata.keys()
-            all_cycles.sort()
-            latest_cycle = all_cycles.pop()
+            if len(all_cycles):
+                all_cycles.sort()
+                latest_cycle = all_cycles.pop()
 
-            metadata['seat'] = metadata[latest_cycle]['seat']
-            metadata['party'] = metadata[latest_cycle]['party']
-            metadata['state'] = metadata[latest_cycle]['state']
+                metadata['seat'] = metadata[latest_cycle]['seat']
+                metadata['party'] = metadata[latest_cycle]['party']
+                metadata['state'] = metadata[latest_cycle]['state']
+
+            else:
+                metadata['seat'] = ''
+                metadata['party'] = ''
+                metadata['state'] = ''
 
         elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
             metadata.update(self.organization_metadata.to_dict())
