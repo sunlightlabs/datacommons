@@ -101,11 +101,11 @@ class IndivPolRecipientsHandler(EntityTopListHandler):
 
     stmt = """
         select recipient_name, recipient_entity, party, state, count, amount
-        from agg_cands_from_indiv
+        from agg_cands_from_indiv aci
             left join matchbox_politicianmetadata on recipient_entity = entity_id
         where
             contributor_entity = %s
-            and cycle = %s
+            and aci.cycle = %s
         order by amount desc
         limit %s
     """
@@ -117,11 +117,11 @@ class OrgRecipientsHandler(EntityTopListHandler):
 
     stmt = """
         select recipient_name, recipient_entity, party, state, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-        from agg_cands_from_org
+        from agg_cands_from_org aco
             left join matchbox_politicianmetadata on recipient_entity = entity_id
         where
             organization_entity = %s
-            and cycle = %s
+            and aco.cycle = %s
         order by total_amount desc
         limit %s
     """
