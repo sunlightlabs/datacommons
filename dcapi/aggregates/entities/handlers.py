@@ -125,7 +125,7 @@ class EntitySearchHandler(BaseHandler):
                     from matchbox_entityalias ea
                     where to_tsvector('datacommons', ea.alias) @@ to_tsquery('datacommons', quote_literal(%s))) ft_match
             on e.id = ft_match.entity_id
-        left join matchbox_politicianmetadata pm
+        left join politician_metadata_latest_cycle_view pm
             on e.id = pm.entity_id
         left join matchbox_organizationmetadata om
             on e.id = om.entity_id
@@ -206,7 +206,7 @@ class CurrentRaceHandler(TopListHandler):
         select entity_id, name, cr.state, election_type, district, cr.seat, seat_status, seat_result, votesmart_id, party
         from matchbox_currentrace cr
         inner join matchbox_votesmartinfo vsi on cr.id = vsi.entity_id
-        inner join matchbox_politicianmetadata pm using (entity_id)
+        inner join politician_metadata_latest_cycle_view pm using (entity_id)
         where
             case
                 when district is null then lower(substring(%s for 2)) = lower(cr.state)
