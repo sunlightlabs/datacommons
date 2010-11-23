@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 count(*)
             from
                 matchbox_entity e
-                inner join matchbox_politicianmetadata pm
+                inner join politician_metadata_latest_cycle_view pm
                     on e.id = pm.entity_id
             where
                 seat like 'federal%%'
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                     ea.value as crp_id
                 from
                     matchbox_entity e
-                    inner join matchbox_politicianmetadata pm
+                    inner join politician_metadata_latest_cycle_view pm
                         on e.id = pm.entity_id
                     left join matchbox_entityattribute ea using (entity_id)
                 where
