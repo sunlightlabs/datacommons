@@ -30,6 +30,7 @@ LOBBYING_SCHEMA = Schema(
 
 def filter_lobbying(request):
     q = LOBBYING_SCHEMA.build_filter(Lobbying.objects, request).order_by()
+    # filter does nothing--it's here to force the join on lobbyists
     if 'lobbyist_ft' in request:
         q = q.filter(lobbyists__lobbyist_name__isnull=False)
     return q.select_related()

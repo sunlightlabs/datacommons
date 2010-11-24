@@ -135,7 +135,11 @@ class Member(models.Model):
     district = models.IntegerField(null=True)
 
     def __unicode__(self):
-        return "%s %s (%s-%s)" % ("Sen." if self.chamber == 's' else 'Rep.', self.raw_name, self.party.upper(), self.state)
+        return "%s %s (%s-%s)" % (
+            "Sen." if self.chamber == 's' else 'Rep.',
+            self.standardized_name if self.standardized_name else self.raw_name,
+            self.party.upper(),
+            self.state)
 
 
 class Location(models.Model):
