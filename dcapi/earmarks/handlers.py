@@ -35,7 +35,6 @@ def filter_earmarks(request):
     return qs.order_by().select_related()
     
     
-
 SIMPLE_FIELDS = [
     'fiscal_year',
     'final_amount',
