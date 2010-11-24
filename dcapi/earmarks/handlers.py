@@ -7,21 +7,33 @@ from dcdata.earmarks.models import Earmark
 
 EARMARKS_SCHEMA = Schema(
     InclusionField('year', 'fiscal_year'),
-    InclusionField('locations__state'),
-    InclusionField('member_party', ['members__party']),
-    InclusionField('member_state', ['members__state']),
+    InclusionField('state', 'locations__state'),
+    InclusionField('member_party', 'members__party'),
+    InclusionField('member_state', 'members__state'),
     
     FulltextField('bill', ['bill', 'bill_section', 'bill_subsection']),
     FulltextField('description', ['earmarks_earmark.description', 'notes']),
-    FulltextField('locations__city'),
-    FulltextField('member', ['members__standardized_name', 'members__raw_name']),
-    FulltextField('recipient', ['recipients__standardized_recipient', 'recipients__raw_recipient']),
+    # the following three fulltext searches on related models don't work
+    FulltextField('city'),
+    FulltextField('member', ['standardized_name', 'raw_name']),
+    FulltextField('recipient', ['standardized_recipient', 'raw_recipient']),
     
     ComparisonField('amount', 'final_amount'),
 )
 
 def filter_earmarks(request):
-    return EARMARKS_SCHEMA.build_filter(Earmark.objects, request).order_by().select_related()
+    qs = EARMARKS_SCHEMA.build_filter(Earmark.objects, request)
+    
+    # filters do nothing--just here to force the join that's needed for the fulltext search
+    if 'city' in request:
+        qs = qs.filter(locations__city__isnull=False)
+    if 'member' in request:
+        qs = qs.filter(members__raw_name__isnull=False)
+    if 'recipient' in request:
+        qs = qs.filter(recipients__raw_recipient__isnull=False)  
+        
+    return qs.order_by().select_related()
+    
     
 
 SIMPLE_FIELDS = [
