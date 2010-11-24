@@ -38,8 +38,17 @@ def filter_earmarks(request):
 SIMPLE_FIELDS = [
     'fiscal_year',
     'final_amount',
+    'budget_amount',
+    'house_amount',
+    'senate_amount',
+    'omni_amount',
     'bill',
+    'bill_section',
+    'bill_subsection',
     'description',
+    'notes',
+    'presidential',
+    'undisclosed',
 ]
 
 RELATION_FIELDS = [
