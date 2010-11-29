@@ -4,12 +4,37 @@ from dcapi.schema import Schema, FunctionField
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from dcdata.lobbying.models import Lobbying
 
+
 def _lobbyist_is_rep_generator(query, value):
     return query.filter(lobbyists__member_of_congress=True)
 
+
+def _cat_order_generator(query, *orders):
+    where_clause = 'client_category=catcode and catorder in (%s)' % ', '.join(["'%s'" % order.upper() for order in orders])
+    return query.extra(tables=['agg_cat_map'], where=[where_clause])
+
+def _cat_generator(query, *cats):
+    return query.filter(client_category__in=[cat.upper() for cat in cats])
+
+def _industry_generator(query, *industries):
+    malformed_industries = [ind for ind in industries if len(ind) not in (3, 5)]
+    if malformed_industries:
+        raise ValueError("Arguments not valid industry categories or category orders: %s" % str(malformed_industries))
+    
+    orders = [order for order in industries if len(order)==3]
+    if orders:
+        query = _cat_order_generator(query, *orders)
+        
+    cats = [cat for cat in industries if len(cat)==5]
+    if cats:
+        query = _cat_generator(query, *cats)
+        
+    return query
+    
     
 LOBBYING_SCHEMA = Schema(
     FunctionField('lobbyist_is_rep', _lobbyist_is_rep_generator),
+    FunctionField('industry', _industry_generator),
 
     InclusionField('transaction_id'),
     InclusionField('transaction_type'),

@@ -8,20 +8,27 @@ from django.db.models.query_utils import Q
 from urllib import unquote_plus
 
 
-def _contributor_industry_in_generator(query, *industry):
-    ors = Q()
-    for ind in industry:
-        if len(ind) == 5:
-            ors = ors | Q(contributor_category=ind)
-        elif len(ind) == 3:
-            ors = ors | Q(contributor_category_order=ind)
-        else:
-            (catorder, catcode) = ind.split(',')
-            if catcode:
-                ors = ors | Q(contributor_category=catcode)
-            else:
-                ors = ors | Q(contributor_category_order=catorder)
-    return query.filter(ors)
+def _cat_order_generator(query, *orders):
+    where_clause = 'contributor_category=catcode and catorder in (%s)' % ', '.join(["'%s'" % order.upper() for order in orders])
+    return query.extra(tables=['agg_cat_map'], where=[where_clause])
+
+def _cat_generator(query, *cats):
+    return query.filter(contributor_category__in=[cat.upper() for cat in cats])
+
+def _contributor_industry_in_generator(query, *industries):
+    malformed_industries = [ind for ind in industries if len(ind) not in (3, 5)]
+    if malformed_industries:
+        raise ValueError("Arguments not valid industry categories or category orders: %s" % str(malformed_industries))
+    
+    orders = [order for order in industries if len(order)==3]
+    if orders:
+        query = _cat_order_generator(query, *orders)
+        
+    cats = [cat for cat in industries if len(cat)==5]
+    if cats:
+        query = _cat_generator(query, *cats)
+        
+    return query
 
 
 def _contributor_state_in_generator(query, *states):
