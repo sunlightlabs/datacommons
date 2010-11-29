@@ -11,6 +11,7 @@ from django.db.utils import DatabaseError
 from saucebrush.filters import FieldAdder, FieldMerger, FieldRemover, \
     FieldModifier
 from sys import stderr
+import re
 
 FIELDS = [
     'id',
@@ -103,7 +104,7 @@ def split_and_transpose(separator, *strings):
     if not any(strings):
         return []
 
-    splits = [[value.strip() for value in s.split(separator)] if s else [] for s in strings]
+    splits = [[value.strip() for value in s.rstrip(separator).split(separator)] if s else [] for s in strings]
             
 
     if len(splits) == 1:
@@ -113,11 +114,21 @@ def split_and_transpose(separator, *strings):
         return map(None, *splits)
 
 
+UNIVERSITY_REGEX = re.compile('university.*university', re.IGNORECASE)
+UNIVERSITY_SPLIT = re.compile('(?:,|;|(?: and ))+', re.IGNORECASE)
+
 def _normalize_recipients(recipient_string):
+    if not recipient_string:
+        return []
+    
     def create_recipient(recipient):
         return Recipient(raw_recipient=recipient)
     
-    recipients = [recipient.strip() for recipient in recipient_string.split(';')] if recipient_string else []
+    # TCS formats lists of universities differently than other lists
+    if UNIVERSITY_REGEX.search(recipient_string):
+        recipients = [recipient.strip() for recipient in UNIVERSITY_SPLIT.split(recipient_string) if 'university' in recipient.lower()]
+    else:
+        recipients = [recipient.strip() for recipient in recipient_string.rstrip(';').split(';')]
     
     return [create_recipient(recipient) for recipient in recipients]
     
