@@ -9,7 +9,7 @@ chamber_map = {
     'h': 'federal:house',
 }
 
-DEBUG = True
+DEBUG = False
 
 class Command(BaseCommand):
     args = ''
@@ -20,7 +20,7 @@ class Command(BaseCommand):
         self.failures_no_match = 0
         self.failures_too_many = 0
 
-        for member in Member.objects.filter(crp_id='').values('raw_name', 'chamber', 'state').distinct():
+        for member in Member.objects.filter(standardized_name='').values('raw_name', 'chamber', 'state').distinct():
             name_obj = PoliticianNameCleaver(member['raw_name']).parse()
 
             state_possibilities = self.get_set_of_states_from_earmark(member)
@@ -31,28 +31,30 @@ class Command(BaseCommand):
 
             if (not member.get('state')) or entities.count() == 0: # state might be wrong, so try the whole list of states
 
-                if kwargs.has_key('politician_metadata__state'):
-                    kwargs.pop('politician_metadata__state')
+                if kwargs.has_key('politician_metadata_for_latest_cycle__state'):
+                    kwargs.pop('politician_metadata_for_latest_cycle__state')
 
-                kwargs['politician_metadata__state__in'] = state_possibilities
+                kwargs['politician_metadata_for_latest_cycle__state__in'] = state_possibilities
                 entities = self.entity_query_set(name_obj, kwargs)
 
             # main decision block
             if len(entities) == 0:
                 self.failures_no_match += 1
+                self.update_member(member, name_obj)
 
                 if DEBUG:
                     self.print_member(member, state_possibilities)
                     print "- No match!"
 
             elif len(entities) > 1:
+                self.update_member(member, name_obj)
                 if DEBUG:
                     self.prompt_on_too_many_matches(member, state_possibilities, entities)
                 else:
                     self.failures_too_many += 1
 
             elif len(entities) == 1:
-                self.update_member(member, entities[0])
+                self.update_member(member, name_obj, entities[0])
                 self.successes += 1
 
 
@@ -74,9 +76,9 @@ class Command(BaseCommand):
 
     def build_query_kwargs(self, member, chamber_map, name_obj):
         kwargs = {}
-        self.add_to_query_if_not_null(kwargs, 'politician_metadata__state', member.get('state'))
-        self.add_to_query_if_not_null(kwargs, 'politician_metadata__party', member.get('party'))
-        self.add_to_query_if_not_null(kwargs, 'politician_metadata__seat', chamber_map.get(member['chamber']))
+        self.add_to_query_if_not_null(kwargs, 'politician_metadata_for_latest_cycle__state', member.get('state'))
+        self.add_to_query_if_not_null(kwargs, 'politician_metadata_for_latest_cycle__party', member.get('party'))
+        self.add_to_query_if_not_null(kwargs, 'politician_metadata_for_latest_cycle__seat', chamber_map.get(member['chamber']))
         self.add_to_query_if_not_null(kwargs, 'aliases__name_parts__first', name_obj.first)
         return kwargs
 
@@ -98,7 +100,7 @@ class Command(BaseCommand):
         count = 1
 
         for entity in entities:
-            meta = entity.politician_metadata
+            meta = entity.politician_metadata_for_latest_cycle
             print "{0}: {1}|{2}|{3}|{4}".format(count, entity.name, meta.state, meta.party, meta.seat)
             count += 1
 
@@ -122,16 +124,19 @@ class Command(BaseCommand):
             kwargs[criterion] = value
 
 
-    def update_member(self, member, entity):
+    def update_member(self, member, name_obj, entity=None):
+        crp_id = entity.attributes.get(namespace='urn:crp:recipient').value if entity else ''
+
         member_objs = Member.objects.filter(
             raw_name=member.get('raw_name'),
             chamber=member.get('chamber'),
             state=member.get('state'),
         ).update(
-            crp_id=entity.attributes.get(namespace='urn:crp:recipient').value,
-            standardized_name=entity.name,
+            crp_id=crp_id,
+            standardized_name=str(name_obj),
         )
-        self.print_member(member)
-        print '- Updated for state {0}!'.format(entity.politician_metadata.state)
+        if entity:
+            self.print_member(member)
+            print '- Updated for state {0}!'.format(entity.politician_metadata_for_latest_cycle.state)
 
 
