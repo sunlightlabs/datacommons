@@ -39,6 +39,47 @@ class InclusionField(Field):
         return query.filter(**{self.query_key: args})
         
 
+class IndustryField(Field):
+    def __init__(self, name, model_field=None):
+        super(IndustryField, self).__init__(name)
+        self.model_field = model_field if model_field else name
+        
+    def _extract_cat_or_order(self, v):
+        if ',' in v:
+            (order, cat) = v.split(',')
+            return cat if cat else order
+        return v
+
+    def _add_industry_clauses(self, query, categories, orders):
+        join_condition = '%s=catcode' % self.model_field
+        cat_clause = '%s in (%s)' % (self.model_field, ', '.join(["'%s'" % cat.upper() for cat in categories]))
+        order_clause = 'catorder in (%s)' % ', '.join(["'%s'" % order.upper() for order in orders])
+        
+        if categories and orders:
+            where_clause = "(%s or %s)" % (cat_clause, order_clause)
+            return query.extra(tables=['agg_cat_map'], where=[where_clause, join_condition])
+        
+        if orders:
+            return query.extra(tables=['agg_cat_map'], where=[order_clause, join_condition])
+        
+        if categories:
+            return query.extra(where=[cat_clause])
+        
+        return query
+    
+    def apply(self, query, *industries):
+        parsed_industries = [self._extract_cat_or_order(i) for i in industries]
+        
+        malformed_industries = [ind for ind in parsed_industries if len(ind) not in (3, 5)]
+        if malformed_industries:
+            raise ValueError("Arguments not valid industry categories or category orders: %s" % str(malformed_industries))
+        
+        orders = [order for order in parsed_industries if len(order)==3]
+        cats = [cat for cat in parsed_industries if len(cat)==5]
+            
+        return self._add_industry_clauses(query, cats, orders)
+
+
 class FulltextField(Field):
     def __init__(self, name, model_fields=None):
         super(FulltextField, self).__init__(name)

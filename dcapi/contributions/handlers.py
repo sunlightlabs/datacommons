@@ -1,34 +1,12 @@
 
 from dcapi.common.handlers import FilterHandler
-from dcapi.common.schema import InclusionField, ComparisonField, FulltextField
+from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, \
+    IndustryField
 from dcapi.schema import Schema, FunctionField
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
 from django.db.models.query_utils import Q
 from urllib import unquote_plus
-
-
-def _cat_order_generator(query, *orders):
-    where_clause = 'contributor_category=catcode and catorder in (%s)' % ', '.join(["'%s'" % order.upper() for order in orders])
-    return query.extra(tables=['agg_cat_map'], where=[where_clause])
-
-def _cat_generator(query, *cats):
-    return query.filter(contributor_category__in=[cat.upper() for cat in cats])
-
-def _contributor_industry_in_generator(query, *industries):
-    malformed_industries = [ind for ind in industries if len(ind) not in (3, 5)]
-    if malformed_industries:
-        raise ValueError("Arguments not valid industry categories or category orders: %s" % str(malformed_industries))
-    
-    orders = [order for order in industries if len(order)==3]
-    if orders:
-        query = _cat_order_generator(query, *orders)
-        
-    cats = [cat for cat in industries if len(cat)==5]
-    if cats:
-        query = _cat_generator(query, *cats)
-        
-    return query
 
 
 def _contributor_state_in_generator(query, *states):
@@ -56,11 +34,11 @@ def _recipient_state_in_generator(query, *states):
 
 
 CONTRIBUTION_SCHEMA = Schema(
-    FunctionField('contributor_industry', _contributor_industry_in_generator),
     FunctionField('contributor_state', _contributor_state_in_generator),
     FunctionField('recipient_state', _recipient_state_in_generator),
     FunctionField('cycle', _cycle_in_generator),
     FunctionField('for_against', _for_against_generator),
+    IndustryField('contributor_industry', 'contributor_category'),
     InclusionField('seat'),
     InclusionField('transaction_namespace'),
     InclusionField('transaction_type'),
