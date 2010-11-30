@@ -1,4 +1,7 @@
 
+drop index if exists lobbying_lobbying_client_category;
+create index lobbying_lobbying_client_category on lobbying_lobbying (client_category);
+
 -- names
 drop index if exists lobbying_lobbying_registrant_name;
 drop index if exists lobbying_lobbying_client_name;
