@@ -5,7 +5,7 @@ import xlwt
 
 class LobbyingExcelEmitter(ExcelEmitter):
     
-    def stream(self, request, fields, stats):
+    def stream(self, request, stats):
         
         output = cStringIO.StringIO()
         

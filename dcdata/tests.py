@@ -496,7 +496,24 @@ class TestEarmarks(TestCase):
         ',,3000000,,3000000,,"101st Airborne/Air Assault Injury Prevention and Performance Enhancement Initiative","Fort Campbell",,"KY","Defense","Research, Development, Test & Evaluation","Army",,,,,,"Corker; Specter","R; D","TN; PA",,,"University of Pittsburgh",',
         ',,500000,,500000,,"10th Avenue South Corridor Extension, Waverly, IA","Waverly",,"IA","Transportation-Housing and Urban Development","Federal Highway Administration","Surface Transportation Priorities",,"Braley","D","IA",,"Grassley; Harkin","R; D","IA; IA",,,,',
         ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
-    ]
+    ]    
+    
+    def test_raw_fields(self):
+        source = VerifiedCSVSource(self.csv2008[0:1], EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(1, len(output))
+        self.assertEqual("Abercrombie", output[0]['house_members'])
+        self.assertEqual("D", output[0]['house_parties'])
+        self.assertEqual("HI", output[0]['house_states'])
+        self.assertEqual("", output[0]['house_districts'])
+        self.assertEqual("Bingaman; Cochran; Kennedy", output[0]['senate_members'])
+        self.assertEqual("D; R; D", output[0]['senate_parties'])
+        self.assertEqual("NM; MS; MA", output[0]['senate_states'])
+        
     
     def test_process_earmarks(self):
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
@@ -582,13 +599,13 @@ class TestEarmarks(TestCase):
         self.assertEqual(2, len(r))
         self.assertEqual(("", "OR"), (r[0].city, r[0].state))
         self.assertEqual(("", "WA"), (r[1].city, r[1].state))
-        
-        
-        try:
-            r = _normalize_locations("Portland", "OR; WA")
-            self.asserFail() # should not make it here
-        except SkipRecordException:
-            pass
+
+        r = _normalize_locations("Portland", "OR; WA")
+        self.assertEqual(3, len(r))
+        self.assertEqual(("Portland", ""), (r[0].city, r[0].state))
+        self.assertEqual(("", "OR"), (r[1].city, r[1].state))
+        self.assertEqual(("", "WA"), (r[2].city, r[2].state))
+
 
     def test_split_and_transpose(self):
         s = split_and_transpose(';')
@@ -615,7 +632,7 @@ class TestEarmarks(TestCase):
 
     def test_filters(self):
         csv = [
-               '293,1500000,15000000,,1200000,,"Space Situational Awareness","College Station",,"TX","Defense","RDTE","Air Force","Advanced Spacecraft Technology","Edwards","D","TX",,"Committee Initiative","N/A","N/A",,,"Texas A&M University",'
+               '293,1500000,15000000,,1200000,,"Space Situational Awareness","College Station",,"TX","Defense","RDTE","Air Force","Advanced Spacecraft Technology","Edwards;","D","TX",,"Committee Initiative","N/A","N/A",,,"Texas A&M University",'
         ]
         
         source = VerifiedCSVSource(csv, EARMARK_FIELDS)
@@ -629,6 +646,27 @@ class TestEarmarks(TestCase):
         self.assertEqual('', output[0]['members'][1].party)
         self.assertEqual('', output[0]['members'][1].state)
 
+    def test_recipients(self):
+        csv = [
+            '1214,38777000,6305310,38041000,38200000,,"Arts in Education Program (VSA Arts and John F. Kennedy Center for the Performing Arts) for model arts education and other activities",,,"UNK","Labor-HHS-Education","Department of Education","Innovation and Improvement",,"Abercrombie","D","HI",,"Bingaman; Cochran; Kennedy","D; R; D","NM; MS; MA",,,,',
+            '1,300000,,425000,414000,,"Boys & Girls Club of Hawaii, Honolulu, HI for a multi-media center, which may include equipment","Honolulu",,"HI","Labor-HHS-Education","Department of Education","Fund for the Improvement of Education",,"Abercrombie","D","HI",,,,,,,"JC Penny",',
+            '1,,1500000,1500000,1476000,,"Cellular Bioengineering, Inc., Continue development of polymeric hydrogels for radiation decontamination","Honolulu",,"HI","Energy & Water","Department of Energy","Defense Environmental Cleanup",,"Abercrombie","D","HI",,"Inouye","D","HI",,,"JC Penny; Macys;",'
+        ]
+
+        source = VerifiedCSVSource(csv, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(3, len(output))
+        (no_recip, one_recip, two_recips) = output
+        self.assertEqual([], no_recip['recipients'])
+        self.assertEqual('JC Penny', one_recip['recipients'][0].raw_recipient)
+        self.assertEqual('JC Penny', two_recips['recipients'][0].raw_recipient)
+        self.assertEqual('Macys', two_recips['recipients'][1].raw_recipient)
+        
+        
         
 # tests the experimental 'updates' module
 class TestUpdates(TestCase):

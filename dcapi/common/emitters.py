@@ -5,7 +5,6 @@ from django.db.models import Model
 from django.db import connections
 from piston.emitters import Emitter
 from piston.utils import HttpStatusCode
-from dcapi.middleware import RETURN_ENTITIES_KEY
 from dcapi.models import Invocation
 from dcapi.validate_jsonp import is_valid_jsonp_callback_value
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE, CRP_TRANSACTION_NAMESPACE
@@ -15,6 +14,7 @@ import cStringIO
 import datetime
 from xlwt import XFStyle
 import xlwt
+
 
 class AmnesiacFile(object):
     def __init__(self):
@@ -32,7 +32,22 @@ class StatsLogger(object):
     def log(self, record):
         self.stats['total'] += 1
 
+
 class StreamingLoggingEmitter(Emitter):
+    
+    def construct_record(self, record):
+        """ Serialize just one record of the data into a dict.
+        
+        This is a workaround because the superclass method will only
+        serialize the self.data parameter.
+        """
+        
+        old_data = self.data
+        try:
+            self.data = record
+            return self.construct()
+        finally:
+            self.data = old_data
             
     def stream(self, request, stats):
         raise NotImplementedError('please implement this method')
@@ -46,21 +61,9 @@ class StreamingLoggingEmitter(Emitter):
         
         stats = self.handler.statslogger() if hasattr(self.handler, 'statslogger') else StatsLogger()
         
-        if self.handler.fields:
-            fields = self.handler.fields
-        elif hasattr(self.data, 'model'):
-            fields = self.data.model._meta.get_all_field_names()
-            if self.handler.exclude:
-                for field in self.handler.exclude:
-                    fields.remove(field)
-        else:
-            fields = []
-        
-        final_fields = fields
-        
         start_time = time()
         
-        for chunk in self.stream(request, final_fields, stats):
+        for chunk in self.stream(request, stats):
             yield chunk
             
         end_time = time()
@@ -79,46 +82,44 @@ class StreamingLoggingEmitter(Emitter):
             
 class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
     
-    def stream(self, request, fields, stats):
+    def stream(self, request, stats):
         
         cb = request.GET.get('callback', None)
         cb = cb if cb and is_valid_jsonp_callback_value(cb) else None
-        
-        qs = self.data
-        
+                
         if cb:
             yield '%s(' % cb
-        if isinstance(qs, (Model, dict)):
+        if isinstance(self.data, (Model, dict)):
             seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
             yield seria
-        elif isinstance(qs, HttpResponse):
+        elif isinstance(self.data, HttpResponse):
             pass
         else:
             yield '['
-            for record in qs:
-                self.data = record
-                seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
+            for record in self.data:
+                seria = simplejson.dumps(self.construct_record(record), cls=DateTimeAwareJSONEncoder, ensure_ascii=False)
                 if stats.stats['total'] == 0:
                     yield seria
                 else:
                     yield ',%s' % seria
                 stats.log(record)
             yield ']'
-            self.data = qs
         
         if cb:
             yield ');'
 
+
 class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
     
-    def stream(self, request, fields, stats):
+    def stream(self, request, stats):
         f = AmnesiacFile()
-        writer = csv.DictWriter(f, fieldnames=fields)
-        yield ",".join(fields) + "\n"
-        for record in self.data.values(*fields):
+        writer = csv.DictWriter(f, fieldnames=self.fields)
+        yield ",".join(self.fields) + "\n"
+        for record in self.data:
             stats.log(record)
-            writer.writerow(record)
+            writer.writerow(self.construct_record(record))
             yield f.read()
+
 
 class ExcelEmitter(StreamingLoggingEmitter):
     
@@ -143,26 +144,27 @@ class ExcelEmitter(StreamingLoggingEmitter):
                 ws.write(row, col, value)
             col += 1
     
-    def stream(self, request, fields, stats):
+    def stream(self, request, stats):
 
         output = cStringIO.StringIO()
         
         if self.handler.model:
-            fields = [f.name for f in self.handler.model._meta.fields]
-            fields.remove('import_reference')
+
             sheet_name = self.handler.model._meta.object_name.lower()
         else:
-            sheet_name = ''
+            sheet_name = 'Sheet1'
         
         wb = xlwt.Workbook()
         ws = wb.add_sheet(sheet_name)
                 
-        self.write_row(ws, 0, fields)
+        self.write_row(ws, 0, self.fields)
         
         row = 0
         for record in self.data:
             row += 1
-            values = [getattr(record, f) for f in fields]
+            
+            record_as_dict = self.construct_record(record)
+            values = [record_as_dict[f] for f in self.fields]
             self.write_row(ws, row, values)
             stats.log(record)
         
@@ -173,3 +175,4 @@ class ExcelEmitter(StreamingLoggingEmitter):
         output.close()
         
         yield xls
+

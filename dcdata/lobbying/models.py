@@ -23,7 +23,7 @@ class Lobbying(models.Model):
     registrant_is_firm = models.BooleanField(default=False)
     
     client_name = models.CharField(max_length=255, blank=True, null=True)
-    client_category = models.CharField(max_length=8, blank=True, null=True)
+    client_category = models.CharField(max_length=5, blank=True, null=True)
     client_ext_id = models.CharField(max_length=128, blank=True, null=True)
     
     client_parent_name = models.CharField(max_length=255, blank=True, null=True)

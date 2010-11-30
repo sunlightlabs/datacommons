@@ -90,52 +90,77 @@ party_choices = (
 
 class Earmark(models.Model):
     import_reference = models.ForeignKey(Import)
-    
+
     fiscal_year = models.IntegerField()
-    
+
     budget_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     house_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     senate_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     omni_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     final_amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
-    
+
     bill = models.CharField(max_length=64, choices=bill_choices, blank=False)
     bill_section = models.CharField(max_length=256, blank=True)
     bill_subsection = models.CharField(max_length=256, blank=True)
-    
+
     # possible that we'll need to increase the length if we see long values
     description = models.CharField(max_length=512, blank=True)
-    notes = models.CharField(max_length=512, blank=True)
-    
+    notes = models.CharField(max_length=1024, blank=True)
+
     presidential = models.CharField(max_length=1, choices=presidential_choices, blank=True)
     undisclosed = models.CharField(max_length=1, choices=undisclosed_choices, blank=True)
-    
-    raw_recipient = models.CharField(max_length=128, blank=True)
-    standardized_recipient = models.CharField(max_length=128, blank=True)
-    
+
+    house_members = models.CharField(max_length=1024, blank=True)
+    house_parties = models.CharField(max_length=512, blank=True)
+    house_states = models.CharField(max_length=512, blank=True)
+    house_districts = models.CharField(max_length=512, blank=True)
+    senate_members = models.CharField(max_length=1024, blank=True)
+    senate_parties = models.CharField(max_length=512, blank=True)
+    senate_states = models.CharField(max_length=512, blank=True)
+
     def __unicode__(self):
         return "%s. %s: %s" % ("; ".join(map(str,self.members.all())), self.final_amount, self.description[:16])
 
 
 class Member(models.Model):
     earmark = models.ForeignKey(Earmark, related_name='members')
-    
+
     raw_name = models.CharField(max_length=64)
     crp_id = models.CharField(max_length=128, blank=True)
     standardized_name = models.CharField(max_length=128, blank=True)
-    
-    chamber = models.CharField(max_length=1, choices=chamber_choices)    
+
+    chamber = models.CharField(max_length=1, choices=chamber_choices)
     party = models.CharField(max_length=1, choices=party_choices)
     state = USStateField(blank=True)
     district = models.IntegerField(null=True)
 
     def __unicode__(self):
-        return "%s %s (%s-%s)" % ("Sen." if self.chamber == 's' else 'Rep.', self.raw_name, self.party.upper(), self.state)
-        
-        
+        return "%s %s (%s-%s)" % (
+            "Sen." if self.chamber == 's' else 'Rep.',
+            self.standardized_name if self.standardized_name else self.raw_name,
+            self.party.upper(),
+            self.state)
+
+
 class Location(models.Model):
     earmark = models.ForeignKey(Earmark, related_name='locations')
-    
+
     city = models.CharField(max_length=128, blank=True)
-    state = USStateField(blank=True)    
+    state = USStateField(blank=True)
+
+    def __unicode__(self):
+        if self.city and self.state:
+            return "%s, %s" % (self.city, self.state)
+        else:
+            return self.city + self.state # only one or none will be returned
+
+
+class Recipient(models.Model):
+    earmark = models.ForeignKey(Earmark, related_name='recipients')
+
+    raw_recipient = models.CharField(max_length=256, blank=True)
+    standardized_recipient = models.CharField(max_length=128, blank=True)
+
+    def __unicode__(self):
+        return self.standardized_recipient if self.standardized_recipient else self.raw_recipient
 
