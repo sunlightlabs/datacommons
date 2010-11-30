@@ -82,15 +82,11 @@ class Entity(models.Model):
 
             # assign latest cycle to old fields for backwards compatibility
             # (might not need this going forward)
-            all_cycles = metadata.keys()
-            if len(all_cycles):
-                all_cycles.sort()
-                latest_cycle = all_cycles.pop()
-
-                metadata['seat'] = metadata[latest_cycle]['seat']
-                metadata['party'] = metadata[latest_cycle]['party']
-                metadata['state'] = metadata[latest_cycle]['state']
-
+            if hasattr(self, 'politician_metadata_for_latest_cycle'):
+                latest = model_to_dict(self.politician_metadata_for_latest_cycle)
+                del(latest['cycle'])
+                del(latest['entity'])
+                metadata.update(latest)
             else:
                 metadata['seat'] = ''
                 metadata['party'] = ''
@@ -207,6 +203,20 @@ class PoliticianMetadata(models.Model):
 
     class Meta:
         db_table = 'matchbox_politicianmetadata'
+
+class PoliticianMetadataLatest(models.Model):
+    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True)
+
+    cycle = models.PositiveSmallIntegerField()
+
+    state       = USStateField(blank=True, null=True)
+    party       = models.CharField(max_length=64, blank=True, null=True)
+    seat        = models.CharField(max_length=64, blank=True, null=True)
+    seat_status = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
+    seat_result = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
+
+    class Meta:
+        db_table = 'politician_metadata_latest_cycle_view'
 
 class IndustryMetadata(models.Model):
     entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
