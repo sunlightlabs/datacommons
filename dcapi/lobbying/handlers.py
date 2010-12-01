@@ -26,7 +26,7 @@ LOBBYING_SCHEMA = Schema(
 
     FulltextField('client_ft', ['client_name']),
     FulltextField('client_parent_ft', ['client_parent_name']),
-    FulltextField('lobbyist_ft', ['lobbyist_name']),
+    FulltextField('lobbyist_ft', ['lobbying_lobbyist.lobbyist_name']),
     FulltextField('registrant_ft', ['registrant_name']),
 
     ComparisonField('amount', cast=int),
@@ -34,10 +34,12 @@ LOBBYING_SCHEMA = Schema(
 
 def filter_lobbying(request):
     q = LOBBYING_SCHEMA.build_filter(Lobbying.objects, request).order_by()
+
     # filter does nothing--it's here to force the join on lobbyists
     if 'lobbyist_ft' in request:
         q = q.filter(lobbyists__lobbyist_name__isnull=False)
-    return q.select_related()
+
+    return q.distinct().select_related()
 
 
 LOBBYING_FIELDS = ['year', 'transaction_id', 'transaction_type', 'transaction_type_desc',
