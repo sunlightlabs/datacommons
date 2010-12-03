@@ -4,17 +4,41 @@
 
 -- Earmarks Normalized to Cycles
 
+select date_trunc('second', now()) || ' -- drop view if exists earmarks_by_cycle';
 drop view if exists earmarks_by_cycle;
 
+select date_trunc('second', now()) || ' -- create view earmarks_by_cycle';
 create view earmarks_by_cycle as
     select
         *,
-        case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year + 1 end as cycle
+        case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year - 1 end as cycle
     from
         earmarks_earmark
 ;
 
--- Member associations
+select date_trunc('second', now()) || ' -- drop table if exists earmarks_flattened';
+drop table if exists earmarks_flattened;
+
+select date_trunc('second', now()) || ' -- create table earmarks_flattened';
+create table earmarks_flattened as
+    select
+        e.id,
+        cycle,
+        fiscal_year,
+        final_amount,
+        description,
+        array_agg( '{name:' || standardized_name || ', id:' || coalesce(a.entity_id::varchar, '') || '}') as members
+    from
+        earmarks_by_cycle e
+        inner join earmarks_member m
+            on e.id = m.earmark_id
+        left join earmarks_member_associations a
+            on m.id = a.member_id
+    group by e.id, cycle, fiscal_year, final_amount, description
+;
+
+
+-- Member Associations
 
 select date_trunc('second', now()) || ' -- drop table if exists earmarks_member_associations';
 drop table if exists earmarks_member_associations;
@@ -23,13 +47,14 @@ select date_trunc('second', now()) || ' -- create table earmarks_member_associat
 create table earmarks_member_associations as
     select
         ea.entity_id,
+        m.id as member_id,
         m.earmark_id
     from earmarks_member m
     inner join matchbox_entityattribute ea
         on m.crp_id = ea.value
     where
         ea.namespace = 'urn:crp:recipient'
-    ;
+;
 
 select date_trunc('second', now()) || ' -- create index earmarks_member_associations_entity_id on earmarks_member_associations (entity_id)';
 create index earmarks_member_associations_entity_id on earmarks_member_associations (entity_id);
@@ -46,6 +71,7 @@ select date_trunc('second', now()) || ' -- create table earmarks_recipient_assoc
 create table earmarks_recipient_associations as
     select
         e.id as entity_id,
+        r.id as recipient_id,
         r.earmark_id
     from earmarks_recipient r
     inner join matchbox_entity e
@@ -58,6 +84,31 @@ select date_trunc('second', now()) || ' -- create index earmarks_recipient_assoc
 create index earmarks_recipient_associations_entity_id on earmarks_recipient_associations (entity_id);
 select date_trunc('second', now()) || ' -- create index earmarks_recipient_associations_earmark_id on earmarks_recipient_associations (earmark_id)';
 create index earmarks_recipient_associations_earmark_id on earmarks_recipient_associations (earmark_id);
+
+-- Member with Our Metadata If Matched, Data from Earmark If Not
+
+select date_trunc('second', now()) || ' -- drop table if exists earmarks_member_w_metadata';
+drop table if exists earmarks_member_w_metadata;
+
+select date_trunc('second', now()) || ' -- create table earmarks_member_w_metadata';
+create table earmarks_member_w_metadata as
+    select
+        m.earmark_id,
+        m.id as member_id,
+        entity_id,
+        standardized_name as name,
+        coalesce(meta.state, m.state) as state,
+        coalesce(meta.seat, m.chamber) as seat, -- needs more work to convert to same format, but currently unneeded
+        coalesce(meta.party, m.party) as party
+    from
+        earmarks_member m
+        left join earmarks_member_associations ma
+            on m.id = ma.member_id
+        left join politician_metadata_latest_cycle_view meta using (entity_id)
+;
+
+select date_trunc('second', now()) || ' -- create index earmarks_member_w_metadata_entity_id on earmarks_member_w_metadata (entity_id)';
+create index earmarks_member_w_metadata_entity_id on earmarks_member_w_metadata (entity_id);
 
 -- Earmark Totals
 
@@ -99,74 +150,143 @@ create index agg_earmark_totals_cycle on agg_earmark_totals (cycle);
 
 -- Top 10 Earmarks by Amount per Entity
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_earmarks_by_amt_per_entity';
 drop table if exists agg_earmarks_by_amt_per_entity;
 
+select date_trunc('second', now()) || ' -- create table agg_earmarks_by_amt_per_entity';
 create table agg_earmarks_by_amt_per_entity as
     with earmarks_by_entity_cycle as (
         select
             e.id as earmark_id,
             cycle,
+            fiscal_year,
             coalesce(ma.entity_id, ra.entity_id) as entity_id,
             final_amount as amount,
+            description,
+            members,
             rank() over (partition by coalesce(ma.entity_id, ra.entity_id), cycle order by final_amount desc) as rank
         from
-            earmarks_by_cycle e
+            earmarks_flattened e
             left join earmarks_member_associations ma on e.id = ma.earmark_id
             left join earmarks_recipient_associations ra on e.id = ra.earmark_id
     )
 
-    select earmark_id, cycle, entity_id, amount
+    select earmark_id, cycle, fiscal_year, entity_id, amount, description, members
     from earmarks_by_entity_cycle
     where rank <= :agg_top_n
 
     union all
 
-    select earmark_id, -1, entity_id, amount
+    select earmark_id, -1, fiscal_year, entity_id, amount, description, members
     from (
-        select earmark_id, entity_id, amount, rank() over (partition by entity_id order by amount desc) as rank
+        select earmark_id, fiscal_year, entity_id, amount, description, members, rank() over (partition by entity_id order by amount desc) as rank
         from earmarks_by_entity_cycle
     )x
     where rank <= :agg_top_n
 ;
 
+select date_trunc('second', now()) || ' -- create index agg_earmarks_by_amt_per_entity_entity_id';
 create index agg_earmarks_by_amt_per_entity_entity_id on agg_earmarks_by_amt_per_entity (entity_id);
+select date_trunc('second', now()) || ' -- create table agg_earmarks_by_amt_per_entity_cycle';
 create index agg_earmarks_by_amt_per_entity_cycle on agg_earmarks_by_amt_per_entity (cycle);
 
 
 -- Amount Earmarked In-State vs Out-State Per Member
 
-drop table if exists agg_earmarks_by_amt_per_entity;
+select date_trunc('second', now()) || ' -- drop table if exists agg_earmark_amt_by_entity_in_state_out_state';
+drop table if exists agg_earmark_amt_by_entity_in_state_out_state;
 
-create table agg_earmarks_by_amt_per_entity as
-    with earmarks_by_entity_cycle as (
+select date_trunc('second', now()) || ' -- create table agg_earmark_amt_by_entity_in_state_out_state';
+create table agg_earmark_amt_by_entity_in_state_out_state as
+    with amounts_per_earmark as (
         select
-            e.id as earmark_id,
+            entity_id,
             cycle,
-            coalesce(ma.entity_id, ra.entity_id) as entity_id,
-            final_amount as amount,
-            rank() over (partition by coalesce(ma.entity_id, ra.entity_id), cycle order by final_amount desc) as rank
-        from
-            earmarks_by_cycle e
-            left join earmarks_member_associations ma on e.id = ma.earmark_id
-            left join earmarks_recipient_associations ra on e.id = ra.earmark_id
+            case
+                when state is not null then final_amount
+                else 0
+            end as in_state_amount,
+            case
+                when state is null then final_amount
+                else 0
+            end as out_state_amount
+        from (
+            select
+                meta.entity_id as entity_id,
+                cycle,
+                max(l.state) as state,
+                final_amount
+            from
+                earmarks_by_cycle e
+                inner join earmarks_member_w_metadata meta
+                    on e.id = meta.earmark_id
+                left join earmarks_location l
+                    on e.id = l.earmark_id and meta.state = l.state
+            group by
+                e.id, meta.entity_id, cycle, final_amount
+        )x
     )
 
-    select earmark_id, cycle, entity_id, amount
-    from earmarks_by_entity_cycle
-    where rank <= :agg_top_n
+    select entity_id, cycle, sum(in_state_amount) as in_state_amount, sum(out_state_amount) as out_state_amount
+    from amounts_per_earmark
+    group by entity_id, cycle
 
     union all
 
-    select earmark_id, -1, entity_id, amount
-    from (
-        select earmark_id, entity_id, amount, rank() over (partition by entity_id order by amount desc) as rank
-        from earmarks_by_entity_cycle
-    )x
-    where rank <= :agg_top_n
+    select entity_id, -1, sum(in_state_amount) as in_state_amount, sum(out_state_amount) as out_state_amount
+    from amounts_per_earmark
+    group by entity_id
 ;
 
-create index agg_earmarks_by_amt_per_entity_entity_id on agg_earmarks_by_amt_per_entity (entity_id);
-create index agg_earmarks_by_amt_per_entity_cycle on agg_earmarks_by_amt_per_entity (cycle);
+select date_trunc('second', now()) || ' -- create index agg_earmark_amt_by_entity_in_state_out_state_entity_id';
+create index agg_earmark_amt_by_entity_in_state_out_state_entity_id on agg_earmark_amt_by_entity_in_state_out_state (entity_id);
+select date_trunc('second', now()) || ' -- create index agg_earmark_amt_by_entity_in_state_out_state_cycle';
+create index agg_earmark_amt_by_entity_in_state_out_state_cycle on agg_earmark_amt_by_entity_in_state_out_state (cycle);
+
+
+-- Amount Requested vs Granted per Member
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_earmarks_amt_requested_v_granted_by_entity';
+drop table if exists agg_earmarks_amt_requested_v_granted_by_entity;
+
+select date_trunc('second', now()) || ' -- create table agg_earmarks_amt_requested_v_granted_by_entity';
+create table agg_earmarks_amt_requested_v_granted_by_entity as
+    with earmark_requested_vs_granted as (
+        select
+            entity_id,
+            cycle,
+            sum(requested_amount) as requested_amount,
+            sum(final_amount) as final_amount
+        from (
+            select
+                meta.entity_id as entity_id,
+                cycle,
+                case
+                    when meta.seat = 'federal:senate' then senate_amount
+                    else house_amount
+                end as requested_amount,
+                final_amount
+            from
+                earmarks_by_cycle e
+                inner join earmarks_member_w_metadata meta
+                    on e.id = meta.earmark_id
+        ) x
+        group by entity_id, cycle
+    )
+
+    table earmark_requested_vs_granted
+
+    union all
+
+    select entity_id, -1, sum(requested_amount) as requested_amount, sum(final_amount) as final_amount
+    from earmark_requested_vs_granted
+    group by entity_id
+;
+
+select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_entity_id';
+create index agg_earmarks_amt_requested_v_granted_by_entity_entity_id on agg_earmarks_amt_requested_v_granted_by_entity (entity_id);
+select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_cycle';
+create index agg_earmarks_amt_requested_v_granted_by_entity_cycle on agg_earmarks_amt_requested_v_granted_by_entity (cycle);
 
 
 select date_trunc('second', now()) || ' -- Finished computing earmark aggregates.';
