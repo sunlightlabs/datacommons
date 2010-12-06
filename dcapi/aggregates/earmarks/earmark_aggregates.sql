@@ -78,7 +78,7 @@ create table earmarks_flattened as
         final_amount,
         description,
         ARRAY(
-            select '{name:''' || standardized_name || ''', id:''' || coalesce(a.entity_id::varchar, '') || '''}'
+            select '{"name":"' || standardized_name || '", "id":"' || coalesce(a.entity_id::varchar, '') || '"}'
             from earmarks_member m
             left join assoc_earmarks_member a
                 on m.id = a.member_id
@@ -86,7 +86,7 @@ create table earmarks_flattened as
                 e.id = m.earmark_id
             ) as members,
         ARRAY(
-            select '{name:''' || case when standardized_recipient != '' then standardized_recipient else raw_recipient end || ''', id:''' || coalesce(a.entity_id::varchar, '') || '''}'
+            select '{"name":"' || case when standardized_recipient != '' then standardized_recipient else raw_recipient end || '", "id":"' || coalesce(a.entity_id::varchar, '') || '"}'
             from earmarks_recipient r
             left join assoc_earmarks_recipient a
                 on r.id = a.recipient_id
@@ -192,6 +192,7 @@ create table agg_earmarks_by_amt_per_entity as
             final_amount as amount,
             description,
             members,
+            recipients,
             rank() over (partition by ma.entity_id, cycle order by final_amount desc) as rank
         from
             earmarks_flattened e
@@ -207,21 +208,22 @@ create table agg_earmarks_by_amt_per_entity as
             final_amount as amount,
             description,
             members,
+            recipients,
             rank() over (partition by ra.entity_id, cycle order by final_amount desc) as rank
         from
             earmarks_flattened e
             inner join assoc_earmarks_recipient ra on e.id = ra.earmark_id
     )
 
-    select earmark_id, cycle, fiscal_year, entity_id, amount, description, members
+    select earmark_id, cycle, fiscal_year, entity_id, amount, description, members, recipients
     from earmarks_by_entity_cycle
     where rank <= :agg_top_n
 
     union all
 
-    select earmark_id, -1, fiscal_year, entity_id, amount, description, members
+    select earmark_id, -1, fiscal_year, entity_id, amount, description, members, recipients
     from (
-        select earmark_id, fiscal_year, entity_id, amount, description, members, rank() over (partition by entity_id order by amount desc) as rank
+        select earmark_id, fiscal_year, entity_id, amount, description, members, recipients, rank() over (partition by entity_id order by amount desc) as rank
         from earmarks_by_entity_cycle
     )x
     where rank <= :agg_top_n
