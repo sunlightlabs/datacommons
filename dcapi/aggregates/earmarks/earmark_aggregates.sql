@@ -77,15 +77,27 @@ create table earmarks_flattened as
         fiscal_year,
         final_amount,
         description,
-        array_agg( '{name:' || standardized_name || ', id:' || coalesce(a.entity_id::varchar, '') || '}') as members
+        ARRAY(
+            select '{name:''' || standardized_name || ''', id:''' || coalesce(a.entity_id::varchar, '') || '''}'
+            from earmarks_member m
+            left join assoc_earmarks_member a
+                on m.id = a.member_id
+            where
+                e.id = m.earmark_id
+            ) as members,
+        ARRAY(
+            select '{name:''' || case when standardized_recipient != '' then standardized_recipient else raw_recipient end || ''', id:''' || coalesce(a.entity_id::varchar, '') || '''}'
+            from earmarks_recipient r
+            left join assoc_earmarks_recipient a
+                on r.id = a.recipient_id
+            where
+                e.id = r.earmark_id
+            ) as recipients
     from
-        earmarks_by_cycle e
-        inner join earmarks_member m
-            on e.id = m.earmark_id
-        left join assoc_earmarks_member a
-            on m.id = a.member_id
-    group by e.id, cycle, fiscal_year, final_amount, description
-;
+        earmarks_by_cycle e;
+
+
+
 
 
 -- Member with Our Metadata If Matched, Data from Earmark If Not
