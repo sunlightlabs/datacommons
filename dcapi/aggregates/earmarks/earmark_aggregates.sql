@@ -16,6 +16,56 @@ create view earmarks_by_cycle as
         earmarks_earmark
 ;
 
+-- Member Associations
+
+select date_trunc('second', now()) || ' -- drop table if exists assoc_earmarks_member';
+drop table if exists assoc_earmarks_member;
+
+select date_trunc('second', now()) || ' -- create table assoc_earmarks_member';
+create table assoc_earmarks_member as
+    select
+        ea.entity_id,
+        m.id as member_id,
+        m.earmark_id
+    from earmarks_member m
+    inner join matchbox_entityattribute ea
+        on m.crp_id = ea.value
+    where
+        ea.namespace = 'urn:crp:recipient'
+;
+
+select date_trunc('second', now()) || ' -- create index assoc_earmarks_member_entity_id on assoc_earmarks_member (entity_id)';
+create index assoc_earmarks_member_entity_id on assoc_earmarks_member (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_earmarks_member_earmark_id on assoc_earmarks_member (earmark_id)';
+create index assoc_earmarks_member_earmark_id on assoc_earmarks_member (earmark_id);
+
+
+-- Recipient Associations
+
+select date_trunc('second', now()) || ' -- drop table if exists assoc_earmarks_recipient';
+drop table if exists assoc_earmarks_recipient;
+
+select date_trunc('second', now()) || ' -- create table assoc_earmarks_recipient';
+create table assoc_earmarks_recipient as
+    select
+        e.id as entity_id,
+        r.id as recipient_id,
+        r.earmark_id
+    from earmarks_recipient r
+    inner join matchbox_entity e
+        on e.name = r.standardized_recipient
+    where
+        e.type = 'organization'
+    ;
+
+select date_trunc('second', now()) || ' -- create index assoc_earmarks_recipient_entity_id on assoc_earmarks_recipient (entity_id)';
+create index assoc_earmarks_recipient_entity_id on assoc_earmarks_recipient (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_earmarks_recipient_earmark_id on assoc_earmarks_recipient (earmark_id)';
+create index assoc_earmarks_recipient_earmark_id on assoc_earmarks_recipient (earmark_id);
+
+
+-- Flattened earmarks
+
 select date_trunc('second', now()) || ' -- drop table if exists earmarks_flattened';
 drop table if exists earmarks_flattened;
 
@@ -32,58 +82,11 @@ create table earmarks_flattened as
         earmarks_by_cycle e
         inner join earmarks_member m
             on e.id = m.earmark_id
-        left join earmarks_member_associations a
+        left join assoc_earmarks_member a
             on m.id = a.member_id
     group by e.id, cycle, fiscal_year, final_amount, description
 ;
 
-
--- Member Associations
-
-select date_trunc('second', now()) || ' -- drop table if exists earmarks_member_associations';
-drop table if exists earmarks_member_associations;
-
-select date_trunc('second', now()) || ' -- create table earmarks_member_associations';
-create table earmarks_member_associations as
-    select
-        ea.entity_id,
-        m.id as member_id,
-        m.earmark_id
-    from earmarks_member m
-    inner join matchbox_entityattribute ea
-        on m.crp_id = ea.value
-    where
-        ea.namespace = 'urn:crp:recipient'
-;
-
-select date_trunc('second', now()) || ' -- create index earmarks_member_associations_entity_id on earmarks_member_associations (entity_id)';
-create index earmarks_member_associations_entity_id on earmarks_member_associations (entity_id);
-select date_trunc('second', now()) || ' -- create index earmarks_member_associations_earmark_id on earmarks_member_associations (earmark_id)';
-create index earmarks_member_associations_earmark_id on earmarks_member_associations (earmark_id);
-
-
--- Recipient Associations
-
-select date_trunc('second', now()) || ' -- drop table if exists earmarks_recipient_associations';
-drop table if exists earmarks_recipient_associations;
-
-select date_trunc('second', now()) || ' -- create table earmarks_recipient_associations';
-create table earmarks_recipient_associations as
-    select
-        e.id as entity_id,
-        r.id as recipient_id,
-        r.earmark_id
-    from earmarks_recipient r
-    inner join matchbox_entity e
-        on e.name = r.standardized_recipient
-    where
-        e.type = 'organization'
-    ;
-
-select date_trunc('second', now()) || ' -- create index earmarks_recipient_associations_entity_id on earmarks_recipient_associations (entity_id)';
-create index earmarks_recipient_associations_entity_id on earmarks_recipient_associations (entity_id);
-select date_trunc('second', now()) || ' -- create index earmarks_recipient_associations_earmark_id on earmarks_recipient_associations (earmark_id)';
-create index earmarks_recipient_associations_earmark_id on earmarks_recipient_associations (earmark_id);
 
 -- Member with Our Metadata If Matched, Data from Earmark If Not
 
@@ -102,7 +105,7 @@ create table earmarks_member_w_metadata as
         coalesce(meta.party, m.party) as party
     from
         earmarks_member m
-        left join earmarks_member_associations ma
+        left join assoc_earmarks_member ma
             on m.id = ma.member_id
         left join politician_metadata_latest_cycle_view meta using (entity_id)
 ;
@@ -119,16 +122,29 @@ select date_trunc('second', now()) || ' -- create table agg_earmark_totals';
 create table agg_earmark_totals as
     with earmarks_by_entity_cycle as (
         select
-            coalesce(ma.entity_id, ra.entity_id) as entity_id,
+            ma.entity_id as entity_id,
             cycle,
             count(*) as count,
             sum(final_amount) as amount
         from
             earmarks_by_cycle e
-            left join earmarks_member_associations ma on e.id = ma.earmark_id
-            left join earmarks_recipient_associations ra on e.id = ra.earmark_id
+            inner join assoc_earmarks_member ma on e.id = ma.earmark_id
         group by
-            coalesce(ma.entity_id, ra.entity_id),
+            ma.entity_id,
+            cycle
+
+        union all
+
+        select
+            ra.entity_id as entity_id,
+            cycle,
+            count(*) as count,
+            sum(final_amount) as amount
+        from
+            earmarks_by_cycle e
+            inner join assoc_earmarks_recipient ra on e.id = ra.earmark_id
+        group by
+            ra.entity_id,
             cycle
     )
     select entity_id, cycle, count, amount
@@ -160,15 +176,29 @@ create table agg_earmarks_by_amt_per_entity as
             e.id as earmark_id,
             cycle,
             fiscal_year,
-            coalesce(ma.entity_id, ra.entity_id) as entity_id,
+            ma.entity_id as entity_id,
             final_amount as amount,
             description,
             members,
-            rank() over (partition by coalesce(ma.entity_id, ra.entity_id), cycle order by final_amount desc) as rank
+            rank() over (partition by ma.entity_id, cycle order by final_amount desc) as rank
         from
             earmarks_flattened e
-            left join earmarks_member_associations ma on e.id = ma.earmark_id
-            left join earmarks_recipient_associations ra on e.id = ra.earmark_id
+            inner join assoc_earmarks_member ma on e.id = ma.earmark_id
+
+        union all
+
+        select
+            e.id as earmark_id,
+            cycle,
+            fiscal_year,
+            ra.entity_id as entity_id,
+            final_amount as amount,
+            description,
+            members,
+            rank() over (partition by ra.entity_id, cycle order by final_amount desc) as rank
+        from
+            earmarks_flattened e
+            inner join assoc_earmarks_recipient ra on e.id = ra.earmark_id
     )
 
     select earmark_id, cycle, fiscal_year, entity_id, amount, description, members
@@ -288,5 +318,7 @@ create index agg_earmarks_amt_requested_v_granted_by_entity_entity_id on agg_ear
 select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_cycle';
 create index agg_earmarks_amt_requested_v_granted_by_entity_cycle on agg_earmarks_amt_requested_v_granted_by_entity (cycle);
 
+
+-- The End
 
 select date_trunc('second', now()) || ' -- Finished computing earmark aggregates.';
