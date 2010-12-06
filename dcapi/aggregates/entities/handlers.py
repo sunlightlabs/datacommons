@@ -23,7 +23,8 @@ get_totals_stmt = """
             coalesce(loan_count,         0)::integer,
             coalesce(grant_amount,       0)::float,
             coalesce(contract_amount,    0)::float,
-            coalesce(loan_amount,        0)::float
+            coalesce(loan_amount,        0)::float,
+            coalesce(e.amount,           0)::float
      from
          (select *
          from agg_entities
@@ -38,11 +39,16 @@ get_totals_stmt = """
          from agg_spending_totals
          where recipient_entity = %s) s
      using (cycle)
+     full outer join
+         (select *
+         from agg_earmark_totals
+         where entity_id = %s) e
+    using (cycle)
 """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id):
+    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -50,7 +56,7 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount', 'earmark_amount']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
