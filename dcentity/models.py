@@ -191,7 +191,7 @@ class OrganizationMetadata(ExtensibleModel):
 
 
 class PoliticianMetadata(models.Model):
-    entity = models.ForeignKey(Entity, related_name='politician_metadata_by_cycle', null=False)
+    entity = models.ForeignKey(Entity, related_name='politician_metadata_by_cycle', null=False, db_index=True)
 
     cycle = models.PositiveSmallIntegerField()
 
