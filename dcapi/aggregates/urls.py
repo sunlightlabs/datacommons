@@ -64,7 +64,7 @@ urlpatterns = patterns('',
     url(r'^pols/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopPoliticiansByReceiptsHandler, **ad)),
         
-    url(r'^pols/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
         Resource(TopEarmarksHandler, **ad)),
 
     # recipients from a single individual, broken down to show percentages
