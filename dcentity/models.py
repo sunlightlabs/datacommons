@@ -37,6 +37,8 @@ class Entity(models.Model):
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
+    should_delete = models.BooleanField(default=False, null=False)
+    flagged_on = models.DateTimeField()
 
     def __unicode__(self):
         return self.name
