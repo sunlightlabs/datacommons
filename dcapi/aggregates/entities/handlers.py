@@ -24,6 +24,7 @@ get_totals_stmt = """
             coalesce(grant_amount,       0)::float,
             coalesce(contract_amount,    0)::float,
             coalesce(loan_amount,        0)::float,
+            coalesce(e.count,            0)::integer,
             coalesce(e.amount,           0)::float
      from
          (select *
@@ -56,7 +57,7 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount', 'earmark_amount']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount', 'earmark_count', 'earmark_amount']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
