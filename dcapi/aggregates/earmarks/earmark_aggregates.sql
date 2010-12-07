@@ -78,7 +78,7 @@ create table earmarks_flattened as
         final_amount,
         description,
         ARRAY(
-            select '{"name":"' || standardized_name || '", "id":"' || replace(coalesce(a.entity_id::varchar, ''), '-', '' || '"}'
+            select '{"name":"' || standardized_name || '", "id":"' || replace(coalesce(a.entity_id::varchar, ''), '-', '') || '"}'
             from earmarks_member m
             left join assoc_earmarks_member a
                 on m.id = a.member_id
@@ -86,7 +86,7 @@ create table earmarks_flattened as
                 e.id = m.earmark_id
             ) as members,
         ARRAY(
-            select '{"name":"' || case when standardized_recipient != '' then standardized_recipient else raw_recipient end || '", "id":"' || replace(coalesce(a.entity_id::varchar, ''), '-', '' || '"}'
+            select '{"name":"' || case when standardized_recipient != '' then standardized_recipient else raw_recipient end || '", "id":"' || replace(coalesce(a.entity_id::varchar, ''), '-', '') || '"}'
             from earmarks_recipient r
             left join assoc_earmarks_recipient a
                 on r.id = a.recipient_id
