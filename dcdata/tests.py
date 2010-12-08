@@ -1,5 +1,4 @@
-
-
+from cStringIO import StringIO
 from dcdata import processor
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
@@ -378,10 +377,13 @@ class TestLoadContributions(TestCase):
         processor = LoadContributions.get_record_processor(loader.import_session)
         output = LoaderEmitter(loader).process_record
 
-        sys.stderr.write("Error expected:\n")
-
+        # Prevent this test from spewing the expected error to the command line
+        old_stderr = sys.stderr
+        sys.stderr = mystderr = StringIO()
         load_data(source, processor, output)
+        sys.stderr = old_stderr
 
+        self.assertTrue(mystderr.getvalue())
         self.assertEqual(2, Contribution.objects.count())
 
 class TestProcessor(TestCase):
@@ -451,7 +453,16 @@ class TestProcessor(TestCase):
         processor.TERMINATE_ON_ERROR = False
 
         output = list()
+
+        # prevent unwanted console output
+        stderr_old = sys.stderr
+        sys.stderr = mystderr = StringIO()
+
         load_data([single, double, triple, double], chain_filters(validator), output.append)
+
+        sys.stderr = stderr_old
+
+        self.assertTrue(mystderr.getvalue())
         self.assertEqual([double, double], output)
 
     def test_verified_csv_source(self):
@@ -462,7 +473,15 @@ class TestProcessor(TestCase):
         f = chain_filters(CSVFieldVerifier())
         output = list()
 
+        # prevent unwanted console output
+        stderr_old = sys.stderr
+        sys.stderr = mystderr = StringIO()
+
         load_data(source, f, output.append)
+
+        sys.stderr = stderr_old
+
+        self.assertTrue(mystderr.getvalue())
         self.assertEqual([{'a': '1', 'b': '2', 'c': '3'}], output)
 
     def test_string_length(self):
