@@ -13,11 +13,13 @@ create index contribution_contribution_contributor_category_order on contributio
 drop index if exists contribution_contribution_contributor_ext_id;
 drop index if exists contribution_contribution_organization_ext_id;
 drop index if exists contribution_contribution_parent_organization_ext_id;
+drop index if exists contribution_contribution_committee_ext_id;
 drop index if exists contribution_contribution_recipient_ext_id;
 
 create index contribution_contribution_contributor_ext_id on contribution_contribution (contributor_ext_id);
 create index contribution_contribution_organization_ext_id on contribution_contribution (organization_ext_id);
 create index contribution_contribution_parent_organization_ext_id on contribution_contribution (parent_organization_ext_id);
+create index contribution_contribution_committee_ext_id on contribution_contribution (committee_ext_id);
 create index contribution_contribution_recipient_ext_id on contribution_contribution (recipient_ext_id);
 
 
