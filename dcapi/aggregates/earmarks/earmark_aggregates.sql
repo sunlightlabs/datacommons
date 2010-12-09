@@ -239,40 +239,30 @@ drop table if exists agg_earmark_amt_by_entity_in_state_out_state;
 
 select date_trunc('second', now()) || ' -- create table agg_earmark_amt_by_entity_in_state_out_state';
 create table agg_earmark_amt_by_entity_in_state_out_state as
-    with amounts_per_earmark as (
+    with local_per_earmark as (
         select
-            entity_id,
+            meta.entity_id,
             cycle,
             case
-                when state is null then 'out-of-state'
-                else 'in-state'
+                when not exists (select * from earmarks_location l where l.earmark_id = e.id) then 'unknown'
+                when exists (select * from earmarks_location l where l.earmark_id = e.id and l.state = meta.state) then 'in-state'
+                else 'out-of-state'
             end as local,
             final_amount
-        from (
-            select
-                meta.entity_id as entity_id,
-                cycle,
-                max(l.state) as state,
-                final_amount
-            from
-                earmarks_by_cycle e
-                inner join earmarks_member_w_metadata meta
-                    on e.id = meta.earmark_id
-                left join earmarks_location l
-                    on e.id = l.earmark_id and meta.state = l.state
-            group by
-                e.id, meta.entity_id, cycle, final_amount
-        )x
+        from
+            earmarks_by_cycle e
+            inner join earmarks_member_w_metadata meta
+                on e.id = meta.earmark_id
     )
 
     select entity_id, cycle, local, count(*) as count, sum(final_amount) as amount
-    from amounts_per_earmark
+    from local_per_earmark
     group by entity_id, cycle, local
 
     union all
 
     select entity_id, -1, local, count(*) as count, sum(final_amount) as amount
-    from amounts_per_earmark
+    from local_per_earmark
     group by entity_id, local
 ;
 
@@ -292,32 +282,35 @@ create table agg_earmarks_amt_requested_v_granted_by_entity as
         select
             entity_id,
             cycle,
-            sum(requested_amount) as requested_amount,
-            sum(final_amount) as final_amount
+            stage,
+            count(*) as count,
+            sum(amount) as amount
         from (
             select
                 meta.entity_id as entity_id,
                 cycle,
+                switch.column1 as stage,
                 case
+                    when switch.column1 = 'approved' then final_amount
                     when meta.seat = 'federal:senate' then senate_amount
                     else house_amount
-                end as requested_amount,
-                final_amount
+                end as amount
             from
                 earmarks_by_cycle e
                 inner join earmarks_member_w_metadata meta
                     on e.id = meta.earmark_id
+                cross join (values ('requested'), ('approved')) switch
         ) x
-        group by entity_id, cycle
+        group by entity_id, cycle, stage
     )
 
     table earmark_requested_vs_granted
 
     union all
 
-    select entity_id, -1, sum(requested_amount) as requested_amount, sum(final_amount) as final_amount
+    select entity_id, -1, stage, sum(count) as count, sum(amount) as amount
     from earmark_requested_vs_granted
-    group by entity_id
+    group by entity_id, stage
 ;
 
 select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_idx';
