@@ -17,7 +17,8 @@ from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
-from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler
+from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
+    LocalEarmarksHandler
 
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need.
@@ -66,6 +67,9 @@ urlpatterns = patterns('',
         
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
         Resource(TopEarmarksHandler, **ad)),
+        
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks/local_breakdown\.(?P<emitter_format>.+)$',
+        Resource(LocalEarmarksHandler, **ad)),        
 
     # recipients from a single individual, broken down to show percentages
     url(r'^indiv/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$',

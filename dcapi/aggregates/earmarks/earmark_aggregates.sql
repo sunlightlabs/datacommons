@@ -171,8 +171,6 @@ create table agg_earmark_totals as
 
 select date_trunc('second', now()) || ' -- create index agg_earmark_totals_entity_id on agg_earmark_totals (entity_id)';
 create index agg_earmark_totals_entity_id on agg_earmark_totals (entity_id);
-select date_trunc('second', now()) || ' -- create index agg_earmark_totals_cycle on agg_earmark_totals (cycle)';
-create index agg_earmark_totals_cycle on agg_earmark_totals (cycle);
 
 
 
@@ -229,10 +227,9 @@ create table agg_earmarks_by_amt_per_entity as
     where rank <= :agg_top_n
 ;
 
-select date_trunc('second', now()) || ' -- create index agg_earmarks_by_amt_per_entity_entity_id';
-create index agg_earmarks_by_amt_per_entity_entity_id on agg_earmarks_by_amt_per_entity (entity_id);
-select date_trunc('second', now()) || ' -- create table agg_earmarks_by_amt_per_entity_cycle';
-create index agg_earmarks_by_amt_per_entity_cycle on agg_earmarks_by_amt_per_entity (cycle);
+select date_trunc('second', now()) || ' -- create index agg_earmarks_by_amt_per_entity_idx';
+create index agg_earmarks_by_amt_per_entity_idx on agg_earmarks_by_amt_per_entity (entity_id, cycle);
+
 
 
 -- Amount Earmarked In-State vs Out-State Per Member
@@ -247,13 +244,10 @@ create table agg_earmark_amt_by_entity_in_state_out_state as
             entity_id,
             cycle,
             case
-                when state is not null then final_amount
-                else 0
-            end as in_state_amount,
-            case
-                when state is null then final_amount
-                else 0
-            end as out_state_amount
+                when state is null then 'out-of-state'
+                else 'in-state'
+            end as local,
+            final_amount
         from (
             select
                 meta.entity_id as entity_id,
@@ -271,21 +265,20 @@ create table agg_earmark_amt_by_entity_in_state_out_state as
         )x
     )
 
-    select entity_id, cycle, sum(in_state_amount) as in_state_amount, sum(out_state_amount) as out_state_amount
+    select entity_id, cycle, local, count(*) as count, sum(final_amount) as amount
     from amounts_per_earmark
-    group by entity_id, cycle
+    group by entity_id, cycle, local
 
     union all
 
-    select entity_id, -1, sum(in_state_amount) as in_state_amount, sum(out_state_amount) as out_state_amount
+    select entity_id, -1, local, count(*) as count, sum(final_amount) as amount
     from amounts_per_earmark
-    group by entity_id
+    group by entity_id, local
 ;
 
-select date_trunc('second', now()) || ' -- create index agg_earmark_amt_by_entity_in_state_out_state_entity_id';
-create index agg_earmark_amt_by_entity_in_state_out_state_entity_id on agg_earmark_amt_by_entity_in_state_out_state (entity_id);
-select date_trunc('second', now()) || ' -- create index agg_earmark_amt_by_entity_in_state_out_state_cycle';
-create index agg_earmark_amt_by_entity_in_state_out_state_cycle on agg_earmark_amt_by_entity_in_state_out_state (cycle);
+select date_trunc('second', now()) || ' -- create index agg_earmark_amt_by_entity_in_state_out_state_idx';
+create index agg_earmark_amt_by_entity_in_state_out_state_idx on agg_earmark_amt_by_entity_in_state_out_state (entity_id, cycle);
+
 
 
 -- Amount Requested vs Granted per Member
@@ -327,10 +320,8 @@ create table agg_earmarks_amt_requested_v_granted_by_entity as
     group by entity_id
 ;
 
-select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_entity_id';
-create index agg_earmarks_amt_requested_v_granted_by_entity_entity_id on agg_earmarks_amt_requested_v_granted_by_entity (entity_id);
-select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_cycle';
-create index agg_earmarks_amt_requested_v_granted_by_entity_cycle on agg_earmarks_amt_requested_v_granted_by_entity (cycle);
+select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_idx';
+create index agg_earmarks_amt_requested_v_granted_by_entity_idx on agg_earmarks_amt_requested_v_granted_by_entity (entity_id, cycle);
 
 
 -- The End

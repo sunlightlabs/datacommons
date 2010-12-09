@@ -1,4 +1,4 @@
-from dcapi.aggregates.handlers import EntityTopListHandler
+from dcapi.aggregates.handlers import EntityTopListHandler, PieHandler
 import json
 
 
@@ -25,3 +25,14 @@ class TopEarmarksHandler(EntityTopListHandler):
             row['recipients'] = [json.loads(recipient) for recipient in row['recipients']]
         
         return result
+    
+    
+class LocalEarmarksHandler(PieHandler):
+    
+    stmt = """
+        select local, count, amount
+        from agg_earmark_amt_by_entity_in_state_out_state
+        where
+            entity_id = %s
+            and cycle = %s
+    """
