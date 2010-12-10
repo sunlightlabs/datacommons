@@ -11,7 +11,7 @@ class TopEarmarksHandler(EntityTopListHandler):
         where
             entity_id = %s
             and cycle = %s
-        order by amount desc
+        order by amount desc, fiscal_year desc
         limit %s
     """
     
