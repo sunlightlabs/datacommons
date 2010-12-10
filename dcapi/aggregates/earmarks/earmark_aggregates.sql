@@ -270,53 +270,6 @@ select date_trunc('second', now()) || ' -- create index agg_earmark_amt_by_entit
 create index agg_earmark_amt_by_entity_in_state_out_state_idx on agg_earmark_amt_by_entity_in_state_out_state (entity_id, cycle);
 
 
-
--- Amount Requested vs Granted per Member
-
-select date_trunc('second', now()) || ' -- drop table if exists agg_earmarks_amt_requested_v_granted_by_entity';
-drop table if exists agg_earmarks_amt_requested_v_granted_by_entity;
-
-select date_trunc('second', now()) || ' -- create table agg_earmarks_amt_requested_v_granted_by_entity';
-create table agg_earmarks_amt_requested_v_granted_by_entity as
-    with earmark_requested_vs_granted as (
-        select
-            entity_id,
-            cycle,
-            stage,
-            count(*) as count,
-            sum(amount) as amount
-        from (
-            select
-                meta.entity_id as entity_id,
-                cycle,
-                switch.column1 as stage,
-                case
-                    when switch.column1 = 'approved' then final_amount
-                    when meta.seat = 'federal:senate' then senate_amount
-                    else house_amount
-                end as amount
-            from
-                earmarks_by_cycle e
-                inner join earmarks_member_w_metadata meta
-                    on e.id = meta.earmark_id
-                cross join (values ('requested'), ('approved')) switch
-        ) x
-        group by entity_id, cycle, stage
-    )
-
-    table earmark_requested_vs_granted
-
-    union all
-
-    select entity_id, -1, stage, sum(count) as count, sum(amount) as amount
-    from earmark_requested_vs_granted
-    group by entity_id, stage
-;
-
-select date_trunc('second', now()) || ' -- create index agg_earmarks_amt_requested_v_granted_by_entity_idx';
-create index agg_earmarks_amt_requested_v_granted_by_entity_idx on agg_earmarks_amt_requested_v_granted_by_entity (entity_id, cycle);
-
-
 -- The End
 
 select date_trunc('second', now()) || ' -- Finished computing earmark aggregates.';
