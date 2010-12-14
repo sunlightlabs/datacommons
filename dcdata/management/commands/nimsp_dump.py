@@ -6,26 +6,31 @@ import MySQLdb
 from settings import OTHER_DATABASES
 
 from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
-from optparse import make_option
-from django.core.management.base import BaseCommand
-    
-    
-class NIMSPDump2CSV(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option("-o", "--outfile", dest="outfile", help="path to csv file to create (default %s)" % SQL_DUMP_FILE),
-        make_option("-c", "--cycle", dest="cycle", metavar='YYYY',
-                          help="cycle to process (default all)"),
-        make_option("-n", "--number", dest="n", metavar='ROWS',
-                          help="number of rows to process"),
-        make_option("-b", "--verbose", action='store_true', dest="verbose", 
-                          help="noisy output"))
-    
-    def handle(self, **options):
+from dcdata.management.base.nimsp_importer import BaseNimspImporter
 
-        outfile_path = os.path.abspath(options['outfile']) if 'outfile' in options and options['outfile'] else os.path.abspath(SQL_DUMP_FILE)
+
+class NIMSPDump2CSV(BaseNimspImporter):
+    IN_DIR       = '/home/datacommons/data/auto/nimsp/dump/IN'
+    DONE_DIR     = '/home/datacommons/data/auto/nimsp/dump/DONE'
+    REJECTED_DIR = '/home/datacommons/data/auto/nimsp/dump/REJECTED'
+    OUT_DIR      = '/home/datacommons/data/auto/nimsp/denormalized/IN'
+    FILE_PATTERN = 'do_dump.txt'
+
+    LOG_PATH = '/home/datacommons/data/auto/log/nimsp_dump.log'
+
+    def __init__(self):
+        super(NIMSPDump2CSV, self).__init__()
+
+
+    def do_for_file(self, file, file_path):
+        # The file and file_path arguments are irrelevant for this particular
+        # script, since it's pulling all the data out of MySQL.
+        # We'll just ignore them, except to archive the file when we're done.
+
+        outfile_path = os.path.join(self.OUT_DIR, SQL_DUMP_FILE)
 
         select_fields = ",".join([sql_field for (name, sql_field, conversion_func) in CSV_SQL_MAPPING])
-    
+
         stmt = """
             select %s
                from Contributions c
@@ -39,15 +44,10 @@ class NIMSPDump2CSV(BaseCommand):
                    left outer join CatCodes cc on c.CatCode = cc.CatCode
                    left outer join PartyLookup p_cand on cand.PartyLookupID = p_cand.PartyLookupID
                    left outer join PartyLookup p_comm on comm.PartyLookupID = p_comm.PartyLookupID
-                %s
-                %s
                 into outfile '%s'
                     fields terminated by ',' enclosed by '"'
                     lines terminated by '\\n'
-            """ % (select_fields,
-                   ("where syr.Yearcode = %s" % options['cycle']) if 'cycle' in options and options['cycle'] else "",
-                   ("limit %s" % options['n']) if 'n' in options and options['n'] else "",
-                   outfile_path)
+            """ % (select_fields, outfile_path)
 
         connection = MySQLdb.connect(
             db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
@@ -57,11 +57,11 @@ class NIMSPDump2CSV(BaseCommand):
         )
         cursor = connection.cursor()
 
+        self.log.info('Dumping data to {0}...'.format(outfile_path))
         cursor.execute(stmt)
+        self.log.info('Data dump complete.')
 
-        # is there anything to print? Not sure
-        for row in cursor:
-            print row
+        self.archive_file(file, timestamp=True)
 
 
 Command = NIMSPDump2CSV
