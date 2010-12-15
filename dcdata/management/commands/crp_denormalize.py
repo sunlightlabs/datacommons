@@ -15,10 +15,10 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
               'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order',
               'organization_name', 'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id',
-              'recipient_name', 'recipient_ext_id',
-              'recipient_party', 'recipient_type', 'recipient_state', 'recipient_category', 'recipient_category_order',
-              'committee_name', 'committee_ext_id', 'committee_party', 'election_type',
-              'district', 'seat', 'seat_status', 'seat_result']
+              'recipient_name', 'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state',
+              'recipient_state_held', 'recipient_category', 'recipient_category_order',
+              'committee_name', 'committee_ext_id', 'committee_party', 'candidacy_status',
+              'district', 'district_held', 'seat', 'seat_held', 'seat_status', 'seat_result']
 
 SPEC = dict(((fn, None) for fn in FIELDNAMES))
 
@@ -54,18 +54,42 @@ class RecipientFilter(Filter):
             record['recipient_ext_id'] = candidate['cid']
             record['seat_status'] = candidate['crp_ico']
             record['seat_result'] = RecipientFilter.get_recip_code_result(candidate['recip_code'])
-            seat = candidate['dist_id_run_for'].upper()
-            if len(seat) == 4:
-                if seat == 'PRES':
-                    record['recipient_state'] = ''
-                    record['seat'] = 'federal:president'
+
+            seat_held = candidate['dist_id_curr'].upper()
+            seat_in_race = candidate['dist_id_run_for'].upper()
+
+            RecipientFilter.standardize_seat(seat_held, record, '_held')
+            RecipientFilter.standardize_seat(seat_in_race, record)
+
+            # the above also populates
+            # record['recipient_state']
+            # record['seat']
+            # record['district']
+            # record['recipient_state_held']
+            # record['seat_held']
+            # record['district_held']
+
+    @staticmethod
+    def standardize_seat(seat, record, label=''):
+        state_key    = RecipientFilter.format_key('recipient_state', label)
+        seat_key     = RecipientFilter.format_key('seat', label)
+        district_key = RecipientFilter.format_key('district', label)
+
+        if len(seat) == 4:
+            if seat == 'PRES':
+                record[state_key] = ''
+                record[seat_key] = 'federal:president'
+            else:
+                record[state_key] = seat[0:2]
+                if seat[2] == 'S':
+                    record[seat_key] = 'federal:senate'
                 else:
-                    record['recipient_state'] = seat[0:2]
-                    if seat[2] == 'S':
-                        record['seat'] = 'federal:senate'
-                    else:
-                        record['seat'] = 'federal:house'
-                        record['district'] = "%s-%s" % (seat[:2], seat[2:])
+                    record[seat_key] = 'federal:house'
+                    record[district_key] = "%s-%s" % (seat[:2], seat[2:])
+
+    @staticmethod
+    def format_key(key, extra):
+        return ''.join([key, extra])
 
     @staticmethod
     def add_committee_recipient(committee, record):
@@ -99,9 +123,6 @@ def load_candidates(dataroot):
         for record in reader:
             key = "%s:%s" % (record.pop('cycle'), record['cid'].upper())
             del record['fec_cand_id']
-            del record['dist_id_curr']
-            del record['curr_cand']
-            del record['cycle_cand']
             del record['no_pacs']
             candidates[key] = record
     return candidates
