@@ -107,14 +107,14 @@ class RecipientFilter(Filter):
         return record
 
 class SeatFilter(Filter):
-    election_type_map = {
-        'CL': 'C', # Utah candidate culling process 
-        'L':  'G', # General
-        'LR': 'R', # Judicial retention election (no opponents) 
-        'PL': 'P', # Primary
-        'W':  'G', # General
-        'WR': 'R'  # Judicial retention
-        }
+    candidacy_status_map = {
+        'CL': True,  # Utah candidate culling process 
+        'L':  True,  # General
+        'LR': True,  # Judicial retention election (no opponents) 
+        'PL': False, # Primary
+        'W':  True,  # General
+        'WR': True   # Judicial retention
+    }
     office_code_map = {
         'G': 'state:governor',
         'H': 'state:lower',
@@ -122,7 +122,7 @@ class SeatFilter(Filter):
         'J': 'state:judicial',
         'K': 'state:judicial',
         'O': 'state:office'
-        }
+    }
 
     def process_record(self, record):
         if record['district'] is not None:
@@ -138,7 +138,7 @@ class SeatFilter(Filter):
                 record['seat_result'] = 'W'
             elif record['status'].startswith('L') or record['status'].endswith('L'):
                 record['seat_result'] = 'L'
-        record['election_type'] = self.election_type_map.get(record['status'])
+        record['candidacy_status'] = self.candidacy_status_map.get(record['status'], None)
         return record
 
 

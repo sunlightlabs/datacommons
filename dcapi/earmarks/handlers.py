@@ -13,17 +13,16 @@ EARMARKS_SCHEMA = Schema(
     
     FulltextField('bill', ['bill', 'bill_section', 'bill_subsection']),
     FulltextField('description', ['earmarks_earmark.description', 'notes']),
-    # the following three fulltext searches on related models don't work
-    FulltextField('city'),
-    FulltextField('member', ['standardized_name', 'raw_name']),
-    FulltextField('recipient', ['standardized_recipient', 'raw_recipient']),
+    FulltextField('city', ['earmarks_location.city']),
+    FulltextField('member', ['earmarks_member.standardized_name', 'earmarks_member.raw_name']),
+    FulltextField('recipient', ['earmarks_recipient.standardized_recipient', 'earmarks_recipient.raw_recipient']),
     
     ComparisonField('amount', 'final_amount'),
 )
 
 def filter_earmarks(request):
     qs = EARMARKS_SCHEMA.build_filter(Earmark.objects, request)
-    
+
     # filters do nothing--just here to force the join that's needed for the fulltext search
     if 'city' in request:
         qs = qs.filter(locations__city__isnull=False)
@@ -32,7 +31,7 @@ def filter_earmarks(request):
     if 'recipient' in request:
         qs = qs.filter(recipients__raw_recipient__isnull=False)  
         
-    return qs.order_by().select_related()
+    return qs.order_by().distinct().select_related()
     
     
 SIMPLE_FIELDS = [
