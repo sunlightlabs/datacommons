@@ -14,6 +14,8 @@ create view earmarks_by_cycle as
         case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year - 1 end as cycle
     from
         earmarks_earmark
+    where
+        presidential = '' -- don't include any sort of presidential earmark
 ;
 
 -- Member Associations
