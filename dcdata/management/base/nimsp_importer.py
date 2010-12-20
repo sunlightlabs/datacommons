@@ -1,18 +1,19 @@
-import os, fnmatch, logging, time, datetime
+import os, fnmatch, logging, logging.handlers, time, datetime
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
 
 class BaseNimspImporter(BaseCommand):
 
-    IN_DIR       = '/home/datacommons/data/auto/nimsp/raw/IN'
-    DONE_DIR     = '/home/datacommons/data/auto/nimsp/raw/DONE'
-    REJECTED_DIR = '/home/datacommons/data/auto/nimsp/raw/REJECTED'
-    #OUT_DIR      = '/home/datacommons/data/auto/nimsp//IN'
-    FILE_PATTERN = '*.sql'
+    IN_DIR       = None # '/home/datacommons/data/auto/nimsp/raw/IN'
+    DONE_DIR     = None # '/home/datacommons/data/auto/nimsp/raw/DONE'
+    REJECTED_DIR = None # '/home/datacommons/data/auto/nimsp/raw/REJECTED'
+    OUT_DIR      = None # '/home/datacommons/data/auto/nimsp/IN'
+    FILE_PATTERN = None # bash-style, ala '*.sql'
 
-    LOG_PATH = '/home/datacommons/data/auto/log/nimsp_mysql_loader.log'
+    LOG_PATH = None # '/home/datacommons/data/auto/log/nimsp_my_command.log'
 
     option_list = BaseCommand.option_list + (
         make_option('--dry-run', '-d',
@@ -30,15 +31,28 @@ class BaseNimspImporter(BaseCommand):
 
     def set_up_logger(self):
         # create logger
-        self.log = logging.getLogger("command")
+        self.log = logging.getLogger(self.__class__.__name__)
         self.log.setLevel(logging.DEBUG)
         # create console handler and set level to debug
         ch = logging.FileHandler(self.LOG_PATH)
         ch.setLevel(logging.DEBUG)
+
+        # create email handler and set level to warn
+        eh = logging.handlers.SMTPHandler(
+            (self.LOGGING_EMAIL['host'], self.LOGGING_EMAIL['port']), # host
+            self.LOGGING_EMAIL['username'], # from address
+            ['arowland@sunlightfoundation.com'], # to addresses
+            'Unhappy NIMSP Loading App', # subject
+            (self.LOGGING_EMAIL['username'], self.LOGGING_EMAIL['password']) # credentials tuple
+        )
+        eh.setLevel(logging.WARN)
+
         # create formatter
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         ch.setFormatter(formatter)
+        eh.setFormatter(formatter)
         self.log.addHandler(ch)
+        self.log.addHandler(eh)
 
 
     def handle(self, *args, **options):
