@@ -65,7 +65,8 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             
             # add static fields
             FieldAdder('is_amendment', False),
-            FieldAdder('election_type', 'G'),
+
+            FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: None if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),
             
             # filter through spec
             SpecFilter(SPEC))

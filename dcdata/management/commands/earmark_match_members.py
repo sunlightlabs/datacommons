@@ -126,6 +126,7 @@ class Command(BaseCommand):
 
     def update_member(self, member, name_obj, entity=None):
         crp_id = entity.attributes.get(namespace='urn:crp:recipient').value if entity else ''
+        name = str(PoliticianNameCleaver(entity.name).parse()) if entity else str(name_obj)
 
         member_objs = Member.objects.filter(
             raw_name=member.get('raw_name'),
@@ -133,8 +134,9 @@ class Command(BaseCommand):
             state=member.get('state'),
         ).update(
             crp_id=crp_id,
-            standardized_name=str(name_obj),
+            standardized_name=name,
         )
+
         if entity:
             self.print_member(member)
             print '- Updated for state {0}!'.format(entity.politician_metadata_for_latest_cycle.state)
