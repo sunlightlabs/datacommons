@@ -237,49 +237,46 @@ class UnallocatedEmitter(CSVEmitter):
 
 
 class NIMSPDenormalize(BaseCommand):
-    
+
     option_list = BaseCommand.option_list + (
-        make_option("-d", "--dataroot", dest="dataroot",
-                      help="path to data directory", metavar="PATH"),
+        make_option("-d", "--directory", dest="dest_dir",
+                      help="path to destination directory", metavar="PATH"),
         make_option("-s", "--saltsdb", dest="saltsdb",
                     help="path to salts SQLite database", metavar="PATH"),
         make_option("-i", "--infile", dest="input_path",
                       help="path to input csv", metavar="FILE"),
         make_option("-o", "--output_type", dest="output_types", choices=['allocated', 'unallocated', 'both'],
                     default='both', help="which output files to generate"))
-        
+
     def handle(self, *args, **options):
-        if 'dataroot' not in options:
-            CommandError("path to dataroot is required")
+        if 'dest_dir' not in options:
+            CommandError("path to destination directory is required")
         if 'saltsdb' not in options:
             CommandError("path to saltsdb is required")
-    
-        dataroot = os.path.abspath(options['dataroot'])
-        assert dataroot
-        if not os.path.exists(dataroot):
-            print "No such directory %s" % dataroot
+
+        dest_dir = os.path.abspath(options['dest_dir'])
+        assert dest_dir
+        if not os.path.exists(dest_dir):
+            print "No such directory %s" % dest_dir
             sys.exit(1)
         saltsdb = os.path.abspath(options['saltsdb'])
         assert saltsdb
         if not os.path.exists(saltsdb):
             print "No such database %s" % saltsdb
             sys.exit(1)
-        denorm_path = os.path.join(dataroot, 'denormalized')
-        if not os.path.exists(denorm_path):
-            os.makedirs(denorm_path)
-        
-        input_path = options.get('input_path', '') or os.path.join(denorm_path, SQL_DUMP_FILE)
-        
+
+        input_path = options.get('input_path', '') or os.path.join(dest_dir, SQL_DUMP_FILE)
+
         if options['output_types'] in ('allocated', 'both'):
             self.process_allocated(denorm_path, input_path)
-    
+
         if options['output_types'] in ('unallocated', 'both'):
             self.process_unallocated(denorm_path, saltsdb)
 
     @staticmethod
     def get_allocated_record_processor():
         input_type_conversions = dict([(field, conversion_func) for (field, _, conversion_func) in CSV_SQL_MAPPING if conversion_func])
-        
+
         return chain_filters(
             CSVFieldVerifier(),
             MultiFieldConversionFilter(input_type_conversions),
