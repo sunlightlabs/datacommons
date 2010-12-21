@@ -56,7 +56,7 @@ presidential_raw = dict([
     ("President and Member(s)", 'm'),
     ("President with member(s)", 'm'),
     ("President - with member(s)", 'm'),
-    ("Judiciary", 'j')
+    ("Judiciary", 'j') # don't know what this means --epg
 ])
 
 
