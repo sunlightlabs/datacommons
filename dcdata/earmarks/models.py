@@ -52,11 +52,11 @@ presidential_choices = (
 presidential_raw = dict([
     ("President-Solo", 'p'),
     ("President - solo", 'p'),
-    ("President-Solo & Und.", 'u'), # don't know what this means --epg
+    ("President-Solo & Und.", 'u'), 
     ("President and Member(s)", 'm'),
     ("President with member(s)", 'm'),
     ("President - with member(s)", 'm'),
-    ("Judiciary", 'j') # don't know what this means --epg
+    ("Judiciary", 'j')
 ])
 
 
