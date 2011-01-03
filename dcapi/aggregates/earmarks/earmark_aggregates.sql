@@ -66,42 +66,6 @@ select date_trunc('second', now()) || ' -- create index assoc_earmarks_recipient
 create index assoc_earmarks_recipient_earmark_id on assoc_earmarks_recipient (earmark_id);
 
 
--- Flattened earmarks
-
-select date_trunc('second', now()) || ' -- drop table if exists earmarks_flattened';
-drop table if exists earmarks_flattened;
-
-select date_trunc('second', now()) || ' -- create table earmarks_flattened';
-create table earmarks_flattened as
-    select
-        e.id,
-        cycle,
-        fiscal_year,
-        final_amount,
-        description,
-        ARRAY(
-            select '{"name":"' || standardized_name || '", "id":"' || replace(coalesce(a.entity_id::varchar, ''), '-', '') || '"}'
-            from earmarks_member m
-            left join assoc_earmarks_member a
-                on m.id = a.member_id
-            where
-                e.id = m.earmark_id
-            ) as members,
-        ARRAY(
-            select '{"name":"' || case when standardized_recipient != '' then standardized_recipient else raw_recipient end || '", "id":"' || replace(coalesce(a.entity_id::varchar, ''), '-', '') || '"}'
-            from earmarks_recipient r
-            left join assoc_earmarks_recipient a
-                on r.id = a.recipient_id
-            where
-                e.id = r.earmark_id
-            ) as recipients
-    from
-        earmarks_by_cycle e;
-
-
-
-
-
 -- Member with Our Metadata If Matched, Data from Earmark If Not
 
 select date_trunc('second', now()) || ' -- drop table if exists earmarks_member_w_metadata';
@@ -126,6 +90,42 @@ create table earmarks_member_w_metadata as
 
 select date_trunc('second', now()) || ' -- create index earmarks_member_w_metadata_entity_id on earmarks_member_w_metadata (entity_id)';
 create index earmarks_member_w_metadata_entity_id on earmarks_member_w_metadata (entity_id);
+
+
+-- Flattened earmarks
+
+select date_trunc('second', now()) || ' -- drop table if exists earmarks_flattened';
+drop table if exists earmarks_flattened;
+
+select date_trunc('second', now()) || ' -- create table earmarks_flattened';
+create table earmarks_flattened as
+    select
+        e.id,
+        cycle,
+        fiscal_year,
+        final_amount,
+        description,
+        ARRAY(
+            select '{"name":"' || name || 
+                    '", "id":"' || replace(coalesce(entity_id::varchar, ''), '-', '') || 
+                    '", "party":"' || party ||
+                    '", "state":"' || state ||
+                    '"}'
+            from earmarks_member_w_metadata m
+            where
+                e.id = m.earmark_id
+            ) as members,
+        ARRAY(
+            select '{"name":"' || case when standardized_recipient != '' then standardized_recipient else raw_recipient end || '", "id":"' || replace(coalesce(a.entity_id::varchar, ''), '-', '') || '"}'
+            from earmarks_recipient r
+            left join assoc_earmarks_recipient a
+                on r.id = a.recipient_id
+            where
+                e.id = r.earmark_id
+            ) as recipients
+    from
+        earmarks_by_cycle e;
+
 
 -- Earmark Totals
 
