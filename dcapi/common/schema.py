@@ -1,5 +1,6 @@
 from dcapi.schema import OperatorField, Operator, Field
-from dcdata.utils.strings.transformers import build_remove_substrings
+from dcdata.utils.strings.transformers import build_remove_substrings, \
+    build_map_substrings
 
 EQUAL_OP = '='
 LESS_THAN_OP = '<'
@@ -92,7 +93,8 @@ class FulltextField(Field):
         return query.extra(where=[self.clause], params=[terms] * len(self.model_fields))
      
 
-_strip_postgres_ft_operators = build_remove_substrings("&|!():*")
+_punctuation_to_spaces = dict([(c, ' ') for c in "&|!():*"])
+_strip_postgres_ft_operators = build_map_substrings(_punctuation_to_spaces)
 
 def _fulltext_clause(column):
     return """to_tsvector('datacommons', %s) @@ to_tsquery('datacommons', %%s)""" % column
