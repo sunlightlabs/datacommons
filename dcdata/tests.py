@@ -21,6 +21,7 @@ from decimal import Decimal
 from django.core.management import call_command
 from django.db import connection
 from django.test import TestCase
+from nose.plugins.attrib import attr
 from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
 from saucebrush.sources import CSVSource
@@ -32,7 +33,7 @@ import shutil
 import sqlite3
 import sys
 
-#from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
+from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 
 
 dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
@@ -112,8 +113,8 @@ class TestNIMSPDenormalize(TestCase):
         shutil.copy(self.original_salts_db_path, self.salts_db_path)
 
 
+    @attr('mysql')
     def test_salting(self):
-        raise SkipTest
         input_string = '"3327568","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
                         "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
@@ -124,17 +125,16 @@ class TestNIMSPDenormalize(TestCase):
 
         load_data(source, processor, output.append)
 
-
         self.assertEqual(2, len(output))
         self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
 
 
+    @attr('mysql')
     def test_output_switch(self):
-        raise SkipTest
         self.assertFalse(os.path.exists(self.output_paths[0]))
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path)
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertTrue(os.path.exists(self.output_paths[0]))
         self.assertTrue(os.path.exists(self.output_paths[1]))
@@ -142,7 +142,7 @@ class TestNIMSPDenormalize(TestCase):
         os.remove(self.output_paths[1])
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='unallocated')
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='unallocated', dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertTrue(os.path.exists(self.output_paths[1]))
 
@@ -151,16 +151,15 @@ class TestNIMSPDenormalize(TestCase):
         self.assertFalse(os.path.exists(self.output_paths[0]))
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='allocated')
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='allocated', dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertTrue(os.path.exists(self.output_paths[0]))
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
 
+    @attr('mysql')
     def test_command(self):
-        raise SkipTest
-
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path)
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
         self.assertEqual(4, sum(1 for _ in open(self.output_paths[1], 'r')))
@@ -173,16 +172,15 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(11, Contribution.objects.all().count())
 
 
+    @attr('mysql')
     def test_recipient_state(self):
-        raise SkipTest
         self.test_command()
 
         self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
         self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
 
+    @attr('mysql')
     def test_salt_filter(self):
-        raise SkipTest
-
         connection = sqlite3.connect(self.salts_db_path)
         connection.cursor().execute('delete from salts where nimsp_id = 9999')
         connection.commit()
@@ -199,8 +197,8 @@ class TestNIMSPDenormalize(TestCase):
 
         self.assertEqual(2, len(output))
 
+    @attr('mysql')
     def test_contributor_type(self):
-        raise SkipTest
         input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0",\
                         "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'

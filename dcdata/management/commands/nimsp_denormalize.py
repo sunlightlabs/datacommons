@@ -268,10 +268,10 @@ class NIMSPDenormalize(BaseCommand):
         input_path = options.get('input_path', '') or os.path.join(dest_dir, SQL_DUMP_FILE)
 
         if options['output_types'] in ('allocated', 'both'):
-            self.process_allocated(denorm_path, input_path)
+            self.process_allocated(dest_dir, input_path)
 
         if options['output_types'] in ('unallocated', 'both'):
-            self.process_unallocated(denorm_path, saltsdb)
+            self.process_unallocated(dest_dir, saltsdb)
 
     @staticmethod
     def get_allocated_record_processor():
