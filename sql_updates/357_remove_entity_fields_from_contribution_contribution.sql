@@ -1,0 +1,5 @@
+alter table contribution_contribution drop column contributor_entity;
+alter table contribution_contribution drop column organization_entity;
+alter table contribution_contribution drop column parent_organization_entity;
+alter table contribution_contribution drop column recipient_entity;
+alter table contribution_contribution drop column committee_entity;

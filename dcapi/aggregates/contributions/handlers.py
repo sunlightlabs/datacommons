@@ -79,18 +79,6 @@ class PolContributorsHandler(EntityTopListHandler):
         limit %s
     """
 
-class PolOrgContributorHandler(EntityTopListHandler):
-    fields = ['total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
-
-    stmt = """
-        select total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-        from agg_orgs_to_cand
-        where
-            recipient_entity = %s
-            and cycle = %s
-        order by total_amount desc
-        limit %s
-    """
 
 class IndivOrgRecipientsHandler(EntityTopListHandler):
 
@@ -113,11 +101,11 @@ class IndivPolRecipientsHandler(EntityTopListHandler):
 
     stmt = """
         select recipient_name, recipient_entity, party, state, count, amount
-        from agg_cands_from_indiv
-            left join matchbox_politicianmetadata on recipient_entity = entity_id
+        from agg_cands_from_indiv aci
+            left join politician_metadata_latest_cycle_view on recipient_entity = entity_id
         where
             contributor_entity = %s
-            and cycle = %s
+            and aci.cycle = %s
         order by amount desc
         limit %s
     """
@@ -129,12 +117,28 @@ class OrgRecipientsHandler(EntityTopListHandler):
 
     stmt = """
         select recipient_name, recipient_entity, party, state, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
-        from agg_cands_from_org
-            left join matchbox_politicianmetadata on recipient_entity = entity_id
+        from agg_cands_from_org aco
+            left join politician_metadata_latest_cycle_view on recipient_entity = entity_id
         where
             organization_entity = %s
-            and cycle = %s
+            and aco.cycle = %s
         order by total_amount desc
+        limit %s
+    """
+
+
+class IndustriesHandler(EntityTopListHandler):
+
+    fields = ['name', 'id', 'count', 'amount', 'should_show_entity']
+
+    stmt = """
+        select industry as name, industry_entity as id, count, amount, coalesce(should_show_entity, 't') as should_show_entity
+        from agg_industries_to_cand
+        left join matchbox_industrymetadata on industry_entity = entity_id
+        where
+            recipient_entity = %s
+            and cycle = %s
+        order by amount desc
         limit %s
     """
 
@@ -165,9 +169,9 @@ class TopPoliticiansByReceiptsHandler(TopListHandler):
           from agg_entities ae
          inner join matchbox_entity me
             on ae.entity_id = id
-         left join matchbox_politicianmetadata mpm
-            on me.id = mpm.entity_id
-         where cycle     = %s
+         left join politician_metadata_latest_cycle_view pm
+            on me.id = pm.entity_id
+         where ae.cycle  = %s
            and type      = 'politician'
          order by recipient_amount desc, recipient_count desc
          limit %s
@@ -192,6 +196,27 @@ class TopOrganizationsByContributionsHandler(TopListHandler):
     """
 
 
+class TopIndustriesByContributionsHandler(TopListHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'count', 'amount', 'should_show_entity']
+
+    stmt = """
+        select name, me.id, contributor_count, contributor_amount, coalesce(should_show_entity, 't') as should_show_entity
+          from agg_entities ae
+         inner join matchbox_entity me
+            on ae.entity_id = me.id
+         left join matchbox_industrymetadata mim
+            using (entity_id)
+         where cycle = %s
+           and type  = 'industry'
+           and coalesce(should_show_entity, 't')
+         order by contributor_amount desc, contributor_count desc
+         limit %s
+    """
+
+
 class TopIndividualsByContributionsHandler(TopListHandler):
 
     args = ['cycle', 'limit']
@@ -209,64 +234,103 @@ class TopIndividualsByContributionsHandler(TopListHandler):
          limit %s
     """
 
+class IndustryOrgHandler(EntityTopListHandler):
+    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
+
+    stmt = """
+        select organization_name, organization_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+        from agg_top_orgs_by_industry
+        where
+            industry_entity = %s
+            and cycle = %s
+        order by total_amount desc
+        limit %s
+    """
+
 
 class SparklineHandler(EntityTopListHandler):
 
-    args = ['entity_id', 'cycle']
-
+    args   = 'cycle entity_id cycle entity_id cycle entity_id cycle'.split()
     fields = ['step', 'amount']
 
     stmt = """
-        select step, coalesce(amount, 0)::integer
-        from generate_series(0,24) as all_steps(step)
-        left join (select step, amount
-            from agg_contribution_sparklines
+        select
+            all_steps_and_dates.step,
+            coalesce(amounts_by_date.amount, 0) as amount
+        from (
+            select
+                rank() over (order by date_step) as step,
+                date_step
+            from (
+                select distinct
+                    case when %s != -1 then generate_series else date_trunc('quarter', generate_series) end as date_step
+                from generate_series(
+                    (select date_trunc('year', min(date_step)) from agg_contribution_sparklines where entity_id = %s and cycle = %s),
+                    (select max(date_step) from agg_contribution_sparklines where entity_id = %s and cycle = %s),
+                    '1 month'
+                )
+            ) x
+        ) all_steps_and_dates
+        left join (
+            select
+                date_step,
+                amount
+            from
+                agg_contribution_sparklines
             where
                 entity_id = %s
-                and cycle = %s) sparkline
-            using (step)
-        order by step;
+                and cycle = %s
+        ) amounts_by_date using (date_step)
+        order by
+            step
     """
 
 class SparklineByPartyHandler(BaseHandler):
 
-    args   = ['entity_id', 'cycle']
+    args   = 'cycle entity_id cycle entity_id cycle entity_id cycle'.split()
     fields = ['step', 'amount']
 
     stmt = """
         select
             recipient_party,
-            step,
-            sum(amount)
+            all_steps_parties_and_dates.step,
+            coalesce(amounts_by_date.amount, 0) as amount
         from (
             select
                 recipient_party,
-                step,
-                coalesce(amount, 0)::integer as amount
+                rank() over (partition by recipient_party order by date_step) as step,
+                date_step
             from (
-                select *
-                from generate_series(0,24) as all_steps(step)
+                select distinct
+                    case when %s != -1 then generate_series else date_trunc('quarter', generate_series) end as date_step,
+                    recipient_party
+                from generate_series(
+                    (select date_trunc('year', min(date_step)) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s),
+                    (select max(date_step) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s),
+                    '1 month'
+                )
                 cross join (
                     select recipient_party from (values ('D'), ('R'), ('O')) as parties(recipient_party)
                 ) x
-            ) steps_and_parties
-            left join (
-                select
-                    case
-                        when recipient_party in('D', 'R') then recipient_party
-                        else 'O'
-                    end as recipient_party,
-                    step,
-                    amount
-                from
-                    agg_contribution_sparklines_by_party
-                where
-                    entity_id = %s
-                    and cycle = %s
-            ) contribution_data using (step, recipient_party)
-        ) grouped
-        group by recipient_party, step
-        order by step, recipient_party
+            ) y
+        ) all_steps_parties_and_dates
+        left join (
+            select
+                case
+                    when recipient_party in('D', 'R') then recipient_party
+                    else 'O'
+                end as recipient_party,
+                date_step,
+                amount
+            from
+                agg_contribution_sparklines_by_party
+            where
+                entity_id = %s
+                and cycle = %s
+        ) amounts_by_date using (date_step, recipient_party)
+        order by
+            step,
+            recipient_party
     """
 
     def read(self, request, **kwargs):
@@ -290,21 +354,21 @@ class ContributionAmountHandler(BaseHandler):
     fields = 'recipient_entity recipient_name contributor_entity contributor_name amount'.split()
 
     stmt = """
-	select r.id, r.name, c.id, c.name,
-		(select coalesce(sum(amount), 0)::integer
-		from recipient_associations ra 
-		inner join (select * from contributor_associations union select * from organization_associations) ca
-			on ca.entity_id = c.id 
-		 	   and ra.entity_id = r.id
-			   and ca.transaction_id = ra.transaction_id
-		inner join contributions_all_relevant contrib
-			on contrib.transaction_id = ra.transaction_id
-		%s) as amount
-	from matchbox_entity r
-	cross join matchbox_entity c
-	where
-		c.id = %%s
-		and r.id = %%s
+    select r.id, r.name, c.id, c.name,
+        (select coalesce(sum(amount), 0)::integer
+        from recipient_associations ra
+        inner join (select * from contributor_associations union select * from organization_associations) ca
+            on ca.entity_id = c.id
+                and ra.entity_id = r.id
+               and ca.transaction_id = ra.transaction_id
+        inner join contributions_all_relevant contrib
+            on contrib.transaction_id = ra.transaction_id
+        %s) as amount
+    from matchbox_entity r
+    cross join matchbox_entity c
+    where
+        c.id = %%s
+        and r.id = %%s
     """
 
     def read(self, request, **kwargs):
@@ -314,20 +378,20 @@ class ContributionAmountHandler(BaseHandler):
         cached = cache.get(cache_key, 'has expired')
 
         if cached == 'has expired':
-			if cycle == ALL_CYCLES:
-				cycle_where = ''
-			else:
-				cycle_where = 'where cycle = %d' % int(cycle)
+            if cycle == ALL_CYCLES:
+                cycle_where = ''
+            else:
+                cycle_where = 'where cycle = %d' % int(cycle)
 
-			result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
+            result = execute_one(self.stmt % cycle_where, *[kwargs[param] for param in self.args])
 
-			if result:
-				result = dict(zip(self.fields, result)) # add labels
+            if result:
+                result = dict(zip(self.fields, result)) # add labels
 
-			result = check_empty(result, kwargs['recipient_entity'], kwargs['contributor_entity'])
-			cache.set(cache_key, result)
+            result = check_empty(result, kwargs['recipient_entity'], kwargs['contributor_entity'])
+            cache.set(cache_key, result)
 
-			return result
+            return result
         else:
             return cached
 

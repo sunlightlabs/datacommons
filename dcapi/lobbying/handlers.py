@@ -1,12 +1,46 @@
-from urllib import unquote_plus
-from piston.handler import BaseHandler
+from dcapi.common.handlers import FilterHandler
+from dcapi.common.schema import InclusionField, FulltextField, ComparisonField, \
+    IndustryField
+from dcapi.schema import Schema, FunctionField
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
 from dcdata.lobbying.models import Lobbying
-from dcapi.lobbying import filter_lobbying
 
-RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
-DEFAULT_PER_PAGE = 1000
-MAX_PER_PAGE = 100000
+
+def _lobbyist_is_rep_generator(query, value):
+    return query.filter(lobbyists__member_of_congress=True)
+
+    
+LOBBYING_SCHEMA = Schema(
+    FunctionField('lobbyist_is_rep', _lobbyist_is_rep_generator),
+    
+    IndustryField('industry', 'client_category'),
+
+    InclusionField('transaction_id'),
+    InclusionField('transaction_type'),
+    InclusionField('filing_type'),
+    InclusionField('year'),
+    InclusionField('issue', 'issues__general_issue_code'),
+    InclusionField('client_ext_id'),
+    InclusionField('lobbyist_ext_id', 'lobbyists__lobbyist_ext_id'),
+    InclusionField('candidate_ext_id', 'lobbyists__candidate_ext_id'),
+
+    FulltextField('client_ft', ['client_name']),
+    FulltextField('client_parent_ft', ['client_parent_name']),
+    FulltextField('lobbyist_ft', ['lobbying_lobbyist.lobbyist_name']),
+    FulltextField('registrant_ft', ['registrant_name']),
+
+    ComparisonField('amount', cast=int),
+)
+
+def filter_lobbying(request):
+    q = LOBBYING_SCHEMA.build_filter(Lobbying.objects, request).order_by()
+
+    # filter does nothing--it's here to force the join on lobbyists
+    if 'lobbyist_ft' in request:
+        q = q.filter(lobbyists__lobbyist_name__isnull=False)
+
+    return q.distinct().select_related()
+
 
 LOBBYING_FIELDS = ['year', 'transaction_id', 'transaction_type', 'transaction_type_desc',
     'filing_type', 'amount', 'registrant_name', 'registrant_is_firm',
@@ -15,26 +49,6 @@ LOBBYING_FIELDS = ['year', 'transaction_id', 'transaction_type', 'transaction_ty
     ('issues', ('general_issue_code','general_issue','specific_issue')),
     ('agencies', ('agency_ext_id','agency_name')),]
 
-def load_lobbying(params, nolimit=False, ordering=True):
-    
-    per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
-    page = int(params.get('page', 1)) - 1
-    
-    offset = page * per_page
-    limit = offset + per_page
-    
-    for param in RESERVED_PARAMS:
-        if param in params:
-            del params[param]
-            
-    unquoted_params = dict([(param, unquote_plus(quoted_value)) for (param, quoted_value) in params.iteritems()])
-    result = filter_lobbying(unquoted_params)
-    if ordering:
-        result = result.order_by('-year','-amount')
-    if not nolimit:
-        result = result[offset:limit]
-          
-    return result
 
 class LobbyingStatsLogger(object):
     def __init__(self):
@@ -44,12 +58,15 @@ class LobbyingStatsLogger(object):
         self.stats[CRP_TRANSACTION_NAMESPACE] += 1
         self.stats['total'] += 1
 
-class LobbyingFilterHandler(BaseHandler):
-    allowed_methods = ('GET',)
+
+class LobbyingFilterHandler(FilterHandler):
     fields = LOBBYING_FIELDS
     model = Lobbying
     statslogger = LobbyingStatsLogger
+    ordering = ['-year','-amount']
+    filename = 'lobbying'
     
-    def read(self, request):
-        params = request.GET.copy()
-        return load_lobbying(params)
+    def queryset(self, params):
+        return filter_lobbying(self._unquote(params))
+    
+    

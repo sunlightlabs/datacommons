@@ -9,6 +9,6 @@ grantsfilter_handler = Resource(GrantsFilterHandler,
                                 authentication=PistonKeyAuthentication())
 
 urlpatterns = patterns('',
-    url(r'^.(?P<emitter_format>json|xls)$', grantsfilter_handler, name='api_grants_filter'),
+    url(r'^.(?P<emitter_format>json|xls|csv)$', grantsfilter_handler, name='api_grants_filter'),
     url(r'^.(?P<emitter_format>.*)$', no_format),
 )

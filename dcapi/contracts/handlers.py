@@ -1,37 +1,42 @@
-from urllib import unquote_plus
-from piston.handler import BaseHandler
+from dcapi.common.handlers import FilterHandler
+from dcapi.common.schema import InclusionField, FulltextField, ComparisonField
+from dcapi.schema import Schema
 from dcdata.contracts.models import Contract
-from dcapi.contracts import filter_contracts
 
-RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
-DEFAULT_PER_PAGE = 1000
-MAX_PER_PAGE = 100000
+CONTRACTS_SCHEMA = Schema(
+    InclusionField('agency_id'),
+    InclusionField('contracting_agency_id'),
+    InclusionField('fiscal_year'),
+    InclusionField('place_distrct'),
+    InclusionField('place_state', 'place_state_code'),
+    InclusionField('requesting_agency_id'),
+    InclusionField('vendor_state'),
+    InclusionField('vendor_zipcode'),
+    InclusionField('vendor_district'),
+    InclusionField('vendor_duns'),
+    InclusionField('vendor_parent_duns'),
 
-def load_contracts(params, nolimit=False, ordering=True):
-    
-    per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
-    page = int(params.get('page', 1)) - 1
-    
-    offset = page * per_page
-    limit = offset + per_page
-    
-    for param in RESERVED_PARAMS:
-        if param in params:
-            del params[param]
-            
-    unquoted_params = dict([(param, unquote_plus(quoted_value)) for (param, quoted_value) in params.iteritems()])
-    result = filter_contracts(unquoted_params)
-    if ordering:
-        result = result.order_by('-fiscal_year','-current_amount')
-    if not nolimit:
-        result = result[offset:limit]
-          
-    return result
+    FulltextField('agency_name'),
+    FulltextField('contracting_agency_name'),
+    FulltextField('requesting_agency_name'),
+    FulltextField('vendor_name'),
+    FulltextField('vendor_city'),
 
-class ContractsFilterHandler(BaseHandler):
-    allowed_methods = ('GET',)
+    ComparisonField('obligated_amount', cast=int),
+    ComparisonField('current_amount', cast=int),
+    ComparisonField('maximum_amount', cast=int)
+)
+
+
+def filter_contracts(request):
+    return CONTRACTS_SCHEMA.build_filter(Contract.objects, request).order_by()
+
+
+class ContractsFilterHandler(FilterHandler):
     model = Contract
+    ordering = ['-fiscal_year','-current_amount']
+    filename = 'contracts'
+        
+    def queryset(self, params):
+        return filter_contracts(self._unquote(params))
     
-    def read(self, request):
-        params = request.GET.copy()
-        return load_contracts(params)

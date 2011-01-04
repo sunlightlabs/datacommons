@@ -67,11 +67,10 @@ set -e
 echo Loading $update
 mysql -u $USERNAME --password=$PASSWD $DBNAME < $update
 
-for t in BallotMeasures BallotSupport Candidates CatCodes Committees Contributions Contributors ExpenditurePayee ExpenditureTarget ExpenditureTransaction LobbyistClient Lobbyist OfficeCodes OfficeSeats PartyLookup RecipientReportsBundle Recipients States StateYearReports; do
-    txt=$src/$t.txt
+for txt in $src/*.txt; do
     gz=$txt.gz
     if [ ! -f $txt ] && [ -f $gz ]; then
-       gunzip -c $gz > $txt
+       gunzip -c $gz
     fi
     if [ -f $txt ]; then
 	echo Loading $txt

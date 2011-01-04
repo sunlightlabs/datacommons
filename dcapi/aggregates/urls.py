@@ -1,20 +1,24 @@
 
 from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
-    SectorsHandler, PolLocalBreakdownHandler, \
+    SectorsHandler, IndustriesHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
-    SparklineByPartyHandler, \
-    TopPoliticiansByReceiptsHandler, TopIndividualsByContributionsHandler, \
-    TopOrganizationsByContributionsHandler, ContributionAmountHandler
+    SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
+    TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
+    TopIndustriesByContributionsHandler, IndustryOrgHandler, \
+    ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
     IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
     RegistrantClientsHandler, RegistrantLobbyistsHandler
+from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
+from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
+    LocalEarmarksHandler
 
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need.
@@ -42,9 +46,13 @@ urlpatterns = patterns('',
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors\.(?P<emitter_format>.+)$',
         Resource(PolContributorsHandler, **ad)),
 
-    # contributions to a single politician, broken down by industry
+    # contributions to a single politician, broken down by sector
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/sectors\.(?P<emitter_format>.+)$',
         Resource(SectorsHandler, **ad)),
+
+    # contributions to a single politician, broken down by industry
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/industries\.(?P<emitter_format>.+)$',
+        Resource(IndustriesHandler, **ad)),
 
     # contributions to a single politician, broken down to show percentages
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/local_breakdown\.(?P<emitter_format>.+)$',
@@ -56,6 +64,12 @@ urlpatterns = patterns('',
     # top N politicians by receipts for a cycle
     url(r'^pols/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopPoliticiansByReceiptsHandler, **ad)),
+        
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
+        Resource(TopEarmarksHandler, **ad)),
+        
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks/local_breakdown\.(?P<emitter_format>.+)$',
+        Resource(LocalEarmarksHandler, **ad)),        
 
     # recipients from a single individual, broken down to show percentages
     url(r'^indiv/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$',
@@ -98,6 +112,9 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/registrants\.(?P<emitter_format>.+)$',
         Resource(OrgRegistrantsHandler, **ad)),
 
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
+        Resource(TopEarmarksHandler, **ad)),
+
     # issues an org hired people to
     url(r'^org/(?P<entity_id>[a-f0-9]+)/issues\.(?P<emitter_format>.+)',
         Resource(OrgIssuesHandler, **ad)),
@@ -119,6 +136,17 @@ urlpatterns = patterns('',
     url(r'^orgs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopOrganizationsByContributionsHandler, **ad)),
 
+    # top N industries by contributions for a cycle
+    url(r'^industries/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndustriesByContributionsHandler, **ad)),
+
+    # Grants and Contracts Spending
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/fed_spending\.(?P<emitter_format>.+)',
+        Resource(OrgFedSpendingHandler, **ad)),
+
+    # organizations in an industry
+    url(r'^industry/(?P<entity_id>[a-f0-9]+)/orgs\.(?P<emitter_format>.+)$',
+        Resource(IndustryOrgHandler, **ad)),
 )
 
 

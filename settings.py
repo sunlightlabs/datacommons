@@ -43,14 +43,17 @@ INSTALLED_APPS = (
     'dcdata',
     'dcdata.contribution',
     'dcdata.lobbying',
+    'dcdata.earmarks',
     'dcapi',
     'dcapi.contributions',
     'dcentity.tools',
+    'django_nose',
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 try:
     from local_settings import *
-except ImportError:
-    pass
+except ImportError as e:
+    print e

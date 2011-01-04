@@ -1,7 +1,6 @@
 from base64 import b64encode
-from dcapi.contributions.handlers import load_contributions
-from dcapi.lobbying.handlers import load_lobbying
-from django.conf import settings
+from dcapi.contributions.handlers import ContributionFilterHandler
+from dcapi.lobbying.handlers import LobbyingFilterHandler
 from django.template.loader import render_to_string
 from locksmith.auth.models import ApiKey
 from piston.handler import BaseHandler
@@ -30,12 +29,12 @@ class RapletHandler(BaseHandler):
             return rc.BAD_REQUEST('name and callback parameters are required')
         
         # get contributions and create link hash for each contributor
-        contributors = load_contributions({
+        contributors = ContributionFilterHandler().read({
             'contributor_ft': name,
             'cycle': str(CYCLE),
             'for_against': 'for',
             'per_page': 10,
-        }, ordering='contributor_name').values('contributor_name','contributor_state','organization_name').distinct()
+        }).values('contributor_name','contributor_state','organization_name').distinct()
         
         for contrib in contributors:
             contrib['hash'] = make_hash({
@@ -46,7 +45,8 @@ class RapletHandler(BaseHandler):
             })
         
         # load lobbying records
-        lobbying = load_lobbying({
+        
+        lobbying = LobbyingFilterHandler.read({
             'lobbyist_ft': name,
             'year': str(CYCLE),
         })

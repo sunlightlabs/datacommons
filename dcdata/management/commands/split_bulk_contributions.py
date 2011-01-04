@@ -57,13 +57,13 @@ class SplitBulkContributionsCommand(BaseCommand):
             emitter = ConditionalEmitter(namespace_condition, CSVEmitter(out_file, CONTRIBUTION_FIELDS))
             outputs.append(emitter)
             
-            for cycle in range(1992, 2011, 2):  
+            for cycle in range(1990, 2011, 2):
                 cycle_condition = check_namespace_and_cycle(namespace, cycle)
                 out_file = open(os.path.join(output_dir, 'contributions.%s.%s.csv' % (namespace, cycle)), 'w')
                 emitter = ConditionalEmitter(cycle_condition, CSVEmitter(out_file, CONTRIBUTION_FIELDS))
                 outputs.append(emitter)
                 
-        processor = chain_filters(FieldRemover(['id', 'import_reference', 'contributor_entity', 'organization_entity', 'parent_organization_entity', 'committee_entity', 'recipient_entity']))
+        processor = chain_filters(FieldRemover(['id', 'import_reference']))
         
            
         combined_output = chain_filters(*outputs)

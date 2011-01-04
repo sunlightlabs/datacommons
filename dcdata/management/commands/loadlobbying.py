@@ -1,13 +1,16 @@
-from dcdata.loading import Loader, LoaderEmitter
-from dcdata.lobbying.models import Lobbying, Lobbyist, Agency, Issue
-from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
-from decimal import Decimal
+from dcdata.loading              import Loader, LoaderEmitter
+from dcdata.lobbying.models      import Lobbying, Lobbyist, Agency, Issue
+from dcdata.lobbying.sources.crp import FILE_TYPES
+from decimal                     import Decimal
 from django.core.management.base import CommandError, BaseCommand
-from optparse import make_option
-from saucebrush import run_recipe
-from saucebrush.emitters import DebugEmitter, Emitter
-from saucebrush.filters import FieldModifier, UnicodeFilter, Filter
-from saucebrush.sources import CSVSource
+from django.core                 import management
+from django.db                   import connections
+from optparse                    import make_option
+from saucebrush                  import run_recipe
+from saucebrush.emitters         import DebugEmitter, Emitter
+from saucebrush.filters          import FieldModifier, UnicodeFilter, Filter
+from saucebrush.sources          import CSVSource
+
 import os
 
 # util emitters and filters
@@ -31,14 +34,6 @@ class NoneFilter(Filter):
             if isinstance(value, basestring) and value.strip() == '':
                 record[key] = None
         return record
-
-class YearFilter(Filter):
-    def __init__(self, year, field='year'):
-        self.year = year
-        self.field = field
-    def process_record(self, record):
-        if not self.year or (self.year and self.year == record[self.field]):
-            return record
 
 class TransactionFilter(Filter):
     def __init__(self):
@@ -64,12 +59,9 @@ class LobbyingLoader(Loader):
     model = Lobbying
     def __init__(self, *args, **kwargs):
         super(LobbyingLoader, self).__init__(*args, **kwargs)
-        
+
     def get_instance(self, record):
-        #try:
-        #    return self.model.objects.get(transaction_id=record['transaction_id'])
-        #except Lobbying.DoesNotExist:
-            return self.model(transaction_id=record['transaction_id'])
+        return self.model(transaction_id=record['transaction_id'])
 
 class AgencyLoader(Loader):
     model = Agency
@@ -81,115 +73,142 @@ class AgencyLoader(Loader):
 class IssueLoader(Loader):
     model = Issue
     def get_instance(self, record):
-        #try:
-        #    return self.model.objects.get(id=record['id'])
-        #except self.model.DoesNotExist:
-            return self.model(id=record['id'])
+        return self.model(id=record['id'])
 
 class LobbyistLoader(Loader):
     model = Lobbyist
     def __init__(self, *args, **kwargs):
         super(LobbyistLoader, self).__init__(*args, **kwargs)
-        
+
     def get_instance(self, record):
-        
+
         if record['transaction'] is None:
             return
-        
-        #try:
-        #    return self.model.objects.get(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
-        #except Lobbyist.DoesNotExist:
+
         return self.model(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
 
 # handlers
 
 transaction_filter = TransactionFilter()
 
-def lobbying_handler(inpath, year=None):
-    run_recipe(
-        CSVSource(open(inpath)),
-        YearFilter(year),
-        FieldModifier('year', lambda x: int(x) if x else None),
-        FieldModifier('amount', lambda x: Decimal(x) if x else None),
-        FieldModifier((
-            'affiliate','filing_included_nsfs','include_in_industry_totals',
-            'registrant_is_firm','use'), lambda x: x == 'True'),
-        NoneFilter(),
-        UnicodeFilter(),
-        #DebugEmitter(),
-        CountEmitter(every=1000),
-        LoaderEmitter(LobbyingLoader(
-            source=inpath,
-            description='load from denormalized CSVs',
-            imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-        )),
-    )
+class TableHandler(object):
+    db_table = None
+    inpath = None
 
-def agency_handler(inpath, year=None):
-    Agency.objects.all().delete()
-    run_recipe(
-        CSVSource(open(inpath)),
-        FieldModifier('year', lambda x: int(x) if x else None),
-        NoneFilter(),
-        transaction_filter,
-        UnicodeFilter(),
-        #DebugEmitter(),
-        CountEmitter(every=1000),
-        LoaderEmitter(AgencyLoader(
-            source=inpath,
-            description='load from denormalized CSVs',
-            imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-        ), commit_every=10000),
-    )
+    def __init__(self, inpath):
+        self.inpath = inpath
+
+    def drop(self):
+        print "Dropping {0}.".format(self.db_table)
+        cursor = connections['default'].cursor()
+        cursor.execute("drop table {0}".format(self.db_table))
 
 
-def lobbyist_handler(inpath, year=None):
-    Lobbyist.objects.all().delete()
-    run_recipe(
-        CSVSource(open(inpath)),
-        YearFilter(year),
-        FieldModifier('year', lambda x: int(x) if x else None),
-        FieldModifier('member_of_congress', lambda x: x == 'True'),
-        NoneFilter(),
-        transaction_filter,
-        UnicodeFilter(),
-        #DebugEmitter(),
-        CountEmitter(every=1000),
-        LoaderEmitter(LobbyistLoader(
-            source=inpath,
-            description='load from denormalized CSVs',
-            imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-        ), commit_every=10000),
-    )
+class LobbyingHandler(TableHandler):
 
-def issue_handler(inpath, year=None):
-    Issue.objects.all().delete()
-    run_recipe(
-        CSVSource(open(inpath)),
-        YearFilter(year),
-        FieldModifier('year', lambda x: int(x) if x else None),
-        NoneFilter(),
-        FieldModifier('specific_issue', lambda x: '' if x is None else x),
-        transaction_filter,
-        UnicodeFilter(),
-        #DebugEmitter(),
-        CountEmitter(every=1000),
-        LoaderEmitter(IssueLoader(
-            source=inpath,
-            description='load from denormalized CSVs',
-            imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-        ), commit_every=10000),
-    )
-    
+    def __init__(self, inpath):
+        super(LobbyingHandler, self).__init__(inpath)
+        self.db_table = 'lobbying_lobbying'
+
+    def run(self):
+        run_recipe(
+            CSVSource(open(self.inpath)),
+            FieldModifier('year', lambda x: int(x) if x else None),
+            FieldModifier('amount', lambda x: Decimal(x) if x else None),
+            FieldModifier((
+                'affiliate','filing_included_nsfs','include_in_industry_totals',
+                'registrant_is_firm','use'), lambda x: x == 'True'),
+            NoneFilter(),
+            UnicodeFilter(),
+            #DebugEmitter(),
+            CountEmitter(every=1000),
+            LoaderEmitter(LobbyingLoader(
+                source=self.inpath,
+                description='load from denormalized CSVs',
+                imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+            )),
+        )
+
+
+class AgencyHandler(TableHandler):
+
+    def __init__(self, inpath):
+        super(AgencyHandler, self).__init__(inpath)
+        self.db_table = 'lobbying_agency'
+
+    def run(self):
+        run_recipe(
+            CSVSource(open(self.inpath)),
+            FieldModifier('year', lambda x: int(x) if x else None),
+            NoneFilter(),
+            transaction_filter,
+            UnicodeFilter(),
+            #DebugEmitter(),
+            CountEmitter(every=1000),
+            LoaderEmitter(AgencyLoader(
+                source=self.inpath,
+                description='load from denormalized CSVs',
+                imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+            ), commit_every=10000),
+        )
+
+
+class LobbyistHandler(TableHandler):
+
+    def __init__(self, inpath):
+        super(LobbyistHandler, self).__init__(inpath)
+        self.db_table = 'lobbying_lobbyist'
+
+    def run(self):
+        run_recipe(
+            CSVSource(open(self.inpath)),
+            FieldModifier('year', lambda x: int(x) if x else None),
+            FieldModifier('member_of_congress', lambda x: x == 'True'),
+            NoneFilter(),
+            transaction_filter,
+            UnicodeFilter(),
+            #DebugEmitter(),
+            CountEmitter(every=1000),
+            LoaderEmitter(LobbyistLoader(
+                source=self.inpath,
+                description='load from denormalized CSVs',
+                imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+            ), commit_every=10000),
+        )
+
+
+class IssueHandler(TableHandler):
+
+    def __init__(self, inpath):
+        super(IssueHandler, self).__init__(inpath)
+        self.db_table = 'lobbying_issue'
+
+    def run(self):
+        run_recipe(
+            CSVSource(open(self.inpath)),
+            FieldModifier('year', lambda x: int(x) if x else None),
+            NoneFilter(),
+            FieldModifier('specific_issue', lambda x: '' if x is None else x),
+            transaction_filter,
+            UnicodeFilter(),
+            #DebugEmitter(),
+            CountEmitter(every=1000),
+            LoaderEmitter(IssueLoader(
+                source=self.inpath,
+                description='load from denormalized CSVs',
+                imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+            ), commit_every=10000),
+        )
+
 
 HANDLERS = {
-    "lob_lobbying": lobbying_handler,
-    "lob_lobbyist": lobbyist_handler,
-    "lob_issue": issue_handler,
-    "lob_agency": agency_handler,
+    "lob_lobbying": LobbyingHandler,
+    "lob_lobbyist": LobbyistHandler,
+    "lob_issue":    IssueHandler,
+    "lob_agency":   AgencyHandler,
 }
 
-SOURCE_FILES = ('lob_lobbying','lob_lobbyist','lob_issue','lob_agency')
+SOURCE_FILES = [ 'lob_lobbying','lob_lobbyist','lob_issue','lob_agency' ]
 
 # main management command
 
@@ -197,7 +216,6 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
         make_option("-f", "--files", dest="files", help="source files", metavar="FILE[,FILE]"),
-        make_option("-y", "--year", dest="year", help="year to load", metavar="YEAR"),
     )
 
     def handle(self, *args, **options):
@@ -206,19 +224,32 @@ class Command(BaseCommand):
             raise CommandError("path to dataroot is required")
 
         dataroot = os.path.abspath(options['dataroot'])
-        year = options.get('year', None)
-        tables = options.get('files', '').split(',') or SOURCE_FILES
+        tables = options['files'].split(',') if options['files'] else SOURCE_FILES
 
+        handlers = []
+
+        tables.reverse() # this is so that we drop the tables in reverse (dependent-first) order
         for table in tables:
-            
+            print table
             infields = FILE_TYPES[table]
             inpath = os.path.join(dataroot, "denorm_%s.csv" % table)
 
             if os.path.exists(inpath):
-                handler = HANDLERS.get(table, None)
-                
-                if handler is None:
-                    print "!!! no handler for %s" % table
+                handler_class = HANDLERS.get(table, None)
+
+                if handler_class is None:
+                    raise Exception, "!!! no handler for %s" % table
                 else:
-                    print "loading records for %s" % table
-                    handler(inpath, year)
+                    print "found handler"
+                    handler = handler_class(inpath)
+                    handler.drop()
+                    handlers.append(handler)
+
+        print "Syncing database to recreate dropped tables:"
+        management.call_command('syncdb', interactive=False)
+
+        handlers.reverse() # this is to undo the last reverse and load the data in the intended (necessary) order
+        for handler in handlers:
+            print "loading records for %s" % table
+            handler.run()
+

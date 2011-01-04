@@ -25,5 +25,10 @@ dcdata/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv
 dc_web/build
 .project
 .pydevproject
-
+PYSMELLTAGS
 .DS_Store
+nationwide_candidates.pkl
+.coverage
+postgresql.conf.*
+pgexperts.conf.*
+sysctl.conf.*

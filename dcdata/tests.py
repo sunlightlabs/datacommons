@@ -1,34 +1,39 @@
-
-
-from decimal import Decimal
-import os
-from unittest import TestCase
-import shutil
-
+from cStringIO import StringIO
+from dcdata import processor
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
-from dcdata.loading import model_fields, LoaderEmitter
+from dcdata.earmarks.models import Earmark, Member
+from dcdata.loading import model_fields, LoaderEmitter, SkipRecordException
+from dcdata.management.commands.crp_denormalize import load_candidates, \
+    load_committees
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
-#from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
-from dcdata.processor import load_data, chain_filters, compose_one2many,\
+from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, \
+    LoadTCSEarmarks, save_earmark, _normalize_locations, split_and_transpose
+from dcdata.models import Import
+from dcdata.processor import load_data, chain_filters, compose_one2many, \
     SkipRecordException
+from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource, \
+    CSVFieldVerifier
+from decimal import Decimal
 from django.core.management import call_command
 from django.db import connection
+from django.test import TestCase
+from nose.plugins.attrib import attr
+from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
-from scripts.nimsp.common import CSV_SQL_MAPPING
-from updates import edits, update
-from dcdata.management.commands.crp_denormalize import load_candidates,\
-    load_committees
-from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource,\
-    CSVFieldVerifier
-from dcdata import processor
 from saucebrush.sources import CSVSource
+from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
+from updates import edits, update
+import os
+import shutil
 import sqlite3
 import sys
+
+from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 
 
 dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
@@ -108,6 +113,7 @@ class TestNIMSPDenormalize(TestCase):
         shutil.copy(self.original_salts_db_path, self.salts_db_path)
 
 
+    @attr('mysql')
     def test_salting(self):
         input_string = '"3327568","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
@@ -123,11 +129,12 @@ class TestNIMSPDenormalize(TestCase):
         self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
 
 
+    @attr('mysql')
     def test_output_switch(self):
         self.assertFalse(os.path.exists(self.output_paths[0]))
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path)
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertTrue(os.path.exists(self.output_paths[0]))
         self.assertTrue(os.path.exists(self.output_paths[1]))
@@ -135,7 +142,7 @@ class TestNIMSPDenormalize(TestCase):
         os.remove(self.output_paths[1])
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='unallocated')
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='unallocated', dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertTrue(os.path.exists(self.output_paths[1]))
 
@@ -144,15 +151,15 @@ class TestNIMSPDenormalize(TestCase):
         self.assertFalse(os.path.exists(self.output_paths[0]))
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='allocated')
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='allocated', dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertTrue(os.path.exists(self.output_paths[0]))
         self.assertFalse(os.path.exists(self.output_paths[1]))
 
 
+    @attr('mysql')
     def test_command(self):
-
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path)
+        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, dest_dir=os.path.join(dataroot, 'denormalized'))
 
         self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
         self.assertEqual(4, sum(1 for _ in open(self.output_paths[1], 'r')))
@@ -165,14 +172,15 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(11, Contribution.objects.all().count())
 
 
+    @attr('mysql')
     def test_recipient_state(self):
         self.test_command()
 
         self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
         self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
 
+    @attr('mysql')
     def test_salt_filter(self):
-
         connection = sqlite3.connect(self.salts_db_path)
         connection.cursor().execute('delete from salts where nimsp_id = 9999')
         connection.commit()
@@ -189,6 +197,7 @@ class TestNIMSPDenormalize(TestCase):
 
         self.assertEqual(2, len(output))
 
+    @attr('mysql')
     def test_contributor_type(self):
         input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0",\
@@ -224,8 +233,6 @@ class TestCRPDenormalizeAll(TestCase):
             os.remove(TestCRPDenormalizePac2Candidate.output_path)
         if os.path.exists(TestCRPDenormalizePac2Pac.output_path):
             os.remove(TestCRPDenormalizePac2Pac.output_path)
-
-        Contribution.objects.all().delete()
 
         call_command('crp_denormalize', cycles='08', dataroot=dataroot)
         call_command('loadcontributions', TestCRPIndividualDenormalization.output_path)
@@ -314,16 +321,12 @@ class TestLoadContributions(TestCase):
 
 
     def test_command(self):
-        Contribution.objects.all().delete()
-
         call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
         call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'))
 
         self.assertEqual(10, Contribution.objects.all().count())
 
     def test_skip(self):
-        Contribution.objects.all().delete()
-
         call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
         call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'), skip='3')
 
@@ -358,8 +361,6 @@ class TestLoadContributions(TestCase):
         self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
 
     def test_bad_value(self):
-        Contribution.objects.all().delete()
-
         # the second record has an out-of-range date
         input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,|BOTTGER, ANTHONY|,,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
                       ',,1998,urn:nimsp:transaction,227059e3c32af276f5b37642922e415c,,,False,200,0922-09-08,|TRICK, BILL|,,,,,,,BOX 2730,TUSCALOOSA,AL,35403,B1500,,,,,,,,|BENTLEY, ROBERT J|,3188,,R,politician,AL,,,,,,,G,AL-21,state:upper,,L',
@@ -374,10 +375,13 @@ class TestLoadContributions(TestCase):
         processor = LoadContributions.get_record_processor(loader.import_session)
         output = LoaderEmitter(loader).process_record
 
-        sys.stderr.write("Error expected:\n")
-
+        # Prevent this test from spewing the expected error to the command line
+        old_stderr = sys.stderr
+        sys.stderr = mystderr = StringIO()
         load_data(source, processor, output)
+        sys.stderr = old_stderr
 
+        self.assertTrue(mystderr.getvalue())
         self.assertEqual(2, Contribution.objects.count())
 
 class TestProcessor(TestCase):
@@ -447,7 +451,16 @@ class TestProcessor(TestCase):
         processor.TERMINATE_ON_ERROR = False
 
         output = list()
+
+        # prevent unwanted console output
+        stderr_old = sys.stderr
+        sys.stderr = mystderr = StringIO()
+
         load_data([single, double, triple, double], chain_filters(validator), output.append)
+
+        sys.stderr = stderr_old
+
+        self.assertTrue(mystderr.getvalue())
         self.assertEqual([double, double], output)
 
     def test_verified_csv_source(self):
@@ -458,7 +471,15 @@ class TestProcessor(TestCase):
         f = chain_filters(CSVFieldVerifier())
         output = list()
 
+        # prevent unwanted console output
+        stderr_old = sys.stderr
+        sys.stderr = mystderr = StringIO()
+
         load_data(source, f, output.append)
+
+        sys.stderr = stderr_old
+
+        self.assertTrue(mystderr.getvalue())
         self.assertEqual([{'a': '1', 'b': '2', 'c': '3'}], output)
 
     def test_string_length(self):
@@ -475,6 +496,195 @@ class TestProcessor(TestCase):
         self.assertEqual('too short', result['contributor_occupation'])
 
 
+class TestEarmarks(TestCase):
+    csv2008 = [
+        '1214,38777000,6305310,38041000,38200000,,"Arts in Education Program (VSA Arts and John F. Kennedy Center for the Performing Arts) for model arts education and other activities",,,"UNK","Labor-HHS-Education","Department of Education","Innovation and Improvement",,"Abercrombie","D","HI",,"Bingaman; Cochran; Kennedy","D; R; D","NM; MS; MA",,,,',
+        '1,300000,,425000,414000,,"Boys & Girls Club of Hawaii, Honolulu, HI for a multi-media center, which may include equipment","Honolulu",,"HI","Labor-HHS-Education","Department of Education","Fund for the Improvement of Education",,"Abercrombie","D","HI",,,,,,,,',
+        '1,,1500000,1500000,1476000,,"Cellular Bioengineering, Inc., Continue development of polymeric hydrogels for radiation decontamination","Honolulu",,"HI","Energy & Water","Department of Energy","Defense Environmental Cleanup",,"Abercrombie","D","HI",,"Inouye","D","HI",,,,'
+    ]
+
+    csv2009 = [
+        ',,,,2000000,,"101st Airborne Injury Prevention & Performance Enhancement Research Initiative",,,"KY","Defense","RDTE","Army",,,,,,"Alexander, Lamar; Corker","R; R","TN; TN",,,,',
+        ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",,,,',
+        ',,,,3200000,,"11th Air Force Critical Communications Infrastructure",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",,,,'
+    ]
+
+    csv2010 = [
+        ',,3000000,,3000000,,"101st Airborne/Air Assault Injury Prevention and Performance Enhancement Initiative","Fort Campbell",,"KY","Defense","Research, Development, Test & Evaluation","Army",,,,,,"Corker; Specter","R; D","TN; PA",,,"University of Pittsburgh",',
+        ',,500000,,500000,,"10th Avenue South Corridor Extension, Waverly, IA","Waverly",,"IA","Transportation-Housing and Urban Development","Federal Highway Administration","Surface Transportation Priorities",,"Braley","D","IA",,"Grassley; Harkin","R; D","IA; IA",,,,',
+        ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
+    ]    
+    
+    def test_raw_fields(self):
+        source = VerifiedCSVSource(self.csv2008[0:1], EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(1, len(output))
+        self.assertEqual("Abercrombie", output[0]['house_members'])
+        self.assertEqual("D", output[0]['house_parties'])
+        self.assertEqual("HI", output[0]['house_states'])
+        self.assertEqual("", output[0]['house_districts'])
+        self.assertEqual("Bingaman; Cochran; Kennedy", output[0]['senate_members'])
+        self.assertEqual("D; R; D", output[0]['senate_parties'])
+        self.assertEqual("NM; MS; MA", output[0]['senate_states'])
+        
+    
+    def test_process_earmarks(self):
+        source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(9, len(output))
+        
+    def test_save_earmarks(self):
+        Earmark.objects.all().delete()
+        Member.objects.all().delete()
+        import_ref = Import.objects.create()
+        
+        source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
+        
+        load_data(source, processor, save_earmark)
+        
+        self.assertEqual(9, Earmark.objects.count())
+        self.assertEqual(18, Member.objects.count())
+
+    def test_choice_maps(self):
+        variants = [
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo,Undisclosed,,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo & Und.,Undisclosed (President),,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President and Member(s),O & M-Disclosed,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",Judiciary,O & M-Undisclosed,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",something wrong,Something else entirely,,',                        
+        ]
+
+        Earmark.objects.all().delete()
+        Member.objects.all().delete()
+        import_ref = Import.objects.create()
+        
+        source = VerifiedCSVSource(variants, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
+        load_data(source, processor, save_earmark)
+
+        self.assertEqual(5, Earmark.objects.count())
+        
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='u').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='p').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='o').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='m').count())
+        self.assertEqual(1, Earmark.objects.filter(undisclosed='').count())
+        
+        self.assertEqual(1, Earmark.objects.filter(presidential='p').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='u').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='m').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='j').count())
+        self.assertEqual(1, Earmark.objects.filter(presidential='').count())
+
+
+    def test_locations(self):
+        r = _normalize_locations("", "")
+        self.assertEqual([], r)
+        
+        r = _normalize_locations("Portland", "")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("Portland", ""), (r[0].city, r[0].state))
+
+        r = _normalize_locations("", "OR")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("","OR"), (r[0].city, r[0].state))
+        
+        r = _normalize_locations("Portland", "OR")
+        self.assertEqual(1, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        
+        r = _normalize_locations("Portland; Seattle", "OR; WA")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("Seattle", "WA"), (r[1].city, r[1].state))
+        
+        r = _normalize_locations("Portland; Corvallis", "OR")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("Portland", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("Corvallis", "OR"), (r[1].city, r[1].state))
+        
+        r = _normalize_locations("", "OR; WA")
+        self.assertEqual(2, len(r))
+        self.assertEqual(("", "OR"), (r[0].city, r[0].state))
+        self.assertEqual(("", "WA"), (r[1].city, r[1].state))
+
+        r = _normalize_locations("Portland", "OR; WA")
+        self.assertEqual(3, len(r))
+        self.assertEqual(("Portland", ""), (r[0].city, r[0].state))
+        self.assertEqual(("", "OR"), (r[1].city, r[1].state))
+        self.assertEqual(("", "WA"), (r[2].city, r[2].state))
+
+
+    def test_split_and_transpose(self):
+        s = split_and_transpose(';')
+        self.assertEqual([], s)
+        
+        s = split_and_transpose(';', 'a; b; c')
+        self.assertEqual([('a',), ('b',), ('c',)], s)
+        
+        s = split_and_transpose(';', 'a; b; c', '1; 2; 3')
+        self.assertEqual([('a', '1'), ('b', '2'), ('c', '3')], s)
+        
+        s = split_and_transpose(';', 'a; b', '1')
+        self.assertEqual([('a', ''), ('b', '')], s)
+        
+        s = split_and_transpose(';', 'a; b', '1')
+        self.assertEqual([('a', ''), ('b', '')], s)   
+        
+        s = split_and_transpose(';', 'a; b', '1', 'x; y; z')
+        self.assertEqual([('a', '', ''), ('b', '', '')], s)  
+        
+        s = split_and_transpose(';', 'a; b', '1', 'x; y')
+        self.assertEqual([('a', '', 'x'), ('b', '', 'y')], s)  
+        
+
+    def test_filters(self):
+        csv = [
+               '293,1500000,15000000,,1200000,,"Space Situational Awareness","College Station",,"TX","Defense","RDTE","Air Force","Advanced Spacecraft Technology","Edwards;","D","TX",,"Committee Initiative","N/A","N/A",,,"Texas A&M University",'
+        ]
+        
+        source = VerifiedCSVSource(csv, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(1, len(output))
+        self.assertEqual(2, len(output[0]['members']))
+        self.assertEqual('', output[0]['members'][1].party)
+        self.assertEqual('', output[0]['members'][1].state)
+
+    def test_recipients(self):
+        csv = [
+            '1214,38777000,6305310,38041000,38200000,,"Arts in Education Program (VSA Arts and John F. Kennedy Center for the Performing Arts) for model arts education and other activities",,,"UNK","Labor-HHS-Education","Department of Education","Innovation and Improvement",,"Abercrombie","D","HI",,"Bingaman; Cochran; Kennedy","D; R; D","NM; MS; MA",,,,',
+            '1,300000,,425000,414000,,"Boys & Girls Club of Hawaii, Honolulu, HI for a multi-media center, which may include equipment","Honolulu",,"HI","Labor-HHS-Education","Department of Education","Fund for the Improvement of Education",,"Abercrombie","D","HI",,,,,,,"JC Penny",',
+            '1,,1500000,1500000,1476000,,"Cellular Bioengineering, Inc., Continue development of polymeric hydrogels for radiation decontamination","Honolulu",,"HI","Energy & Water","Department of Energy","Defense Environmental Cleanup",,"Abercrombie","D","HI",,"Inouye","D","HI",,,"JC Penny; Macys;",'
+        ]
+
+        source = VerifiedCSVSource(csv, EARMARK_FIELDS)
+        processor = LoadTCSEarmarks.get_record_processor(0, None)
+        output = list()
+        
+        load_data(source, processor, output.append)
+        
+        self.assertEqual(3, len(output))
+        (no_recip, one_recip, two_recips) = output
+        self.assertEqual([], no_recip['recipients'])
+        self.assertEqual('JC Penny', one_recip['recipients'][0].raw_recipient)
+        self.assertEqual('JC Penny', two_recips['recipients'][0].raw_recipient)
+        self.assertEqual('Macys', two_recips['recipients'][1].raw_recipient)
+        
+        
+        
 # tests the experimental 'updates' module
 class TestUpdates(TestCase):
     def create_table(self, table_name):

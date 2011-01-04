@@ -11,14 +11,14 @@ from django.core.management.base import CommandError, BaseCommand
 
 FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
               'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
-              'contributor_entity', 'contributor_type', 'contributor_occupation', 'contributor_employer',
+              'contributor_type', 'contributor_occupation', 'contributor_employer',
               'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'contributor_category_order',
-              'organization_name', 'organization_ext_id', 'organization_entity', 'parent_organization_name', 'parent_organization_ext_id',
-              'parent_organization_entity', 'recipient_name', 'recipient_ext_id', 'recipient_entity',
-              'recipient_party', 'recipient_type', 'recipient_state', 'recipient_category', 'recipient_category_order',
-              'committee_name', 'committee_ext_id', 'committee_entity', 'committee_party', 'election_type',
-              'district', 'seat', 'seat_status', 'seat_result']
+              'organization_name', 'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id',
+              'recipient_name', 'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state',
+              'recipient_state_held', 'recipient_category', 'recipient_category_order',
+              'committee_name', 'committee_ext_id', 'committee_party', 'candidacy_status',
+              'district', 'district_held', 'seat', 'seat_held', 'seat_status', 'seat_result']
 
 SPEC = dict(((fn, None) for fn in FIELDNAMES))
 
@@ -28,7 +28,7 @@ class RecipientFilter(Filter):
         super(RecipientFilter, self).__init__()
         self._candidates = candidates
         self._committees = committees
-        
+
     def process_record(self, record):
         recip_id = record['recip_id'].strip().upper()
         if recip_id:
@@ -39,12 +39,12 @@ class RecipientFilter(Filter):
                 committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
                 self.add_committee_recipient(committee, record)
         return record
-        
+
     @staticmethod
     def get_recip_code_result(recip_code):
         recip_code = recip_code.strip().upper()
         return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else None
-    
+
     @staticmethod
     def add_candidate_recipient(candidate, record):
         if candidate:
@@ -54,20 +54,44 @@ class RecipientFilter(Filter):
             record['recipient_ext_id'] = candidate['cid']
             record['seat_status'] = candidate['crp_ico']
             record['seat_result'] = RecipientFilter.get_recip_code_result(candidate['recip_code'])
-            seat = candidate['dist_id_run_for'].upper()
-            if len(seat) == 4:
-                if seat == 'PRES':
-                    record['recipient_state'] = ''
-                    record['seat'] = 'federal:president'
+
+            seat_held = candidate['dist_id_curr'].upper()
+            seat_in_race = candidate['dist_id_run_for'].upper()
+
+            RecipientFilter.standardize_seat(seat_held, record, '_held')
+            RecipientFilter.standardize_seat(seat_in_race, record)
+
+            # the above also populates
+            # record['recipient_state']
+            # record['seat']
+            # record['district']
+            # record['recipient_state_held']
+            # record['seat_held']
+            # record['district_held']
+
+    @staticmethod
+    def standardize_seat(seat, record, label=''):
+        state_key    = RecipientFilter.format_key('recipient_state', label)
+        seat_key     = RecipientFilter.format_key('seat', label)
+        district_key = RecipientFilter.format_key('district', label)
+
+        if len(seat) == 4:
+            if seat == 'PRES':
+                record[state_key] = ''
+                record[seat_key] = 'federal:president'
+            else:
+                record[state_key] = seat[0:2]
+                if seat[2] == 'S':
+                    record[seat_key] = 'federal:senate'
                 else:
-                    record['recipient_state'] = seat[0:2]
-                    if seat[2] == 'S':
-                        record['seat'] = 'federal:senate'
-                    else:
-                        record['seat'] = 'federal:house'
-                        record['district'] = "%s-%s" % (seat[:2], seat[2:])
-                        
-    @staticmethod                    
+                    record[seat_key] = 'federal:house'
+                    record[district_key] = "%s-%s" % (seat[:2], seat[2:])
+
+    @staticmethod
+    def format_key(key, extra):
+        return ''.join([key, extra])
+
+    @staticmethod
     def add_committee_recipient(committee, record):
         if committee:
             record['recipient_name'] = committee['pac_short']
@@ -99,9 +123,6 @@ def load_candidates(dataroot):
         for record in reader:
             key = "%s:%s" % (record.pop('cycle'), record['cid'].upper())
             del record['fec_cand_id']
-            del record['dist_id_curr']
-            del record['curr_cand']
-            del record['cycle_cand']
             del record['no_pacs']
             candidates[key] = record
     return candidates
@@ -193,7 +214,7 @@ class CRPDenormalizeBase(BaseCommand):
     def handle(self, *args, **options):
         if 'dataroot' not in options:
             raise CommandError("path to dataroot is required")
-    
+
         cycles = []
         if 'cycles' in options and options['cycles']:
             for cycle in options['cycles'].split(','):
@@ -203,34 +224,34 @@ class CRPDenormalizeBase(BaseCommand):
                     cycles.append(cycle)
         else:
             cycles = CYCLES
-        
+
         dataroot = os.path.abspath(options['dataroot'])
-    
+
         print "Loading catcodes..."
         catcodes = load_catcodes(dataroot)
-        
+
         print "Loading candidates..."
         candidates = load_candidates(dataroot)
-        
+
         print "Loading committees..."
         committees = load_committees(dataroot)
-        
+
         self.denormalize(dataroot, cycles, catcodes, candidates, committees)
-                 
+
     # to be implemented by subclasses
     def denormalize(self, root_path, cycles, catcodes, candidates, committees):
         raise NotImplementedError
-    
-    
+
+
 class CRPDenormalizeAll(CRPDenormalizeBase):
-    
+
     def denormalize(self, data_path, cycles, catcodes, candidates, committees):
         from dcdata.management.commands.crp_denormalize_individuals import CRPDenormalizeIndividual
         from dcdata.management.commands.crp_denormalize_pac2candidate import CRPDenormalizePac2Candidate
         from dcdata.management.commands.crp_denormalize_pac2pac import CRPDenormalizePac2Pac
-                
+
         CRPDenormalizeIndividual().denormalize(data_path, cycles, catcodes, candidates, committees)
         CRPDenormalizePac2Candidate().denormalize(data_path, cycles, catcodes, candidates, committees)
         CRPDenormalizePac2Pac().denormalize(data_path, cycles, catcodes, candidates, committees)
-        
+
 Command = CRPDenormalizeAll

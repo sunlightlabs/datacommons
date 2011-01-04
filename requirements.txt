@@ -1,6 +1,16 @@
--e svn+http://code.djangoproject.com/svn/django/trunk/#egg=django
+django==1.2.3
 django-debug-toolbar
 django-piston
 -e git://github.com/sunlightlabs/django-locksmith.git#egg=locksmith
 xlwt
-#python-psycopg2
+psycopg2
+python-memcached
+boto
+-e git+http://github.com/sunlightlabs/django-mediasync.git#egg=mediasync
+nose
+django-nose
+lxml
+django-indexer
+django-paging
+django-sentry
+-e git+http://github.com/sunlightlabs/name-cleaver.git#egg=name-cleaver

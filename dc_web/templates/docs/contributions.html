@@ -61,11 +61,7 @@
 <dt>contributor_zipcode</dt>
 <dd>The self-reported ZIPCode of the contributor.</dd>
 <dt>contributor_category</dt>
-<dd>The five character industry category code of the contributor assigned by CRP or NIMSP.
-<a class="reference external" href="http://assets.transparencydata.org.s3.amazonaws.com/docs/catcodes-20100402.csv">http://assets.transparencydata.org.s3.amazonaws.com/docs/catcodes-20100402.csv</a></dd>
-<dt>contributor_category_order</dt>
-<dd>The three character industry code of the contributor assigned by CRP or NIMSP.
-<a class="reference external" href="http://assets.transparencydata.org.s3.amazonaws.com/docs/catcodes-20100402.csv">http://assets.transparencydata.org.s3.amazonaws.com/docs/catcodes-20100402.csv</a></dd>
+<dd>The five character industry <a class="reference external" href="http://assets.transparencydata.org.s3.amazonaws.com/docs/catcodes.csv">category code</a> of the contributor assigned by CRP or NIMSP.</dd>
 <dt>organization_name</dt>
 <dd>The name of the organization related to the contributor (employee, owner, spouse of owner, etc.). CRP or NIMSP standardized name.</dd>
 <dt>organization_ext_id</dt>
@@ -92,8 +88,8 @@
 <dd>The NIMSP or CRP ID of the committee.</dd>
 <dt>committee_party</dt>
 <dd>The political party to which the committee belongs. <tt class="docutils literal">3</tt> for third party, <tt class="docutils literal">D</tt> for Democratic Party, <tt class="docutils literal">I</tt> for independent, <tt class="docutils literal">R</tt> for Republican Party, and <tt class="docutils literal">U</tt> for unknown.</dd>
-<dt>election_type</dt>
-<dd><tt class="docutils literal">G</tt> for general, <tt class="docutils literal">P</tt> for primary.</dd>
+<dt>candidacy_status</dt>
+<dd><tt class="docutils literal">TRUE</tt> for general election, <tt class="docutils literal">FALSE</tt> for lost in the primary or dropped out, <tt class="docutils literal">NULL</tt> if never ran.</dd>
 <dt>district</dt>
 <dd>The district that the candidate represents, if there is one. The district is as the state abbreviation followed by the district number. For example: <tt class="docutils literal"><span class="pre">CA-12</span></tt>.</dd>
 <dt>seat</dt>
@@ -135,5 +131,4 @@
 <dt>seat_result</dt>
 <dd><tt class="docutils literal">W</tt> for win, <tt class="docutils literal">L</tt> for loss. The value will be filled in as available in the source data.</dd>
 </dl>
-</div>
 {% endblock %}

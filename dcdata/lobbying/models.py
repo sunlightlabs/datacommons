@@ -1,5 +1,4 @@
 from django.db import models
-from dcentity.models import EntityRef
 
 
 """
@@ -21,16 +20,13 @@ class Lobbying(models.Model):
     amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     
     registrant_name = models.CharField(max_length=255, blank=True, null=True)
-    registrant_entity = EntityRef('registrant_transactions')
     registrant_is_firm = models.BooleanField(default=False)
     
     client_name = models.CharField(max_length=255, blank=True, null=True)
-    client_entity = EntityRef('client_transactions')
-    client_category = models.CharField(max_length=8, blank=True, null=True)
+    client_category = models.CharField(max_length=5, blank=True, null=True)
     client_ext_id = models.CharField(max_length=128, blank=True, null=True)
     
     client_parent_name = models.CharField(max_length=255, blank=True, null=True)
-    client_parent_entity = EntityRef('client_parent_transactions')
     
     include_in_industry_totals = models.BooleanField(default=False) # need a better name for this
     use = models.BooleanField(default=False) # CRP determines if it should be used?!
@@ -46,7 +42,6 @@ class Lobbying(models.Model):
 class Agency(models.Model):
     transaction = models.ForeignKey(Lobbying, related_name='agencies')
     agency_name = models.CharField(max_length=255, blank=True, null=True)
-    agency_entity = EntityRef('agency_transactions')
     agency_ext_id = models.CharField(max_length=128, blank=True, null=True)
 
     class Meta:
@@ -60,9 +55,7 @@ class Lobbyist(models.Model):
     #transaction_id = models.CharField(max_length=64, db_index=True)
     transaction = models.ForeignKey(Lobbying, related_name='lobbyists')
     lobbyist_name = models.CharField(max_length=255, blank=True, null=True)
-    lobbyist_entity = EntityRef('lobbyist_transactions')
     lobbyist_ext_id = models.CharField(max_length=128, blank=True, null=True, db_index=True)
-    candidate_entity = EntityRef('candidate_transactions')
     candidate_ext_id = models.CharField(max_length=128, blank=True, null=True)
     government_position = models.CharField(max_length=100, blank=True, null=True)
     member_of_congress = models.BooleanField(default=False)

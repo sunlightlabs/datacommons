@@ -1,9 +1,10 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
-from dcdata.models import DataCommonsModel
+from dcdata.models import Import
 from dcdata.contracts import *
 
-class Contract(DataCommonsModel):
+class Contract(models.Model):
+    import_reference = models.ForeignKey(Import)
     
     id = models.BigIntegerField(primary_key=True, unique=True) # record_id
     transaction_number = models.IntegerField(blank=True, null=True) # transactionNumber, key + transactionNumber is unique
