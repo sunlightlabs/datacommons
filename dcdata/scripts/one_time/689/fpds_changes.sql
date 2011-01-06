@@ -1,4 +1,3 @@
-alter table contracts_contract alter column OURS rename to KEVINS;
 alter table contracts_contract alter column government_property rename to gfe_gfp;
 alter table contracts_contract add column verysmallbusinessflag varchar(1);
 alter table contracts_contract add column progsourceagency varchar(2);
@@ -44,7 +43,7 @@ alter table contracts_contract alter column vendor_business_name rename to vendo
 alter table contracts_contract add column apaobflag varchar(1);
 alter table contracts_contract add column baobflag varchar(1);
 alter table contracts_contract alter column major_program_code rename to majorprogramcode;
-alter table contracts_contract add column transaction_status BLIMEY!!!;
+alter table contracts_contract add column transaction_status varchar(32);
 alter table contracts_contract add column commercialitemtestprogram varchar(1);
 alter table contracts_contract add column piid varchar(50);
 alter table contracts_contract add column aiobflag varchar(1);
@@ -108,7 +107,7 @@ alter table contracts_contract alter column contracting_agency_id rename to cont
 alter table contracts_contract alter column product_service_code rename to productorservicecode;
 alter table contracts_contract add column mod_parent varchar(100);
 alter table contracts_contract alter column cotr_name rename to cotrname;
-alter table contracts_contract add column unique_transaction_id BLIMEY!!!;
+alter table contracts_contract add column unique_transaction_id varchar(32);
 alter table contracts_contract alter column signed_date rename to signeddate;
 alter table contracts_contract add column localgovernmentflag varchar(1);
 alter table contracts_contract alter column renewal_date rename to renewaldate;
@@ -125,11 +124,11 @@ alter table contracts_contract alter column requesting_agency_id rename to fundi
 alter table contracts_contract alter column place_district rename to congressionaldistrict;
 alter table contracts_contract alter column vendor_name rename to vendorname;
 alter table contracts_contract add column idvmodificationnumber varchar(25);
-alter table contracts_contract add column competitiveprocedures BLIMEY!!!;
+alter table contracts_contract add column competitiveprocedures varchar(3);
 alter table contracts_contract alter column vendor_employees rename to numberofemployees;
 alter table contracts_contract alter column maximum_amount rename to baseandalloptionsvalue;
 alter table contracts_contract alter column product_origin rename to placeofmanufacture;
-alter table contracts_contract add column placeofperformancecongressionaldistrict BLIMEY!!!;
+alter table contracts_contract add column placeofperformancecongressionaldistrict varchar(6);
 alter table contracts_contract alter column modification_reason rename to reasonformodification;
 alter table contracts_contract alter column vendor_district rename to vendor_cd;
 alter table contracts_contract alter column contract_nocompete_reason rename to reasonnotcompeted;
