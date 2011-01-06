@@ -9,7 +9,10 @@ datasets = [
 ]
 
 def generate_sql(reader, output_file, table, datatype_key):
+    print dir(reader)
     for line in reader:
+        if reader.line_num == 1: continue
+
         orig, kevins, ours = line
 
         if kevins and ours:
