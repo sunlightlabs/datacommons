@@ -21,7 +21,7 @@ from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource, \
     CSVFieldVerifier
 from decimal import Decimal
 from django.core.management import call_command
-from django.db import connection
+from django.db import connections
 from django.test import TestCase
 from nose.plugins.attrib import attr
 from nose.plugins.skip import Skip, SkipTest
@@ -703,7 +703,7 @@ class TestUpdates(TestCase):
 
 
     def setUp(self):
-        self.cursor = connection.cursor()
+        self.cursor = connections['default'].cursor()
 
         self.create_table('old_table')
         self.create_table('new_table')
@@ -773,8 +773,8 @@ class TestUpdates(TestCase):
 
 
     def assertTablesEqual(self):
-        new_table_cursor = connection.cursor()
-        updated_table_cursor = connection.cursor()
+        new_table_cursor = connections['default'].cursor()
+        updated_table_cursor = connections['default'].cursor()
 
         new_table_cursor.execute("select * from new_table order by id")
         updated_table_cursor.execute("select * from old_table order by id")
@@ -841,7 +841,8 @@ FROM '/home/kwebb/GIANT/usapsending/20101101_csv/datafeeds/out/grants.out'
 CSV QUOTE '"'
         """
 
-        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_faads_sql())
+        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_faads_sql('/home/kwebb/GIANT/usapsending/20101101_csv/datafeeds/out/grants.out'))
+
 
     def test_loader_fpds_sql(self):
         sql = """
@@ -851,11 +852,23 @@ FROM '/home/kwebb/GIANT/usapsending/20101101_csv/datafeeds/out/contracts.out'
 CSV QUOTE '"'
         """
 
-        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_fpds_sql())
+        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_fpds_sql('/home/kwebb/GIANT/usapsending/20101101_csv/datafeeds/out/contracts.out'))
+
+
+    def test_insert_faads(self):
+        Loader().insert_faads(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/grants.out'))
+
+        cursor = connections['default'].cursor()
+        cursor.execute('select count(*) from grants_grant')
+        count = cursor.fetchone()[0]
+
+        self.assertEqual(10, count)
+
 
     def assert_eq_ignoring_leading_trailing_space(self, expected, actual):
         self.maxDiff = None
         self.assertEqual(self.strip_lines(expected), self.strip_lines(actual))
+
 
     def strip_lines(self, values):
         if type(values) != type([]):
