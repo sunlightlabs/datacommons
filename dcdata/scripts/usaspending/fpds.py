@@ -1,7 +1,7 @@
 from helpers import *
 
 FPDS_FIELDS = [('unique_transaction_id','unique_transaction_id', None),
-                ('transaction_status','transaction_status', None), # CAN'T FIND!!
+                ('transaction_status','transaction_status', None),
                 ('vendorname','vendorName', None),
                 ('lastdatetoorder', None, None),
                 ('agencyid', 'agencyid', splitCode),
