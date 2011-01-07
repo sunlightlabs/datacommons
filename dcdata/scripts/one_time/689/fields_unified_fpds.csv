@@ -14,13 +14,13 @@ educationalInstitutionFlag,educationalinstitutionflag,
 ZIPCode,zipcode,vendor_zipcode
 ClingerCohenAct,clingercohenact,
 DavisBaconAct,davisbaconact,
-extentCompeted,extentcompeted,
+extentCompeted,extentcompeted,contract_competitiveness
 costOrPricingData,costorpricingdata,cost_data_obtained
 fedBizOpps,,fed_biz_opps
 lastModifiedDate,,last_modified_date
 vendorCountryCode,vendorcountrycode,vendor_country_code
 CCRException,,vendor_ccr_exception
-fiscal_year,fiscal_year,
+fiscal_year,fiscal_year,fiscal_year
 IDVAgencyID,idvagencyid,
 nationalInterestActionCode,,contract_nia_code
 firm8AFlag,firm8aflag,
@@ -32,7 +32,7 @@ psc_cat,psc_cat,
 WalshHealyAct,walshhealyact,
 feePaidForUseOfService,,idv_agency_fee
 veteranOwnedFlag,veteranownedflag,
-agencyID,agencyid,
+agencyID,agencyid,agencyid
 countryOfOrigin,countryoforigin,product_origin_country
 cancellationDate,,cancellation_date
 A76Action,a76action,
@@ -46,7 +46,7 @@ BAOBFlag,baobflag,
 majorProgramCode,majorprogramcode,major_program_code
 transaction_status,transaction_status,
 commercialItemTestProgram,commercialitemtestprogram,
-PIID,piid,
+PIID,piid,piid
 AIOBFlag,aiobflag,
 contractActionType,contractactiontype,contract_action_type
 ProgSourceSubAcct,progsourcesubacct,
@@ -69,7 +69,6 @@ purchaseCardAsPaymentMethod,purchasecardaspaymentmethod,purchase_card_as_payment
 locationCode,locationcode,place_location_code
 ultimateCompletionDate,ultimatecompletiondate,maximum_date
 transactionNumber,transactionnumber,transaction_number
-extentCompeted,,contract_competitiveness
 HAOBFlag,haobflag,
 stateCode,statecode,place_state_code
 solicitationProcedures,solicitationprocedures,
@@ -139,7 +138,6 @@ shelteredWorkshopFlag,shelteredworkshopflag,
 annualRevenue,annualrevenue,vendor_annual_revenue
 hospitalFlag,hospitalflag,
 effectiveDate,effectivedate,effective_date
-agencyID,,agency_id
 priceEvaluationPercentDifference,,price_difference
 costAccountingStandardsClause,costaccountingstandardsclause,cas_clause
 SAAOBFlag,saaobflag,
