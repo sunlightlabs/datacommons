@@ -15,7 +15,6 @@ alter table grants_grant rename amount_subsidy_cost to orig_sub_guran;
 alter table grants_grant rename place_code to principal_place_code;
 alter table grants_grant rename agency_category to maj_agency_cat;
 alter table grants_grant add column starting_date date;
-alter table grants_grant rename id to record_id;
 alter table grants_grant rename bfi to business_identifier;
 alter table grants_grant add column duns_conf_code varchar(2);
 alter table grants_grant rename psta_account_code to progsrc_acnt_code;

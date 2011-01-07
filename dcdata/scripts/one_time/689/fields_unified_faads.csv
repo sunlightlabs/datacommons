@@ -24,7 +24,6 @@ assistance_type,assistance_type,assistance_type
 recipient_country_code,recipient_country_code,recipient_country_code
 maj_agency_cat,maj_agency_cat,agency_category
 starting_date,starting_date,
-record_id,,id
 business_identifier,,bfi
 recipient_city_code,recipient_city_code,recipient_city_code
 duns_conf_code,duns_conf_code,
