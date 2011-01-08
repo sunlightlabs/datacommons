@@ -116,7 +116,7 @@ AGENCY_CATEGORIES = (
 
 
 class Grant(models.Model):
-    import_reference = models.ForeignKey(Import)
+    imported_on = models.DateField(auto_now_add=True)
     
     fiscal_year = models.IntegerField()
     record_type = models.CharField(max_length=1, blank=True, choices=RECORD_TYPES)
@@ -127,11 +127,11 @@ class Grant(models.Model):
     recip_id = models.IntegerField(blank=True, null=True)
     recipient_name = models.CharField(max_length=45, blank=True)
     recipient_city_name = models.CharField(max_length=21, blank=True)
-    recipient_city_name_code = models.CharField(max_length=5, blank=True)
+    recipient_city_code = models.CharField(max_length=5, blank=True)
     recipient_county_name = models.CharField(max_length=21, blank=True)
-    recipient_county_name_code = models.CharField(max_length=3, blank=True)
+    recipient_county_code = models.CharField(max_length=3, blank=True)
     recipient_state_name = USStateField(blank=True)
-    recipient_state_name_code = models.CharField(max_length=2, blank=True)
+    recipient_state_code = models.CharField(max_length=2, blank=True)
     recipient_zip = models.CharField(max_length=9, blank=True)
     recipient_country_code = models.CharField(max_length=3, blank=True)
     recipient_cd = models.CharField(max_length=4, blank=True)
@@ -159,8 +159,8 @@ class Grant(models.Model):
     asst_cat_type = models.CharField(max_length=1, blank=True, choices=ASSISTANCE_CATEGORIES)
     correction_late_ind = models.CharField(max_length=1, blank=True, choices=CORRECTIONS)
     principal_place_code = models.CharField(max_length=7, blank=True)
-    principal_place_state = USStateField(blank=True)
-    principal_principal_place_state_code = models.CharField(max_length=2, blank=True)
+    principal_place_state = models.CharField(max_length=64, blank=True)
+    principal_place_state_code = USStateField(blank=True)
     principal_place_cc = models.CharField(max_length=25, blank=True)
     principal_place_zip = models.CharField(max_length=9, blank=True)
     principal_place_cd = models.CharField(max_length=2, blank=True)
@@ -172,7 +172,7 @@ class Grant(models.Model):
     business_identifier = models.CharField(max_length=3, blank=True, choices=BFIS)
     uri = models.CharField(max_length=70, blank=True)
     duns_conf_code = models.CharField(max_length=2, blank=True)
-    ending_date = models.DateField(blank=True, null=True)date
+    ending_date = models.DateField(blank=True, null=True)
     fyq = models.CharField(max_length=10, blank=True)
     fyq_correction = models.CharField(max_length=5, blank=True)
     starting_date = models.DateField(blank=True, null=True)
