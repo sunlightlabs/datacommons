@@ -127,7 +127,14 @@ FPDS_FIELDS = [('unique_transaction_id','unique_transaction_id', None),
                 ('progsourceaccount', 'ProgSourceAccount', splitCode),
                 ('progsourcesubacct', 'ProgSourceSubAcct', splitCode),
                 ('rec_flag', 'rec_flag', transformFlag),
-                ('type_of_contract', 'type_of_contract', splitCode)]
+                ('type_of_contract', 'type_of_contract', splitCode)
+]
+
+CALCULATED_FPDS_FIELDS = [
+        ('agency_name', 'agencyid', agency_name_lookup),
+        ('contracting_agency_name', 'contractingofficeagencyid', agency_name_lookup),
+        ('requesting_agency_name', 'fundingrequestingagencyid', agency_name_lookup)
+]
 
 
 

@@ -1,9 +1,11 @@
-import csv, sys, os, re, fpds, faads
+#!/usr/bin/env python
+
+import csv, sys, os, os.path, re, fpds, faads
 
 class USASpendingDenormalizer:
     re_contracts = re.compile('.*[cC]ontracts.*')
 
-    def parse_file(self, input, output, fields):
+    def parse_file(self, input, output, fields, calculated_fields=None):
         reader = csv.DictReader(input)
 
         def null_transform(value):
@@ -21,16 +23,32 @@ class USASpendingDenormalizer:
                     value = transform(line[csv_fieldname])
                 except Exception, e:
                     value = None
-                    print >> sys.stderr, csv_fieldname, '|', line[csv_fieldname], '|', e.message
+                    print >> sys.stderr, '|'.join([csv_fieldname, line[csv_fieldname],e.message])
 
                 insert_fields.append(self.field_assignment_for_value(value))
 
-            print >> output, ','.join(insert_fields)
+            if calculated_fields:
+                for field in calculated_fields:
+                    fieldname, built_on_field, transform = field
+
+                    try:
+                        if built_on_field:
+                            value = transform(line[built_on_field])
+                        else:
+                            value = transform()
+                    except Exception, e:
+                        value = None
+                        print >> sys.stderr, '|'.join([fieldname, line.get(built_on_field, ''), e.message])
+
+                    insert_fields.append(self.field_assignment_for_value(value))
+
+
+            print >> output, '|'.join([ str(x) for x in insert_fields])
 
 
     def parse_directory(self, in_path, out_path=None, out_grants_path=None, out_contracts_path=None):
         if not out_path:
-            out_path = os.path.join(path, 'out')
+            out_path = os.path.join(in_path, 'out')
 
         if not os.path.exists(out_path):
             os.mkdir(out_path)
@@ -44,12 +62,10 @@ class USASpendingDenormalizer:
             if os.path.isfile(file_path):
                 input = open(file_path, 'rb')
 
-                print file_path
-
                 if self.re_contracts.match(file):
-                    self.parse_file(input, out_contracts, fpds.FPDS_FIELDS)
+                    self.parse_file(input, out_contracts, fpds.FPDS_FIELDS, fpds.CALCULATED_FPDS_FIELDS)
                 else:
-                    self.parse_file(input, out_grants, faads.FAADS_FIELDS)
+                    self.parse_file(input, out_grants, faads.FAADS_FIELDS, faads.CALCULATED_FAADS_FIELDS)
 
                 input.close()
 
@@ -59,18 +75,15 @@ class USASpendingDenormalizer:
 
     def field_assignment_for_value(self, value):
         if value:
-            if isinstance(value, int):
-                return '"%d"' % value
-            elif isinstance(value, float):
-                return '"%f"' % value
-            else:
-                return '"%s"' % value
+            return value
         else:
             return 'NULL'
 
 
 if __name__ == '__main__':
-    out_grants_path = os.path.join(out_path, 'grants.out')
-    out_contracts_path = os.path.join(out_path, 'contracts.out')
+    out_path = sys.argv[-1]
+    in_path = sys.argv[-2]
+    out_grants_path = os.path.join(os.path.abspath(out_path), 'grants.out')
+    out_contracts_path = os.path.join(os.path.abspath(out_path), 'contracts.out')
 
-    USASpendingDenormalizer().parse_directory('../20101101_csv/datafeeds/', None, out_grants_path, out_contracts_path)
+    USASpendingDenormalizer().parse_directory(os.path.abspath(in_path), None, out_grants_path, out_contracts_path)

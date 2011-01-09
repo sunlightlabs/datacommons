@@ -17,8 +17,10 @@ FAADS_FIELDS = [('unique_transaction_id', 'unique_transaction_id', None),
                 ('recipient_name', 'recipient_name', None),
                 ('recipient_city_code', 'recipient_city_code', None),
                 ('recipient_city_name', 'recipient_city_name', None),
+                ('recipient_county_name', 'recipient_county_name', None),
                 ('recipient_county_code', 'recipient_county_code', None),
                 ('recipient_zip', 'recipient_zip', None),
+                ('recipient_country_code', 'recipient_country_code', splitCode),
                 ('recipient_type', 'recipient_type', splitCode),
                 ('action_type', 'action_type', splitCode),
                 ('agency_code', 'agency_code', splitCode),
@@ -59,7 +61,10 @@ FAADS_FIELDS = [('unique_transaction_id', 'unique_transaction_id', None),
                 ('recipient_cd', 'recipient_cd', splitCode),
                 ('maj_agency_cat', 'maj_agency_cat', splitCode),
                 ('rec_flag', 'rec_flag', splitCode),
-                ('recipient_country_code', 'recipient_country_code', splitCode),
                 ('uri', 'uri', None),
                 ('recipient_state_code', 'recipient_state_code', splitCode)]
+
+CALCULATED_FAADS_FIELDS = [
+    ('imported_on', None, datestamp)
+]
 
