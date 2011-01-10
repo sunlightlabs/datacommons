@@ -64,6 +64,9 @@ class CommitteeFilter(Filter):
         if committee:
             record['committee_name'] = committee['pac_short']
             record['committee_party'] = committee['party']
+        else:
+            record['committee_name'] = ''
+            record['committee_party'] = ''
         return record
  
 

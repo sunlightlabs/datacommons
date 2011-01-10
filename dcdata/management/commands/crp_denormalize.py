@@ -20,7 +20,7 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
               'committee_name', 'committee_ext_id', 'committee_party', 'candidacy_status',
               'district', 'district_held', 'seat', 'seat_held', 'seat_status', 'seat_result']
 
-SPEC = dict(((fn, None) for fn in FIELDNAMES))
+SPEC = dict(((fn, '') for fn in FIELDNAMES))
 
 
 class RecipientFilter(Filter):
@@ -30,6 +30,7 @@ class RecipientFilter(Filter):
         self._committees = committees
 
     def process_record(self, record):
+        self.add_empty_recipient(record)
         recip_id = record['recip_id'].strip().upper()
         if recip_id and recip_id.startswith('N'):
             candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
@@ -40,7 +41,26 @@ class RecipientFilter(Filter):
             
         return record
 
-
+    @staticmethod
+    def add_empty_recipient(record):
+        """ Initialize recipient fields so that nothing is left as 'None'. """
+        
+        record['recipient_name'] = ''
+        record['recipient_party'] = ''
+        record['recipient_type'] = ''
+        record['recipient_ext_id'] = ''
+        record['recipient_category'] = ''
+        record['seat_status'] = ''
+        record['seat_result'] = ''
+        
+        record['recipient_state'] = ''
+        record['seat'] = ''
+        record['district'] = ''
+        record['recipient_state_held'] = ''
+        record['seat_held'] = ''
+        record['district_held'] = ''
+            
+            
     @staticmethod
     def get_recip_code_result(recip_code):
         recip_code = recip_code.strip().upper()
@@ -69,6 +89,7 @@ class RecipientFilter(Filter):
             # record['recipient_state_held']
             # record['seat_held']
             # record['district_held']
+
 
     @staticmethod
     def standardize_seat(seat, record, label=''):
@@ -101,6 +122,7 @@ class RecipientFilter(Filter):
             record['seat_result'] = RecipientFilter.get_recip_code_result(committee['recip_code'])
             record['recipient_ext_id'] = committee['cmte_id']
             record['recipient_category'] = committee['prim_code']
+
 
 
 def load_catcodes(dataroot):
