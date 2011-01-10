@@ -83,7 +83,7 @@ class Contribution(models.Model):
     transaction_namespace = models.CharField(max_length=64)
     transaction_id = models.CharField(max_length=32) # <cycle>:<fec_transaction_id>, <nimsp_id>
     transaction_type = models.CharField(max_length=32, choices=TRANSACTION_TYPES)
-    filing_id = models.CharField(max_length=128, blank=True, null=True)
+    filing_id = models.CharField(max_length=128, blank=True)
     is_amendment = models.BooleanField(default=False)
 
     # amount and date
@@ -91,56 +91,56 @@ class Contribution(models.Model):
     date = models.DateField(null=True)
 
     # contributor fields
-    contributor_name = models.CharField(max_length=255, blank=True, null=True)
-    contributor_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    contributor_type = models.CharField(max_length=1, choices=CONTRIBUTOR_TYPES, blank=True, null=True)
-    contributor_occupation = models.CharField(max_length=64, blank=True, null=True)
-    contributor_employer = models.CharField(max_length=64, blank=True, null=True)
+    contributor_name = models.CharField(max_length=255, blank=True)
+    contributor_ext_id = models.CharField(max_length=128, blank=True)
+    contributor_type = models.CharField(max_length=1, choices=CONTRIBUTOR_TYPES, blank=True)
+    contributor_occupation = models.CharField(max_length=64, blank=True)
+    contributor_employer = models.CharField(max_length=64, blank=True)
 
     contributor_gender = models.CharField(max_length=1, choices=GENDERS, default='U')
-    contributor_address = models.CharField(max_length=255, blank=True, null=True)
-    contributor_city = models.CharField(max_length=128, blank=True, null=True)
-    contributor_state = USStateField(blank=True, null=True)
-    contributor_zipcode = models.CharField(max_length=5, blank=True, null=True)
+    contributor_address = models.CharField(max_length=255, blank=True)
+    contributor_city = models.CharField(max_length=128, blank=True)
+    contributor_state = USStateField(blank=True)
+    contributor_zipcode = models.CharField(max_length=5, blank=True)
 
-    contributor_category = models.CharField(max_length=8, blank=True, null=True)
-    contributor_category_order = models.CharField(max_length=3, blank=True, null=True)
+    contributor_category = models.CharField(max_length=8, blank=True)
+    contributor_category_order = models.CharField(max_length=3, blank=True)
 
     # organization
-    organization_name = models.CharField(max_length=255, blank=True, null=True)
-    organization_ext_id = models.CharField(max_length=128, blank=True, null=True)
+    organization_name = models.CharField(max_length=255, blank=True)
+    organization_ext_id = models.CharField(max_length=128, blank=True)
 
     # parent organization
-    parent_organization_name = models.CharField(max_length=255, blank=True, null=True)
-    parent_organization_ext_id =  models.CharField(max_length=128, blank=True, null=True)
+    parent_organization_name = models.CharField(max_length=255, blank=True)
+    parent_organization_ext_id =  models.CharField(max_length=128, blank=True)
 
     # recipient fields
-    recipient_name = models.CharField(max_length=255, blank=True, null=True)
-    recipient_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
-    recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True, null=True)
-    recipient_state = USStateField(blank=True, null=True)
-    recipient_state_held = USStateField(blank=True, null=True)
+    recipient_name = models.CharField(max_length=255, blank=True)
+    recipient_ext_id = models.CharField(max_length=128, blank=True)
+    recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True)
+    recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True)
+    recipient_state = USStateField(blank=True)
+    recipient_state_held = USStateField(blank=True)
 
-    recipient_category = models.CharField(max_length=8, blank=True, null=True)
-    recipient_category_order = models.CharField(max_length=3, blank=True, null=True)
+    recipient_category = models.CharField(max_length=8, blank=True)
+    recipient_category_order = models.CharField(max_length=3, blank=True)
 
     # committee fields
-    committee_name = models.CharField(max_length=255, blank=True, null=True)
-    committee_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
+    committee_name = models.CharField(max_length=255, blank=True)
+    committee_ext_id = models.CharField(max_length=128, blank=True)
+    committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True)
 
     # election and seat fields
     candidacy_status = models.NullBooleanField(null=True)
 
-    district = models.CharField(max_length=8, blank=True, null=True)
-    seat = models.CharField(max_length=64, choices=SEATS, blank=True, null=True)
+    district = models.CharField(max_length=8, blank=True)
+    seat = models.CharField(max_length=64, choices=SEATS, blank=True)
 
-    district_held = models.CharField(max_length=8, blank=True, null=True)
-    seat_held = models.CharField(max_length=64, choices=SEATS, blank=True, null=True)
+    district_held = models.CharField(max_length=8, blank=True)
+    seat_held = models.CharField(max_length=64, choices=SEATS, blank=True)
 
-    seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True, null=True)
-    seat_result = models.CharField(max_length=1, choices=SEAT_RESULTS, blank=True, null=True)
+    seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True)
+    seat_result = models.CharField(max_length=1, choices=SEAT_RESULTS, blank=True)
 
     class Meta:
         ordering = ('cycle','contributor_name','amount','recipient_name')
