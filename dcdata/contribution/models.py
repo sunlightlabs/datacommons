@@ -104,7 +104,6 @@ class Contribution(models.Model):
     contributor_zipcode = models.CharField(max_length=5, blank=True)
 
     contributor_category = models.CharField(max_length=8, blank=True)
-    contributor_category_order = models.CharField(max_length=3, blank=True)
 
     # organization
     organization_name = models.CharField(max_length=255, blank=True)
@@ -123,7 +122,6 @@ class Contribution(models.Model):
     recipient_state_held = USStateField(blank=True)
 
     recipient_category = models.CharField(max_length=8, blank=True)
-    recipient_category_order = models.CharField(max_length=3, blank=True)
 
     # committee fields
     committee_name = models.CharField(max_length=255, blank=True)

@@ -1,5 +1,4 @@
 drop index if exists contribution_contribution_contributor_category;
-drop index if exists contribution_contribution_contributor_category_order;
 drop index if exists contribution_contribution_contributor_ext_id;
 drop index if exists contribution_contribution_organization_ext_id;
 drop index if exists contribution_contribution_parent_organization_ext_id;

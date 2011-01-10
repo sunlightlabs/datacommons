@@ -50,7 +50,7 @@ disallowed_orgnames = set(['retired', 'homemaker', 'attorney', '[24i contributio
 class OrganizationFilter(Filter):
     def process_record(self, record):
         orgname = record.get('org_name', '').strip()
-        record['organization_name'] = orgname if orgname and orgname.lower() not in disallowed_orgnames else None
+        record['organization_name'] = orgname if orgname and orgname.lower() not in disallowed_orgnames else ""
         return record
 
 
@@ -60,7 +60,7 @@ class CommitteeFilter(Filter):
         self._committees = committees
     def process_record(self, record):
         cmte_id = record['cmte_id'].upper()
-        committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
+        committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), "")
         if committee:
             record['committee_name'] = committee['pac_short']
             record['committee_party'] = committee['party']
@@ -102,8 +102,8 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
                           'contributor_state': 'state',
                           'contributor_zipcode': 'zipcode',
                           'contributor_gender': 'gender'}),
-                FieldModifier('contributor_state', lambda s: s.upper() if s else None),
-                FieldModifier('contributor_gender', lambda s: s.upper() if s else None),
+                FieldModifier('contributor_state', lambda s: s.upper() if s else ""),
+                FieldModifier('contributor_gender', lambda s: s.upper() if s else ""),
         
                 # employer/occupation filter
                 FECOccupationFilter(),
@@ -115,7 +115,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
                 FieldAdder('contributor_type', 'individual'),
                 FieldAdder('is_amendment', False),
         
-                FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: None if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),
+                FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: "" if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),
 
                 # filter through spec
                 SpecFilter(SPEC))
