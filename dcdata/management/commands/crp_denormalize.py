@@ -43,7 +43,7 @@ class RecipientFilter(Filter):
     @staticmethod
     def get_recip_code_result(recip_code):
         recip_code = recip_code.strip().upper()
-        return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else None
+        return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else ""
 
     @staticmethod
     def add_candidate_recipient(candidate, record):
