@@ -25,7 +25,7 @@ class USASpendingDenormalizer:
                     value = None
                     print >> sys.stderr, '|'.join([csv_fieldname, line[csv_fieldname],e.message])
 
-                insert_fields.append(self.field_assignment_for_value(value))
+                insert_fields.append(self.filter_non_values(value))
 
             if calculated_fields:
                 for field in calculated_fields:
@@ -40,13 +40,22 @@ class USASpendingDenormalizer:
                         value = None
                         print >> sys.stderr, '|'.join([fieldname, line.get(built_on_field, ''), e.message])
 
-                    insert_fields.append(self.field_assignment_for_value(value))
+                    insert_fields.append(self.filter_non_values(value))
 
 
             print >> output, '|'.join([ str(x) for x in insert_fields])
 
+    def filter_non_values(self, value):
+        if value == None:
+            return "NULL"
+        
+        if isinstance(value, str) and value in ('(none)'):
+            return ''
+        
+        return value
+    
 
-    def parse_directory(self, in_path, out_path=None, out_grants_path=None, out_contracts_path=None):
+    def parse_directory(self, in_path, out_path, out_grants_path, out_contracts_path):
         if not out_path:
             out_path = os.path.join(in_path, 'out')
 
@@ -71,13 +80,6 @@ class USASpendingDenormalizer:
 
         out_grants.close()
         out_contracts.close()
-
-
-    def field_assignment_for_value(self, value):
-        if value:
-            return value
-        else:
-            return 'NULL'
 
 
 if __name__ == '__main__':

@@ -798,40 +798,43 @@ class TestUpdates(TestCase):
 
 class TestConverter(TestCase):
 
+    @attr('usaspending')
+    @attr('grants')
     def test_prepare_grants_file(self):
-        grants_file = NamedTemporaryFile('w')
-        contracts_file = NamedTemporaryFile('w')
+        grants_file = 'test_data/usaspending/out/grants.out'
+        contracts_file = 'test_data/usaspending/out/contracts.out'
 
-        out_dir = os.path.dirname(grants_file.name)
+        out_dir = os.path.dirname(grants_file)
 
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file.name, contracts_file.name)
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
 
         self.assert_file_contents_eq('''
-c9b7090891d057c1336d6ae5f902243d|active|201010041|94.016|SAI NOT AVAILABLE|Hope for the Aged Inc.|06593|Bayaman|Bayamon|021|00956|NULL|12|A|9577|10SCAPR001|0|282687|49576|332263|2010-09-07|2010-09-30|2013-09-29|04|2|NULL|NULL|7206593|Puerto Rico|Bayamon|00956|98  |Senior Companion Program|Corporation for National and Community Service|Senior Companion Program|146240820|8 |95|2728|000|Calle Duende 2 G1|Lomas Verdes|NULL|NULL|NULL|2010|PR|n|g|ZZ|ot|N|10SCAPR001020100907|PR|20110108
-8a9788a5623095aabcb2d34fe57a4f67|active|201010041|94.006|SAI NOT AVAILABLE|Mississippi Institutions of Higher Learning|36000|Jackson|Hinds|049|392116453|NULL|25|A|9577|10EDHMS002|0|160000|NULL|160000|2010-09-29|2010-09-29|2011-07-31|04|2|NULL|NULL|00*****|Mississippi|Hinds|392116453|00  |AmeriCorps|Corporation for National and Community Service|Education Awards Program|023659365|8 |95|2728|000|MS Institutions of Higher Learning|3825 Ridgewood Road  Suite 334|NULL|NULL|NULL|2010|NULL|o|g|ZZ|ot|N|10EDHMS002020100929|MS|20110108
-dce6cc6b47be826b03f5729738ed97a2|active|201006291|17.310|NULL|MULTIPLE RECIPIENTS|NULL|NULL|YAVAPAI|025|NULL|USA|21|NULL|1635|NULL|NULL|175000|NULL|175000|2010-03-31|2010-01-01|2010-03-31|10|1|NULL|NULL|04**025|ARIZONA|YAVAPAI|NULL|03  |Energy Employees Occupational Illness Compensation|Employment Standards Administration  Department of Labor|ENERGY EMPLOYEES OCCUPATIONAL ILLNESS COMPENSATION.|NULL|NULL|16|1523|000|NULL|NULL|NULL|NULL|NULL|2010|AZ|i|d|ZZ|16|N|17.310-ARIZONA-YAVAPAI-20100331-10|AZ|20110108
-15de92034664663f55b0044b97d0deae|active|201006291|17.310|NULL|MULTIPLE RECIPIENTS|NULL|NULL|FAIRFAX|059|NULL|USA|21|NULL|1635|NULL|NULL|75000|NULL|75000|2010-03-31|2010-01-01|2010-03-31|10|1|NULL|NULL|51**059|VIRGINIA|FAIRFAX|NULL|90  |Energy Employees Occupational Illness Compensation|Employment Standards Administration  Department of Labor|ENERGY EMPLOYEES OCCUPATIONAL ILLNESS COMPENSATION.|NULL|NULL|16|1523|000|NULL|NULL|NULL|NULL|NULL|2010|VA|i|d|ZZ|16|N|17.310-VIRGINIA-FAIRFAX-20100331-10|VA|20110108
-25d61e047db8db4423a192e529bd39db|active|201010051|64.114|NULL|MULTIPLE RECIPIENTS|NULL|NULL|STARKE|149|NULL|NULL|21|(none)|3640|NULL|NULL|NULL|NULL|NULL|2010-09-28|NULL|NULL|08|1|NULL|NULL|18149**|INDIANA|STARKE|NULL|    |NULL|VA- VETERANS BENEFIT ADMINISTRATION|NULL|NULL|  |  |NULL|   |NULL|NULL|NULL|30040|-128|2010|IN|i|l|ZZ|36|N|64114201009727|IN|20110108
-239422b6dd7b2a88d8ff5e0bab119532|active|201010051|64.114|NULL|MULTIPLE RECIPIENTS|NULL|NULL|DOUGLAS|019|NULL|NULL|21|(none)|3640|NULL|NULL|NULL|NULL|NULL|2010-09-28|NULL|NULL|08|1|NULL|NULL|41019**|OREGON|DOUGLAS|NULL|    |NULL|VA- VETERANS BENEFIT ADMINISTRATION|NULL|NULL|  |  |NULL|   |NULL|NULL|NULL|534491|-3310|2010|OR|i|l|ZZ|36|N|6411420100982|OR|20110108
-d80da494988d362aa74ed68b7e35eda1|active|201005141|31.007|SAI EXEMPT|LUDLUM MEASUREMENTS INC|71540|SWEETWATER|NOLAN|353|795563209|USA|23|B|8300|09425204ST0003|NULL|600000|NULL|600000|2010-02-24|2010-03-01|2011-03-01|09|2|C|NULL|4871540|TX|SWEETWATER|795563209|TX11|EXPORT - LOAN GUARANTEE/INSURED LOANS|EXPORT-IMPORT BANK OF THE UNITED STATES|EXPORT INSURANCE|008025447|10|83|4162|   |501 OAK ST|NULL|NULL|NULL|NULL|2010|TX|f|i|TX11|ot|N|NULL|TX|20110108
-f9e7a41d8585b0e0cb2b52a9f4bd26f4|active|201004053|10.450|NULL|ACE PROPERTY AND CASUALTY|60000|Philadelphia|Philadelphia|101|191063703|USA|22|A|12D4|A&O2010RH022010|NULL|10485897|NULL|NULL|2010-02-24|2010-01-25|2010-02-24|09|2|NULL|NULL|1939765|IOWA|Johnston|501313006|IA03|NULL|Risk Management Agency (08)|Standard Reinsurance Agreement for ACE PROPERTY AND CASUALTY  for RY 2010 for 022010|090362109|08|12|4085|NULL|436 Walnut Street|NULL|NULL|NULL|NULL|2010|IA|f|i|ZZ|12|N|12D400A&O2010RH022010       12X4085|TX|20110108
-01db4707cf4c5d6d021697f3f31f6b9f|active|201010051|10.998|SAI EXEMPT|MISSOURI SYSTEM UNIVERSITY|15670|COLUMBIA|Boone|019|652111230|USA|06|A|12D3|9069910|1|38519|NULL|NULL|2010-02-01|2009-10-01|2010-09-30|11|2|NULL|NULL|29019|MISSOURI|COLUMBIA|652113020|MO09|NULL|Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|153890272|11|12|2900|   |310 JESSE HALL|NULL|NULL|NULL|NULL|2010|MO|h|o|MO09|12|N|12D3019069910         1     1282900|MO|20110108
-e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC.|65000|SCOTTSDALE|Maricopa|013|852602490|USA|22|A|12D3|9069806|1|754|NULL|NULL|2010-03-01|2009-10-01|2010-09-30|11|2|NULL|NULL|04013|ARIZONA|SCOTTSDALE|852602441|AZ05|NULL|Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|116899969|11|12|2900|   |14605 NORTH AIRPORT DRIVE|NULL|NULL|NULL|NULL|2010|AZ|f|o|AZ05|12|N|12D3019069806         1     1282900|AZ|20110108
-        ''', grants_file.name)
+dce6cc6b47be826b03f5729738ed97a2|active|201006291|17.310||MULTIPLE RECIPIENTS|||YAVAPAI|025||USA|21||1635|||175000|0|175000|2010-03-31|2010-01-01|2010-03-31|10|1|||04**025|ARIZONA|YAVAPAI||03  |Energy Employees Occupational Illness Compensation|Employment Standards Administration  Department of Labor|ENERGY EMPLOYEES OCCUPATIONAL ILLNESS COMPENSATION.|||16|1523|000||||0|0|2010|AZ|i|d|ZZ|16|N|17.310-ARIZONA-YAVAPAI-20100331-10|AZ|20110111
+15de92034664663f55b0044b97d0deae|active|201006291|17.310||MULTIPLE RECIPIENTS|||FAIRFAX|059||USA|21||1635|||75000|0|75000|2010-03-31|2010-01-01|2010-03-31|10|1|||51**059|VIRGINIA|FAIRFAX||90  |Energy Employees Occupational Illness Compensation|Employment Standards Administration  Department of Labor|ENERGY EMPLOYEES OCCUPATIONAL ILLNESS COMPENSATION.|||16|1523|000||||0|0|2010|VA|i|d|ZZ|16|N|17.310-VIRGINIA-FAIRFAX-20100331-10|VA|20110111
+c9b7090891d057c1336d6ae5f902243d|active|201010041|94.016|SAI NOT AVAILABLE|Hope for the Aged Inc.|06593|Bayaman|Bayamon|021|00956||12|A|9577|10SCAPR001|0|282687|49576|332263|2010-09-07|2010-09-30|2013-09-29|04|2|||7206593|Puerto Rico|Bayamon|00956|98  |Senior Companion Program|Corporation for National and Community Service|Senior Companion Program|146240820|8 |95|2728|000|Calle Duende 2 G1|Lomas Verdes||0|0|2010|PR|n|g|ZZ|ot|N|10SCAPR001020100907|PR|20110111
+8a9788a5623095aabcb2d34fe57a4f67|active|201010041|94.006|SAI NOT AVAILABLE|Mississippi Institutions of Higher Learning|36000|Jackson|Hinds|049|392116453||25|A|9577|10EDHMS002|0|160000|0|160000|2010-09-29|2010-09-29|2011-07-31|04|2|||00*****|Mississippi|Hinds|392116453|00  |AmeriCorps|Corporation for National and Community Service|Education Awards Program|023659365|8 |95|2728|000|MS Institutions of Higher Learning|3825 Ridgewood Road  Suite 334||0|0|2010||o|g|ZZ|ot|N|10EDHMS002020100929|MS|20110111
+d80da494988d362aa74ed68b7e35eda1|active|201005141|31.007|SAI EXEMPT|LUDLUM MEASUREMENTS INC|71540|SWEETWATER|NOLAN|353|795563209|USA|23|B|8300|09425204ST0003||600000|0|600000|2010-02-24|2010-03-01|2011-03-01|09|2|C||4871540|TX|SWEETWATER|795563209|TX11|EXPORT - LOAN GUARANTEE/INSURED LOANS|EXPORT-IMPORT BANK OF THE UNITED STATES|EXPORT INSURANCE|008025447|10|83|4162|   |501 OAK ST|||0|0|2010|TX|f|i|TX11|ot|N||TX|20110111
+f9e7a41d8585b0e0cb2b52a9f4bd26f4|active|201004053|10.450||ACE PROPERTY AND CASUALTY|60000|Philadelphia|Philadelphia|101|191063703|USA|22|A|12D4|A&O2010RH022010||10485897|0|0|2010-02-24|2010-01-25|2010-02-24|09|2|||1939765|IOWA|Johnston|501313006|IA03||Risk Management Agency (08)|Standard Reinsurance Agreement for ACE PROPERTY AND CASUALTY  for RY 2010 for 022010|090362109|08|12|4085||436 Walnut Street|||0|0|2010|IA|f|i|ZZ|12|N|12D400A&O2010RH022010       12X4085|TX|20110111
+25d61e047db8db4423a192e529bd39db|active|201010051|64.114||MULTIPLE RECIPIENTS|||STARKE|149|||21|(none)|3640|||0|0|0|2010-09-28|||08|1|||18149**|INDIANA|STARKE||    ||VA- VETERANS BENEFIT ADMINISTRATION|||  |  ||   ||||30040|-128|2010|IN|i|l|ZZ|36|N|64114201009727|IN|20110111
+239422b6dd7b2a88d8ff5e0bab119532|active|201010051|64.114||MULTIPLE RECIPIENTS|||DOUGLAS|019|||21|(none)|3640|||0|0|0|2010-09-28|||08|1|||41019**|OREGON|DOUGLAS||    ||VA- VETERANS BENEFIT ADMINISTRATION|||  |  ||   ||||534491|-3310|2010|OR|i|l|ZZ|36|N|6411420100982|OR|20110111
+01db4707cf4c5d6d021697f3f31f6b9f|active|201010051|10.998|SAI EXEMPT|MISSOURI SYSTEM UNIVERSITY|15670|COLUMBIA|Boone|019|652111230|USA|06|A|12D3|9069910|1|38519|0|0|2010-02-01|2009-10-01|2010-09-30|11|2|||29019|MISSOURI|COLUMBIA|652113020|MO09||Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|153890272|11|12|2900|   |310 JESSE HALL|||0|0|2010|MO|h|o|MO09|12|N|12D3019069910         1     1282900|MO|20110111
+e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC.|65000|SCOTTSDALE|Maricopa|013|852602490|USA|22|A|12D3|9069806|1|754|0|0|2010-03-01|2009-10-01|2010-09-30|11|2|||04013|ARIZONA|SCOTTSDALE|852602441|AZ05||Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|116899969|11|12|2900|   |14605 NORTH AIRPORT DRIVE|||0|0|2010|AZ|f|o|AZ05|12|N|12D3019069806         1     1282900|AZ|20110111
+       ''', grants_file)
 
+    @attr('usaspending')
+    @attr('contracts')
     def test_prepare_contracts_file(self):
-        grants_file = NamedTemporaryFile('w')
-        contracts_file = NamedTemporaryFile('w')
+        grants_file = 'test_data/usaspending/out/grants.out'
+        contracts_file = 'test_data/usaspending/out/contracts.out'
 
-        out_dir = os.path.dirname(grants_file.name)
+        out_dir = os.path.dirname(grants_file)
 
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file.name, contracts_file.name)
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
 
         self.assert_file_contents_eq('''
-37adc9010a603b98304be859dad2695e|active|GOVPLACE|NULL|7014|Automation Modernization, Customs and Border Protection|HSBP1010J00525|0|NULL|0|7001|HSHQDC07D00025|N|0|2010-08-12|2010-07-30|2010-08-29|2010-08-29|616022.12|f|616022.12|f|f|616022.12|7014|f|ITCD|f|7014|f|f|ITCD|NULL|f|X|f|f|C|J|f|NULL|f|NULL|N: No|NULL|NULL|f|Brocade switches|f|f|f|f|X|f|X|X|f|NULL|f|1|NULL|NULL|NULL|t|X|7050|D|NULL|541519|C|f|NULL|f|NULL|E|US|D|15707 ROCKFIELD BLVD STE 305|NULL|NULL|IRVINE|CA|926182829|USA|9570508830000|48|NULL|VA|US|221503224|NULL|11|D|NULL|MAFO|SBA|NULL|NONE|30|NULL|20000000.0|FAIR|NULL|5|A|NULL|f|f|f|f|f|f|NULL|NULL|S|NULL|957050883|2010|GOVPLACE|70|70|CA48|VA11|70|0531|NULL|NULL|c|NULL|NULL|NULL
-0d42d94514b1a7031be23d1974c5e1bb|active|SUPREME FOODSERVICE AG|NULL|9700|NULL|610G|0|NULL|0|9700|SPM30008D3153|N|0|2010-07-03|2010-07-03|2010-07-12|2010-07-12|77431.0|f|77431.0|f|f|77431.0|97AS|f|SPM300|f|97AS|f|f|SPM300|NULL|f|X|f|f|C|J|f|NULL|f|NULL|N: No|NULL|X|f|4514806667OTHER GROCERY AND RE|f|f|t|f|X|f|X|NULL|f|Z|f|1|NULL|NULL|NULL|f|X|8910|D|B2|424490|C|f|000|f|Z|E|SZ|E|ZIEGELBRUECKSTRASSE 66|NULL|NULL|ZIEGELBRUECKE|NULL|8866|CHE|4813475520000|NULL|NULL|NULL|SZ|NULL|NULL|NULL|A|NULL|NP|NONE|INTERNATIONAL ORG|NONE|2073|NULL|700000000.0|NULL|NULL|5|A|NULL|f|f|f|f|f|f|NULL|NULL|O|NULL|400210806|2010|SUPREME GROUP HOLDING SARL|97|89|ZZ|ZZ|NULL|NULL|NULL|NULL|c|NULL|NULL|NULL
-        ''', contracts_file.name)
-
+37adc9010a603b98304be859dad2695e|active|GOVPLACE||7014|Automation Modernization, Customs and Border Protection|HSBP1010J00525|0||0|7001|HSHQDC07D00025|N|0|2010-08-12|2010-07-30|2010-08-29|2010-08-29|616022.12|f|616022.12|f|f|616022.12|7014|f|ITCD|f|7014|f|f|ITCD||f|X|f|f|C|J|f||f||N: No|||f|Brocade switches|f|f|f|f|X|f|X|X|f||f|1||||t|X|7050|D||541519|C|f||f||E|US|D|15707 ROCKFIELD BLVD STE 305|||IRVINE|CA|926182829|USA|9570508830000|48||VA|US|221503224||11|D||MAFO|SBA||NONE|30||20000000.0|FAIR||5|A||f|f|f|f|f|f|||S||957050883|2010|GOVPLACE|70|70|CA48|VA11|70|0531|||c|||
+0d42d94514b1a7031be23d1974c5e1bb|active|SUPREME FOODSERVICE AG||9700||610G|0||0|9700|SPM30008D3153|N|0|2010-07-03|2010-07-03|2010-07-12|2010-07-12|77431.0|f|77431.0|f|f|77431.0|97AS|f|SPM300|f|97AS|f|f|SPM300||f|X|f|f|C|J|f||f||N: No||X|f|4514806667OTHER GROCERY AND RE|f|f|t|f|X|f|X||f|Z|f|1||||f|X|8910|D|B2|424490|C|f|000|f|Z|E|SZ|E|ZIEGELBRUECKSTRASSE 66|||ZIEGELBRUECKE||8866|CHE|4813475520000||||SZ||||A||NP|NONE|INTERNATIONAL ORG|NONE|2073||700000000.0|||5|A||f|f|f|f|f|f|||O||400210806|2010|SUPREME GROUP HOLDING SARL|97|89|ZZ|ZZ|||||c|||
+        ''', contracts_file)
 
     def assert_file_contents_eq(self, expected_contents, actual_file_path):
         self.maxDiff = None
@@ -846,7 +849,19 @@ e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC
 
 class TestLoader(TestCase):
 
+    def setUp(self):
+        grants_file = 'test_data/usaspending/out/grants.out'
+        contracts_file = 'test_data/usaspending/out/contracts.out'
+
+        out_dir = os.path.dirname(grants_file)
+
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
+        
+
+    @attr('usaspending')
+    @attr('grants')
     def test_loader_faads_sql(self):
+        
         sql = """
 COPY grants_grant
 (unique_transaction_id, transaction_status, fyq, cfda_program_num, sai_number, recipient_name, recipient_city_code, recipient_city_name, recipient_county_name, recipient_county_code, recipient_zip, recipient_country_code, recipient_type, action_type, agency_code, federal_award_id, federal_award_mod, fed_funding_amount, non_fed_funding_amount, total_funding_amount, obligation_action_date, starting_date, ending_date, assistance_type, record_type, correction_late_ind, fyq_correction, principal_place_code, principal_place_state, principal_place_cc, principal_place_zip, principal_place_cd, cfda_program_title, agency_name, project_description, duns_no, duns_conf_code, progsrc_agen_code, progsrc_acnt_code, progsrc_subacnt_code, receip_addr1, receip_addr2, receip_addr3, face_loan_guran, orig_sub_guran, fiscal_year, principal_place_state_code, recip_cat_type, asst_cat_type, recipient_cd, maj_agency_cat, rec_flag, uri, recipient_state_code, imported_on)
@@ -857,6 +872,8 @@ CSV QUOTE '"'
         self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_faads_sql(os.path.abspath('./test_data/usaspending/out/grants.out')))
 
 
+    @attr('usaspending')
+    @attr('contracts')
     def test_loader_fpds_sql(self):
         sql = """
 COPY contracts_contract
@@ -868,6 +885,8 @@ CSV QUOTE \'"\'
         self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_fpds_sql(os.path.abspath('./test_data/usaspending/out/contracts.out')))
 
 
+    @attr('usaspending')
+    @attr('grants')
     def test_insert_faads(self):
         Loader().insert_faads(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/grants.out'))
 

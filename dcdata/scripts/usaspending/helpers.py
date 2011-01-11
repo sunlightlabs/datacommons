@@ -1,6 +1,24 @@
 from django.contrib.localflavor.us.us_states import STATES_NORMALIZED
 import datetime
 
+
+def correctionLateIndicator(value):
+    
+    if value == 'current entry':
+        return ''
+    elif value[0] == 'C':
+        return 'C'
+    elif value[0] == 'L':
+        return 'L'
+    
+
+def nullable(value):
+    if value == '':
+        return None
+    
+    return value
+
+
 def splitInt(value):
 
     if not value is None:

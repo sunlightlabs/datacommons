@@ -1,13 +1,5 @@
 from helpers import *
 
-def correctionLateIndicator(value):
-    
-    if value == 'current entry':
-        return ''
-    elif value[0] == 'C':
-        return 'C'
-    elif value[0] == 'L':
-        return 'L'
 
 FAADS_FIELDS = [('unique_transaction_id', 'unique_transaction_id', None),
                 ('transaction_status', 'transaction_status', None),
@@ -30,8 +22,8 @@ FAADS_FIELDS = [('unique_transaction_id', 'unique_transaction_id', None),
                 ('non_fed_funding_amount', 'non_fed_funding_amount', splitInt),
                 ('total_funding_amount', 'total_funding_amount', splitInt),
                 ('obligation_action_date', 'obligation_action_date', None),
-                ('starting_date', 'starting_date', None),
-                ('ending_date', 'ending_date', None),
+                ('starting_date', 'starting_date', nullable),
+                ('ending_date', 'ending_date', nullable),
                 ('assistance_type', 'assistance_type', splitCode),
                 ('record_type', 'record_type', splitCode),
                 ('correction_late_ind', 'correction_late_ind', correctionLateIndicator),
