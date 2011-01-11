@@ -140,7 +140,6 @@ class Grant(models.Model):
     receip_addr2 = models.CharField(max_length=35, blank=True, null=True)
     receip_addr3 = models.CharField(max_length=35, blank=True, null=True)
     duns_no = models.CharField(max_length=13, blank=True)
-    parent_duns_no = models.CharField(max_length=13, blank=True, null=True) # this field has lost its mapping. might be 'eeparentdunsno'? Kevin doesn't import that one.
     obligation_action_date = models.DateField(blank=True, null=True)
     action_type = models.CharField(max_length=1, blank=True, choices=ACTION_TYPES)
     agency_name = models.CharField(max_length=72, blank=True)

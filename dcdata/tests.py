@@ -896,6 +896,17 @@ CSV QUOTE \'"\'
 
         self.assertEqual(10, count)
 
+    @attr('usaspending')
+    @attr('contracts')
+    def test_insert_fpds(self):
+        Loader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
+
+        cursor = connections['default'].cursor()
+        cursor.execute('select count(*) from contracts_contract')
+        count = cursor.fetchone()[0]
+
+        self.assertEqual(2, count)
+
 
     def assert_eq_ignoring_leading_trailing_space(self, expected, actual):
         self.maxDiff = None

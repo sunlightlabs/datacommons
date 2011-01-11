@@ -50,7 +50,7 @@ def transformFlag(value):
         elif value[0].lower() in ('n', 'f'):
             return 'f'
     else:
-        return ''
+        return None
 
 def state_abbr(value):
     return STATES_NORMALIZED.get(value.strip().lower(), '')

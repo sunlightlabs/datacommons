@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'dcentity',
     'dcdata',
     'dcdata.contribution',
+    'dcdata.contracts',
     'dcdata.grants',
     'dcdata.lobbying',
     'dcdata.earmarks',

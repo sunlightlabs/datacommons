@@ -16,7 +16,7 @@ class USASpendingDenormalizer:
 
             for field in fields:
                 csv_fieldname = field[0]
-                db_fieldname = field[1]
+                db_fieldname = field[1] # todo: delete this data, it isn't used
                 transform = field[2] or null_transform
 
                 try:

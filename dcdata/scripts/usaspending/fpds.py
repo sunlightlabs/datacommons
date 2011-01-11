@@ -43,7 +43,7 @@ FPDS_FIELDS = [('unique_transaction_id','unique_transaction_id', None),
                 ('reasonformodification', 'reasonForModification', splitCode),
                 ('federalgovernmentflag', 'federalGovernmentFlag', transformFlag),
                 ('majorprogramcode', 'majorProgramCode', None),
-                ('costorpricingdata', 'costOrPricingData', None),
+                ('costorpricingdata', 'costOrPricingData', splitCode),
                 ('solicitationid', 'solicitationID', None),
                 ('costaccountingstandardsclause', 'costAccountingStandardsClause', splitCode),
                 ('stategovernmentflag', 'stateGovernmentFlag', transformFlag),
@@ -133,7 +133,8 @@ FPDS_FIELDS = [('unique_transaction_id','unique_transaction_id', None),
 CALCULATED_FPDS_FIELDS = [
         ('agency_name', 'agencyid', agency_name_lookup),
         ('contracting_agency_name', 'contractingofficeagencyid', agency_name_lookup),
-        ('requesting_agency_name', 'fundingrequestingagencyid', agency_name_lookup)
+        ('requesting_agency_name', 'fundingrequestingagencyid', agency_name_lookup),
+        ('imported_on', None, datestamp),
 ]
 
 
