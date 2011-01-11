@@ -226,6 +226,7 @@ class TestNIMSPDenormalize(TestCase):
 
 class TestCRPDenormalizeAll(TestCase):
 
+    @attr('crp')
     def test_denormalize_and_load(self):
         if os.path.exists(TestCRPIndividualDenormalization.output_path):
             os.remove(TestCRPIndividualDenormalization.output_path)
@@ -245,6 +246,7 @@ class TestCRPDenormalizeAll(TestCase):
 class TestCRPIndividualDenormalization(TestCase):
     output_path = os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt')
 
+    @attr('crp')
     def test_command(self):
 
         if os.path.exists(self.output_path):
@@ -256,11 +258,13 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(10, sum(1 for _ in open(input_path, 'r')))
         self.assertEqual(11, sum(1 for _ in open(self.output_path, 'r')))
 
+    @attr('crp')
     def test_process_record(self):
 
         input_values = ["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"]
         self.assert_row_succeeds(input_values)
 
+    @attr('crp')
     def test_process(self):
 
         input_rows = [["2000","0011161","f0000263005 ","VAN SYCKLE, LORRAINE E","C00040998","","","T2300","02/22/1999","200","","BANGOR","ME","04401","PB","15 ","C00040998","","F","VAN SYCKLE LM","99034391444","","","P/PAC"],
@@ -277,6 +281,7 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(5, len(output_records))
 
 
+    @attr('crp')
     def assert_row_succeeds(self, input_values):
         self.assertEqual(len(FILE_TYPES['indivs']), len(input_values))
         input_record = dict(zip(FILE_TYPES['indivs'], input_values))
@@ -290,6 +295,7 @@ class TestCRPIndividualDenormalization(TestCase):
 class TestCRPDenormalizePac2Candidate(TestCase):
     output_path = os.path.join(dataroot, 'denormalized/denorm_pac2cand.txt')
 
+    @attr('crp')
     def test_command(self):
 
         if os.path.exists(self.output_path):
@@ -305,6 +311,7 @@ class TestCRPDenormalizePac2Candidate(TestCase):
 class TestCRPDenormalizePac2Pac(TestCase):
     output_path = os.path.join(dataroot, 'denormalized/denorm_pac2pac.txt')
 
+    @attr('crp')
     def test_command(self):
 
         if os.path.exists(self.output_path):
@@ -320,18 +327,21 @@ class TestCRPDenormalizePac2Pac(TestCase):
 class TestLoadContributions(TestCase):
 
 
+    @attr('crp')
     def test_command(self):
         call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
         call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'))
 
         self.assertEqual(10, Contribution.objects.all().count())
 
+    @attr('crp')
     def test_skip(self):
         call_command('crp_denormalize_individuals', cycles='08', dataroot=dataroot)
         call_command('loadcontributions', os.path.join(dataroot, 'denormalized/denorm_indivs.08.txt'), skip='3')
 
         self.assertEqual(7, Contribution.objects.all().count())
 
+    @attr('crp')
     def test_decimal_amounts(self):
         """ See ticket #177. """
 
@@ -341,6 +351,8 @@ class TestLoadContributions(TestCase):
         denormalizer = CRPDenormalizeIndividual.get_record_processor({}, {}, {})
 
         load_data([input_record], denormalizer, denormalized_records.append)
+        
+        print denormalized_records[0]
 
         self.assertEqual(1, len(denormalized_records))
         self.assertEqual(u'123.45', denormalized_records[0]['amount'])
@@ -360,6 +372,7 @@ class TestLoadContributions(TestCase):
         self.assertEqual(1, Contribution.objects.all().count())
         self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
 
+    @attr('crp')
     def test_bad_value(self):
         # the second record has an out-of-range date
         input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,|BOTTGER, ANTHONY|,,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',

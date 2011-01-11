@@ -23,7 +23,7 @@ from django.db.models.fields import CharField
 class ContributorFilter(Filter):
     type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
     def process_record(self, record):
-        record['contributor_type'] = self.type_mapping.get(record['contributor_type'], None)
+        record['contributor_type'] = self.type_mapping.get(record['contributor_type'], '')
         return record
 
 class OrganizationFilter(Filter):
@@ -38,7 +38,7 @@ class ParentOrganizationFilter(Filter):
 class RecipientFilter(Filter):
     type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
-        record['recipient_type'] = self.type_mapping.get(record['recipient_type'], None)
+        record['recipient_type'] = self.type_mapping.get(record['recipient_type'], '')
         return record
 
 class CommitteeFilter(Filter):    

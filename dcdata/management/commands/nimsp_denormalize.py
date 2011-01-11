@@ -5,7 +5,6 @@ import sys
 import os
 import re
 
-import MySQLdb
 import psycopg2
 
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
@@ -20,7 +19,6 @@ from dcdata.utils.dryrub import CountEmitter, VerifiedCSVSource,\
 
 from dcdata.scripts.nimsp.salt import DCIDFilter, SaltFilter
 
-from settings import OTHER_DATABASES
 
 from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from dcdata.processor import chain_filters, load_data
@@ -249,6 +247,9 @@ class NIMSPDenormalize(BaseCommand):
                     default='both', help="which output files to generate"))
 
     def handle(self, *args, **options):
+        import MySQLdb
+        from settings import OTHER_DATABASES
+        
         if 'dest_dir' not in options:
             CommandError("path to destination directory is required")
         if 'saltsdb' not in options:

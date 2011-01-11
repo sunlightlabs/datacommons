@@ -13,14 +13,14 @@ FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'trans
               'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
               'contributor_type', 'contributor_occupation', 'contributor_employer',
               'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
-              'contributor_zipcode', 'contributor_category', 'contributor_category_order',
+              'contributor_zipcode', 'contributor_category',
               'organization_name', 'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id',
               'recipient_name', 'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state',
-              'recipient_state_held', 'recipient_category', 'recipient_category_order',
+              'recipient_state_held', 'recipient_category',
               'committee_name', 'committee_ext_id', 'committee_party', 'candidacy_status',
               'district', 'district_held', 'seat', 'seat_held', 'seat_status', 'seat_result']
 
-SPEC = dict(((fn, None) for fn in FIELDNAMES))
+SPEC = dict(((fn, '') for fn in FIELDNAMES))
 
 
 class RecipientFilter(Filter):
@@ -30,20 +30,41 @@ class RecipientFilter(Filter):
         self._committees = committees
 
     def process_record(self, record):
+        self.add_empty_recipient(record)
         recip_id = record['recip_id'].strip().upper()
-        if recip_id:
-            if recip_id.startswith('N'):
-                candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-                self.add_candidate_recipient(candidate, record)
-            elif recip_id.startswith('C'):
-                committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-                self.add_committee_recipient(committee, record)
+        if recip_id and recip_id.startswith('N'):
+            candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
+            self.add_candidate_recipient(candidate, record)
+        elif recip_id and recip_id.startswith('C'):
+            committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
+            self.add_committee_recipient(committee, record)
+            
         return record
 
     @staticmethod
+    def add_empty_recipient(record):
+        """ Initialize recipient fields so that nothing is left as 'None'. """
+        
+        record['recipient_name'] = ''
+        record['recipient_party'] = ''
+        record['recipient_type'] = ''
+        record['recipient_ext_id'] = ''
+        record['recipient_category'] = ''
+        record['seat_status'] = ''
+        record['seat_result'] = ''
+        
+        record['recipient_state'] = ''
+        record['seat'] = ''
+        record['district'] = ''
+        record['recipient_state_held'] = ''
+        record['seat_held'] = ''
+        record['district_held'] = ''
+            
+            
+    @staticmethod
     def get_recip_code_result(recip_code):
         recip_code = recip_code.strip().upper()
-        return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else None
+        return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else ""
 
     @staticmethod
     def add_candidate_recipient(candidate, record):
@@ -68,6 +89,7 @@ class RecipientFilter(Filter):
             # record['recipient_state_held']
             # record['seat_held']
             # record['district_held']
+
 
     @staticmethod
     def standardize_seat(seat, record, label=''):
@@ -100,6 +122,7 @@ class RecipientFilter(Filter):
             record['seat_result'] = RecipientFilter.get_recip_code_result(committee['recip_code'])
             record['recipient_ext_id'] = committee['cmte_id']
             record['recipient_category'] = committee['prim_code']
+
 
 
 def load_catcodes(dataroot):
@@ -186,6 +209,7 @@ class FECOccupationFilter(Filter):
             record['contributor_employer'] = emp
         else:
             record['contributor_occupation'] = record['fec_occ_emp']
+            record['contributor_employer'] = ''
 
         return record
 

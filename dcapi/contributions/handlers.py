@@ -63,10 +63,10 @@ def filter_contributions(request):
 CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment',
               'amount', 'date', 'contributor_name', 'contributor_ext_id', 'contributor_type', 'contributor_occupation',
               'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
-              'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name',
+              'contributor_zipcode', 'contributor_category', 'organization_name',
               'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id', 'recipient_name',
               'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state', 'recipient_state_held',
-              'recipient_category', 'recipient_category_order', 'committee_name', 'committee_ext_id', 'committee_party',
+              'recipient_category', 'committee_name', 'committee_ext_id', 'committee_party',
               'candidacy_status', 'district', 'district_held', 'seat', 'seat_held', 'seat_status',
               'seat_result']
 

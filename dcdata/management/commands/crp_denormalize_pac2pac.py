@@ -17,10 +17,10 @@ class CommitteeFilter(Filter):
         super(CommitteeFilter, self).__init__()
         self._committees = committees
     def process_record(self, record):
-        committee_ext_id = record.get('committee_ext_id', None)
+        committee_ext_id = record.get('committee_ext_id', "")
         if committee_ext_id:
             cmte_id = committee_ext_id
-            committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), None)
+            committee = self._committees.get('%s:%s' % (record['cycle'], cmte_id), "")
             if committee:
                 record['committee_name'] = committee['pac_short']
                 record['committee_party'] = committee['party']
@@ -60,12 +60,7 @@ class ContribRecipFilter(Filter):
 class CRPDenormalizePac2Pac(CRPDenormalizeBase):
     
     @staticmethod
-    def get_record_processor(catcodes, candidates, committees):
-        def real_code(s):
-            s = s.upper()
-            if s in catcodes:
-                return catcodes[s]['catorder'].upper()        
-        
+    def get_record_processor(catcodes, candidates, committees):        
         return chain_filters(
             CSVFieldVerifier(),
 
@@ -85,17 +80,15 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             FieldModifier('date', parse_date_iso),
             
             # catcode
-            FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
-            FieldMerger({'contributor_category_order': ('real_code',)}, real_code, keep_fields=True),
-            FieldMerger({'recipient_category': ('recip_prim_code',)}, lambda s: s.upper() if s else None, keep_fields=True),
-            FieldMerger({'recipient_category_order': ('recip_prim_code',)}, real_code, keep_fields=True),
+            FieldMerger({'contributor_category': ('real_code',)}, lambda s: s.upper() if s else "", keep_fields=True),
+            FieldMerger({'recipient_category': ('recip_prim_code',)}, lambda s: s.upper() if s else "", keep_fields=True),
             
             FieldRenamer({'contributor_city': 'city',
                           'contributor_state': 'state',
                           'contributor_zipcode': 'zipcode',
                           'contributor_occupation': 'fec_occ_emp',
                           'recipient_party': 'party',}),
-            FieldModifier('contributor_state', lambda s: s.strip().upper() if s else None),
+            FieldModifier('contributor_state', lambda s: s.strip().upper() if s else ""),
             
             FieldAdder('contributor_type', 'committee'),
 
@@ -104,7 +97,7 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
             FieldAdder('jurisdiction', 'F'),
             FieldMerger({'is_amendment': ('amend',)}, lambda s: s.strip().upper() != 'N'),
 
-            FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: None if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),
+            FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: "" if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),
             
             # filter through spec
             SpecFilter(SPEC))
