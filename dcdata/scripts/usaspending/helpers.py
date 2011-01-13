@@ -18,6 +18,18 @@ def nullable(value):
     
     return value
 
+def nullable_float(value):
+    if value == '':
+        return None
+    
+    return float(value)
+
+def nullable_int(value):
+    if value == '':
+        return None
+    
+    return int(value)
+
 
 def splitInt(value):
 
