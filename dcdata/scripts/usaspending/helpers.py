@@ -11,6 +11,8 @@ def correctionLateIndicator(value):
     elif value[0] == 'L':
         return 'L'
     
+    return ''
+    
 
 def nullable(value):
     if value == '':
@@ -63,6 +65,19 @@ def transformFlag(value):
             return 'f'
     else:
         return None
+
+def first_char(value):
+    return value[:1]
+
+def recovery_act(value):
+    if value:
+        if value.lower() in ("recovery act", 'y', 't'):
+            return 't'
+        elif value.lower() in ('n', 'f'):
+            return 'f'
+    
+    return None
+
 
 def state_abbr(value):
     return STATES_NORMALIZED.get(value.strip().lower(), '')

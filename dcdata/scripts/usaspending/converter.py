@@ -7,6 +7,7 @@ class USASpendingDenormalizer:
 
     def parse_file(self, input, output, fields, calculated_fields=None):
         reader = csv.DictReader(input)
+        writer = csv.writer(output, delimiter='|')
 
         def null_transform(value):
             return value
@@ -42,15 +43,17 @@ class USASpendingDenormalizer:
 
                     insert_fields.append(self.filter_non_values(value))
 
-
-            print >> output, '|'.join([ str(x) for x in insert_fields])
+            writer.writerow(insert_fields)
 
     def filter_non_values(self, value):
         if value == None:
             return "NULL"
         
-        if isinstance(value, str) and value in ('(none)'):
-            return ''
+        if isinstance(value, str):
+            if value in ('(none)'):
+                return ''
+            else:
+                return value.strip()
         
         return value
     

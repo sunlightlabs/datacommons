@@ -1,6 +1,6 @@
+from django.db import connections
 from faads import FAADS_FIELDS, CALCULATED_FAADS_FIELDS
 from fpds import FPDS_FIELDS, CALCULATED_FPDS_FIELDS
-from django.db import connections
 import os.path
 
 class Loader():
@@ -23,19 +23,28 @@ class Loader():
 
         cursor = connections['default'].cursor()
         cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.faads_fields())
+        
 
     def insert_fpds(self, infile):
         table = 'contracts_contract'
 
         cursor = connections['default'].cursor()
-        cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.fpds_fields())
+        
+        # neither verion seems to handle quoted values correctly.
+        # in particular, a pipe in a string value is treated as a delimiter, even though the value is quoted.
+        # works fine using the \copy command in psql, indicating it's probably a psycopg2 bug.
+        cursor.copy_expert(self.sql_template_postgres('STDIN', table, self.fpds_fields()), open(infile, 'r'))
+        #cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.fpds_fields())
+
 
     def sql_template_postgres(self, file, table, fields):
         return """
-            COPY {1} 
-            ({2})
-            FROM '{0}'
-            CSV QUOTE '"'
+            COPY {1} \
+            ({2}) \
+            FROM {0} \
+            DELIMITER '|' \
+            CSV QUOTE '"' \
+            NULL 'NULL' \
         """.format(os.path.relpath(file), table, ', '.join(fields)) # relpath is for the sake of tests passing in different environments
 
     def sql_template_mysql(self, file, table, fields):
@@ -45,3 +54,4 @@ class Loader():
             FIELDS TERMINATED BY ',' ENCLOSED BY '\"' 
             ({2})
         """.format(os.path.relpath(file), table, ', '.join(fields)) # relpath is for the sake of tests passing in different environments
+

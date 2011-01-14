@@ -52,7 +52,7 @@ FAADS_FIELDS = [('unique_transaction_id', 'unique_transaction_id', None),
                 ('asst_cat_type', 'asst_cat_type', splitCode),
                 ('recipient_cd', 'recipient_cd', splitCode),
                 ('maj_agency_cat', 'maj_agency_cat', splitCode),
-                ('rec_flag', 'rec_flag', splitCode),
+                ('rec_flag', 'rec_flag', recovery_act),
                 ('uri', 'uri', None),
                 ('recipient_state_code', 'recipient_state_code', splitCode)]
 

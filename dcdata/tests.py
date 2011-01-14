@@ -1,5 +1,6 @@
 from cStringIO import StringIO
 from dcdata import processor
+from dcdata.contracts.models import Contract
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.earmarks.models import Earmark, Member
@@ -12,6 +13,7 @@ from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
 from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, \
     LoadTCSEarmarks, save_earmark, _normalize_locations, split_and_transpose
+from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 from dcdata.models import Import
 from dcdata.processor import load_data, chain_filters, compose_one2many, \
     SkipRecordException
@@ -31,9 +33,13 @@ from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
 from tempfile import NamedTemporaryFile
 from updates import edits, update
-import os, os.path, re, shutil, sqlite3, sys
+import os
+import os.path
+import re
+import shutil
+import sqlite3
+import sys
 
-from dcdata.management.commands.nimsp_denormalize import NIMSPDenormalize
 
 
 dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
@@ -907,6 +913,17 @@ CSV QUOTE \'"\'
 
         self.assertEqual(2, count)
 
+    @attr('usaspending')
+    @attr('contracts')
+    def test_fpds_quoting(self):
+        input = StringIO('1b649a7c08ba717c09abd378c660dba1|active|DELL MARKETING LIMITED PARTNERSHIP||4735||GST0904DF3801|AO02||0|4730|GS35F4076D|N|0|2004-11-09|2004-11-09|2004-11-09|2004-11-09|-0.02|f|-0.02|f|f|-0.02|4735|f|DF000|f|1700|f|f|N62271||f|X|f|f|C|J|f|K|f||||X|f|"Dell | EMC CX500 Disk Processor Enclosure Array (221-4205)"|f|f|N|f|X|f|X||f||f|1|NULL|NULL|NULL|f|X|7021|D||334111||f||f||E|||ONE DELL WAY|||ROUND ROCK|TX|786820001|USA|8779365180000|10|63500|TX|US||NULL||CDO|CDO|||||0||0.0|||4|D|NULL|f|f|f|f|f|f|||O||114315195|2005|DELL INC.|47|70|TX10|ZZ||||NULL|c||||20110114')
+
+        self.assertEqual(0, Contract.objects.all().count())
+
+        cursor = connections['default'].cursor()
+        cursor.copy_from(input, 'contracts_contract', sep='|', null='NULL', columns=Loader().fpds_fields())
+
+        self.assertEqual(1, Contract.objects.all().count())
 
     def assert_eq_ignoring_leading_trailing_space(self, expected, actual):
         self.maxDiff = None
