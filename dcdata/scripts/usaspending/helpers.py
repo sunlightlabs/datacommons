@@ -30,7 +30,13 @@ def nullable_int(value):
     if value == '':
         return None
     
-    return int(value)
+    parsed_value = int(value)
+    
+    # these are Postgres' limits
+    if parsed_value < -2147483648 or parsed_value > 2147483647:
+        return None
+    
+    return parsed_value
 
 
 def splitInt(value):

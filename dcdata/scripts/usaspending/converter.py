@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 
-import csv, sys, os, os.path, re, fpds, faads
+from dcdata.contracts.models import Contract
+from dcdata.grants.models import Grant
+from django.db.models.fields import CharField
+import csv
+import faads
+import fpds
+import os
+import os.path
+import re
+import sys
 
 class USASpendingDenormalizer:
     re_contracts = re.compile('.*[cC]ontracts.*')
 
-    def parse_file(self, input, output, fields, calculated_fields=None):
+    def parse_file(self, input, output, fields, model, calculated_fields=None):
         reader = csv.DictReader(input)
         writer = csv.writer(output, delimiter='|')
 
@@ -16,17 +25,17 @@ class USASpendingDenormalizer:
             insert_fields = []
 
             for field in fields:
-                csv_fieldname = field[0]
+                fieldname = field[0]
                 db_fieldname = field[1] # todo: delete this data, it isn't used
                 transform = field[2] or null_transform
 
                 try:
-                    value = transform(line[csv_fieldname])
+                    value = transform(line[fieldname])
                 except Exception, e:
                     value = None
-                    print >> sys.stderr, '|'.join([csv_fieldname, line[csv_fieldname],e.message])
+                    print >> sys.stderr, '|'.join([fieldname, line[fieldname],e.message])
 
-                insert_fields.append(self.filter_non_values(value))
+                insert_fields.append(self.filter_non_values(value, model._meta.get_field(fieldname)))
 
             if calculated_fields:
                 for field in calculated_fields:
@@ -41,22 +50,34 @@ class USASpendingDenormalizer:
                         value = None
                         print >> sys.stderr, '|'.join([fieldname, line.get(built_on_field, ''), e.message])
 
-                    insert_fields.append(self.filter_non_values(value))
+                    insert_fields.append(self.filter_non_values(value,  model._meta.get_field(fieldname)))
 
             writer.writerow(insert_fields)
 
-    def filter_non_values(self, value):
-        if value == None:
-            return "NULL"
-        
-        if isinstance(value, str):
-            if value in ('(none)'):
+
+    def filter_non_values(self, value, django_field):
+        if isinstance(django_field, CharField):
+            if not value or value in ('(none)'):
                 return ''
-            else:
-                return value.strip()
+
+            if not isinstance(value, str):
+                print >> sys.stderr, "Warning: value '%s' for field '%s' is not a string." % (value, django_field.name)
+                value = str(value)
+            
+            value = value.strip()
+            
+            if len(value) > django_field.max_length:
+                print >> sys.stderr, "Warning: value '%s' for field '%s' is too long." % (value, django_field.name)
+
+            return value[:django_field.max_length]
         
-        return value
-    
+        else:
+        
+            if value == None:
+                return "NULL"
+                    
+            return value
+        
 
     def parse_directory(self, in_path, out_path, out_grants_path, out_contracts_path):
         if not out_path:
@@ -75,20 +96,11 @@ class USASpendingDenormalizer:
                 input = open(file_path, 'rb')
 
                 if self.re_contracts.match(file):
-                    self.parse_file(input, out_contracts, fpds.FPDS_FIELDS, fpds.CALCULATED_FPDS_FIELDS)
+                    self.parse_file(input, out_contracts, fpds.FPDS_FIELDS, Contract, fpds.CALCULATED_FPDS_FIELDS)
                 else:
-                    self.parse_file(input, out_grants, faads.FAADS_FIELDS, faads.CALCULATED_FAADS_FIELDS)
+                    self.parse_file(input, out_grants, faads.FAADS_FIELDS, Grant, faads.CALCULATED_FAADS_FIELDS)
 
                 input.close()
 
         out_grants.close()
         out_contracts.close()
-
-
-if __name__ == '__main__':
-    out_path = sys.argv[-1]
-    in_path = sys.argv[-2]
-    out_grants_path = os.path.join(os.path.abspath(out_path), 'grants.out')
-    out_contracts_path = os.path.join(os.path.abspath(out_path), 'contracts.out')
-
-    USASpendingDenormalizer().parse_directory(os.path.abspath(in_path), None, out_grants_path, out_contracts_path)
