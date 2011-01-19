@@ -6,13 +6,13 @@ from dcdata.grants.models import Grant
 GRANTS_SCHEMA = Schema(
     InclusionField('assistance_type'),
     InclusionField('fiscal_year'),
-    InclusionField('recipient_state'),
+    InclusionField('recipient_state', 'recipient_state_code'),
     InclusionField('recipient_type'),
     
     FulltextField('agency_ft', ['agency_name']),
     FulltextField('recipient_ft', ['recipient_name']),
 
-    ComparisonField('amount_total', cast=int)
+    ComparisonField('amount_total', 'total_funding_amount', cast=int)
 )
 
 def filter_grants(request):
@@ -22,7 +22,7 @@ def filter_grants(request):
 
 class GrantsFilterHandler(FilterHandler):
     model = Grant
-    ordering = ['-fiscal_year','-amount_total']
+    ordering = ['-fiscal_year','-total_funding_amount']
     filename = 'grants'
         
     def queryset(self, params):
