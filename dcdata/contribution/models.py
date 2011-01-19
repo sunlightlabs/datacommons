@@ -132,9 +132,9 @@ class Contribution(models.Model):
     candidacy_status = models.NullBooleanField(null=True)
 
     district = models.CharField(max_length=8, blank=True)
-    seat = models.CharField(max_length=64, choices=SEATS, blank=True)
-
     district_held = models.CharField(max_length=8, blank=True)
+
+    seat = models.CharField(max_length=64, choices=SEATS, blank=True)
     seat_held = models.CharField(max_length=64, choices=SEATS, blank=True)
 
     seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True)

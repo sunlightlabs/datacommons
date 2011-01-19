@@ -1,24 +1,16 @@
 #!/usr/bin/env python
-from saucebrush.filters import *
+from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
+from django.core.management.base import CommandError, BaseCommand
+from optparse import make_option
+from saucebrush.filters import *
 import csv
 import datetime
 import logging
 import os
-from optparse import make_option
-from django.core.management.base import CommandError, BaseCommand
 
 
-FIELDNAMES = ['id', 'import_reference', 'cycle', 'transaction_namespace', 'transaction_id', 'transaction_type',
-              'filing_id', 'is_amendment', 'amount', 'date', 'contributor_name', 'contributor_ext_id',
-              'contributor_type', 'contributor_occupation', 'contributor_employer',
-              'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
-              'contributor_zipcode', 'contributor_category',
-              'organization_name', 'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id',
-              'recipient_name', 'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state',
-              'recipient_state_held', 'recipient_category',
-              'committee_name', 'committee_ext_id', 'committee_party', 'candidacy_status',
-              'district', 'district_held', 'seat', 'seat_held', 'seat_status', 'seat_result']
+FIELDNAMES = [field.name for field in Contribution._meta.fields]
 
 SPEC = dict(((fn, '') for fn in FIELDNAMES))
 
