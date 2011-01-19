@@ -11,10 +11,15 @@ import os.path
 import re
 import sys
 
+
+CONTRACT_STRINGS = dict([(f.name, f.max_length) for f in Contract._meta.fields if isinstance(f, CharField)])
+GRANT_STRINGS = dict([(f.name, f.max_length) for f in Grant._meta.fields if isinstance(f, CharField)])
+                     
+
 class USASpendingDenormalizer:
     re_contracts = re.compile('.*[cC]ontracts.*')
 
-    def parse_file(self, input, output, fields, model, calculated_fields=None):
+    def parse_file(self, input, output, fields, string_lengths, calculated_fields=None):
         reader = csv.DictReader(input)
         writer = csv.writer(output, delimiter='|')
 
@@ -35,7 +40,7 @@ class USASpendingDenormalizer:
                     value = None
                     print >> sys.stderr, '|'.join([fieldname, line[fieldname],e.message])
 
-                insert_fields.append(self.filter_non_values(value, model._meta.get_field(fieldname)))
+                insert_fields.append(self.filter_non_values(fieldname, value, string_lengths))
 
             if calculated_fields:
                 for field in calculated_fields:
@@ -50,26 +55,27 @@ class USASpendingDenormalizer:
                         value = None
                         print >> sys.stderr, '|'.join([fieldname, line.get(built_on_field, ''), e.message])
 
-                    insert_fields.append(self.filter_non_values(value,  model._meta.get_field(fieldname)))
+                    insert_fields.append(self.filter_non_values(fieldname, value, string_lengths))
 
             writer.writerow(insert_fields)
 
 
-    def filter_non_values(self, value, django_field):
-        if isinstance(django_field, CharField):
+    def filter_non_values(self, field, value, string_lengths):
+        # indicates that field should be treated as a CharField
+        if field in string_lengths:
             if not value or value in ('(none)'):
                 return ''
 
             if not isinstance(value, str):
-                print >> sys.stderr, "Warning: value '%s' for field '%s' is not a string." % (value, django_field.name)
+                print >> sys.stderr, "Warning: value '%s' for field '%s' is not a string." % (value, field)
                 value = str(value)
             
             value = value.strip()
             
-            if len(value) > django_field.max_length:
-                print >> sys.stderr, "Warning: value '%s' for field '%s' is too long." % (value, django_field.name)
+            if len(value) > string_lengths[field]:
+                print >> sys.stderr, "Warning: value '%s' for field '%s' is too long." % (value, field)
 
-            return value[:django_field.max_length]
+            return value[:string_lengths[field]]
         
         else:
         
@@ -96,9 +102,9 @@ class USASpendingDenormalizer:
                 input = open(file_path, 'rb')
 
                 if self.re_contracts.match(file):
-                    self.parse_file(input, out_contracts, fpds.FPDS_FIELDS, Contract, fpds.CALCULATED_FPDS_FIELDS)
+                    self.parse_file(input, out_contracts, fpds.FPDS_FIELDS, CONTRACT_STRINGS, fpds.CALCULATED_FPDS_FIELDS)
                 else:
-                    self.parse_file(input, out_grants, faads.FAADS_FIELDS, Grant, faads.CALCULATED_FAADS_FIELDS)
+                    self.parse_file(input, out_grants, faads.FAADS_FIELDS, GRANT_STRINGS, faads.CALCULATED_FAADS_FIELDS)
 
                 input.close()
 
