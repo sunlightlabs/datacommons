@@ -63,7 +63,7 @@ class USASpendingDenormalizer:
     def filter_non_values(self, field, value, string_lengths):
         # indicates that field should be treated as a CharField
         if field in string_lengths:
-            if not value or value in ('(none)'):
+            if not value or value in ('(none)', 'NULL'):
                 return ''
 
             if not isinstance(value, str):
