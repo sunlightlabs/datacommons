@@ -22,6 +22,8 @@ class Loader():
         table = 'grants_grant'
 
         cursor = connections['default'].cursor()
+        
+        #cursor.execute(self.sql_template_postgres(infile, table, self.faads_fields()))
         cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.faads_fields())
         
 
@@ -33,15 +35,15 @@ class Loader():
         # neither verion seems to handle quoted values correctly.
         # in particular, a pipe in a string value is treated as a delimiter, even though the value is quoted.
         # works fine using the \copy command in psql, indicating it's probably a psycopg2 bug.
-        cursor.copy_expert(self.sql_template_postgres('STDIN', table, self.fpds_fields()), open(infile, 'r'))
-        #cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.fpds_fields())
+        #cursor.copy_expert(self.sql_template_postgres(infile, table, self.fpds_fields()))
+        cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.fpds_fields())
 
 
     def sql_template_postgres(self, file, table, fields):
         return """
             COPY {1} \
             ({2}) \
-            FROM {0} \
+            FROM '{0}' \
             DELIMITER '|' \
             CSV QUOTE '"' \
             NULL 'NULL' \
