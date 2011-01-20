@@ -854,6 +854,28 @@ e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC
 
 
 class TestLoader(TestCase):
+    
+    @attr('usaspending')
+    @attr('contracts')
+    @attr('usaspending_split_unicode')
+    def test_split_unicode(self):
+        Contract.objects.all().delete()
+        
+        grants_file = 'test_data/usaspending/out/grants.out'
+        contracts_file = 'test_data/usaspending/out/contracts.out'
+
+        out_dir = os.path.dirname(grants_file)
+
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/bad_unicode'), out_dir, grants_file, contracts_file)
+
+        Loader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
+
+        self.assertEqual(1, Contract.objects.all().count())
+        
+        expected_program_code = 'FREQUENCY UP-CONVERSION DETECTION SYSTEM WITH SINGLE PHOTON SENSITIVITY WITHIN 1-1.8 \xc3\x82\xc2\xb5M AND 3-4 \xc3\x82\xc2\xb5M'
+        
+        self.assertEqual(expected_program_code.decode('utf8'), Contract.objects.all()[0].majorprogramcode)
+        
 
     def setUp(self):
         grants_file = 'test_data/usaspending/out/grants.out'

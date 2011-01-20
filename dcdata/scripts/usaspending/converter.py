@@ -69,13 +69,21 @@ class USASpendingDenormalizer:
             if not isinstance(value, str):
                 print >> sys.stderr, "Warning: value '%s' for field '%s' is not a string." % (value, field)
                 value = str(value)
+
+            # need value as unicode in order to compute proper length
+            value = value.decode('utf8')
             
             value = value.strip()
             
             if len(value) > string_lengths[field]:
                 print >> sys.stderr, "Warning: value '%s' for field '%s' is too long." % (value, field)
 
-            return value[:string_lengths[field]]
+            value = value[:string_lengths[field]]
+            
+            # but need value back as string in order to write to file
+            value = value.encode('utf8')
+            
+            return value
         
         else:
         
