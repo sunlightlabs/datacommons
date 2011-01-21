@@ -247,8 +247,6 @@ class NIMSPDenormalize(BaseCommand):
                     default='both', help="which output files to generate"))
 
     def handle(self, *args, **options):
-        import MySQLdb
-        from settings import OTHER_DATABASES
         
         if 'dest_dir' not in options:
             CommandError("path to destination directory is required")
