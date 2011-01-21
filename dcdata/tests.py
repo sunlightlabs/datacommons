@@ -402,6 +402,36 @@ class TestLoadContributions(TestCase):
 
         self.assertTrue(mystderr.getvalue())
         self.assertEqual(2, Contribution.objects.count())
+        
+        
+    @attr('crp')
+    @attr('crp_bogus_warnings')
+    def test_bogus_warnings(self):
+        """ When running the full loadcontributions, I get about 1.7M warnings of records with extra fields.
+        Something very mysterious is going on b/c the data is still laoded correctly, despite the warnings
+        showing misformed data. Plus, just being in the exception shandler should've meant that the records
+        aren't loaded, but they are. Here in the unit test there's no problem. So I have no idea where these
+        warnings are coming from. See note in ticket #735.
+        """
+        input_rows = [',,2010,urn:fec:transaction,pac2pac:2010:1477454,24k,10990744132,False,5000.0,2010-05-10,National Auto Dealers Assn,C00040998,committee,,,,,WASHINGTON,DC,20003,T2300,National Auto Dealers Assn,,,,Every Republican is Crucial PAC,C00384701,R,committee,,,J2200,Every Republican is Crucial PAC,C00384701,R,,,,,,,']
+
+        loader = ContributionLoader(
+            source='unittest',
+            description='unittest',
+            imported_by='unittest'
+        )
+        source = VerifiedCSVSource(input_rows, model_fields('contribution.Contribution'))
+        processor = LoadContributions.get_record_processor(loader.import_session)
+        output = LoaderEmitter(loader).process_record
+
+        sys.stderr.write('Will this show up????')
+
+        self.assertEqual(0, Contribution.objects.all().count())
+
+        load_data(source, processor, output)
+
+        self.assertEqual(1, Contribution.objects.all().count())
+
 
 class TestProcessor(TestCase):
 
