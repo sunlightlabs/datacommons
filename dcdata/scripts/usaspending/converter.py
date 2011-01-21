@@ -17,7 +17,7 @@ GRANT_STRINGS = dict([(f.name, f.max_length) for f in Grant._meta.fields if isin
                      
 
 class USASpendingDenormalizer:
-    re_contracts = re.compile('.*[cC]ontracts.*')
+    re_contracts = re.compile('.*[cC]ontracts.*.')
 
     def parse_file(self, input, output, fields, string_lengths, calculated_fields=None):
         reader = csv.DictReader(input)
@@ -108,6 +108,8 @@ class USASpendingDenormalizer:
 
             if os.path.isfile(file_path):
                 input = open(file_path, 'rb')
+                
+                print "Converting %s..." % file_path
 
                 if self.re_contracts.match(file):
                     self.parse_file(input, out_contracts, fpds.FPDS_FIELDS, CONTRACT_STRINGS, fpds.CALCULATED_FPDS_FIELDS)
