@@ -31,8 +31,7 @@ class USASpendingDenormalizer:
 
             for field in fields:
                 fieldname = field[0]
-                db_fieldname = field[1] # todo: delete this data, it isn't used
-                transform = field[2] or null_transform
+                transform = field[1] or null_transform
 
                 try:
                     value = transform(line[fieldname])
