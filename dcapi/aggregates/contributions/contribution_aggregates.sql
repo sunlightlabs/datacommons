@@ -138,7 +138,9 @@ create table tmp_assoc_indiv_id as
     select entity_id, transaction_id
     from contributions_all_relevant c
     inner join matchbox_entityattribute a
-        on a.value = c.contributor_ext_id
+        on (a.value = c.contributor_ext_id
+            -- a 12th digit of '0' can be ignored
+            or (length(a.value) = 12 and substring(a.value from 12 for 1) = '0' and substring(a.value for 11) = c.contributor_ext_id))
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
