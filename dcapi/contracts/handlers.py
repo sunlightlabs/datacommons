@@ -19,8 +19,8 @@ CONTRACTS_SCHEMA = Schema(
     FulltextField('agency_name'),
     FulltextField('contracting_agency_name'),
     FulltextField('requesting_agency_name'),
-    FulltextField('vendor_name', 'vendorname'),
-    FulltextField('vendor_city', 'city'),
+    FulltextField('vendor_name', ['vendorname']),
+    FulltextField('vendor_city', ['city']),
 
     ComparisonField('obligated_amount', 'obligatedamount', cast=int),
     ComparisonField('current_amount', 'baseandexercisedoptionsvalue', cast=int),
