@@ -21,8 +21,9 @@ drop view if exists contracts_record;
 create view contracts_record as
     select id, vendorname as recipient_name,
             case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year + 1 end as cycle,
-            fiscal_year, agency_name, descriptionofcontractrequirement as description, obligatedamount as amount
-    from contracts_contract;
+            fiscal_year, coalesce(a.name, '') as agency_name, descriptionofcontractrequirement as description, obligatedamount as amount
+    from contracts_contract
+    left join contracts_agencies on agencyid = a.id;
 
 
 -- Grant Associations
