@@ -23,7 +23,7 @@ create view contracts_record as
             case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year + 1 end as cycle,
             fiscal_year, coalesce(a.name, '') as agency_name, descriptionofcontractrequirement as description, obligatedamount as amount
     from contracts_contract
-    left join contracts_agencies on agencyid = a.id;
+    left join contracts_agencies a on agencyid = a.id;
 
 
 -- Grant Associations
