@@ -47,6 +47,8 @@ CONTRIBUTION_SCHEMA = Schema(
     InclusionField('organization_ext_id'),
     InclusionField('parent_organization_ext_id'),
     InclusionField('committee_ext_id'),
+    InclusionField('contributor_type'),
+    InclusionField('recipient_type'),
     ComparisonField('date', cast=parse_date),
     ComparisonField('amount', cast=int),
     FulltextField('committee_ft', ['committee_name']),                                                        
