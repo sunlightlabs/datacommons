@@ -67,10 +67,10 @@ insert into tmp_matchbox_politicianmetadata (entity_id, cycle, state, party, sea
     group by entity_id, cycle
 ;
 
-delete from matchbox_politicianmetadata;
+drop table matchbox_politicianmetadata;
 
-insert into matchbox_politicianmetadata (entity_id, state, party, seat, seat_status, seat_result)
-    select entity_id, state, party, seat, seat_status, seat_result from tmp_matchbox_politicianmetadata;
+alter table tmp_matchbox_politicianmetadata rename to matchbox_politicianmetadata;
+    
 commit;
 
 
