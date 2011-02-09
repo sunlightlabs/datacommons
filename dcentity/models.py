@@ -104,7 +104,7 @@ class Entity(models.Model):
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
 
         elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
-            metadata.update(model_to_dict(self.industry_metadata))
+            metadata.update(self.industry_metadata.to_dict())
 
         metadata.update(self._get_sourced_data_as_dict())
 
@@ -220,9 +220,17 @@ class PoliticianMetadataLatest(models.Model):
     class Meta:
         db_table = 'politician_metadata_latest_cycle_view'
 
-class IndustryMetadata(models.Model):
+class IndustryMetadata(ExtensibleModel):
     entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
     should_show_entity = models.BooleanField(default=True)
+    parent_industry = models.ForeignKey(Entity, related_name='child_industry_set', null=True)
+    
+    extended_properties = ['parent_industry', 'child_industries']
+    
+    def _child_industries(self):
+        return [x.entity.public_representation() for x in self.entity.child_industry_set.all()]
+
+    child_industries = property(_child_industries)
 
     class Meta:
         db_table = 'matchbox_industrymetadata'
