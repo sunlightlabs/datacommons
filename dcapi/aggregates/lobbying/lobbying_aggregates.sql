@@ -85,6 +85,15 @@ create table assoc_lobbying_client_industry as
         on lower(cm.catcode) = lower(l.client_category)
     where
         e.type = 'industry'
+union
+    select ea.entity_id, l.transaction_id
+    from matchbox_entityattribute ea
+    inner join matchbox_entity e
+        on e.id = ea.entity_id
+    inner join lobbying_lobbying l
+        on lower(ea.value) = lower(l.client_category)
+    where
+        e.type = 'industry'
 ;
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_industry_entity_id on assoc_lobbying_client_industry (entity_id)';

@@ -310,6 +310,15 @@ create table industry_associations as
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
+        e.type = 'industry'
+union all
+    select a.entity_id, c.transaction_id
+    from contributions_all_relevant c
+    inner join matchbox_entityattribute a
+        on lower(c.contributor_category) = lower(a.value)
+    inner join matchbox_entity e
+        on e.id = a.entity_id
+    where
         e.type = 'industry';
 
 select date_trunc('second', now()) || ' -- create index industry_associations_entity_id on industry_associations (entity_id)';
