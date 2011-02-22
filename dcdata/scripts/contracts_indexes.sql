@@ -1,3 +1,7 @@
+drop index if exists contracts_contract_unique_transaction_id; 
+
+create index contracts_contract_unique_transaction_id on contracts_contract (unique_transaction_id);
+
 -- full-text
 drop index if exists contracts_contract_agency_name_ft;
 drop index if exists contracts_contract_contracting_agency_name_ft;
