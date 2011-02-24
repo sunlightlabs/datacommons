@@ -1,8 +1,9 @@
-import urllib, urllib2, logging, pprint, pickle, os, name_parser
+import urllib, urllib2, logging, pprint, pickle, os
 
 from django.conf                 import settings
 from django.core.management.base import BaseCommand
 from django.db                   import connection, transaction
+from name_cleaver.name_cleaver   import PoliticianNameCleaver, RunningMatesNames
 from votesmart                   import votesmart, VotesmartApiError
 
 try:
@@ -181,8 +182,8 @@ class Command(BaseCommand):
         #print "{0} {1} {2} {3}".format(name, state, district, seat)
         possibilities = [ x for x in cands_for_seat if x.electionDistrictName in [str(district), 'At-Large'] and x.electionStage == 'General' ]
 
-        name_obj = name_parser.standardize_politician_name_to_objs(name)
-        if isinstance(name_obj, name_parser.RunningMatesNames):
+        name_obj = PoliticianNameCleaver(name).parse()
+        if isinstance(name_obj, RunningMatesNames):
             name_obj = name_obj.mate1 # just use the governor, not lt. governor (this is the only case where it's a list
 
         name_possibilities = [ x for x in possibilities if \
