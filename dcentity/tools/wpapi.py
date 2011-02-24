@@ -5,6 +5,7 @@ import gzip
 import urllib
 import urllib2
 import lxml.etree
+
 try:
     import hashlib
     md5 = hashlib.md5
@@ -12,6 +13,7 @@ except ImportError:
     # for Python << 2.5
     import md5 as md5_lib
     md5 = md5_lib.new()
+
 import cStringIO as StringIO
 
 from django.conf import settings
@@ -32,7 +34,7 @@ WIKIPEDIA_PARSER = lxml.etree.XMLParser(
 
 # Regular expression to match against any of the 50 states and 'america'
 AMERICA_STATE_RE = re.compile(
-        "(%s)" % ("america|" + "|".join(v for k,v in STATE_CHOICES)), 
+        "(%s)" % ("america|" + "|".join(v for k,v in STATE_CHOICES)),
         re.I)
 
 def build_cache_key(*parts):
@@ -42,7 +44,7 @@ def build_cache_key(*parts):
 def wikipedia_api_query(params):
     # ensure k/v are sorted so we don't miss cache due to different ordering
     key = build_cache_key(
-        u"wikipedia-api", 
+        u"wikipedia-api",
         u"&".join(u"%s=%s" % (k, v) for k,v in sorted(params.items()))
     )
     cached = cache.get(key)
@@ -74,7 +76,7 @@ def title_search_redirects(phrase):
         if clean_name == clean(title):
             redirect = get_redirect(title)
             if redirect:
-                redirects[redirect] = phrase 
+                redirects[redirect] = phrase
 
     # Also get redirects for the search phrase itself, which may not be
     # returned by the title search..
@@ -91,7 +93,7 @@ def clean(string):
     return re.sub("\s+", " ", re.sub("[^A-Z ]", " ", string.upper())).strip()
 
 def get_redirect(title):
-    """ 
+    """
     Find the destination to which the given title redirects, or None if it does
     not redirect.
 
