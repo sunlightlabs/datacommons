@@ -325,7 +325,7 @@ class WikipediaArticle(object):
                "disambiguation" in self.get_categories()
 
     def _politician_words(self, string):
-        return bool(re.search(r"(politician|republican|democrat|judge|governor|president of the united states|house of representatives|senate)", string, re.I))
+        return bool(re.search(r"(politician|republican|democrat|judge|governor|presidents of the united states|house of representatives|senators)", string, re.I))
 
     def name_matches(self, name):
         if self.is_person():
