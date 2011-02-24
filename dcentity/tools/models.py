@@ -86,9 +86,9 @@ class EntityPlus(Entity):
                 name, pol_entity = match
 
         search_terms = [name.search_string()]
-        if pol_entity:
+        if pol_entity and pol_entity.politician_metadata_for_latest_cycle:
             search_terms.append(
-                expand_state(pol_entity.politician_metadata.state)
+                expand_state(pol_entity.politician_metadata_for_latest_cycle.state)
             )
         return " ".join(search_terms)
 
