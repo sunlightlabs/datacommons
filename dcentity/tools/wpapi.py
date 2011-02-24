@@ -64,16 +64,7 @@ def wikipedia_api_query(params):
 def title_search_redirects(phrase):
     """
     Construct a dict mapping destination => redirecting page given a phrase
-    that might be a redirecting page title.  
-
-    >>> title_search_redirects(u"Atlantic Richfield")
-    {u'ARCO': u'Atlantic Richfield'}
-
-    >>> title_search_redirects(u"PANERA")
-    {u'Panera Bread': u'PANERA'}
-
-    >>> title_search_redirects(u"Barack Obama")
-    {u'Barack Obama': u'Barack Obama'}
+    that might be a redirecting page title.
 
     """
     redirects = {}
@@ -262,92 +253,26 @@ def get_article_excerpt(title, length=500):
             if char_count > length:
                 break
 
-    return "".join(u"<p>%s</p>" % p for p in excerpt)
+    return "".join(u"<p>%s</p>" % p for p in excerpt), image_url
 
 def get_article_subject(title):
     """
     Extract the portion of the article in the first bolded bit of the first
     paragraph, which conventionally is the subject of the article, often in
     more detail than the title.
-
-    >>> get_article_subject("Barack Obama")
-    u'Barack Hussein Obama II'
-
     """
     xml = get_article_xml(title)
     try:
-        return unicode(xml.xpath('//x:p[1]/x:b[1]/text()',
-                namespaces={'x': 'http://www.w3.org/1999/xhtml'})[0])
+    #return unicode(xml.xpath('//div[@id="bodyContent"]/p[1]/b[1]/text()'))
+        return unicode(xml.xpath('//x:div[@id="bodyContent"]/x:p[1]/x:b[1]/text()', namespaces={'x': 'http://www.w3.org/1999/xhtml'})[0])
     except IndexError:
-        return None
+        print xml
 
 class WikipediaArticle(object):
     """
     Class representing a Wikipedia Article, encapsulating properties such as
     the name, disambiguation, categories.  Makes calls to the wikipedia API to
     obtain data.
-
-    >>> a = WikipediaArticle("Barack Obama")
-    >>> a.is_person()
-    True
-    >>> a.is_politician()
-    True
-    >>> a.name_matches("Barack Hussein Obama III")
-    True
-    >>> a.is_american()
-    True
-
-    >>> a = WikipediaArticle("BP")
-    >>> a.is_person()
-    False
-    >>> a.is_politician()
-    False
-    >>> a.is_company()
-    True
-    
-    >>> a = WikipediaArticle("User:SomeUser (disambiguation)")
-    >>> a.namespace
-    'User'
-    >>> a.name
-    'SomeUser'
-    >>> a.disambiguator
-    'disambiguation'
-
-    >>> a = WikipediaArticle("Ralph E. Reed, Jr.")
-    >>> a.is_person()
-    True
-    >>> a.is_politician()
-    True
-    >>> a.is_american()
-    True
-
-    >>> a = WikipediaArticle("Brian Clay")
-    >>> a.is_politician()
-    False
-
-    >>> a = WikipediaArticle("Kevin Kolb")
-    >>> a.is_person()
-    True
-    >>> a.is_politician()
-    False
-
-    >>> a = WikipediaArticle("Linda Upmeyer")
-    >>> a.is_politician()
-    True
-    >>> a.is_american()
-    True
-
-    >>> a = WikipediaArticle("Donald Morrison (politician)")
-    >>> a.is_person()
-    True
-    >>> a.is_politician()
-    True
-    >>> a.is_american()
-    False
-
-    >>> WikipediaArticle("Robert Mendelsohn").is_disambiguation_page()
-    True
-
     """
     def __init__(self, title):
         self.title = title

@@ -14,37 +14,8 @@ from dcentity.tools import utils
 
 def find_wikipedia_url(entity):
     """
-    Returns a tuple of (url, article excerpt) for a given entity, or None if no
+    Returns a tuple of (url, article excerpt, image url) for a given entity, or None if no
     matching article is found.
-    
-    >>> from dcentity.models import PoliticianMetadata
-    >>> e = EntityPlus.objects.create(type='politician', name="foo")
-    >>> a = e.aliases.create(alias='Barack Obama')
-    >>> md = PoliticianMetadata.objects.create(entity=e, 
-    ...         state='', party='D', seat='federal:president')
-    >>> find_wikipedia_url(e)[0]
-    'http://en.wikipedia.org/wiki/Barack_Obama'
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo1")
-    >>> a = e.aliases.create(alias='Atlantic Richfield')
-    >>> find_wikipedia_url(e)[0]
-    'http://en.wikipedia.org/wiki/ARCO'
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo2")
-    >>> a = e.aliases.create(alias='No WP entry for this')
-    >>> print find_wikipedia_url(e)
-    ['', '']
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo4")
-    >>> a = e.aliases.create(alias='159 Group')
-    >>> print find_wikipedia_url(e)
-    ['', '']
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo5")
-    >>> a = e.aliases.create(alias='188 Claremont')
-    >>> print find_wikipedia_url(e)
-    ['', '']
-
     """
     empty_result = ['', '']
     if entity.type == 'individual':

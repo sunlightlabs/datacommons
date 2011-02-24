@@ -29,32 +29,6 @@ ABBREVIATIONS = {
 }
 
 def fix_name(name):
-    """
-    >>> fix_name('Joe Blow (D)')
-    'Joe Blow'
-    >>> fix_name('Blow, Joe (R)')
-    'Joe Blow'
-    >>> fix_name('Schumer, Ted & George, Boy')
-    'Ted Schumer & Boy George'
-    >>> fix_name('54th Natl Assn of US Cmte Dept Assoc Inc.')
-    '54th national association of united states committee department associates Inc.'
-    >>> fix_name('Johnson, Smith et al')
-    'Johnson, Smith et al'
-    >>> fix_name('GORDNER, FRIENDS OF JOHN')
-    'FRIENDS OF JOHN GORDNER'
-    >>> fix_name('HUFFMAN FOR ASSEMBLY 2008, JARED')
-    'JARED HUFFMAN FOR ASSEMBLY 2008'
-    >>> fix_name('BEHNING, CMTE TO ELECT ROBERT W')
-    'committee TO ELECT ROBERT W BEHNING'
-    >>> fix_name('HALL, DUANE R II')
-    'DUANE R HALL II'
-    >>> fix_name('WALL, TROSSIE W JR')
-    'TROSSIE W WALL JR'
-    >>> fix_name('CROOK, MRS JERRY W')
-    'JERRY W CROOK'
-    >>> fix_name('HAMRIC, PEGGY (COMMITTEE 1)')
-    'PEGGY HAMRIC'
-    """
     name = re.sub("\s+\([\w ]+\)", "", name)
     if name.find(",") != -1 and not re.search("(et al| inc)", name, re.I):
         match = re.match("^(.*?)( (?:JR|SR|I+))?$", name.strip())
@@ -83,89 +57,6 @@ class PersonName(object):
     Object representing a person's name in western first, middle, last form.
     Allows matching different formulations of a name which include first,
     middle, last or suffixes. 
-
-    Middle names can be initialed.
-    >>> PersonName("Barack H Obama") == PersonName("Barack Hussein Obama")
-    True
-
-    Middle names, if present, must match.
-    >>> PersonName("Barack B Obama") == PersonName("Barack H Obama")
-    False
-
-    Make sure != works as well as ==.
-    >>> PersonName("Barack H Obama") != PersonName("Barack Hussein Obama")
-    False
-
-    Middle names and suffixes can be eliminated.
-    >>> PersonName("Barack H Obama, III") == PersonName("Barack Obama")
-    True
-    >>> PersonName("Roger McAuliffe") == PersonName("ROGER P MCAULIFFE")
-    True
-
-    First names can be initialed.
-    >>> PersonName("B H Obama") == PersonName("Barack Obama")
-    True
-
-    But they must match if they aren't initials
-    >>> PersonName("Beverly H Obama") == PersonName("Barack H Obama")
-    False
-
-    Last names must always match
-    >>> PersonName("Barack H Hosana") == PersonName("Barack H Obama")
-    False
-
-    Nicknames might work.
-    >>> PersonName("Ted Haggart") == PersonName("Theodore Haggart")
-    True
-    >>> PersonName("Mike Easley") == PersonName("Michael Easley")
-    True
-
-    First and middle names can be ommitted.
-    >>> PersonName("George Washington") == PersonName("Washington")
-    True
-
-    Allow middle name as first name in some cases.
-    >>> PersonName("Ed McMahan") == PersonName("W. Edwin McMahan")
-    True
-    >>> PersonName("J Edgar Hoover") == PersonName("Edgar Hoover")
-    True
-    >>> PersonName("John Edgar Hoover") == PersonName("Edgar Hoover")
-    True
-    >>> PersonName("J E Hoover") == PersonName("Edgar Hoover")
-    True
-    >>> PersonName("J Edwin Hoover") == PersonName("J Edgar Hoover")
-    False
-
-    Ignore anything including and after an ampersand
-    >>> p = PersonName("TED STRICKLAND & LEE FISCHER")
-    >>> p.first, p.middle, p.last, p.suffix
-    ('TED', None, 'STRICKLAND', None)
-    >>> p == PersonName("Ted Strickland")
-    True
-
-    Single name or last name only people.
-    >>> p = PersonName("Bono")
-    >>> p.first, p.middle, p.last, p.suffix
-    (None, None, 'BONO', None)
-
-    Handle in-line nicknames.
-    >>> p = PersonName('Robert Foster "Bob" Bennett')
-    >>> p.first, p.middle, p.last, p.suffix
-    ('ROBERT', 'FOSTER', 'BENNETT', None)
-    >>> p == PersonName('Bob Bennett')
-    True
-
-    >>> p1 = PersonName('Joseph E. "Jeb" Bradley')
-    >>> p1.first, p1.middle, p1.last, p1.suffix
-    ('JOSEPH', 'E', 'BRADLEY', None)
-    >>> p2 = PersonName("JEB E BRADLEY")
-    >>> p2.first, p2.middle, p2.last, p2.suffix
-    ('JEB', 'E', 'BRADLEY', None)
-    >>> p1 == p2
-    True
-    >>> p2 == p1
-    True
-
     """
     def __init__(self, name):
         self.name = name
@@ -308,43 +199,6 @@ class PersonName(object):
 
     @classmethod
     def match_middle_as_first(cls, pname1, pname2, initials, *nick_dicts):
-        """
-        >>> print PersonName.match_middle_as_first(
-        ...     PersonName("J. Edgar Hoover"), PersonName("Edgar Hoover"), 
-        ...     True)
-        True
-        
-        Check reflexive
-        >>> print PersonName.match_middle_as_first(
-        ...     PersonName("Edgar Hoover"), PersonName("J. Edgar Hoover"),
-        ...     True)
-        True
-
-        With initials "false", don't resolve initials
-        >>> print PersonName.match_middle_as_first(
-        ...     PersonName("J. E. Hoover"), PersonName("Edgar Hoover"), 
-        ...     False)
-        False
-
-        With a nick dict, resolve nicknames
-        >>> print PersonName.match_middle_as_first(
-        ...     PersonName("Ed McMahan"), PersonName("W. Edwin McMahan"), 
-        ...     False,
-        ...     {'ED': set(('ED', 'EDWIN')), 'EDWIN': set(('ED', 'EDWIN'))})
-        True
-
-        Without a nick dict, don't resolve nicknames
-        >>> print PersonName.match_middle_as_first(
-        ...     PersonName("Ed McMahan"), PersonName("W. Edwin McMahan"), 
-        ...     False)
-        False
-
-        Non-matching middle names should fail
-        >>> print PersonName.match_middle_as_first(
-        ...     PersonName("J Edgar Hoover"), PersonName("Bob Edgar Hoover"),
-        ...     True)
-        False
-        """
         # once for each order
         for p1, p2 in ((pname1, pname2), (pname2, pname1)):
             if p1.first and p1.middle and not p2.middle and \
@@ -379,88 +233,6 @@ class PersonName(object):
         ))
 
 class OrganizationName(object):
-    """
-    >>> a = OrganizationName("Chronical Books LLC")
-    >>> a.base_name
-    'CHRONICAL BOOKS'
-    >>> a.inc
-    'LLC'
-    >>> a.is_company()
-    True
-    >>> a.is_politician()
-    False
-    >>> a.search_string()
-    'CHRONICAL BOOKS'
-
-    >>> OrganizationName("Pizza Hut") == OrganizationName("Pizza Hut Inc")
-    True
-
-    >>> OrganizationName("Sunkist Growers, Incorporated") == \
-            OrganizationName("Sunkist Growers")
-    True
-
-    >>> o = OrganizationName("Raytheon Co.")
-    >>> o.base_name
-    'RAYTHEON'
-    >>> o.inc
-    'COMPANY'
-    >>> OrganizationName("Raytheon Company") == OrganizationName("Raytheon")
-    True
-
-    >>> OrganizationName("RAYTHEON COmpany") == \
-            OrganizationName("RaYtHeOn company")
-    True
-
-    >>> OrganizationName("THE ARC OF THE UNITED STATES") == \
-            OrganizationName("Arc of the United States")
-    True
-
-    >>> OrganizationName("Firstline Transportation Security") == \
-            OrganizationName("FirstLine Transportation Security, Inc.")
-    True
-
-    >>> OrganizationName("united states department of State").is_politician()
-    False
-
-    >>> OrganizationName("1994 Group") == OrganizationName("Group")
-    False
-
-    >>> OrganizationName("180 Solutions") == OrganizationName("Solutions")
-    False
-
-    >>> OrganizationName("1-800 Contacts") == OrganizationName("1800 Contacts")
-    True
-
-    >>> OrganizationName("166 Research") == OrganizationName("Research")
-    False
-
-    >>> for i, name, base in (
-    ...          (0, "HAGMAN FOR ASSEMBLY", "HAGMAN"),
-    ...          (1, "Friends for Gregory Meeks", "Gregory Meeks"),
-    ...          (2, "SWANSON FOR ASSEMBLY 2008", "SWANSON"),
-    ...          (3, "Welch For Congress", "Welch"),
-    ...          (4, "Cunningham Campaign Committee", "Cunningham"),
-    ...          (5, "Cummings for Congress Campaign Committee", "Cummings"),
-    ...          (6, "NEIGHBORS FOR EARL EHRHART", "EARL EHRHART"),
-    ...          (7, "NEIGHBORS UNITED TO ELECT FRANK DICICO", "FRANK DICICO"),
-    ...         ):
-    ...     o = OrganizationName(name)
-    ...     print i, o.is_politician() and o.base_name == base
-    0 True
-    1 True
-    2 True
-    3 True
-    4 True
-    5 True
-    6 True
-    7 True
-
-    >>> OrganizationName("JIM JONES FOR ASSEMBLY") == PersonName("Jim Jones")
-    True
-    >>> PersonName("Jim Jones") == OrganizationName("JIM JONES FOR ASSEMBLY")
-    True
-
-    """
 
     normalize_incs = {
         'CO': 'COMPANY',
@@ -513,14 +285,6 @@ class OrganizationName(object):
 
     @classmethod
     def eq_clean(cls, string):
-        """
-        >>> OrganizationName.eq_clean("THE ARC OF THE UNITED STATES")
-        'ARC UNITED STATES'
-
-        >>> OrganizationName.eq_clean("The official theater theof ofthe")
-        'OFFICIAL THEATER THEOF OFTHE'
-
-        """
         # extra cleaning before equality checks
         string = re.sub("[^A-Z0-9 ]", "", string.upper())
         string = re.sub("( |^)(OF|THE)(?=$|\s)", "", string)

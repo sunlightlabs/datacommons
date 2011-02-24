@@ -15,30 +15,6 @@ class PoliticianManager(models.Manager):
         Given an entity name, return a (name, entity) tuple of a politician
         whose name uniquely matches the given name.  If no unique politician is
         found, return None.
-        Create some noise.
-        >>> e = EntityPlus.objects.create(type='politician', name='foo1')
-        >>> a = e.aliases.create(alias="Wayne P Deangelo")
-        >>> e = EntityPlus.objects.create(type='politician', name='foo2')
-        >>> a = e.aliases.create(alias="Robert Bennet")
-        >>> e = EntityPlus.objects.create(type='politician', name='foo3')
-        >>> a = e.aliases.create(alias='Caroline Bennet')
-
-        Create an leadership pac entity with an incomplete politician name.
-        >>> e = EntityPlus.objects.create(type='organization', name="foo4")
-        >>> a = e.aliases.create(alias="WAYNE DEANGELO FOR ASSEMBLY")
-        >>> e.names[0].pname.name
-        u'WAYNE DEANGELO'
-
-        Find the unique politician with full name. 
-        >>> ename, entity = EntityPlus.politicians.get_unique_politician(e.names[0])
-        >>> ename.name
-        u'Wayne P Deangelo'
-
-        Non-unique non-match
-        >>> e = EntityPlus.objects.create(type='organization', name='foo5')
-        >>> a = e.aliases.create(alias="BENNET FOR ASSEMBLY")
-        >>> print EntityPlus.politicians.get_unique_politician(e.names[0])
-        None
         """
         if isinstance(name, OrganizationName):
             name = name.pname
