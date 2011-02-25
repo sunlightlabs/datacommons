@@ -230,7 +230,7 @@ def get_article_xml(title):
     article_xml_cache[title] = xml
     return xml
 
-def get_article_excerpt(title, length=500):
+def get_article_excerpt_and_image_url(title, length=500):
     """
     Extract the first few paragraphs of the given article until the length
     exceeds the given length (default 500 characters), or the article ends,
@@ -241,8 +241,13 @@ def get_article_excerpt(title, length=500):
     # Get paragraphs that are immediate descendents of <div id="bodyContent">.
     # This should exclude infobox or other details outside the main article
     # body.
-    paragraphs = xml.xpath('//x:div[@id="bodyContent"]/x:p', 
+    paragraphs = xml.xpath('//x:div[@id="bodyContent"]/x:p',
             namespaces={'x': 'http://www.w3.org/1999/xhtml'})
+    image_url = xml.xpath('(//table[contains(@class,"vcard") and contains(@class,"infobox")]//a[contains(@class, "image")])[1]/img/@src')
+
+    if image_url:
+        image_url = image_url[0]
+
     char_count = 0
     excerpt = []
     for p in paragraphs:
@@ -283,6 +288,7 @@ class WikipediaArticle(object):
         self.disambiguator = (self.disambiguator or "").lower()
         self.categories = None
         self.excerpt = None
+        self.image_url = None
 
     def get_categories(self):
         if self.categories is None:
@@ -291,10 +297,10 @@ class WikipediaArticle(object):
             ).lower()
         return self.categories
 
-    def get_excerpt(self):
+    def get_excerpt_and_url(self):
         if self.excerpt is None:
-            self.excerpt = get_article_excerpt(self.title)
-        return self.excerpt
+            self.excerpt, self.image_url = get_article_excerpt_and_image_url(self.title)
+        return self.excerpt, self.image_url
 
     def get_subject(self):
         return get_article_subject(self.title)
@@ -317,7 +323,7 @@ class WikipediaArticle(object):
         return self.is_person() and (
             ("politician" in self.disambiguator) or
             (self._politician_words(self.get_categories())) or
-            (self._politician_words(self.get_excerpt()))
+            (self._politician_words(self.get_excerpt_and_url()[0]))
         )
 
     def is_disambiguation_page(self):

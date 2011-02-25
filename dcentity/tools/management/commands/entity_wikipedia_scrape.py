@@ -17,7 +17,7 @@ def find_wikipedia_url(entity):
     Returns a tuple of (url, article excerpt, image url) for a given entity, or None if no
     matching article is found.
     """
-    empty_result = ['', '']
+    empty_result = ['', '', '']
     if entity.type == 'individual':
         return empty_result
 
@@ -70,8 +70,8 @@ def find_wikipedia_url(entity):
                     if ename.is_company() and not article.is_company():
                         continue
             wikipedia_url = wpapi.article_url(article.title)
-            wikipedia_excerpt = wpapi.get_article_excerpt(article.title)
-            return (wikipedia_url, wikipedia_excerpt)
+            wikipedia_excerpt, image_url = wpapi.get_article_excerpt_and_image_url(article.title)
+            return (wikipedia_url, wikipedia_excerpt, image_url)
     return empty_result
 
 class Command(BaseCommand):
@@ -151,16 +151,17 @@ can be accomplished from the Django shell like so:
 
         start = time.time()
         try:
-            url, excerpt = find_wikipedia_url(entity)
+            url, excerpt, image_url = find_wikipedia_url(entity)
         except Exception as e:
             print "EXCEPTION", traceback.format_exc()
             row = (entity.id, entity.names[0].name, str(e.args), traceback.format_exc())
             self._log_error(row)
         else:
-            row = (entity.id, url, excerpt, unicode(datetime.datetime.now()))
+            row = (entity.id, url, image_url, excerpt, unicode(datetime.datetime.now()))
             self.results[row[0]] = row
             self.writer.writerow(row)
-            print "%i/%i" % (c, total), (entity.names[0].name, url), \
+            entity_name = entity.names[0].name if len(entity.names) else '__blank__'
+            print "%i/%i" % (c, total), (entity.names[0].name, url, image_url), \
                 "time:", "%.02f" % (time.time()-start), "seconds"
 
     def _log_error(self, row):
