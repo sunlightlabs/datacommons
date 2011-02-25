@@ -271,6 +271,8 @@ class WikipediaInfo(models.Model):
 
     bio        = models.TextField(null=True)
     bio_url    = models.URLField(null=True)
+    photo_url  = models.URLField(null=True)
+
     created_on = models.DateField(auto_now_add=True)
     updated_on = models.DateField(auto_now=True, null=True)
 
