@@ -18,7 +18,7 @@ def find_wikipedia_url(entity):
     matching article is found.
     """
     empty_result = ['', '', '']
-    if entity.type == 'individual':
+    if entity.type in ['individual', 'industry']:
         return empty_result
 
     for ename in entity.names:
@@ -119,7 +119,7 @@ can be accomplished from the Django shell like so:
                 self.errors = dict((row[0], row) for row in rows)
                 self.error_writer = error_writer
 
-                qs = EntityPlus.objects.exclude(type='individual')
+                qs = EntityPlus.objects.exclude(type='individual').exclude(type='industry')
                 total = qs.count()
                 # This'll take up to 48 hours
                 for c, entity in enumerate(qs):
