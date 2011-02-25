@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connection
 
 from dcentity.models import Entity, EntityAlias
@@ -62,6 +63,7 @@ class EntityPlus(Entity):
                     self._names.append(PersonName(name))
                 elif self.type == 'organization':
                     self._names.append(OrganizationName(name))
+
         return self._names
 
     def _set_names(self):
@@ -86,10 +88,13 @@ class EntityPlus(Entity):
                 name, pol_entity = match
 
         search_terms = [name.search_string()]
-        if pol_entity and pol_entity.politician_metadata_for_latest_cycle:
-            search_terms.append(
-                expand_state(pol_entity.politician_metadata_for_latest_cycle.state)
-            )
+        if pol_entity:
+            try:
+                search_terms.append(
+                    expand_state(pol_entity.politician_metadata_for_latest_cycle.state)
+                )
+            except ObjectDoesNotExist:
+                pass
         return " ".join(search_terms)
 
     def first_matching_name(self, entity):
