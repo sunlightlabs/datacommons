@@ -47,11 +47,15 @@ class Command(BaseCommand):
         rows = []
         count = 0
 
-        for (entity_id, url, bio, date) in reader:
+        for (entity_id, url, image_url, bio, date) in reader:
             count += 1
             #self.log.debug(count)
 
-            rows.append((entity_id, url, bio, date))
+            if image_url:
+                if 'replace_this_image' in image_url.lower():
+                    image_url = None
+
+            rows.append((entity_id, url, image_url, bio, date))
 
             if len(rows) >= batch_size:
                 self.log.debug("{0}: Starting batch insert...".format(count))
@@ -75,8 +79,8 @@ class Command(BaseCommand):
 
         self.log.info("Starting insert into tmp_matchbox_wikipediainfo")
 
-        values_string = ",".join(["(%s, %s, %s, %s)" for x in rows_with_bios])
-        insert_sql = "insert into tmp_matchbox_wikipediainfo (entity_id, bio_url, bio, scraped_on) values %s" % values_string
+        values_string = ",".join(["(%s, %s, %s, %s, %s)" for x in rows_with_bios])
+        insert_sql = "insert into tmp_matchbox_wikipediainfo (entity_id, bio_url, photo_url, bio, scraped_on) values %s" % values_string
         cursor.execute(insert_sql, [item for sublist in rows_with_bios for item in sublist])
 
         self.log.info("Finished inserting into temp table. {0} rows inserted.".format(len(rows_with_bios)))
