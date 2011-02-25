@@ -46,14 +46,15 @@ class Command(BaseCommand):
         cursor = connection.cursor()
 
         # get count
-        cursor.execute("select count(*) from matchbox_currentrace cr")
+        cursor.execute("select count(*) from politician_metadata_latest_cycle_view")
         total = cursor.fetchone()
         transaction.rollback()
 
+        # NOTE: The following will not work until politcian metadata gets updated with district
         select_sql = """
-            select id, name, state, district, seat
-            from matchbox_currentrace cr
-            order by id
+            select entity_id, name, state, district, seat
+            from politician_metadata_latest_cycle
+            order by entity_id
         """
 
         self.log.debug(select_sql)
@@ -63,7 +64,7 @@ class Command(BaseCommand):
 
         self.log.info("{0} federal politicians located to find VoteSmart ids for".format(len(politicians)))
 
-        cursor.execute("update matchbox_currentrace set election_type = null")
+        # Reset existing data
         cursor.execute("delete from matchbox_votesmartinfo")
 
         for (entity_id, name, state, district, seat) in politicians:
@@ -74,19 +75,8 @@ class Command(BaseCommand):
 
             # we'll only return the ID if the candidate is in the general election
             votesmart_id = self.get_votesmart_id(name, state, district, seat)
-
             if votesmart_id:
                 self.log.info("Found votesmart id for {0}: {1}".format(name, votesmart_id))
-
-                update_currentrace_sql = """
-                    update
-                        matchbox_currentrace
-                    set
-                        election_type = 'G'
-                    where id = '{0}'
-                """.format(entity_id)
-                self.log.debug(update_currentrace_sql)
-                cursor.execute(update_currentrace_sql)
 
                 insert_votesmart_info_sql = """
                     insert into matchbox_votesmartinfo (entity_id, votesmart_id) values ('{0}', {1})
