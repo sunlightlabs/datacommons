@@ -26,7 +26,7 @@ def find_wikipedia_url(entity):
         # titles later -- we might exactly match a redirect title, but not
         # match the destination page at all.  Full text search returns only
         # the destination pages, not the redirections.
-        redirects = wpapi.title_search_redirects(ename.search_string()) 
+        redirects = wpapi.title_search_redirects(ename.search_string())
 
         # Full text search!
         results = wpapi.full_text_search(entity.get_search_terms(ename))
@@ -81,7 +81,7 @@ class Command(BaseCommand):
 results will include:
 
     entity_id, wikipedia_url or '', wikipedia_excerpt or '', datetime of fetch
-    
+
 Entries are not overridden -- if the file already contains a match for a given
 entity_id, it will not be re-queried.  It should thus be efficient to restart
 the process.  If you wish to refresh an entity, delete the row or start with a
@@ -113,7 +113,7 @@ can be accomplished from the Django shell like so:
 
         # Fetch and record new results
         with utils.reopen_csv_writer(output_file) as (rows, writer):
-            self.results = dict((row[0], row) for row in rows)
+            self.results = dict((row[0], row) for row in rows if len(row))
             self.writer = writer
             with utils.reopen_csv_writer(error_file) as (rows, error_writer):
                 self.errors = dict((row[0], row) for row in rows)
@@ -124,7 +124,7 @@ can be accomplished from the Django shell like so:
                 # This'll take up to 48 hours
                 for c, entity in enumerate(qs):
                     self._fetch_one(entity, c, total)
-            
+
             # Retry errors once; most of the time it's just an HTTP error
             # thrown by wikipedia.
             with open(error_file, 'w') as error_fh:
@@ -167,3 +167,4 @@ can be accomplished from the Django shell like so:
     def _log_error(self, row):
         self.error_writer.writerow(row)
         self.errors[row[0]] = row
+
