@@ -63,7 +63,12 @@ class Entity(models.Model):
 
         if len(sources_dict):
             for (source_name, source_dict) in sources_dict:
-                source_dict['source_name'] = source_name
+                [ source_dict.pop(x) for x in source_dict.keys() if not source_dict[x] ]
+
+                # this is displayed below the bio, so we'll only set it based on that field
+                if source_dict.has_key('bio') and source_dict['bio']:
+                    source_dict['source_name'] = source_name
+
                 compiled_dict.update(source_dict)
 
         return compiled_dict
@@ -224,9 +229,9 @@ class IndustryMetadata(ExtensibleModel):
     entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
     should_show_entity = models.BooleanField(default=True)
     parent_industry = models.ForeignKey(Entity, related_name='child_industry_set', null=True)
-    
+
     extended_properties = ['parent_industry', 'child_industries']
-    
+
     def _child_industries(self):
         return [x.entity.public_representation() for x in self.entity.child_industry_set.all()]
 
