@@ -243,10 +243,12 @@ def get_article_excerpt_and_image_url(title, length=500):
     # body.
     paragraphs = xml.xpath('//x:div[@id="bodyContent"]/x:p',
             namespaces={'x': 'http://www.w3.org/1999/xhtml'})
-    image_url = xml.xpath('(//table[contains(@class,"vcard") and contains(@class,"infobox")]//a[contains(@class, "image")])[1]/img/@src')
-
-    if image_url:
-        image_url = image_url[0]
+    images = xml.xpath('//*[contains(@class,"vcard") and contains(@class,"infobox")]//*[contains(@class, "image")]//*')
+    image_url = ''
+    if len(images):
+        image_srcs = images[0].xpath('@src')
+        if len(image_srcs):
+            image_url = image_srcs[0]
 
     char_count = 0
     excerpt = []
