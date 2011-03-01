@@ -272,7 +272,6 @@ def get_article_subject(title):
     """
     xml = get_article_xml(title)
     try:
-    #return unicode(xml.xpath('//div[@id="bodyContent"]/p[1]/b[1]/text()'))
         return unicode(xml.xpath('//x:div[@id="bodyContent"]/x:p[1]/x:b[1]/text()', namespaces={'x': 'http://www.w3.org/1999/xhtml'})[0])
     except IndexError:
         print xml
