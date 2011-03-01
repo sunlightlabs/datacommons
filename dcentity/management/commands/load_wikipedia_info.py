@@ -63,8 +63,8 @@ class Command(BaseCommand):
             if image_url:
                 if 'replace_this_image' in image_url.lower():
                     image_url = None
-                elif len(image_url) > 255:
-                    self.log.warn("This image URL is longer than 255 characters: {0}".format(image_url))
+                elif len(image_url) > 550:
+                    self.log.warn("This image URL is longer than 550 characters: {0}".format(image_url))
 
             rows.append((entity_id, url, image_url, bio, date))
 

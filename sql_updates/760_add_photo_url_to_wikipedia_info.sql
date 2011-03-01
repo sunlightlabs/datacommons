@@ -1,1 +1,1 @@
-alter table matchbox_wikipediainfo add column photo_url varchar(500);
+alter table matchbox_wikipediainfo add column photo_url varchar(550);
