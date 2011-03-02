@@ -48,6 +48,7 @@ commit;
 -- Politician Metadata
 
 begin;
+drop view politician_metadata_latest_cycle_view;
 create temp table tmp_matchbox_politicianmetadata as select * from matchbox_politicianmetadata limit 0;
 
 insert into tmp_matchbox_politicianmetadata (entity_id, cycle, state, party, seat, seat_status, seat_result)
@@ -71,6 +72,19 @@ drop table matchbox_politicianmetadata;
 
 alter table tmp_matchbox_politicianmetadata rename to matchbox_politicianmetadata;
     
+create view politician_metadata_latest_cycle_view as
+    select distinct on (entity_id)
+        entity_id,
+        cycle,
+        state,
+        party,
+        seat,
+        seat_status,
+        seat_result
+    from matchbox_politicianmetadata
+    order by entity_id, cycle desc
+;
+
 commit;
 
 
