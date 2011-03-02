@@ -89,9 +89,11 @@ class Command(BaseCommand):
                 select min(name) as name, id from (
                     select min(lobbyist_name) as name, lobbyist_ext_id as id
                     from lobbying_lobbyist
+                    inner join lobbying_report using (transaction_id)
                     where
                         lobbyist_name != ''
                         and not exists (select * from matchbox_entityattribute where value = lobbyist_ext_id)
+                        and not use
                     group by lobbyist_ext_id
 
                     union
@@ -246,7 +248,10 @@ class Command(BaseCommand):
                     and not exists (
                         select *
                         from lobbying_lobbyist
-                        where lobbyist_ext_id = a.value
+                        inner join lobbying_report using (transaction_id)
+                        where
+                            lobbyist_ext_id = a.value
+                            and use
                     )
             )
         """
