@@ -156,6 +156,7 @@ FPDS_FIELDS = [
 ('clingercohenact', transformFlag),
 ('otherstatutoryauthority', None),
 ('interagencycontractingauthority', splitCode),
+('isserviceprovider', transformFlag),
 
 ]
 

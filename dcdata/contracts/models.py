@@ -157,6 +157,7 @@ class Contract(models.Model):
     clingercohenact = models.NullBooleanField()
     otherstatutoryauthority = models.TextField(blank=True)
     interagencycontractingauthority = models.CharField(max_length=1, blank=True)
+    isserviceprovider = models.NullBooleanField()
     
     agency_name = models.CharField(max_length=255, blank=True)
     contracting_agency_name = models.CharField(max_length=255, blank=True)
