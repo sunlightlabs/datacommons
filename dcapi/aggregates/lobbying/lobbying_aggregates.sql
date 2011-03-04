@@ -7,6 +7,8 @@
 select date_trunc('second', now()) || ' -- drop view if exists lobbying_report';
 drop view if exists lobbying_report;
 
+-- NOTE: if you update the code in this view, you also need to update it in the loadlobbying command
+-- (which has to drop and recreate it in order to drop and recreate the other tables before loading their data)
 select date_trunc('second', now()) || ' -- create view lobbying_report as';
 create view lobbying_report as
     select *, case when year % 2 = 0 then year else year + 1 end as cycle
