@@ -1,6 +1,7 @@
 *.db
 *.pyc
 *.swp
+*.swk
 *.out
 pip-log.txt
 local_settings.py

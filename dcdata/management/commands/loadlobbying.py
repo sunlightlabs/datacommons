@@ -98,7 +98,14 @@ class TableHandler(object):
     def __init__(self, inpath):
         self.inpath = inpath
 
+    def pre_drop(self):
+        pass
+
+    def post_create(self):
+        pass
+
     def drop(self):
+        self.pre_drop()
         print "Dropping {0}.".format(self.db_table)
         cursor = connections['default'].cursor()
         cursor.execute("drop table {0}".format(self.db_table))
@@ -110,6 +117,19 @@ class LobbyingHandler(TableHandler):
         super(LobbyingHandler, self).__init__(inpath)
         self.db_table = 'lobbying_lobbying'
 
+    def pre_drop(self):
+        cursor = connections['default'].cursor()
+        cursor.execute("drop view if exists lobbying_report")
+
+    def post_create(self):
+        cursor = connections['default'].cursor()
+        cursor.execute("""
+            create view lobbying_report as
+                select *, case when year % 2 = 0 then year else year + 1 end as cycle
+                from lobbying_lobbying l
+                where use = 't'
+        """, None)
+    
     def run(self):
         run_recipe(
             CSVSource(open(self.inpath)),
@@ -250,6 +270,7 @@ class Command(BaseCommand):
 
         handlers.reverse() # this is to undo the last reverse and load the data in the intended (necessary) order
         for handler in handlers:
+            handler.post_create()
             print "loading records for %s" % table
             handler.run()
 

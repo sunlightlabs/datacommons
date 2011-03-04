@@ -46,12 +46,27 @@ class Command(BaseCommand):
 
         rows = []
         count = 0
+        entity_ids = {}
 
-        for (entity_id, url, bio, date) in reader:
+        for (entity_id, url, image_url, bio, date) in reader:
             count += 1
-            #self.log.debug(count)
 
-            rows.append((entity_id, url, bio, date))
+            # check for entity_id duplicates
+            if entity_ids.has_key(entity_id):
+                entity_ids += 1
+            else:
+                entity_ids[entity_id] = 1
+
+            # warn if there's a duplicate entity_id
+            if entity_ids[entity_id] > 1: self.log.debug("Duplicate entity_id found: {0}".format(entity_id))
+
+            if image_url:
+                if 'replace_this_image' in image_url.lower():
+                    image_url = None
+                elif len(image_url) > 550:
+                    self.log.warn("This image URL is longer than 550 characters: {0}".format(image_url))
+
+            rows.append((entity_id, url, image_url, bio, date))
 
             if len(rows) >= batch_size:
                 self.log.debug("{0}: Starting batch insert...".format(count))
@@ -70,13 +85,18 @@ class Command(BaseCommand):
     def delete_and_insert(self, rows, cursor):
         rows_with_bios = [line for line in rows if line[1]]
 
+        # don't try to insert empty data
+        if not len(rows_with_bios):
+            return
+
         self.log.info("Creating temp table tmp_matchbox_wikipediainfo")
-        cursor.execute("create temp table tmp_matchbox_wikipediainfo on commit drop as select * from matchbox_wikipediainfo limit 0");
+        cursor.execute("create temp table tmp_matchbox_wikipediainfo on commit drop as select * from matchbox_wikipediainfo limit 0")
+        cursor.execute("create unique index tmp_matchbox_wikipediainfo_idx on tmp_matchbox_wikipediainfo (entity_id)")
 
         self.log.info("Starting insert into tmp_matchbox_wikipediainfo")
 
-        values_string = ",".join(["(%s, %s, %s, %s)" for x in rows_with_bios])
-        insert_sql = "insert into tmp_matchbox_wikipediainfo (entity_id, bio_url, bio, scraped_on) values %s" % values_string
+        values_string = ",".join(["(%s, %s, %s, %s, %s)" for x in rows_with_bios])
+        insert_sql = "insert into tmp_matchbox_wikipediainfo (entity_id, bio_url, photo_url, bio, scraped_on) values %s" % values_string
         cursor.execute(insert_sql, [item for sublist in rows_with_bios for item in sublist])
 
         self.log.info("Finished inserting into temp table. {0} rows inserted.".format(len(rows_with_bios)))
@@ -88,8 +108,8 @@ class Command(BaseCommand):
 
         self.log.info("Inserting from temp table into real table.")
         cursor.execute("""
-            insert into matchbox_wikipediainfo (entity_id, bio_url, bio, scraped_on)
-                select entity_id, bio_url, bio, scraped_on from tmp_matchbox_wikipediainfo
+            insert into matchbox_wikipediainfo (entity_id, bio_url, photo_url, bio, scraped_on)
+                select entity_id, bio_url, photo_url, bio, scraped_on from tmp_matchbox_wikipediainfo
         """)
         transaction.commit()
 

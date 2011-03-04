@@ -203,38 +203,3 @@ class EntitySimpleHandler(BaseHandler):
             return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
 
 
-class CurrentRaceHandler(TopListHandler):
-
-    args = ['district', 'district', 'district', 'district']
-
-    fields = "entity_id name state election_type district seat seat_status seat_result votesmart_id party".split()
-
-    stmt = """
-        select entity_id, name, cr.state, election_type, district, cr.seat, seat_status, seat_result, votesmart_id, party
-        from matchbox_currentrace cr
-        inner join matchbox_votesmartinfo vsi on cr.id = vsi.entity_id
-        inner join politician_metadata_latest_cycle_view pm using (entity_id)
-        where
-            case
-                when district is null then lower(substring(%s for 2)) = lower(cr.state)
-                else case
-                        when char_length(%s) = 5 then lower(%s) = lower(district)
-                        else lower(substring(%s for 2)) = lower(cr.state)
-                     end
-            end
-            and election_type = 'G'
-    """
-
-class CurrentRaceDistrictsHandler(TopListHandler):
-
-    args = []
-
-    fields = ['district']
-
-    stmt = """
-        select distinct district
-        from matchbox_currentrace cr
-        where election_type = 'G' and district != '' and district is not null
-        order by district
-    """
-
