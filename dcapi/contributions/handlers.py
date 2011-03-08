@@ -1,7 +1,8 @@
 
+from dcapi.aggregates.handlers import execute_top
 from dcapi.common.handlers import FilterHandler
 from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, \
-    IndustryField
+    IndustryField, query_to_ft_sql
 from dcapi.schema import Schema, FunctionField
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
@@ -95,3 +96,30 @@ class ContributionFilterHandler(FilterHandler):
     def queryset(self, params):
         return filter_contributions(self._unquote(params))
 
+
+class ContributorGeoHandler(FilterHandler):
+    fields = ['contributor_name', 'contributor_location', 'count']
+    
+    stmt = """
+        select contributor_name, coalesce(m.name, c.contributor_zipcode), count(*)
+        from contribution_contribution c
+        left join geo_zip z on c.contributor_zipcode = z.zipcode
+        left join geo_msa m on z.msa_id = m.id
+        where
+            to_tsquery('datacommons', %s) @@ to_tsvector('datacommons', contributor_name)
+        group by contributor_name, coalesce(m.name, c.contributor_zipcode), m.location
+        order by ST_Distance(St_GeogFromText(%s), m.location)
+        limit %s
+    """
+    
+    def read(self, request):
+        query = request.GET['query']
+        (lat, lon) = (float(request.GET.get('lat')), float(request.GET.get('lon')))
+        limit = request.GET.get('limit', '10')
+        
+        raw_result = execute_top(self.stmt, query_to_ft_sql(query), "POINT(%s %s)" % (lon, lat), limit)
+        
+        labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
+
+        return labeled_result    
+    
