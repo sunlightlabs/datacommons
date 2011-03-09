@@ -115,7 +115,7 @@ class ContributorGeoHandler(FilterHandler):
     def read(self, request):
         query = request.GET['query']
         (lat, lon) = (float(request.GET.get('lat')), float(request.GET.get('lon')))
-        limit = request.GET.get('limit', '10')
+        limit = int(request.GET.get('limit', '10'))
         
         raw_result = execute_top(self.stmt, query_to_ft_sql(query), "POINT(%s %s)" % (lon, lat), limit)
         
