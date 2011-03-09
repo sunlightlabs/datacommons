@@ -1,4 +1,4 @@
-from dcdata.lobbying.models import Lobbying, Lobbyist, Agency, Issue
+from dcdata.lobbying.models import Lobbying, Lobbyist, Agency, Issue, Bill
 
 FILE_TYPES = {
     "lob_lobbying": ('Uniqid','RegistrantRaw','Registrant','IsFirm',
@@ -19,4 +19,5 @@ MODELS = {
     "lob_lobbyist": Lobbyist,
     "lob_agency": Agency,
     "lob_issue": Issue,
+    "lob_bills": Bill,
 }
