@@ -8,7 +8,7 @@ from optparse                    import make_option
 from saucebrush                  import run_recipe
 from saucebrush.emitters         import Emitter
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
-    Filter, FieldMerger, UniqueIDValidator
+    Filter, FieldMerger
 from saucebrush.sources          import CSVSource
 
 import os, re
@@ -256,7 +256,6 @@ class BillHandler(TableHandler):
             NoneFilter(),
             IssueFilter(),
             UnicodeFilter(),
-            UniqueIDValidator(),
             CountEmitter(every=1000),
             LoaderEmitter(BillLoader(
                 source=self.inpath,
