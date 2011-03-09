@@ -85,5 +85,5 @@ class Bill(models.Model):
     congress_no = models.SmallIntegerField(null=False)
     chamber = models.CharField(max_length=1, blank=False, null=False)
     bill_no = models.SmallIntegerField(null=False)
-    bill_designator_full = models.CharField(max_length=12)
+    bill_name = models.CharField(max_length=12)
 

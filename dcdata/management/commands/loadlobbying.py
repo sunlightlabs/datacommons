@@ -232,11 +232,9 @@ class BillHandler(TableHandler):
 
     def run(self):
         run_recipe(
-            CSVSource(open(self.inpath), ('bill_id', 'issue_id', 'congress_no', 'bill_designator'),
-            FieldModifier('congress_no', lambda x: x.replace('|', '')), # this field is "quoted" with pipes for some reason
-            FieldMerger({'chamber': ['bill_designator']}, lambda x: x.strip()[1] ),
-            FieldMerger({'bill_no': ['bill_designator']}, lambda x: self.digits.match(x).groups()[0] ),
-            FieldRenamer({'bill_designator': 'bill_designator_full'}),
+            CSVSource(open(self.inpath)),
+            FieldMerger({'chamber': ['bill_name']}, lambda x: x.strip()[0] ),
+            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] ),
             NoneFilter(),
             UnicodeFilter(),
             CountEmitter(every=1000),

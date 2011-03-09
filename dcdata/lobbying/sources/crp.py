@@ -10,7 +10,7 @@ FILE_TYPES = {
     "lob_agency": ('UniqID','AgencyID','Agency'),
     # "lob_indus": ('Ultorg','Client','Total','Year','Catcode'),
     "lob_issue": ('SI_ID','UniqID','IssueID','Issue','SpecIssue','Year'),
-    # "lob_bills": ('B_ID','SI_ID','CongNo','Bill_Name'),
+    "lob_bills": ('B_ID','SI_ID','CongNo','Bill_Name'),
     # "lob_rpt": ('TypeLong','Typecode'),
 }
 
