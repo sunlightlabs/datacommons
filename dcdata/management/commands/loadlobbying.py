@@ -251,8 +251,8 @@ class BillHandler(TableHandler):
     def run(self):
         run_recipe(
             CSVSource(open(self.inpath)),
-            FieldMerger({'chamber': ['bill_name']}, lambda x: x.strip()[0] ),
-            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] if x else None ),
+            FieldMerger({'chamber': ['bill_name']}, lambda x: x.strip()[0], keep_fields=True),
+            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] if x else None, keep_fields=True),
             NoneFilter(),
             IssueFilter(),
             UnicodeFilter(),
