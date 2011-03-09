@@ -243,7 +243,7 @@ class BillHandler(TableHandler):
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
             ), commit_every=10000),
-        ))
+        )
 
 
 HANDLERS = {

@@ -99,7 +99,7 @@ def bills_handler(inpath, outpath, infields, outfields):
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldRenamer({
             'id': 'B_ID',
-            'issue_id': 'SI_ID',
+            'issue': 'SI_ID',
             'congress_no': 'CongNo',
             'bill_name': 'Bill_Name',
         }),
