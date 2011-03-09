@@ -8,7 +8,7 @@ from optparse                    import make_option
 from saucebrush                  import run_recipe
 from saucebrush.emitters         import Emitter
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
-    Filter, FieldMerger, FieldRenamer
+    Filter, FieldMerger
 from saucebrush.sources          import CSVSource
 
 import os, re
@@ -53,6 +53,23 @@ class TransactionFilter(Filter):
             record['transaction'] = transaction
             return record
 
+class IssueFilter(Filter):
+    def __init__(self):
+        self._cache = {}
+    def process_record(self, record):
+        issue_id = record['issue']
+        issue = self._cache.get(issue_id, None)
+        if issue is None:
+            try:
+                #print "loading issue %s from database" % issue_id
+                issue = Issue.objects.get(pk=issue_id)
+                self._cache[issue_id] = issue
+                #print "\t* loaded"
+            except Issue.DoesNotExist:
+                pass #print "\t* does not exist"
+        if issue:
+            record['issue'] = issue
+            return record
 # loaders
 
 class LobbyingLoader(Loader):
@@ -230,12 +247,14 @@ class BillHandler(TableHandler):
         self.db_table = 'lobbying_bill'
         self.digits = re.compile(r'\D*(\d+)')
 
+
     def run(self):
         run_recipe(
             CSVSource(open(self.inpath)),
             FieldMerger({'chamber': ['bill_name']}, lambda x: x.strip()[0] ),
-            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] ),
+            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] if x else None ),
             NoneFilter(),
+            IssueFilter(),
             UnicodeFilter(),
             CountEmitter(every=1000),
             LoaderEmitter(BillLoader(
