@@ -97,11 +97,12 @@ def bills_handler(inpath, outpath, infields, outfields):
 
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        FieldAdder('id', ''),
         FieldRenamer({
-            'id': 'B_ID',
-            'issue': 'SI_ID',
+            'bill_id':     'B_ID',
+            'issue':       'SI_ID',
             'congress_no': 'CongNo',
-            'bill_name': 'Bill_Name',
+            'bill_name':   'Bill_Name',
         }),
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
