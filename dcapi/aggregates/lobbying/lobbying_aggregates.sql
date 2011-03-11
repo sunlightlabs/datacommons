@@ -308,6 +308,52 @@ select date_trunc('second', now()) || ' -- create index agg_lobbying_issues_for_
 create index agg_lobbying_issues_for_client_idx on agg_lobbying_issues_for_client (client_entity, cycle);
 
 
+-- Bills Lobbied by Client
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_bills_for_client';
+drop table if exists agg_lobbying_bills_for_client;
+
+select date_trunc('second', now()) || ' -- create table agg_lobbying_bills_for_client as';
+create table agg_lobbying_bills_for_client as
+    with lobbying_by_cycle as (
+        select
+            ca.entity_id as client_entity,
+            r.cycle,
+            b.chamber,
+            b.bill_no,
+            b.congress_no,
+            b.bill_name,
+            count(*)::integer,
+            rank() over (partition by ca.entity_id, r.cycle order by count(*) desc, b.chamber, b.bill_no, b.congress_no) as rank
+        from lobbying_report r
+        inner join lobbying_issue i using (transaction_id)
+        inner join lobbying_bill b on b.issue_id = i.id
+        inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) as ca using (transaction_id)
+        inner join matchbox_entity ce on ce.id = ca.entity_id
+        where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
+        group by ca.entity_id, r.cycle, b.congress_no, b.chamber, b.bill_no
+    )
+
+    select client_entity, cycle, chamber, bill_no, congress_no, bill_name, count
+    from lobbying_by_cycle
+    where rank <= :agg_top_n
+
+    union all
+
+    select client_entity, -1, chamber, bill_no, congress_no, bill_name, count
+    from (
+        select client_entity, -1, chamber, bill_no, congress_no, sum(count) as count,
+            rank() over (partition by client_entity order by sum(count) desc, chamber, bill_no, congress_no) as rank
+        from lobbying_by_cycle
+        group by client_entity, chamber, bill_no, congress_no
+    ) x
+    where rank <= :agg_top_n
+;
+
+select date_trunc('second', now()) || ' -- create index agg_lobbying_bills_for_client_idx on agg_lobbying_bills_for_client (client_entity, cycle)';
+create index agg_lobbying_bills_for_client_idx on agg_lobbying_bills_for_client (client_entity, cycle);
+
+
 -- Lobbyists Working for Client
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_lobbyists_for_client';
