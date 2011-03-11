@@ -81,7 +81,7 @@ class Issue(models.Model):
 
 class Bill(models.Model):
     bill_id = models.IntegerField(null=True)
-    issue = models.ForeignKey(Issue, related_name='issue')
+    issue = models.ForeignKey(Issue, related_name='bills')
     congress_no = models.SmallIntegerField(null=True)
     chamber = models.CharField(max_length=1, blank=False, null=False)
     bill_no = models.SmallIntegerField(null=False)
