@@ -155,7 +155,7 @@ class Contract(models.Model):
     servicecontractact = models.NullBooleanField()
     davisbaconact = models.NullBooleanField()
     clingercohenact = models.NullBooleanField()
-    otherstatutoryauthority = models.TextField(blank=True)
+    otherstatutoryauthority = models.TextField(blank=True, null=True)
     interagencycontractingauthority = models.CharField(max_length=1, blank=True)
     isserviceprovider = models.NullBooleanField()
     
