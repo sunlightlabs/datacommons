@@ -324,14 +324,14 @@ create table agg_lobbying_bills_for_client as
             b.congress_no,
             b.bill_name,
             count(*)::integer,
-            rank() over (partition by ca.entity_id, r.cycle order by count(*) desc, b.chamber, b.bill_no, b.congress_no) as rank
+            rank() over (partition by ca.entity_id, r.cycle order by count(*) desc, b.chamber, b.bill_no, b.congress_no, b.bill_name) as rank
         from lobbying_report r
         inner join lobbying_issue i using (transaction_id)
         inner join lobbying_bill b on b.issue_id = i.id
         inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) as ca using (transaction_id)
         inner join matchbox_entity ce on ce.id = ca.entity_id
         where case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
-        group by ca.entity_id, r.cycle, b.congress_no, b.chamber, b.bill_no
+        group by ca.entity_id, r.cycle, b.congress_no, b.chamber, b.bill_no, b.bill_name
     )
 
     select client_entity, cycle, chamber, bill_no, congress_no, bill_name, count
@@ -342,10 +342,10 @@ create table agg_lobbying_bills_for_client as
 
     select client_entity, -1, chamber, bill_no, congress_no, bill_name, count
     from (
-        select client_entity, -1, chamber, bill_no, congress_no, sum(count) as count,
-            rank() over (partition by client_entity order by sum(count) desc, chamber, bill_no, congress_no) as rank
+        select client_entity, -1, chamber, bill_no, congress_no, bill_name, sum(count) as count,
+            rank() over (partition by client_entity order by sum(count) desc, chamber, bill_no, congress_no, bill_name) as rank
         from lobbying_by_cycle
-        group by client_entity, chamber, bill_no, congress_no
+        group by client_entity, chamber, bill_no, congress_no, bill_name
     ) x
     where rank <= :agg_top_n
 ;
@@ -571,6 +571,49 @@ create table agg_lobbying_issues_for_registrant as
 
 select date_trunc('second', now()) || ' -- create index agg_lobbying_issues_for_registrant_idx on agg_lobbying_issues_for_registrant (registrant_entity, cycle)';
 create index agg_lobbying_issues_for_registrant_idx on agg_lobbying_issues_for_registrant (registrant_entity, cycle);
+
+
+-- Bills on which a Firm Works
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_bills_for_registrant';
+drop table if exists agg_lobbying_bills_for_registrant;
+
+select date_trunc('second', now()) || ' -- create table agg_lobbying_bills_for_registrant as';
+create table agg_lobbying_bills_for_registrant as
+    with lobbying_by_cycle as (
+        select
+            ra.entity_id as registrant_entity, 
+            r.cycle, 
+            b.chamber,
+            b.bill_no,
+            b.congress_no,
+            b.bill_name,
+            count(r)::integer,
+            rank() over (partition by ra.entity_id, r.cycle order by count(r) desc, b.chamber, b.bill_no, b.congress_no, b.bill_name) as rank
+        from lobbying_report r
+        inner join lobbying_issue i using (transaction_id)
+        inner join lobbying_bill b on i.id = b.issue_id
+        inner join assoc_lobbying_registrant ra using (transaction_id)
+        group by ra.entity_id, r.cycle, b.chamber, b.bill_no, b.congress_no, b.bill_name
+    )
+    select registrant_entity, cycle, chamber, bill_no, congress_no, bill_name, count
+    from lobbying_by_cycle
+    where rank <= :agg_top_n
+
+    union all
+
+    select registrant_entity, -1, chamber, bill_no, congress_no, bill_name, count
+    from (
+        select registrant_entity, -1, chamber, bill_no, congress_no, bill_name, sum(count) as count,
+            rank() over (partition by registrant_entity order by sum(count) desc, chamber, bill_no, congress_no, bill_name) as rank
+        from lobbying_by_cycle
+        group by registrant_entity, chamber, bill_no, congress_no, bill_name
+    ) x
+    where rank <= :agg_top_n
+;
+
+select date_trunc('second', now()) || ' -- create index agg_lobbying_bills_for_registrant_idx on agg_lobbying_bills_for_registrant (registrant_entity, cycle)';
+create index agg_lobbying_bills_for_registrant_idx on agg_lobbying_bills_for_registrant (registrant_entity, cycle);
 
 
 -- Lobbyists Employed by a Firm

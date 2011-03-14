@@ -114,6 +114,20 @@ class RegistrantIssuesHandler(EntityTopListHandler):
         limit %s
     """
 
+class RegistrantBillsHandler(EntityTopListHandler):
+
+    fields = 'congress_no chamber bill_no bill_name cycle count'.split()
+
+    stmt = """
+        select congress_no, chamber, bill_no, bill_name, cycle, count
+        from agg_lobbying_bills_for_registrant
+        where
+            registrant_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s
+    """
+
 class RegistrantClientsHandler(EntityTopListHandler):
 
     fields = ['client_name', 'client_entity', 'count', 'amount']
