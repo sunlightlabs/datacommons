@@ -31,17 +31,17 @@ class OrgIssuesHandler(EntityTopListHandler):
 
 
 class OrgBillsHandler(EntityTopListHandler):
-    fields = 'congress_no chamber bill_no bill_name cycle count'.split()
+    fields = 'congress_no bill_type bill_no bill_name cycle count'.split()
 
     stmt = """
-        select congress_no, chamber, bill_no, bill_name, cycle, count
+        select {0}
         from agg_lobbying_bills_for_client
         where
             client_entity = %s
             and cycle = %s
         order by count desc
         limit %s
-    """
+    """.format(', '.join(fields))
 
 
 class OrgLobbyistsHandler(EntityTopListHandler):
@@ -116,17 +116,17 @@ class RegistrantIssuesHandler(EntityTopListHandler):
 
 class RegistrantBillsHandler(EntityTopListHandler):
 
-    fields = 'congress_no chamber bill_no bill_name cycle count'.split()
+    fields = 'congress_no bill_type bill_no bill_name cycle count'.split()
 
     stmt = """
-        select congress_no, chamber, bill_no, bill_name, cycle, count
+        select {0}
         from agg_lobbying_bills_for_registrant
         where
             registrant_entity = %s
             and cycle = %s
         order by count desc
         limit %s
-    """
+    """.format(', '.join(fields))
 
 class RegistrantClientsHandler(EntityTopListHandler):
 

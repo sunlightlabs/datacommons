@@ -246,12 +246,32 @@ class BillHandler(TableHandler):
         super(BillHandler, self).__init__(inpath)
         self.db_table = 'lobbying_bill'
         self.digits = re.compile(r'\D*(\d+)')
-
+        # input values are the keys, target values to match opencongress bill types are the values
+        self.bill_type_map = { 
+            'H':       'h',  
+            'HR':      'h',  
+            'HCON':    'hc', 
+            'HCONRES': 'hc', 
+            'HJ':      'hj', 
+            'HJRES':   'hj', 
+            'HRES':    'hr', 
+            'HRRES':   'hr', 
+            'S':       's',  
+            'SR':      's',  
+            'SCON':    'sc', 
+            'SCONRES': 'sc', 
+            'SJ':      'sj', 
+            'SJES':    'sj', 
+            'SJRES':   'sj', 
+            'SRES':    'sr', 
+        }
+        
 
     def run(self):
         run_recipe(
             CSVSource(open(self.inpath)),
-            FieldMerger({'chamber': ['bill_name']}, lambda x: x.strip()[0], keep_fields=True),
+            FieldMerger({'bill_type_raw': ['bill_name']}, lambda x: re.sub(r'[^A-Z]*', '', x), keep_fields=True),
+            FieldMerger({'bill_type': ['bill_type_raw']}, lambda x: self.bill_type_map.get(x, None), keep_fields=True),
             FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] if x else None, keep_fields=True),
             NoneFilter(),
             IssueFilter(),
