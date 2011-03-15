@@ -12,7 +12,7 @@ except:
 
 class Command(BaseCommand):
 
-    @transaction.commit_on_success
+    @transaction.autocommit
     def handle(self, *args, **options):
         unique_bills = Bill.objects.exclude(bill_type__isnull=True).filter(congress_no__gt=108).values('congress_no', 'bill_type', 'bill_no').distinct()
         unique_bills_count = unique_bills.count()
