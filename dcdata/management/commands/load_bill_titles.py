@@ -1,6 +1,7 @@
 from dcdata.lobbying.models import Bill, BillTitle
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from optparse import make_option
 import os.path
 import urllib2
 import urllib
@@ -12,15 +13,22 @@ except:
 
 class Command(BaseCommand):
 
+    option_list = BaseCommand.option_list + (
+        make_option("-b", "--begin_at", dest="begin_at", help="Begin at a particular count", metavar="INTEGER"),
+    )
+
     @transaction.autocommit
     def handle(self, *args, **options):
+        print 'Starting...'
         unique_bills = Bill.objects.exclude(bill_type__isnull=True).filter(congress_no__gt=108).values('congress_no', 'bill_type', 'bill_no').distinct()
         unique_bills_count = unique_bills.count()
 
-        i = 1
-        for bill in unique_bills:
+        for i, bill in enumerate(unique_bills):
+            print i+1
+            if i + 1 < int(options['begin_at']):
+                continue
             url = self.format_url('http://www.opencongress.org/api/bills', congress=bill['congress_no'], type=bill['bill_type'], number=bill['bill_no'])
-            print "{0}/{1}: {2}".format(i, unique_bills_count, url)
+            print "{0}/{1}: {2}".format(i + 1, unique_bills_count, url)
             json = self.get_url_json(url)
 
             title = ''
@@ -37,8 +45,6 @@ class Command(BaseCommand):
                 bill_no=bill['bill_no'],
                 title=title
             )
-
-            i = i + 1
 
 
     def get_url_json(self, path):
