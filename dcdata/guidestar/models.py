@@ -14,3 +14,6 @@ class Officer(models.Model):
     state = models.CharField(max_length=2, blank=True, null=True)
     zip = models.CharField(max_length=10, blank=True, null=True)
 
+    class Meta:
+        db_table = 'guidestar_officer'
+
