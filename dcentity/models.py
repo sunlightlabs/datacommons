@@ -297,6 +297,21 @@ class SunlightInfo(models.Model):
     class Meta:
         db_table = 'matchbox_sunlightinfo'
 
+
+class PoliticianRelative(models.Model):
+    entity = models.ForeignKey(Entity, related_name='relatives', null=False)
+
+    raw_name = models.CharField(max_length=150, null=False)
+
+    first_name  = models.CharField(max_length=50, null=True)
+    middle_name = models.CharField(max_length=50, null=True)
+    last_name   = models.CharField(max_length=50, null=True)
+
+    relation = models.CharField(max_length=20, null=False, choices=[('child', 'Child'), ('partner', 'Partner')])
+
+    class Meta:
+        db_table = 'matchbox_politicianrelative'
+
 #
 # merge candidate
 #
