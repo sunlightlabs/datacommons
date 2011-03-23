@@ -55,11 +55,9 @@ class NIMSPDump2CSV(BaseNimspImporter):
         )
         cursor = connection.cursor()
 
+        self.log.info('Dumping data to {0}...'.format(outfile_path))
         cursor.execute(stmt)
-
-        # is there anything to print? Not sure
-        for row in cursor:
-            print row
+        self.log.info('Data dump complete.')
 
 
 Command = NIMSPDump2CSV
