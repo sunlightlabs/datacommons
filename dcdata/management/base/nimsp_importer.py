@@ -1,6 +1,6 @@
 import os, fnmatch, logging, logging.handlers, time, datetime
 
-from django.conf import settings
+from settings import LOGGING_EMAIL
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
@@ -39,11 +39,11 @@ class BaseNimspImporter(BaseCommand):
 
         # create email handler and set level to warn
         eh = logging.handlers.SMTPHandler(
-            (self.LOGGING_EMAIL['host'], self.LOGGING_EMAIL['port']), # host
-            self.LOGGING_EMAIL['username'], # from address
+            (LOGGING_EMAIL['host'], LOGGING_EMAIL['port']), # host
+            LOGGING_EMAIL['username'], # from address
             ['arowland@sunlightfoundation.com'], # to addresses
             'Unhappy NIMSP Loading App', # subject
-            (self.LOGGING_EMAIL['username'], self.LOGGING_EMAIL['password']) # credentials tuple
+            (LOGGING_EMAIL['username'], LOGGING_EMAIL['password']) # credentials tuple
         )
         eh.setLevel(logging.WARN)
 
