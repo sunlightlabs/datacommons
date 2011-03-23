@@ -22,7 +22,7 @@ class NIMSPDump2CSV(BaseNimspImporter):
     def do_for_file(self, file, file_path):
         # The file and file_path arguments are irrelevant for this particular
         # script, since it's pulling all the data out of MySQL.
-        # We'll just ignore them.
+        # We'll just ignore them, except to archive the file when we're done.
 
         outfile_path = os.path.join(self.OUT_DIR, SQL_DUMP_FILE)
 
@@ -58,6 +58,8 @@ class NIMSPDump2CSV(BaseNimspImporter):
         self.log.info('Dumping data to {0}...'.format(outfile_path))
         cursor.execute(stmt)
         self.log.info('Data dump complete.')
+
+        self.archive_file(file)
 
 
 Command = NIMSPDump2CSV
