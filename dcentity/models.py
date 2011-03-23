@@ -63,7 +63,12 @@ class Entity(models.Model):
 
         if len(sources_dict):
             for (source_name, source_dict) in sources_dict:
-                source_dict['source_name'] = source_name
+                [ source_dict.pop(x) for x in source_dict.keys() if source_dict[x] == None ]
+
+                # this is displayed below the bio, so we'll only set it based on that field
+                if source_dict.has_key('bio'):
+                    source_dict['source_name'] = source_name
+
                 compiled_dict.update(source_dict)
 
         return compiled_dict
@@ -104,7 +109,7 @@ class Entity(models.Model):
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
 
         elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
-            metadata.update(model_to_dict(self.industry_metadata))
+            metadata.update(self.industry_metadata.to_dict())
 
         metadata.update(self._get_sourced_data_as_dict())
 
@@ -220,9 +225,17 @@ class PoliticianMetadataLatest(models.Model):
     class Meta:
         db_table = 'politician_metadata_latest_cycle_view'
 
-class IndustryMetadata(models.Model):
+class IndustryMetadata(ExtensibleModel):
     entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
     should_show_entity = models.BooleanField(default=True)
+    parent_industry = models.ForeignKey(Entity, related_name='child_industry_set', null=True)
+
+    extended_properties = ['parent_industry', 'child_industries']
+
+    def _child_industries(self):
+        return [x.entity.public_representation() for x in self.entity.child_industry_set.all()]
+
+    child_industries = property(_child_industries)
 
     class Meta:
         db_table = 'matchbox_industrymetadata'
@@ -263,6 +276,8 @@ class WikipediaInfo(models.Model):
 
     bio        = models.TextField(null=True)
     bio_url    = models.URLField(null=True)
+    photo_url  = models.URLField(null=True)
+
     created_on = models.DateField(auto_now_add=True)
     updated_on = models.DateField(auto_now=True, null=True)
 

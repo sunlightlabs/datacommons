@@ -1,9 +1,9 @@
 from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
 from django.core.management.base import CommandError, BaseCommand
 from saucebrush.sources import CSVSource
-from saucebrush.filters import *
+from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, FieldAdder
 from saucebrush.emitters import DebugEmitter, CSVEmitter
-from saucebrush import Recipe, run_recipe
+from saucebrush import run_recipe
 from optparse import make_option
 import os
 
@@ -93,11 +93,27 @@ def issue_handler(inpath, outpath, infields, outfields):
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
 
+def bills_handler(inpath, outpath, infields, outfields):
+
+    run_recipe(
+        CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        FieldAdder('id', ''),
+        FieldRenamer({
+            'bill_id':     'B_ID',
+            'issue':       'SI_ID',
+            'congress_no': 'CongNo',
+            'bill_name':   'Bill_Name',
+        }),
+        #DebugEmitter(),
+        CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
+    )
+
 HANDLERS = {
     "lob_lobbying": lobbying_handler,
     "lob_lobbyist": lobbyist_handler,
     "lob_agency": agency_handler,
     "lob_issue": issue_handler,
+    "lob_bills": bills_handler,
 }
 
 # management command

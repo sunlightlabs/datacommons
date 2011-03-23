@@ -1,7 +1,8 @@
 
+from dcapi.aggregates.handlers import execute_top
 from dcapi.common.handlers import FilterHandler
 from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, \
-    IndustryField
+    IndustryField, query_to_ft_sql
 from dcapi.schema import Schema, FunctionField
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
@@ -47,6 +48,8 @@ CONTRIBUTION_SCHEMA = Schema(
     InclusionField('organization_ext_id'),
     InclusionField('parent_organization_ext_id'),
     InclusionField('committee_ext_id'),
+    InclusionField('contributor_type'),
+    InclusionField('recipient_type'),
     ComparisonField('date', cast=parse_date),
     ComparisonField('amount', cast=int),
     FulltextField('committee_ft', ['committee_name']),                                                        
@@ -63,10 +66,10 @@ def filter_contributions(request):
 CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment',
               'amount', 'date', 'contributor_name', 'contributor_ext_id', 'contributor_type', 'contributor_occupation',
               'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
-              'contributor_zipcode', 'contributor_category', 'contributor_category_order', 'organization_name',
+              'contributor_zipcode', 'contributor_category', 'organization_name',
               'organization_ext_id', 'parent_organization_name', 'parent_organization_ext_id', 'recipient_name',
               'recipient_ext_id', 'recipient_party', 'recipient_type', 'recipient_state', 'recipient_state_held',
-              'recipient_category', 'recipient_category_order', 'committee_name', 'committee_ext_id', 'committee_party',
+              'recipient_category', 'committee_name', 'committee_ext_id', 'committee_party',
               'candidacy_status', 'district', 'district_held', 'seat', 'seat_held', 'seat_status',
               'seat_result']
 
@@ -93,3 +96,30 @@ class ContributionFilterHandler(FilterHandler):
     def queryset(self, params):
         return filter_contributions(self._unquote(params))
 
+
+class ContributorGeoHandler(FilterHandler):
+    fields = ['contributor_name', 'contributor_location', 'count']
+    
+    stmt = """
+        select contributor_name, coalesce(m.name, c.contributor_zipcode), count(*)
+        from contribution_contribution c
+        left join geo_zip z on c.contributor_zipcode = z.zipcode
+        left join geo_msa m on z.msa_id = m.id
+        where
+            to_tsquery('datacommons', %s) @@ to_tsvector('datacommons', contributor_name)
+        group by contributor_name, coalesce(m.name, c.contributor_zipcode), m.location
+        order by ST_Distance(St_GeogFromText(%s), m.location)
+        limit %s
+    """
+    
+    def read(self, request):
+        query = request.GET['query']
+        (lat, lon) = (float(request.GET.get('lat')), float(request.GET.get('lon')))
+        limit = int(request.GET.get('limit', '10'))
+        
+        raw_result = execute_top(self.stmt, query_to_ft_sql(query), "POINT(%s %s)" % (lon, lat), limit)
+        
+        labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
+
+        return labeled_result    
+    

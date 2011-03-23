@@ -1,17 +1,17 @@
 from dcdata.loading              import Loader, LoaderEmitter
-from dcdata.lobbying.models      import Lobbying, Lobbyist, Agency, Issue
-from dcdata.lobbying.sources.crp import FILE_TYPES
+from dcdata.lobbying.models      import Lobbying, Lobbyist, Agency, Issue, Bill
 from decimal                     import Decimal
 from django.core.management.base import CommandError, BaseCommand
 from django.core                 import management
 from django.db                   import connections
 from optparse                    import make_option
 from saucebrush                  import run_recipe
-from saucebrush.emitters         import DebugEmitter, Emitter
-from saucebrush.filters          import FieldModifier, UnicodeFilter, Filter
+from saucebrush.emitters         import Emitter
+from saucebrush.filters          import FieldModifier, UnicodeFilter, \
+    Filter, FieldMerger
 from saucebrush.sources          import CSVSource
 
-import os
+import os, re
 
 # util emitters and filters
 
@@ -53,6 +53,23 @@ class TransactionFilter(Filter):
             record['transaction'] = transaction
             return record
 
+class IssueFilter(Filter):
+    def __init__(self):
+        self._cache = {}
+    def process_record(self, record):
+        issue_id = record['issue']
+        issue = self._cache.get(issue_id, None)
+        if issue is None:
+            try:
+                #print "loading issue %s from database" % issue_id
+                issue = Issue.objects.get(pk=issue_id)
+                self._cache[issue_id] = issue
+                #print "\t* loaded"
+            except Issue.DoesNotExist:
+                pass #print "\t* does not exist"
+        if issue:
+            record['issue'] = issue
+            return record
 # loaders
 
 class LobbyingLoader(Loader):
@@ -75,6 +92,13 @@ class IssueLoader(Loader):
     def get_instance(self, record):
         return self.model(id=record['id'])
 
+class BillLoader(Loader):
+    model = Bill
+    def __init__(self, *args, **kwargs):
+        super(BillLoader, self).__init__(*args, **kwargs)
+    def get_instance(self, record):
+        return self.model(id=record['id'])
+
 class LobbyistLoader(Loader):
     model = Lobbyist
     def __init__(self, *args, **kwargs):
@@ -89,7 +113,7 @@ class LobbyistLoader(Loader):
 
 # handlers
 
-transaction_filter = TransactionFilter()
+TRANSACTION_FILTER = TransactionFilter()
 
 class TableHandler(object):
     db_table = None
@@ -98,7 +122,14 @@ class TableHandler(object):
     def __init__(self, inpath):
         self.inpath = inpath
 
+    def pre_drop(self):
+        pass
+
+    def post_create(self):
+        pass
+
     def drop(self):
+        self.pre_drop()
         print "Dropping {0}.".format(self.db_table)
         cursor = connections['default'].cursor()
         cursor.execute("drop table {0}".format(self.db_table))
@@ -110,6 +141,19 @@ class LobbyingHandler(TableHandler):
         super(LobbyingHandler, self).__init__(inpath)
         self.db_table = 'lobbying_lobbying'
 
+    def pre_drop(self):
+        cursor = connections['default'].cursor()
+        cursor.execute("drop view if exists lobbying_report")
+
+    def post_create(self):
+        cursor = connections['default'].cursor()
+        cursor.execute("""
+            create view lobbying_report as
+                select *, case when year % 2 = 0 then year else year + 1 end as cycle
+                from lobbying_lobbying l
+                where use = 't'
+        """, None)
+
     def run(self):
         run_recipe(
             CSVSource(open(self.inpath)),
@@ -120,7 +164,6 @@ class LobbyingHandler(TableHandler):
                 'registrant_is_firm','use'), lambda x: x == 'True'),
             NoneFilter(),
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=1000),
             LoaderEmitter(LobbyingLoader(
                 source=self.inpath,
@@ -141,9 +184,8 @@ class AgencyHandler(TableHandler):
             CSVSource(open(self.inpath)),
             FieldModifier('year', lambda x: int(x) if x else None),
             NoneFilter(),
-            transaction_filter,
+            TRANSACTION_FILTER,
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=1000),
             LoaderEmitter(AgencyLoader(
                 source=self.inpath,
@@ -165,9 +207,8 @@ class LobbyistHandler(TableHandler):
             FieldModifier('year', lambda x: int(x) if x else None),
             FieldModifier('member_of_congress', lambda x: x == 'True'),
             NoneFilter(),
-            transaction_filter,
+            TRANSACTION_FILTER,
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=1000),
             LoaderEmitter(LobbyistLoader(
                 source=self.inpath,
@@ -189,11 +230,54 @@ class IssueHandler(TableHandler):
             FieldModifier('year', lambda x: int(x) if x else None),
             NoneFilter(),
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
-            transaction_filter,
+            TRANSACTION_FILTER,
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=1000),
             LoaderEmitter(IssueLoader(
+                source=self.inpath,
+                description='load from denormalized CSVs',
+                imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+            ), commit_every=10000),
+        )
+
+class BillHandler(TableHandler):
+
+    def __init__(self, inpath):
+        super(BillHandler, self).__init__(inpath)
+        self.db_table = 'lobbying_bill'
+        self.digits = re.compile(r'\D*(\d+)')
+        # input values are the keys, target values to match opencongress bill types are the values
+        self.bill_type_map = { 
+            'H':       'h',  
+            'HR':      'h',  
+            'HCON':    'hc', 
+            'HCONRES': 'hc', 
+            'HJ':      'hj', 
+            'HJRES':   'hj', 
+            'HRES':    'hr', 
+            'HRRES':   'hr', 
+            'S':       's',  
+            'SR':      's',  
+            'SCON':    'sc', 
+            'SCONRES': 'sc', 
+            'SJ':      'sj', 
+            'SJES':    'sj', 
+            'SJRES':   'sj', 
+            'SRES':    'sr', 
+        }
+        
+
+    def run(self):
+        run_recipe(
+            CSVSource(open(self.inpath)),
+            FieldMerger({'bill_type_raw': ['bill_name']}, lambda x: re.sub(r'[^A-Z]*', '', x), keep_fields=True),
+            FieldMerger({'bill_type': ['bill_type_raw']}, lambda x: self.bill_type_map.get(x, None), keep_fields=True),
+            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] if x else None, keep_fields=True),
+            NoneFilter(),
+            IssueFilter(),
+            UnicodeFilter(),
+            CountEmitter(every=1000),
+            LoaderEmitter(BillLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
@@ -206,9 +290,10 @@ HANDLERS = {
     "lob_lobbyist": LobbyistHandler,
     "lob_issue":    IssueHandler,
     "lob_agency":   AgencyHandler,
+    "lob_bills":    BillHandler,
 }
 
-SOURCE_FILES = [ 'lob_lobbying','lob_lobbyist','lob_issue','lob_agency' ]
+SOURCE_FILES = [ 'lob_lobbying', 'lob_lobbyist', 'lob_issue', 'lob_agency', 'lob_bills' ]
 
 # main management command
 
@@ -231,7 +316,6 @@ class Command(BaseCommand):
         tables.reverse() # this is so that we drop the tables in reverse (dependent-first) order
         for table in tables:
             print table
-            infields = FILE_TYPES[table]
             inpath = os.path.join(dataroot, "denorm_%s.csv" % table)
 
             if os.path.exists(inpath):
@@ -250,6 +334,7 @@ class Command(BaseCommand):
 
         handlers.reverse() # this is to undo the last reverse and load the data in the intended (necessary) order
         for handler in handlers:
-            print "loading records for %s" % table
+            handler.post_create()
+            print "loading records for %s" % handler.db_table
             handler.run()
 

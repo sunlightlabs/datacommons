@@ -81,6 +81,14 @@ class IndustryField(Field):
         return self._add_industry_clauses(query, cats, orders)
 
 
+_punctuation_to_spaces = dict([(c, ' ') for c in "&|!():*"])
+_strip_postgres_ft_operators = build_map_substrings(_punctuation_to_spaces)
+
+def query_to_ft_sql(*searches):
+    cleaned_searches = map(_strip_postgres_ft_operators, searches)
+    return ' | '.join("(%s)" % ' & '.join(search.split()) for search in cleaned_searches)    
+
+
 class FulltextField(Field):
     def __init__(self, name, model_fields=None):
         super(FulltextField, self).__init__(name)
@@ -88,13 +96,10 @@ class FulltextField(Field):
         self.clause = "(%s)" % " or ".join([_fulltext_clause(column) for column in self.model_fields])
                 
     def apply(self, query, *searches):
-        cleaned_searches = map(_strip_postgres_ft_operators, searches)
-        terms =' | '.join("(%s)" % ' & '.join(search.split()) for search in cleaned_searches)
+        terms = query_to_ft_sql(*searches)
         return query.extra(where=[self.clause], params=[terms] * len(self.model_fields))
      
 
-_punctuation_to_spaces = dict([(c, ' ') for c in "&|!():*"])
-_strip_postgres_ft_operators = build_map_substrings(_punctuation_to_spaces)
 
 def _fulltext_clause(column):
     return """to_tsvector('datacommons', %s) @@ to_tsquery('datacommons', %%s)""" % column

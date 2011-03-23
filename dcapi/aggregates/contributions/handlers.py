@@ -212,6 +212,7 @@ class TopIndustriesByContributionsHandler(TopListHandler):
          where cycle = %s
            and type  = 'industry'
            and coalesce(should_show_entity, 't')
+           and parent_industry_id is null -- don't include subindustries
          order by contributor_amount desc, contributor_count desc
          limit %s
     """

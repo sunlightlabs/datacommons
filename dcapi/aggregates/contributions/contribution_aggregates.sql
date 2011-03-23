@@ -138,7 +138,9 @@ create table tmp_assoc_indiv_id as
     select entity_id, transaction_id
     from contributions_all_relevant c
     inner join matchbox_entityattribute a
-        on a.value = c.contributor_ext_id
+        on (a.value = c.contributor_ext_id
+            -- a 12th digit of '0' can be ignored
+            or (length(a.value) = 12 and substring(a.value from 12 for 1) = '0' and substring(a.value for 11) = c.contributor_ext_id))
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
@@ -170,11 +172,11 @@ drop table if exists tmp_indiv_locations;
 
 select date_trunc('second', now()) || ' -- create table tmp_indiv_locations';
 create table tmp_indiv_locations as
-    select entity_id, msa_name
+    select entity_id, msa_id
     from contributions_all_relevant c
     inner join tmp_assoc_indiv_id a using (transaction_id)
-    inner join zip_msa on c.contributor_zipcode = zipcode
-    group by entity_id, msa_name;
+    inner join geo_zip on c.contributor_zipcode = zipcode
+    group by entity_id, msa_id;
 
 create index tmp_indiv_locations_entity on tmp_indiv_locations (entity_id);
 
@@ -194,7 +196,7 @@ create table contributor_associations as
         e.type = 'organization'
         and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
+                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
@@ -215,8 +217,8 @@ union
         on lower(n.name) = lower(c.contributor_name)
     inner join tmp_indiv_locations l
         on n.entity_id = l.entity_id
-    inner join zip_msa z
-        on c.contributor_zipcode = z.zipcode and l.msa_name = z.msa_name
+    inner join geo_zip z
+        on c.contributor_zipcode = z.zipcode and l.msa_id = z.msa_id
     group by n.entity_id, c.transaction_id;
 
 
@@ -305,6 +307,15 @@ create table industry_associations as
         on lower(c.contributor_category) = lower(cm.catcode)
     inner join matchbox_entityattribute a
         on lower(cm.catorder) = lower(a.value)
+    inner join matchbox_entity e
+        on e.id = a.entity_id
+    where
+        e.type = 'industry'
+union all
+    select a.entity_id, c.transaction_id
+    from contributions_all_relevant c
+    inner join matchbox_entityattribute a
+        on lower(c.contributor_category) = lower(a.value)
     inner join matchbox_entity e
         on e.id = a.entity_id
     where

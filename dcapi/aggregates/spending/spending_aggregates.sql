@@ -8,9 +8,9 @@ drop view if exists grants_record;
 create view grants_record as
     select id, recipient_name,
         case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year + 1 end as cycle,
-        case when assistance_category in ('l', 'i') then 'l' else 'g' end as spending_type,
+        case when asst_cat_type in ('l', 'i') then 'l' else 'g' end as spending_type,
         fiscal_year, agency_name, project_description as description, 
-        case when assistance_category in ('l', 'i') then amount_loan else amount_federal end as amount
+        case when asst_cat_type in ('l', 'i') then face_loan_guran else fed_funding_amount end as amount
     from grants_grant;
 
 
@@ -19,10 +19,11 @@ create view grants_record as
 drop view if exists contracts_record;
 
 create view contracts_record as
-    select id, vendor_name as recipient_name,
+    select c.id, vendorname as recipient_name,
             case when fiscal_year % 2 = 0 then fiscal_year else fiscal_year + 1 end as cycle,
-            fiscal_year, agency_name, contract_description as description, obligated_amount as amount
-    from contracts_contract;
+            fiscal_year, coalesce(a.name, '') as agency_name, descriptionofcontractrequirement as description, obligatedamount as amount
+    from contracts_contract c
+    left join contracts_agencies a on agencyid = a.id;
 
 
 -- Grant Associations
@@ -49,7 +50,7 @@ create table assoc_spending_contracts as
     select e.id as entity_id, c.id as transaction_id
     from contracts_contract c
     inner join matchbox_entity e
-        on to_tsvector('datacommons', c.vendor_name) @@ plainto_tsquery('datacommons', e.name)
+        on to_tsvector('datacommons', c.vendorname) @@ plainto_tsquery('datacommons', e.name)
     where
         e.type = 'organization';
 

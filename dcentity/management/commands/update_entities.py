@@ -89,9 +89,11 @@ class Command(BaseCommand):
                 select min(name) as name, id from (
                     select min(lobbyist_name) as name, lobbyist_ext_id as id
                     from lobbying_lobbyist
+                    inner join lobbying_report using (transaction_id)
                     where
                         lobbyist_name != ''
                         and not exists (select * from matchbox_entityattribute where value = lobbyist_ext_id)
+                        and not use
                     group by lobbyist_ext_id
 
                     union
@@ -109,6 +111,7 @@ class Command(BaseCommand):
         """.format(self.today)
 
         self.cursor.execute(creation_sql, None)
+        transaction.set_dirty()
         self.log.info("- Table tmp_individuals_%s populated." % self.today)
 
         self.cursor.execute("select name, id from tmp_individuals_%s" % self.today)
@@ -149,6 +152,7 @@ class Command(BaseCommand):
                 group by lower(registrant_name)
         """.format(self.today)
         self.cursor.execute(tmp_sql, None)
+        transaction.set_dirty()
         self.log.info("- Table tmp_lobbying_orgs_{0} populated.".format(self.today))
 
         self.cursor.execute("select name, nimsp_id, crp_id from tmp_lobbying_orgs_{0}".format(self.today))
@@ -189,6 +193,7 @@ class Command(BaseCommand):
                 group by transaction_namespace, recipient_ext_id
         """.format(self.today)
         self.cursor.execute(tmp_sql, None)
+        transaction.set_dirty()
         self.log.info("- Table tmp_politicians_{0} populated.".format(self.today))
 
         self.cursor.execute("select name, namespace, id from tmp_politicians_{0}".format(self.today), None)
@@ -243,11 +248,15 @@ class Command(BaseCommand):
                     and not exists (
                         select *
                         from lobbying_lobbyist
-                        where lobbyist_ext_id = a.value
+                        inner join lobbying_report using (transaction_id)
+                        where
+                            lobbyist_ext_id = a.value
+                            and use
                     )
             )
         """
         self.cursor.execute(update_sql)
+        transaction.set_dirty()
         self.log.info("- Update finished.")
 
         updated = self.cursor.rowcount
@@ -260,7 +269,7 @@ class Command(BaseCommand):
 
     @transaction.commit_on_success()
     def flag_politicians_for_deletion(self):
-        self.log.info("Starting to flag individuals to delete...")
+        self.log.info("Starting to flag politicians to delete...")
         update_sql = """
             update
                 matchbox_entity
@@ -272,18 +281,18 @@ class Command(BaseCommand):
                     e.id
                 from
                     matchbox_entity e
-                inner join
-                    matchbox_entityattribute a on e.id = a.entity_id
                 where
                     e.type = 'politician'
                     and not exists (
                         select *
                         from contribution_contribution c
+                        inner join matchbox_entityattribute a on e.id = a.entity_id
                         where c.recipient_ext_id = a.value
                     )
             )
         """
         self.cursor.execute(update_sql)
+        transaction.set_dirty()
         self.log.info("- Update finished.")
 
         updated = self.cursor.rowcount

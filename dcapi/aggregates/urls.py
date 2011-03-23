@@ -9,9 +9,10 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
-    OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
-    IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
-    RegistrantClientsHandler, RegistrantLobbyistsHandler
+    OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
+    IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
+    RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
+    RegistrantLobbyistsHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -64,12 +65,12 @@ urlpatterns = patterns('',
     # top N politicians by receipts for a cycle
     url(r'^pols/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopPoliticiansByReceiptsHandler, **ad)),
-        
+
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
         Resource(TopEarmarksHandler, **ad)),
-        
+
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks/local_breakdown\.(?P<emitter_format>.+)$',
-        Resource(LocalEarmarksHandler, **ad)),        
+        Resource(LocalEarmarksHandler, **ad)),
 
     # recipients from a single individual, broken down to show percentages
     url(r'^indiv/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$',
@@ -115,9 +116,13 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
         Resource(TopEarmarksHandler, **ad)),
 
-    # issues an org hired people to
+    # issues an org hired people to lobby on
     url(r'^org/(?P<entity_id>[a-f0-9]+)/issues\.(?P<emitter_format>.+)',
         Resource(OrgIssuesHandler, **ad)),
+
+    # bills an org hired people to lobby on
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/bills\.(?P<emitter_format>.+)',
+        Resource(OrgBillsHandler, **ad)),
 
     # lobbyists who worked with this org.
     url(r'org/(?P<entity_id>[a-f0-9]+)/lobbyists\.(?P<emitter_format>.+)',
@@ -125,6 +130,9 @@ urlpatterns = patterns('',
 
     url(r'org/(?P<entity_id>[a-f0-9]+)/registrant/issues\.(?P<emitter_format>.+)',
         Resource(RegistrantIssuesHandler, **ad)),
+
+    url(r'org/(?P<entity_id>[a-f0-9]+)/registrant/bills\.(?P<emitter_format>.+)',
+        Resource(RegistrantBillsHandler, **ad)),
 
     url(r'org/(?P<entity_id>[a-f0-9]+)/registrant/clients\.(?P<emitter_format>.+)',
         Resource(RegistrantClientsHandler, **ad)),

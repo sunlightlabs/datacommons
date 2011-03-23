@@ -1,0 +1,11 @@
+0, 0, National Republican Congressional Cmte
+0, 0, National Republican Trust PAC
+0, 0, Democratic Senatorial Campaign Cmte
+0, 0, American Action Network
+0, 0, American Future Fund
+0, 0, Americans for Job Security
+0, 0, American Crossroads
+0, 0, Crossroads Strategies
+0, 0, Crossroads Grassroots Policy Strategies
+0, 0, NEA Advocacy Fund
+0, 0, America's Families First Action Fund

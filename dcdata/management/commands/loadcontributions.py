@@ -3,19 +3,20 @@
 
 from dcdata.contribution.models import Contribution
 from dcdata.loading import Loader, LoaderEmitter, model_fields, BooleanFilter
+from dcdata.management.commands.crp_denormalize import FIELDNAMES
 from dcdata.processor import chain_filters, load_data, Every, progress_tick
 from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
+from dcdata.utils.sql import parse_int, parse_date
 from decimal import Decimal
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models.fields import CharField
 from optparse import make_option
 from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier
 import os
 import saucebrush
 import sys
 import traceback
-from dcdata.utils.sql import parse_int, parse_date
-from django.db.models.fields import CharField
 
 
 
@@ -23,7 +24,7 @@ from django.db.models.fields import CharField
 class ContributorFilter(Filter):
     type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
     def process_record(self, record):
-        record['contributor_type'] = self.type_mapping.get(record['contributor_type'], None)
+        record['contributor_type'] = self.type_mapping.get(record['contributor_type'], '')
         return record
 
 class OrganizationFilter(Filter):
@@ -38,7 +39,7 @@ class ParentOrganizationFilter(Filter):
 class RecipientFilter(Filter):
     type_mapping = {'politician': 'P', 'committee': 'C'}
     def process_record(self, record):
-        record['recipient_type'] = self.type_mapping.get(record['recipient_type'], None)
+        record['recipient_type'] = self.type_mapping.get(record['recipient_type'], '')
         return record
 
 class CommitteeFilter(Filter):    
@@ -142,7 +143,6 @@ class LoadContributions(BaseCommand):
     #@transaction.commit_on_success
     def handle(self, csvpath, *args, **options):
         
-        fieldnames = model_fields('contribution.Contribution')
         
         loader = ContributionLoader(
             source=options.get('source'),
@@ -151,7 +151,7 @@ class LoadContributions(BaseCommand):
         )
         
         try:
-            input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), fieldnames, skiprows=1 + int(options['skip']))
+            input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), FIELDNAMES, skiprows=1 + int(options['skip']))
             
             output_func = chain_filters(
                 LoaderEmitter(loader),

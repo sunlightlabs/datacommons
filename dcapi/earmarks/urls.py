@@ -9,6 +9,6 @@ earmarkfilter_handler = Resource(EarmarkFilterHandler,
                                 authentication=PistonKeyAuthentication())
 
 urlpatterns = patterns('',
-    url(r'^.(?P<emitter_format>json|xls|csv)$', earmarkfilter_handler, name='api_contracts_filter'),
+    url(r'^.(?P<emitter_format>json|xls|csv)$', earmarkfilter_handler, name='api_earmarks_filter'),
     url(r'^.(?P<emitter_format>.*)$', no_format),
 )

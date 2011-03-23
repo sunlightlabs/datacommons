@@ -7,38 +7,13 @@ $().ready(function() {
     
     TD.ContractsFilter.row_content = function(row) {
         var content = '<td class="fiscal_year">' + row.fiscal_year + '</td>';
-        content += '<td class="current_amount">$' + TD.Utils.currencyFormat(row.current_amount) + '</td>';
-        content += '<td class="vendor_name">' + row.vendor_name + '</td>';
-        content += '<td class="contract_description">' + row.contract_description + '</td>';
-        content += '<td class="agency_name">' + row.agency_name + '</td>';
+        content += '<td class="current_amount">$' + TD.Utils.currencyFormat(row.baseandexercisedoptionsvalue) + '</td>';
+        content += '<td class="vendor_name">' + row.vendorname + '</td>';
+        content += '<td class="contract_description">' + row.descriptionofcontractrequirement + '</td>';
         return content;
     };
     
     TD.ContractsFilter.init = function() {
-
-        TD.ContractsFilter.registerFilter({
-            name: 'agency_name',
-            label: 'Agency',
-            help: 'The name of the agency that awarded the contract.',
-            field: TD.DataFilter.TextField,
-            allowMultipleFields: true
-        });
-
-		TD.ContractsFilter.registerFilter({
-            name: 'contracting_agency_name',
-            label: 'Agency (contracting)',
-            help: 'The name of the contracting agency.',
-            field: TD.DataFilter.TextField,
-            allowMultipleFields: true
-        });
-
-		TD.ContractsFilter.registerFilter({
-            name: 'requesting_agency_name',
-            label: 'Agency (requesting)',
-            help: 'The name of the requesting agency.',
-            field: TD.DataFilter.TextField,
-            allowMultipleFields: true
-        });
 
         TD.ContractsFilter.registerFilter({
             name: 'obligated_amount',

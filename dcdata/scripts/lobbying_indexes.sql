@@ -38,3 +38,7 @@ create index lobbying_lobbying_registrant_name_ft on lobbying_lobbying using gin
 create index lobbying_lobbying_client_name_ft on lobbying_lobbying using gin(to_tsvector('datacommons', client_name));
 create index lobbying_lobbying_client_parent_name_ft on lobbying_lobbying using gin(to_tsvector('datacommons', client_parent_name));
 create index lobbying_lobbyist_lobbyist_name_ft on lobbying_lobbyist using gin(to_tsvector('datacommons', lobbyist_name));
+
+
+drop index if exists lobbying_issue_specific_issue_ft;
+create index lobbying_issue_specific_issue_ft on lobbying_issue using gin(to_tsvector('datacommons', specific_issue));

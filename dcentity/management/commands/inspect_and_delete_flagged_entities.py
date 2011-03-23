@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
 
     def inspect_politicians_for_deletion(self):
-        candidates = Entity.objects.filter(type='individual', should_delete=True).select_related().all()
+        candidates = Entity.objects.filter(type='politician', should_delete=True).select_related().all()
 
         return self.inspect_and_prompt(candidates, 'politicians')
 
