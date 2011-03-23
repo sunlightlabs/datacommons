@@ -24,7 +24,7 @@ class NimspMysqlLoader(BaseNimspImporter):
             outfile_path = os.path.join(self.OUT_DIR, 'do_dump.txt')
             os.system('touch {0}'.format(outfile_path))
         except:
-            self.log.warning('Something went wrong with the MySQL import or archival. Rejecting {0}'.format(file))
+            self.log.warning('Something went wrong with the MySQL import or archive. Rejecting {0}'.format(file))
             self.reject_file(file)
 
 

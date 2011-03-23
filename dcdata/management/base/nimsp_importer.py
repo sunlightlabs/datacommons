@@ -56,7 +56,12 @@ class BaseNimspImporter(BaseCommand):
 
 
     def handle(self, *args, **options):
-        self.log.info('Starting NIMSP MySQL Loader...')
+        """
+            Will run the do_for_file operation from a subclass on every
+            eligible file found in the IN_DIR, or will log what it would
+            do if the dry_run option is specified.
+        """
+        self.log.info('Starting a NIMSP Importer...')
 
         self.dry_run = options['dry_run']
 
@@ -71,6 +76,11 @@ class BaseNimspImporter(BaseCommand):
 
     # define this in the derived classes
     def do_for_file(self, file, file_path):
+        """
+            The meat of the operation happens here.
+
+            Takes the input file basename and its location/path as arguments.
+        """
         pass
 
 
@@ -80,6 +90,9 @@ class BaseNimspImporter(BaseCommand):
 
 
     def find_eligible_files(self):
+        """
+            Goes through the IN_DIR and finds files matching the FILE_PATTERN to act on
+        """
         files = os.listdir(self.IN_DIR)
 
         if len(files) > 0:
