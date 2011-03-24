@@ -248,7 +248,7 @@ class NIMSPDenormalize(BaseNimspImporter):
 
     def do_for_file(self, file, file_path):
         self.log.info('Starting allocated records...')
-        self.process_allocated(self.OUT_DIR, os.path.join(file_path, file))
+        self.process_allocated(self.OUT_DIR, file_path)
         self.log.info('Done with allocated records.')
 
         self.log.info('Starting unallocated records...')
