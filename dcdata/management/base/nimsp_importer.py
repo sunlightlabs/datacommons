@@ -150,7 +150,7 @@ class BaseNimspImporter(BaseCommand):
 
     def set_pid_file(self):
         fh = open(self.pid_file_path, 'w')
-        fh.write(os.getpid())
+        fh.write(str(os.getpid()))
         fh.close()
 
 
