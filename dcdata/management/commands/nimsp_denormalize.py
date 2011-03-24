@@ -283,12 +283,12 @@ class NIMSPDenormalize(BaseNimspImporter):
 
         # create allocated things
         allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
-        allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
+        allocated_csv = open(allocated_csv_filename, 'w')
         allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
 
         # create unallocated things
         unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
+        unallocated_csv = open(unallocated_csv_filename, 'w')
         unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
 
         input_file = open(input_path, 'r')
