@@ -5,12 +5,10 @@ import sys
 import os
 import re
 
-import psycopg2
-
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
+from dcdata.management.base.nimsp_importer import BaseNimspImporter
 
-import saucebrush
-from saucebrush.emitters import CSVEmitter, DebugEmitter
+from saucebrush.emitters import CSVEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.filters import *
 
