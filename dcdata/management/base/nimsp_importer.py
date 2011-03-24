@@ -1,4 +1,4 @@
-import os, fnmatch, logging, logging.handlers, time, datetime
+import os, fnmatch, logging, logging.handlers, time, datetime, sys
 
 from settings import LOGGING_EMAIL
 from django.core.management.base import BaseCommand, CommandError
