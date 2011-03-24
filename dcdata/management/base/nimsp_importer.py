@@ -1,7 +1,7 @@
 import os, fnmatch, logging, logging.handlers, time, datetime
 
 from settings import LOGGING_EMAIL
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 
 
@@ -15,6 +15,8 @@ class BaseNimspImporter(BaseCommand):
 
     LOG_PATH = None # '/home/datacommons/data/auto/log/nimsp_my_command.log'
 
+    PID_DIR = '/home/datacommons/data/auto/tmp'
+
     option_list = BaseCommand.option_list + (
         make_option('--dry-run', '-d',
             action='store_true',
@@ -27,11 +29,13 @@ class BaseNimspImporter(BaseCommand):
 
     def __init__(self):
         self.set_up_logger()
+        self.pid_file_path = os.path.join(self.PID_DIR, self.__file__)
+        self.class_name = self.__class__.__name__
 
 
     def set_up_logger(self):
         # create logger
-        self.log = logging.getLogger(self.__class__.__name__)
+        self.log = logging.getLogger(self.class_name)
         self.log.setLevel(logging.DEBUG)
         # create console handler and set level to debug
         ch = logging.FileHandler(self.LOG_PATH)
@@ -61,15 +65,22 @@ class BaseNimspImporter(BaseCommand):
             eligible file found in the IN_DIR, or will log what it would
             do if the dry_run option is specified.
         """
-        self.log.info('Starting a NIMSP Importer...')
+
+        self.die_if_already_running()
+        self.set_pid_file()
+
+        self.log.info('Starting {0}'.format(self.class_name))
 
         self.dry_run = options['dry_run']
 
-        for (file, file_path) in self.find_eligible_files():
-            if not self.dry_run:
-                self.do_for_file(file, file_path)
-            else:
-                self.dry_run_for_file(file, file_path)
+        try:
+            for (file, file_path) in self.find_eligible_files():
+                if not self.dry_run:
+                    self.do_for_file(file, file_path)
+                else:
+                    self.dry_run_for_file(file, file_path)
+        except Exception, e:
+            self.log.error('Fatal error: {0}'.format(e.msg))
 
         self.log.info('Finished.')
 
@@ -128,5 +139,22 @@ class BaseNimspImporter(BaseCommand):
 
             os.rename(os.path.join(self.IN_DIR, name), os.path.join(self.DONE_DIR, new_name))
 
+
+    def die_if_already_running(self):
+        """
+            Make sure this script is not already running in another process.
+        """
+        if os.path.exists(self.pid_file_path):
+            raise CommandError("This script is already running in a separate process. (Check {0})".format(self.pid_file_path))
+
+
+    def set_pid_file(self):
+        fh = open(self.pid_file_path, 'w')
+        fh.write(os.getpid())
+        fh.close()
+
+
+    def destroy_pid_file(self):
+        os.remove(self.pid_file_path)
 
 
