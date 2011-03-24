@@ -18,6 +18,9 @@ class NIMSPDump2CSV(BaseNimspImporter):
 
     LOG_PATH = '/home/datacommons/data/auto/log/nimsp_dump.log'
 
+    def __init__(self):
+        super(NIMSPDump2CSV, self).__init__()
+
 
     def do_for_file(self, file, file_path):
         # The file and file_path arguments are irrelevant for this particular
