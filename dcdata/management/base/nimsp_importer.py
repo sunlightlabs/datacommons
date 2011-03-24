@@ -81,7 +81,8 @@ class BaseNimspImporter(BaseCommand):
                 else:
                     self.dry_run_for_file(file, file_path)
         except:
-            self.log.error("Unexpected error", sys.exc_info()[0])
+            self.log.error("Unexpected error:")
+            self.log.error(sys.exc_info()[0])
         finally:
             self.destroy_pid_file()
 
