@@ -61,7 +61,7 @@ class NIMSPDump2CSV(BaseNimspImporter):
         cursor.execute(stmt)
         self.log.info('Data dump complete.')
 
-        self.archive_file(file)
+        self.archive_file(file, timestamp=True)
 
 
 Command = NIMSPDump2CSV
