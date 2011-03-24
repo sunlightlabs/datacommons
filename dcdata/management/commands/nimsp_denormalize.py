@@ -239,6 +239,9 @@ class NIMSPDenormalize(BaseNimspImporter):
     REJECTED_DIR = '/home/datacommons/data/auto/nimsp/denormalized/REJECTED'
     OUT_DIR      = '/home/datacommons/data/auto/nimsp/loading/IN'
 
+    LOG_PATH = '/home/datacommons/data/auto/log/nimsp_denormalize.log'
+    #TODO: Make base class die if the above variable is not defined
+
     SALTS_DB     = '/home/datacommons/data/auto/nimsp/salts.db'
 
     FILE_PATTERN = SQL_DUMP_FILE
