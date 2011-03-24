@@ -232,43 +232,25 @@ class UnallocatedEmitter(CSVEmitter):
             super(UnallocatedEmitter, self).emit_record(record)
 
 
-class NIMSPDenormalize(BaseCommand):
+class NIMSPDenormalize(BaseNimspImporter):
 
-    option_list = BaseCommand.option_list + (
-        make_option("-d", "--directory", dest="dest_dir",
-                      help="path to destination directory", metavar="PATH"),
-        make_option("-s", "--saltsdb", dest="saltsdb",
-                    help="path to salts SQLite database", metavar="PATH"),
-        make_option("-i", "--infile", dest="input_path",
-                      help="path to input csv", metavar="FILE"),
-        make_option("-o", "--output_type", dest="output_types", choices=['allocated', 'unallocated', 'both'],
-                    default='both', help="which output files to generate"))
+    IN_DIR       = '/home/datacommons/data/auto/nimsp/denormalized/IN'
+    DONE_DIR     = '/home/datacommons/data/auto/nimsp/denormalized/DONE'
+    REJECTED_DIR = '/home/datacommons/data/auto/nimsp/denormalized/REJECTED'
+    OUT_DIR      = '/home/datacommons/data/auto/nimsp/loading/IN'
 
-    def handle(self, *args, **options):
-        
-        if 'dest_dir' not in options:
-            CommandError("path to destination directory is required")
-        if 'saltsdb' not in options:
-            CommandError("path to saltsdb is required")
+    SALTS_DB     = '/home/datacommons/data/auto/nimsp/salts.db'
 
-        dest_dir = os.path.abspath(options['dest_dir'])
-        assert dest_dir
-        if not os.path.exists(dest_dir):
-            print "No such directory %s" % dest_dir
-            sys.exit(1)
-        saltsdb = os.path.abspath(options['saltsdb'])
-        assert saltsdb
-        if not os.path.exists(saltsdb):
-            print "No such database %s" % saltsdb
-            sys.exit(1)
+    FILE_PATTERN = SQL_DUMP_FILE
 
-        input_path = options.get('input_path', '') or os.path.join(dest_dir, SQL_DUMP_FILE)
+    def do_for_file(self, file, file_path):
+        self.log.info('Starting allocated records...')
+        self.process_allocated(self.OUT_DIR, os.path.join(file_path, file))
+        self.log.info('Done with allocated records.')
 
-        if options['output_types'] in ('allocated', 'both'):
-            self.process_allocated(dest_dir, input_path)
-
-        if options['output_types'] in ('unallocated', 'both'):
-            self.process_unallocated(dest_dir, saltsdb)
+        self.log.info('Starting unallocated records...')
+        self.process_unallocated(self.OUT_DIR, self.SALTS_DB)
+        self.log.info('Done with unallocated records.')
 
     @staticmethod
     def get_allocated_record_processor():
