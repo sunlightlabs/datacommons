@@ -28,9 +28,9 @@ class BaseNimspImporter(BaseCommand):
 
 
     def __init__(self):
+        self.class_name = self.__class__.__name__
         self.set_up_logger()
         self.pid_file_path = os.path.join(self.PID_DIR, self.__file__)
-        self.class_name = self.__class__.__name__
 
 
     def set_up_logger(self):
