@@ -41,7 +41,6 @@ class NIMSPDump2CSV(BaseNimspImporter):
                    left outer join CatCodes cc on c.CatCode = cc.CatCode
                    left outer join PartyLookup p_cand on cand.PartyLookupID = p_cand.PartyLookupID
                    left outer join PartyLookup p_comm on comm.PartyLookupID = p_comm.PartyLookupID
-                where syr.Yearcode = ''
                 into outfile '%s'
                     fields terminated by ',' enclosed by '"'
                     lines terminated by '\\n'
