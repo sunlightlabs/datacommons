@@ -73,9 +73,9 @@ class BaseNimspImporter(BaseCommand):
         try:
             for (file, file_path) in self.find_eligible_files():
                 if not self.dry_run:
-                    self.do_for_file(file, file_path)
+                    self.do_for_file(file_path)
                 else:
-                    self.dry_run_for_file(file, file_path)
+                    self.dry_run_for_file(file_path)
         except:
             self.log.exception("Unexpected error:")
         finally:
