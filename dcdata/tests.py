@@ -29,9 +29,9 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
 from saucebrush.sources import CSVSource
+from settings import LOADING_DIRECTORY
 from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
-from tempfile import NamedTemporaryFile
 from updates import edits, update
 import os
 import os.path
@@ -42,7 +42,7 @@ import sys
 
 
 
-dataroot = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
+dataroot = os.path.join(LOADING_DIRECTORY, 'test_data')
 
 def assert_record_contains(tester, expected, actual):
     for (name, value) in expected.iteritems():
@@ -108,18 +108,22 @@ class TestRecipientFilter(TestCase):
 class TestNIMSPDenormalize(TestCase):
     original_salts_db_path = os.path.join(dataroot, 'denormalized/original_salts.db')
     salts_db_path = os.path.join(dataroot, 'denormalized/salts.db')
-    output_paths = [os.path.join(dataroot, 'denormalized/nimsp_allocated_contributions.csv'),
-                    os.path.join(dataroot, 'denormalized/nimsp_unallocated_contributions.csv')]
 
     def setUp(self):
-        for path in self.output_paths + [self.salts_db_path]:
+        shutil.copy(self.original_salts_db_path, self.salts_db_path)
+
+    def tearDown(self):
+        output_paths = [
+            os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_allocated_contributions.csv'),
+            os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_unallocated_contributions.csv'),
+            self.salts_db_path
+        ]
+
+        for path in output_paths:
             if os.path.exists(path):
                 os.remove(path)
 
-        shutil.copy(self.original_salts_db_path, self.salts_db_path)
 
-
-    @attr('mysql')
     def test_salting(self):
         input_string = '"3327568","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
@@ -135,57 +139,32 @@ class TestNIMSPDenormalize(TestCase):
         self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
 
 
-    @attr('mysql')
-    def test_output_switch(self):
-        self.assertFalse(os.path.exists(self.output_paths[0]))
-        self.assertFalse(os.path.exists(self.output_paths[1]))
+    def test_command_do_for_file(self):
+        nd = NIMSPDenormalize()
+        nd.do_for_file('nimsp_partial_denormalization.csv', os.path.join(dataroot, 'denormalized/nimsp_partial_denormalization.csv'))
 
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, dest_dir=os.path.join(dataroot, 'denormalized'))
+        allocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_allocated_contributions.csv')
+        unallocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_unallocated_contributions.csv')
+        self.assertEqual(9, sum(1 for _ in open(allocated_path, 'r')))
+        self.assertEqual(4, sum(1 for _ in open(unallocated_path, 'r')))
 
-        self.assertTrue(os.path.exists(self.output_paths[0]))
-        self.assertTrue(os.path.exists(self.output_paths[1]))
-
-        os.remove(self.output_paths[1])
-        self.assertFalse(os.path.exists(self.output_paths[1]))
-
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='unallocated', dest_dir=os.path.join(dataroot, 'denormalized'))
-
-        self.assertTrue(os.path.exists(self.output_paths[1]))
-
-        os.remove(self.output_paths[0])
-        os.remove(self.output_paths[1])
-        self.assertFalse(os.path.exists(self.output_paths[0]))
-        self.assertFalse(os.path.exists(self.output_paths[1]))
-
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, output_types='allocated', dest_dir=os.path.join(dataroot, 'denormalized'))
-
-        self.assertTrue(os.path.exists(self.output_paths[0]))
-        self.assertFalse(os.path.exists(self.output_paths[1]))
+        os.remove(allocated_path)
+        os.remove(unallocated_path)
 
 
-    @attr('mysql')
-    def test_command(self):
-        call_command('nimsp_denormalize', dataroot=dataroot, saltsdb=self.salts_db_path, dest_dir=os.path.join(dataroot, 'denormalized'))
-
-        self.assertEqual(9, sum(1 for _ in open(self.output_paths[0], 'r')))
-        self.assertEqual(4, sum(1 for _ in open(self.output_paths[1], 'r')))
-
-        Contribution.objects.all().delete()
-
-        for path in self.output_paths:
-            call_command('loadcontributions', path)
-
-        self.assertEqual(11, Contribution.objects.all().count())
-
-
-    @attr('mysql')
     def test_recipient_state(self):
+        """
+            The call to test_command, below, originally accessed the 'loadcontributions' command,
+            which has been removed because it was testing too much at once. This test, since it
+            tests only loaded contributions, should be rewritten and moved elsewhere. (TODO)
+        """
+        raise SkipTest
         self.test_command()
 
         self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
         self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
 
-    @attr('mysql')
+
     def test_salt_filter(self):
         connection = sqlite3.connect(self.salts_db_path)
         connection.cursor().execute('delete from salts where nimsp_id = 9999')
@@ -203,7 +182,7 @@ class TestNIMSPDenormalize(TestCase):
 
         self.assertEqual(2, len(output))
 
-    @attr('mysql')
+
     def test_contributor_type(self):
         input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0",\

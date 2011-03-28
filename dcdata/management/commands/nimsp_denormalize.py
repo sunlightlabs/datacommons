@@ -1,4 +1,3 @@
-import hashlib
 import inspect
 import logging
 import sys
@@ -12,8 +11,9 @@ from saucebrush.emitters import CSVEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.filters import *
 
-from dcdata.utils.dryrub import CountEmitter, VerifiedCSVSource,\
-    CSVFieldVerifier
+from settings import LOADING_DIRECTORY
+
+from dcdata.utils.dryrub import VerifiedCSVSource, CSVFieldVerifier
 
 from dcdata.scripts.nimsp.salt import DCIDFilter, SaltFilter
 
@@ -234,15 +234,15 @@ class UnallocatedEmitter(CSVEmitter):
 
 class NIMSPDenormalize(BaseNimspImporter):
 
-    IN_DIR       = '/home/datacommons/data/auto/nimsp/denormalized/IN'
-    DONE_DIR     = '/home/datacommons/data/auto/nimsp/denormalized/DONE'
-    REJECTED_DIR = '/home/datacommons/data/auto/nimsp/denormalized/REJECTED'
-    OUT_DIR      = '/home/datacommons/data/auto/nimsp/loading/IN'
+    IN_DIR       = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/IN')
+    DONE_DIR     = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/DONE')
+    REJECTED_DIR = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/REJECTED')
+    OUT_DIR      = os.path.join(LOADING_DIRECTORY, 'nimsp/loading/IN')
 
-    LOG_PATH = '/home/datacommons/data/auto/log/nimsp_denormalize.log'
+    #LOG_PATH = '/home/datacommons/data/auto/log/nimsp_denormalize.log'
     #TODO: Make base class die if the above variable is not defined
 
-    SALTS_DB     = '/home/datacommons/data/auto/nimsp/salts.db'
+    SALTS_DB     = os.path.join(LOADING_DIRECTORY, 'nimsp/salts.db')
 
     FILE_PATTERN = SQL_DUMP_FILE
 

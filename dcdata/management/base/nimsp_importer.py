@@ -1,6 +1,6 @@
-import os, fnmatch, logging, logging.handlers, time, datetime, sys
+import os, os.path, fnmatch, logging, logging.handlers, time, datetime, sys
 
-from settings import LOGGING_EMAIL
+from settings import LOGGING_EMAIL, LOADING_DIRECTORY, LOGGING_DIRECTORY, TMP_DIRECTORY
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 
@@ -12,10 +12,6 @@ class BaseNimspImporter(BaseCommand):
     REJECTED_DIR = None # '/home/datacommons/data/auto/nimsp/raw/REJECTED'
     OUT_DIR      = None # '/home/datacommons/data/auto/nimsp/IN'
     FILE_PATTERN = None # bash-style, ala '*.sql'
-
-    LOG_PATH = None # '/home/datacommons/data/auto/log/nimsp_my_command.log'
-
-    PID_DIR = '/home/datacommons/data/auto/tmp'
 
     option_list = BaseCommand.option_list + (
         make_option('--dry-run', '-d',
@@ -30,16 +26,16 @@ class BaseNimspImporter(BaseCommand):
     def __init__(self):
         super(BaseNimspImporter, self).__init__()
         self.class_name = self.__class__.__name__
+        self.log_path = os.path.join(LOGGING_DIRECTORY, self.__module__.split('.')[-1])
         self.set_up_logger()
-        self.pid_file_path = os.path.join(self.PID_DIR, self.__module__)
-
+        self.pid_file_path = os.path.join(TMP_DIRECTORY, self.__module__.split('.')[-1])
 
     def set_up_logger(self):
         # create logger
         self.log = logging.getLogger(self.class_name)
         self.log.setLevel(logging.DEBUG)
         # create console handler and set level to debug
-        ch = logging.FileHandler(self.LOG_PATH)
+        ch = logging.FileHandler(self.log_path)
         ch.setLevel(logging.DEBUG)
 
         # create email handler and set level to warn
