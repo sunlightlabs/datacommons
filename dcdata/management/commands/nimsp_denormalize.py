@@ -296,8 +296,6 @@ class NIMSPDenormalize(BaseNimspImporter):
         input_fields = [name for (name, _, _) in CSV_SQL_MAPPING]
 
         source = VerifiedCSVSource(input_file, input_fields)
-        if not source:
-            raise "The source is not defined."
 
         output_func = chain_filters(
             unallocated_emitter,
@@ -329,8 +327,6 @@ class NIMSPDenormalize(BaseNimspImporter):
         salted_csv = open(salted_csv_filename, 'w')
 
         source = VerifiedCSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
-        if not source:
-            raise "The source is not defined."
 
         output_func = CSVEmitter(salted_csv, FIELDNAMES).process_record
 
