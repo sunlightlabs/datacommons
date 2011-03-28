@@ -14,7 +14,8 @@ class NimspMysqlLoader(BaseNimspImporter):
     LOG_PATH = '/home/datacommons/data/auto/log/nimsp_mysql_loader.log'
 
 
-    def do_for_file(self, file, file_path):
+    def do_for_file(self, file_path):
+        file = os.path.basename(file_path)
         try:
             self.log.info('Importing {0}'.format(file))
             os.system('mysql nimsp --execute=\'source {0}\''.format(file_path))
@@ -28,7 +29,8 @@ class NimspMysqlLoader(BaseNimspImporter):
             self.reject_file(file)
 
 
-    def dry_run_for_file(self, file, file_path):
+    def dry_run_for_file(self, file_path):
+        file = os.path.basename(file_path)
         self.log.info('Would import {0} and archive'.format(file))
 
 

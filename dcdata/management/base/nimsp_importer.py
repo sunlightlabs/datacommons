@@ -85,7 +85,7 @@ class BaseNimspImporter(BaseCommand):
 
 
     # define this in the derived classes
-    def do_for_file(self, file, file_path):
+    def do_for_file(self, file_path):
         """
             The meat of the operation happens here.
 
@@ -124,13 +124,15 @@ class BaseNimspImporter(BaseCommand):
             self.log.info('No files found.')
 
 
-    def reject_file(self, name):
+    def reject_file(self, path):
         if not self.dry_run:
+            name = os.path.basedir(path)
             os.rename(os.path.join(self.IN_DIR, name), os.path.join(self.REJECTED_DIR, name))
 
 
-    def archive_file(self, name, timestamp=False):
+    def archive_file(self, path, timestamp=False):
         if not self.dry_run:
+            name = os.path.basedir(path)
             new_name = name
 
             if timestamp:

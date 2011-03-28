@@ -246,7 +246,7 @@ class NIMSPDenormalize(BaseNimspImporter):
 
     FILE_PATTERN = SQL_DUMP_FILE
 
-    def do_for_file(self, file, file_path):
+    def do_for_file(self, file_path):
         self.log.info('Starting allocated records...')
         self.process_allocated(self.OUT_DIR, file_path)
         self.log.info('Done with allocated records.')
@@ -279,17 +279,15 @@ class NIMSPDenormalize(BaseNimspImporter):
             FieldListFilter(FIELDNAMES + ['contributionid']))
 
     @staticmethod
-    def process_allocated(denorm_path, input_path):
+    def process_allocated(out_dir, input_path):
 
         # create allocated things
-        allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
-        allocated_csv = open(allocated_csv_filename, 'w')
-        allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
+        allocated_csv_filename = os.path.join(out_dir,'nimsp_allocated_contributions.csv')
+        allocated_emitter = AllocatedEmitter(open(allocated_csv_filename, 'w'), fieldnames=FIELDNAMES)
 
         # create unallocated things
-        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-        unallocated_csv = open(unallocated_csv_filename, 'w')
-        unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
+        unallocated_csv_filename = os.path.join(out_dir, 'nimsp_unallocated_contributions.csv.TMP')
+        unallocated_emitter = UnallocatedEmitter(open(unallocated_csv_filename, 'w'), fieldnames=FIELDNAMES + ['contributionid'])
 
         input_file = open(input_path, 'r')
 
@@ -318,12 +316,12 @@ class NIMSPDenormalize(BaseNimspImporter):
             dcid)
 
     @staticmethod
-    def process_unallocated(denorm_path, salts_db):
+    def process_unallocated(out_dir, salts_db):
 
-        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
+        unallocated_csv_filename = os.path.join(out_dir, 'nimsp_unallocated_contributions.csv.TMP')
+        unallocated_csv = open(os.path.join(out_dir, unallocated_csv_filename), 'r')
 
-        salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv')
+        salted_csv_filename = os.path.join(out_dir, 'nimsp_unallocated_contributions.csv')
         salted_csv = open(salted_csv_filename, 'w')
 
         source = VerifiedCSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
