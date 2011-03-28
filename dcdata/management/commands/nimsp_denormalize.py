@@ -283,17 +283,21 @@ class NIMSPDenormalize(BaseNimspImporter):
 
         # create allocated things
         allocated_csv_filename = os.path.join(out_dir,'nimsp_allocated_contributions.csv')
-        allocated_emitter = AllocatedEmitter(open(allocated_csv_filename, 'w'), fieldnames=FIELDNAMES)
+        allocated_csv = open(allocated_csv_filename, 'w')
+        allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
 
         # create unallocated things
         unallocated_csv_filename = os.path.join(out_dir, 'nimsp_unallocated_contributions.csv.TMP')
-        unallocated_emitter = UnallocatedEmitter(open(unallocated_csv_filename, 'w'), fieldnames=FIELDNAMES + ['contributionid'])
+        unallocated_csv = open(unallocated_csv_filename, 'w')
+        unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
 
         input_file = open(input_path, 'r')
 
         input_fields = [name for (name, _, _) in CSV_SQL_MAPPING]
 
         source = VerifiedCSVSource(input_file, input_fields)
+        if not source:
+            raise "The source is not defined."
 
         output_func = chain_filters(
             unallocated_emitter,
@@ -325,6 +329,8 @@ class NIMSPDenormalize(BaseNimspImporter):
         salted_csv = open(salted_csv_filename, 'w')
 
         source = VerifiedCSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)
+        if not source:
+            raise "The source is not defined."
 
         output_func = CSVEmitter(salted_csv, FIELDNAMES).process_record
 
