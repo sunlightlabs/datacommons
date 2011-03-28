@@ -84,6 +84,8 @@ class MatchingCommand(BaseCommand):
 
         if name1.first == name2.first:
             score += 1
+        else:
+            return 0
 
         if name1.middle and name2.middle:
             if name1.middle == name2.middle:
