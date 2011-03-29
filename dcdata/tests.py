@@ -141,7 +141,7 @@ class TestNIMSPDenormalize(TestCase):
 
     def test_command_do_for_file(self):
         nd = NIMSPDenormalize()
-        nd.do_for_file('nimsp_partial_denormalization.csv', os.path.join(dataroot, 'denormalized/nimsp_partial_denormalization.csv'))
+        nd.do_for_file(os.path.join(dataroot, 'denormalized/nimsp_partial_denormalization.csv'))
 
         allocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_allocated_contributions.csv')
         unallocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_unallocated_contributions.csv')
