@@ -14,3 +14,4 @@ django-indexer
 django-paging
 django-sentry
 -e git+http://github.com/sunlightlabs/name-cleaver.git#egg=name-cleaver
+-e git+http://github.com/sunlightlabs/saucebrush.git@0.2.0#egg=saucebrush
