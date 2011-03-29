@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from dcdata.earmarks.models      import Member
 from dcentity.models             import Entity
-from name_cleaver.name_cleaver   import PoliticianNameCleaver
+from name_cleaver                import PoliticianNameCleaver
 from itertools                   import groupby
 
 chamber_map = {
