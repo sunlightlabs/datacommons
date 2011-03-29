@@ -312,8 +312,6 @@ class PoliticianRelative(models.Model):
     class Meta:
         db_table = 'matchbox_politicianrelative'
 
-    #name = property(raw_name)
-
 #
 # merge candidate
 #
