@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from dcentity.models             import EntityAlias, EntityNameParts
-from name_cleaver.name_cleaver   import PoliticianNameCleaver
+from name_cleaver                import PoliticianNameCleaver
 import sys
 
 DEBUG = False
