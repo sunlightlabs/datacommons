@@ -1,5 +1,5 @@
-from dcdata.guidestar.management.base.matching import MatchingCommand
-from dcdata.guidestar.models import Officer
+from dcentity.matching.management.base.matching import MatchingCommand
+from dcentity.matching.models import Officer
 from dcentity.models import Entity
 
 import re
@@ -8,9 +8,9 @@ class Command(MatchingCommand):
 
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
-        self.subject = Officer
+        self.subject = Officer.objects
         self.match = Entity.objects.filter(type='politician')
-        self.match_table_prefix = 'guidestar'
+        self.match_table_prefix = 'matching'
 
     def preprocess_subject_name(self, name):
         name = re.sub(r' CBO$', '', name)

@@ -1,5 +1,5 @@
-from dcdata.guidestar.management.base.matching import MatchingCommand
-from dcdata.guidestar.models import Officer
+from dcentity.matching.management.base.matching import MatchingCommand
+from dcentity.matching.models import Officer
 from dcentity.models import PoliticianRelative
 
 import re

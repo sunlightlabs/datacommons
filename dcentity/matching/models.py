@@ -17,3 +17,17 @@ class Officer(models.Model):
     class Meta:
         db_table = 'guidestar_officer'
 
+
+class WhiteHouseVisitor(models.Model):
+    id = models.IntegerField(primary_key=True)
+    first_name = models.CharField(max_length=64)
+    middle_name = models.CharField(max_length=64)
+    last_name = models.CharField(max_length=64)
+
+    class Meta:
+        db_table = 'whitehouse_visitor'
+
+    def build_name(self):
+        return ' '.join([ x for x in [self.first_name, self.middle_name, self.last_name] if x])
+
+    name = property(build_name)

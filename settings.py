@@ -41,8 +41,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'dcentity',
     'dcentity.matching',
-    'dcentity.matching.guidestar',
-    'dcentity.matching.white_house',
     'dcdata',
     'dcdata.contribution',
     'dcdata.contracts',
