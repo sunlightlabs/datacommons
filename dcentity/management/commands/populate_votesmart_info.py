@@ -3,7 +3,7 @@ import urllib, urllib2, logging, pprint, pickle, os
 from django.conf                 import settings
 from django.core.management.base import BaseCommand
 from django.db                   import connection, transaction
-from name_cleaver.name_cleaver   import PoliticianNameCleaver, RunningMatesNames
+from name_cleaver                import PoliticianNameCleaver, RunningMatesNames
 from votesmart                   import votesmart, VotesmartApiError
 
 try:
