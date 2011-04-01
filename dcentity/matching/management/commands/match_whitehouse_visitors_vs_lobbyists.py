@@ -13,7 +13,6 @@ class Command(MatchingCommand):
         self.subject = WhiteHouseVisitor.objects
         self.subject_id_type = 'integer'
 
-        #self.match = Entity.objects.filter(attributes__value__in=['select lobbyist_ext_id from lobbyist_ext_ids_2009_to_2011'])
         self.match = Entity.objects.extra(where=['id in (select entity_id from matchbox_entityattribute inner join lobbyist_ext_ids_2009_to_2011 on lobbyist_ext_id = value)'])
         self.match_table_prefix = 'whitehouse'
 
