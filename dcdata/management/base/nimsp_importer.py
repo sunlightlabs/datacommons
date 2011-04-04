@@ -126,13 +126,13 @@ class BaseNimspImporter(BaseCommand):
 
     def reject_file(self, path):
         if not self.dry_run:
-            name = os.path.basedir(path)
+            name = os.path.basename(path)
             os.rename(os.path.join(self.IN_DIR, name), os.path.join(self.REJECTED_DIR, name))
 
 
     def archive_file(self, path, timestamp=False):
         if not self.dry_run:
-            name = os.path.basedir(path)
+            name = os.path.basename(path)
             new_name = name
 
             if timestamp:
