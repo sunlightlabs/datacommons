@@ -255,6 +255,8 @@ class NIMSPDenormalize(BaseNimspImporter):
         self.process_unallocated(self.OUT_DIR, self.SALTS_DB)
         self.log.info('Done with unallocated records.')
 
+        self.archive_file(file_path, timestamp=True)
+
     @staticmethod
     def get_allocated_record_processor():
         input_type_conversions = dict([(field, conversion_func) for (field, _, conversion_func) in CSV_SQL_MAPPING if conversion_func])
