@@ -132,7 +132,7 @@ class TableHandler(object):
         self.pre_drop()
         print "Dropping {0}.".format(self.db_table)
         cursor = connections['default'].cursor()
-        cursor.execute("drop table {0}".format(self.db_table))
+        cursor.execute("drop table {0} cascade".format(self.db_table))
 
 
 class LobbyingHandler(TableHandler):
