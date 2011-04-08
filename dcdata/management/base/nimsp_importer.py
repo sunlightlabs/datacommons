@@ -71,13 +71,14 @@ class BaseNimspImporter(BaseCommand):
         self.dry_run = options['dry_run']
 
         try:
-            for (file, file_path) in self.find_eligible_files():
+            for file_path in self.find_eligible_files():
                 if not self.dry_run:
                     self.do_for_file(file_path)
                 else:
                     self.dry_run_for_file(file_path)
         except:
             self.log.exception("Unexpected error:")
+            self.reject_file(file_path)
         finally:
             self.destroy_pid_file()
 
@@ -114,7 +115,7 @@ class BaseNimspImporter(BaseCommand):
                     now_epoch = time.time()
                     last_modified_epoch = os.path.getmtime(file_path)
                     if now_epoch - last_modified_epoch > 60:
-                        yield file, file_path
+                        yield file_path
                     else:
                         self.log.info('File last modified time is too recent. Skipping.')
                 else:
