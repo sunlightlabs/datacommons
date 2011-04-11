@@ -107,6 +107,7 @@ class Command(BaseCommand):
     def create_individuals(self):
         self.log.info("Starting to find individuals to create...")
 
+        self.cursor.execute('drop table if exists tmp_individuals_{0}'.format(self.today), None)
         creation_sql = """
             create table tmp_individuals_{0} as
                 select min(name) as name, id from (
@@ -157,6 +158,7 @@ class Command(BaseCommand):
     def create_organizations(self):
         self.log.info("Starting to find organizations to create...")
 
+        self.cursor.execute('drop table if exists tmp_lobbying_orgs_{0}'.format(self.today), None)
         tmp_sql = """
             create table tmp_lobbying_orgs_{0} as
                 select 0 as crp_id, 0 as nimsp_id, max(l.registrant_name) as name
@@ -204,6 +206,7 @@ class Command(BaseCommand):
     def create_politicians(self):
         self.log.info("Starting to find politicians to create...")
 
+        self.cursor.execute('drop table if exists tmp_politicians_{0}'.format(self.today), None)
         tmp_sql = """
             create table tmp_politicians_{0} as
                 select min(recipient_name) as name, transaction_namespace as namespace, recipient_ext_id as id
