@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-from handlers import EntityHandler, EntitySearchHandler, EntityAttributeHandler, EntitySimpleHandler
+from handlers import EntityHandler, EntitySearchHandler, EntityAttributeHandler, EntitySimpleHandler, PoliticianCommitteeHandler
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
@@ -26,4 +26,5 @@ urlpatterns = patterns('',
     url(r'^/(?P<entity_id>[a-f0-9-]{32,36})\.(?P<emitter_format>.+)$', entity_handler, name='api_entities'),
     url(r'^/list.(?P<emitter_format>.+)$', entitysimple_handler, name='api_entities_simple'),
     url(r'^\.(?P<emitter_format>.+)$', entityfilter_handler, name='api_entities_filter'),
+    url(r'^/(?P<entity_id>[a-f0-9-]{32,36})/committees\.(?P<emitter_format>.+)$', Resource(PoliticianCommitteeHandler, **ad), name='api_entity_committees'),
 )

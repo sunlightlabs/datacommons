@@ -217,6 +217,21 @@ class TopIndustriesByContributionsHandler(TopListHandler):
          limit %s
     """
 
+class TopIndustriesLifetimeHandler(TopListHandler):
+    args = ['entity_id']
+    fields = 'industry cycle amount'.split()
+
+    stmt = """
+        select
+            industry, cycle, amount
+        from
+            agg_industries_to_cand
+        where
+            recipient_entity = %s
+            and cycle != -1
+        order by
+            industry, cycle
+    """
 
 class TopIndividualsByContributionsHandler(TopListHandler):
 

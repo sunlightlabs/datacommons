@@ -225,6 +225,18 @@ class PoliticianMetadataLatest(models.Model):
     class Meta:
         db_table = 'politician_metadata_latest_cycle_view'
 
+class PoliticianCommittee(models.Model):
+    entity          = models.ForeignKey(Entity, related_name='committees', null=False)
+    name            = models.CharField(max_length=255, blank=False, null=False)
+    is_chair        = models.BooleanField(default=False, null=False)
+    is_ranking      = models.BooleanField(default=False, null=False)
+    is_subcommittee = models.BooleanField(default=False, null=False)
+    parent_name     = models.CharField(max_length=255, blank=True, null=True)
+    cycle           = models.PositiveSmallIntegerField()
+
+    class Meta:
+        db_table = 'politician_committee'
+
 class IndustryMetadata(ExtensibleModel):
     entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
     should_show_entity = models.BooleanField(default=True)

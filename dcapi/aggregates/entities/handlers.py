@@ -203,3 +203,26 @@ class EntitySimpleHandler(BaseHandler):
             return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
 
 
+class PoliticianCommitteeHandler(BaseHandler):
+    fields = 'committee parent_committee from_cycle to_cycle is_chair is_ranking'.split()
+
+    def read(self, request, **kwargs):
+        stmt = """
+            select
+                committee_name,
+                parent_committee_name,
+                from_year,
+                to_year,
+                is_chair,
+                is_ranking
+            from
+                politician_committee_timeline
+            where
+                entity_id = %s
+                and (is_chair or is_ranking)
+        """
+
+        raw_result = execute_top(stmt, kwargs['entity_id'])
+
+        return [dict(zip(self.fields, row)) for row in raw_result]
+

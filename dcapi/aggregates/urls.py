@@ -1,13 +1,5 @@
 
-from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
-    PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
-    SectorsHandler, IndustriesHandler, PolLocalBreakdownHandler, \
-    PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
-    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
-    SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
-    TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
-    TopIndustriesByContributionsHandler, IndustryOrgHandler, \
-    ContributionAmountHandler
+from dcapi.aggregates.contributions.handlers import *
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
@@ -54,6 +46,10 @@ urlpatterns = patterns('',
     # contributions to a single politician, broken down by industry
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/industries\.(?P<emitter_format>.+)$',
         Resource(IndustriesHandler, **ad)),
+
+    # contributions to a single politician, broken down by industry
+    url(r'^pol/(?P<entity_id>[a-f0-9-]{32,36})/contributors/industries_lifetime\.(?P<emitter_format>.+)$',
+        Resource(TopIndustriesLifetimeHandler, **ad)),
 
     # contributions to a single politician, broken down to show percentages
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/local_breakdown\.(?P<emitter_format>.+)$',
