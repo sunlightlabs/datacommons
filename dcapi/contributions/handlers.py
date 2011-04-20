@@ -98,10 +98,13 @@ class ContributionFilterHandler(FilterHandler):
 
 
 class ContributorGeoHandler(FilterHandler):
-    fields = ['contributor_name', 'contributor_location', 'count']
+    fields = ['contributor_name', 'contributor_location', 'count', 'amount_total', 'amount_democrat', 'amount_republican']
     
     stmt = """
-        select contributor_name, coalesce(m.name, c.contributor_zipcode), count(*)
+        select contributor_name, coalesce(m.name, c.contributor_zipcode), count(*), 
+            sum(amount) as amount_total,
+            sum(case when recipient_party = 'D' then amount else 0 end) as amount_democrat,
+            sum(case when recipient_party = 'R' then amount else 0 end) as amount_republican
         from contribution_contribution c
         left join geo_zip z on c.contributor_zipcode = z.zipcode
         left join geo_msa m on z.msa_id = m.id
@@ -122,4 +125,5 @@ class ContributorGeoHandler(FilterHandler):
         labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
 
         return labeled_result    
+
     
