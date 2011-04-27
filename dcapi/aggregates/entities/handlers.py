@@ -204,13 +204,13 @@ class EntitySimpleHandler(BaseHandler):
 
 
 class PoliticianCommitteeHandler(BaseHandler):
-    fields = 'committee parent_committee from_cycle to_cycle is_chair is_ranking'.split()
+    fields = 'committee parent_committee_code from_cycle to_cycle is_chair is_ranking'.split()
 
     def read(self, request, **kwargs):
         stmt = """
             select
                 committee_name,
-                parent_committee_name,
+                parent_committee_code,
                 from_year,
                 to_year,
                 is_chair,

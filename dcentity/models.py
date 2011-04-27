@@ -227,11 +227,12 @@ class PoliticianMetadataLatest(models.Model):
 
 class PoliticianCommittee(models.Model):
     entity          = models.ForeignKey(Entity, related_name='committees', null=False)
+    code            = models.CharField(max_length=10, blank=True, null=False)
     name            = models.CharField(max_length=255, blank=False, null=False)
     is_chair        = models.BooleanField(default=False, null=False)
     is_ranking      = models.BooleanField(default=False, null=False)
     is_subcommittee = models.BooleanField(default=False, null=False)
-    parent_name     = models.CharField(max_length=255, blank=True, null=True)
+    parent_code     = models.CharField(max_length=10, blank=True, null=False)
     cycle           = models.PositiveSmallIntegerField()
 
     class Meta:

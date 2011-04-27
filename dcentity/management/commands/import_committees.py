@@ -31,27 +31,34 @@ class Command(BaseCommand):
             self.people_ids[person.attrib['id']] = person.attrib['osid']
 
         for committee in committees_root.findall('committee'):
+            shortest_name = self.find_shortest_name_for_committee(committee, session)
+            code = committee.attrib.get('code', '')
+
             for member in committee.findall('member'):
                 pol = self.find_politician_entity_for_member(member)
                 if not pol: continue
                 PoliticianCommittee.objects.create(
                     entity=pol,
-                    name=committee.attrib['displayname'],
+                    code=committee.attrib.get('code', ''),
+                    name=shortest_name,
                     is_chair=member.attrib.get('role', '')=='Chairman',
                     is_ranking=member.attrib.get('role', '')=='Ranking Member',
                     cycle=CYCLES_BY_SESSION[session]
                 )
             for subcommittee in committee.findall('subcommittee'):
+                subcommittee_shortest_name = self.find_shortest_name_for_committee(subcommittee, session)
+
                 for member in subcommittee.findall('member'):
                     pol = self.find_politician_entity_for_member(member)
                     if not pol: continue
                     PoliticianCommittee.objects.create(
                         entity=pol,
-                        name=subcommittee.attrib['displayname'],
+                        code=subcommittee.attrib.get('code', ''),
+                        name=subcommittee_shortest_name,
                         is_chair=member.attrib.get('role', '')=='Chairman',
                         is_ranking=member.attrib.get('role', '')=='Ranking Member',
                         is_subcommittee=True,
-                        parent_name=committee.attrib['displayname'],
+                        parent_code=code,
                         cycle=CYCLES_BY_SESSION[session]
                     )
 
@@ -64,6 +71,16 @@ class Command(BaseCommand):
             )
         except:
             return False
+
+    def find_shortest_name_for_committee(self, committee, session):
+        # we have either a name in a child node or the name in the attribute (different formats)
+        # we'll try both.
+        node_name = committee.find("/thomas-names/name[@session='{0}']".format(session))
+        attr_name = committee.attrib.get('thomasname')
+
+        # we might not have either, in which case we'll fall back to the longer displayname
+        return node_name or attr_name or committee.attrib['displayname']
+
 
 
 

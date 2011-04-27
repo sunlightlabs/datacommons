@@ -218,19 +218,45 @@ class TopIndustriesByContributionsHandler(TopListHandler):
     """
 
 class TopIndustriesLifetimeHandler(TopListHandler):
-    args = ['entity_id']
+    args = ['entity_id', 'cycle']
     fields = 'industry cycle amount'.split()
 
     stmt = """
+        with industries_with_metadata as (
+            select industry_entity, industry, recipient_entity, count, amount, name, parent_industry_id, cycle
+            from agg_industries_to_cand ic
+            inner join matchbox_entity me
+                on me.id = ic.industry_entity
+            left join matchbox_industrymetadata im
+                on me.id = im.entity_id
+            where
+                type = 'industry'
+                and coalesce(should_show_entity, 't')
+                and parent_industry_id is null
+                and recipient_entity = %s
+                and cycle != -1
+                and cycle >= %s
+                and amount >= 0
+        )
         select
-            industry, cycle, amount
-        from
-            agg_industries_to_cand
-        where
-            recipient_entity = %s
-            and cycle != -1
+            industry, cycle, coalesce(amount, 0) as amount
+        from (
+
+            select distinct industry_entity, industry, cycle
+            from generate_series(
+                (select min(cycle) from industries_with_metadata),
+                (select max(cycle) from industries_with_metadata),
+                2
+            ) as cycles(cycle)
+            cross join (
+                select distinct industry_entity, industry from industries_with_metadata
+            ) industries
+
+        ) all_industries_and_cycles
+        left join industries_with_metadata
+            using (industry_entity, industry, cycle)
         order by
-            industry, cycle
+            industry, cycle, amount
     """
 
 class TopIndividualsByContributionsHandler(TopListHandler):
