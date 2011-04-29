@@ -43,6 +43,24 @@ class Command(BaseCommand):
             default=False,
             help='Force creation of organizations despite warnings about number of entities to be created.',
         ),
+        make_option('-I', '--skip-indivs',
+            action='store_true',
+            dest='skip_indivs',
+            default=False,
+            help='Skip individuals',
+        ),
+        make_option('-P', '--skip-pols',
+            action='store_true',
+            dest='skip_pols',
+            default=False,
+            help='Skip politicians',
+        ),
+        make_option('-O', '--skip-orgs',
+            action='store_true',
+            dest='skip_orgs',
+            default=False,
+            help='Skip organizations',
+        ),
     )
 
     def __init__(self):
@@ -69,13 +87,18 @@ class Command(BaseCommand):
         self.today = datetime.today().strftime("%Y%m%d")
         self.cursor = connections['default'].cursor()
 
-        self.flag_individuals_for_deletion()
-        self.flag_politicians_for_deletion()
+        if not options['skip_indivs']:
+            self.flag_individuals_for_deletion()
+        if not options['skip_pols']:
+            self.flag_politicians_for_deletion()
 
         try:
-            self.create_individuals()
-            self.create_politicians()
-            self.create_organizations()
+            if not options['skip_indivs']:
+                self.create_individuals()
+            if not options['skip_pols']:
+                self.create_politicians()
+            if not options['skip_orgs']:
+                self.create_organizations()
         except EntityManagementError as e:
             self.log.error(e)
 
@@ -84,6 +107,7 @@ class Command(BaseCommand):
     def create_individuals(self):
         self.log.info("Starting to find individuals to create...")
 
+        self.cursor.execute('drop table if exists tmp_individuals_{0}'.format(self.today), None)
         creation_sql = """
             create table tmp_individuals_{0} as
                 select min(name) as name, id from (
@@ -134,6 +158,7 @@ class Command(BaseCommand):
     def create_organizations(self):
         self.log.info("Starting to find organizations to create...")
 
+        self.cursor.execute('drop table if exists tmp_lobbying_orgs_{0}'.format(self.today), None)
         tmp_sql = """
             create table tmp_lobbying_orgs_{0} as
                 select 0 as crp_id, 0 as nimsp_id, max(l.registrant_name) as name
@@ -181,6 +206,7 @@ class Command(BaseCommand):
     def create_politicians(self):
         self.log.info("Starting to find politicians to create...")
 
+        self.cursor.execute('drop table if exists tmp_politicians_{0}'.format(self.today), None)
         tmp_sql = """
             create table tmp_politicians_{0} as
                 select min(recipient_name) as name, transaction_namespace as namespace, recipient_ext_id as id

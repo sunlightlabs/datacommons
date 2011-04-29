@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'dcentity',
+    'dcentity.matching',
     'dcdata',
     'dcdata.contribution',
     'dcdata.contracts',

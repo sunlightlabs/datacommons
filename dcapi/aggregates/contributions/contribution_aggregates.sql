@@ -172,11 +172,11 @@ drop table if exists tmp_indiv_locations;
 
 select date_trunc('second', now()) || ' -- create table tmp_indiv_locations';
 create table tmp_indiv_locations as
-    select entity_id, msa_name
+    select entity_id, msa_id
     from contributions_all_relevant c
     inner join tmp_assoc_indiv_id a using (transaction_id)
-    inner join zip_msa on c.contributor_zipcode = zipcode
-    group by entity_id, msa_name;
+    inner join geo_zip on c.contributor_zipcode = zipcode
+    group by entity_id, msa_id;
 
 create index tmp_indiv_locations_entity on tmp_indiv_locations (entity_id);
 
@@ -217,8 +217,8 @@ union
         on lower(n.name) = lower(c.contributor_name)
     inner join tmp_indiv_locations l
         on n.entity_id = l.entity_id
-    inner join zip_msa z
-        on c.contributor_zipcode = z.zipcode and l.msa_name = z.msa_name
+    inner join geo_zip z
+        on c.contributor_zipcode = z.zipcode and l.msa_id = z.msa_id
     group by n.entity_id, c.transaction_id;
 
 
