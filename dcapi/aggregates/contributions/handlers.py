@@ -127,6 +127,42 @@ class OrgRecipientsHandler(EntityTopListHandler):
     """
 
 
+class OrgRecipientsLifetimeHandler(EntityTopListHandler):
+    args = ['entity_id', 'cycle']
+
+    fields = 'name id party state total_amount cycle committee is_chair is_ranking'.split()
+
+    stmt = """
+        with tmp_agg_cands_from_org_with_meta as (
+            select recipient_name, recipient_entity, party, state, total_amount, aco.cycle, array_agg(name) as committee_name, bool_or(is_chair) as is_chair, bool_or(is_ranking) as is_ranking
+            from
+                agg_cands_from_org aco
+                left join politician_metadata_latest_cycle_view on recipient_entity = entity_id
+                left join politician_committee pc on aco.recipient_entity = pc.entity_id and aco.cycle = pc.cycle
+            where
+                organization_entity = %s
+                and aco.cycle >= %s
+                and ((pc.is_chair is null or pc.is_chair) or (pc.is_ranking is null or pc.is_ranking))
+            group by recipient_name, recipient_entity, party, state, total_amount, aco.cycle
+        )
+        select recipient_name, recipient_entity, party, state, coalesce(total_amount, 0) as total_amount, aco.cycle, name, is_chair, is_ranking
+        from
+            (
+                select distinct recipient_entity, cycle
+                from (
+                    select distinct cycle from tmp_agg_cands_from_org_with_meta
+                ) all_cycles
+                cross join (
+                    select distinct recipient_entity from tmp_agg_cands_from_org_with_meta
+                ) all_recipients
+            ) all_recipients_all_cycles
+            left join agg_cands_from_org aco using (recipient_entity, cycle)
+            left join politician_metadata_latest_cycle_view on recipient_entity = entity_id
+            left join politician_committee pc on aco.recipient_entity = pc.entity_id and aco.cycle = pc.cycle
+        order by total_amount desc
+    """
+
+
 class IndustriesHandler(EntityTopListHandler):
 
     fields = ['name', 'id', 'count', 'amount', 'should_show_entity']

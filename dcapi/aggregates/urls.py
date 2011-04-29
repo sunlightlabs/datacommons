@@ -99,6 +99,10 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/recipients\.(?P<emitter_format>.+)$',
         Resource(OrgRecipientsHandler, **ad)),
 
+    # recipients from a single org//pac over time
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/recipients_lifetime\.(?P<emitter_format>.+)$',
+        Resource(OrgRecipientsLifetimeHandler, **ad)),
+
     # recipients from a single org, broken down to show percentages
     url(r'^org/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$',
         Resource(OrgPartyBreakdownHandler, **ad)),
