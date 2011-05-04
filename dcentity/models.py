@@ -202,11 +202,15 @@ class PoliticianMetadata(models.Model):
 
     cycle = models.PositiveSmallIntegerField()
 
-    state       = USStateField(blank=True, null=True)
-    party       = models.CharField(max_length=64, blank=True, null=True)
-    seat        = models.CharField(max_length=64, blank=True, null=True)
-    seat_status = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
-    seat_result = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
+    state         = USStateField(blank=True, null=True)
+    state_held    = USStateField(blank=True, null=True)
+    district      = models.CharField(max_length=8, blank=True, null=True)
+    district_held = models.CharField(max_length=8, blank=True, null=True)
+    party         = models.CharField(max_length=64, blank=True, null=True)
+    seat          = models.CharField(max_length=64, blank=True, null=True)
+    seat_held     = models.CharField(max_length=64, blank=True, null=True)
+    seat_status   = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
+    seat_result   = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
 
     class Meta:
         db_table = 'matchbox_politicianmetadata'
@@ -216,14 +220,19 @@ class PoliticianMetadataLatest(models.Model):
 
     cycle = models.PositiveSmallIntegerField()
 
-    state       = USStateField(blank=True, null=True)
-    party       = models.CharField(max_length=64, blank=True, null=True)
-    seat        = models.CharField(max_length=64, blank=True, null=True)
-    seat_status = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
-    seat_result = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
+    state         = USStateField(blank=True, null=True)
+    state_held    = USStateField(blank=True, null=True)
+    district      = models.CharField(max_length=8, blank=True, null=True)
+    district_held = models.CharField(max_length=8, blank=True, null=True)
+    party         = models.CharField(max_length=64, blank=True, null=True)
+    seat          = models.CharField(max_length=64, blank=True, null=True)
+    seat_held     = models.CharField(max_length=64, blank=True, null=True)
+    seat_status   = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
+    seat_result   = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
 
     class Meta:
         db_table = 'politician_metadata_latest_cycle_view'
+        managed = False
 
 class PoliticianCommittee(models.Model):
     entity          = models.ForeignKey(Entity, related_name='committees', null=False)

@@ -2,17 +2,29 @@
 from dcapi.aggregates.handlers import execute_top
 from dcapi.common.handlers import FilterHandler
 from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, \
-    IndustryField, query_to_ft_sql
-from dcapi.schema import Schema, FunctionField
+    IndustryField, query_to_ft_sql, _fulltext_clause
+from dcapi.schema import Schema, FunctionField, Field
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
-from django.db.models.query_utils import Q
 from urllib import unquote_plus
+
+
+class MSAField(Field):
+    
+    def __init__(self, name):
+        super(MSAField, self).__init__(name)
+
+    def apply(self, query, msa_name):
+        return query.extra(tables=['geo_msa', 'geo_zip'],
+                    where=["contribution_contribution.contributor_zipcode = geo_zip.zipcode",
+                           "geo_zip.msa_id = geo_msa.id",
+                           _fulltext_clause('geo_msa.name')],
+                    params=[query_to_ft_sql(msa_name)])
 
 
 def _contributor_state_in_generator(query, *states):
     return query.filter(contributor_state__in=[state.upper() for state in states])
-    
+
 
 def _cycle_in_generator(query, *cycles):
     def dual_cycles(cycles):
@@ -20,8 +32,8 @@ def _cycle_in_generator(query, *cycles):
             yield int(cycle) - 1
             yield int(cycle)
     return query.filter(cycle__in=[cycle for cycle in dual_cycles(cycles)])
-    
-    
+
+
 def _for_against_generator(query, for_against):
     if for_against == 'for':
         query = query.exclude(transaction_type__in=('24a','24n'))
@@ -57,6 +69,7 @@ CONTRIBUTION_SCHEMA = Schema(
     FulltextField('employer_ft', ['organization_name', 'parent_organization_name', 'contributor_employer']), # deprecated!!!!                  
     FulltextField('organization_ft', ['organization_name', 'parent_organization_name', 'contributor_employer']),
     FulltextField('recipient_ft', ['recipient_name']),
+    MSAField('msa_ft')
 )
 
 def filter_contributions(request):    
@@ -98,10 +111,13 @@ class ContributionFilterHandler(FilterHandler):
 
 
 class ContributorGeoHandler(FilterHandler):
-    fields = ['contributor_name', 'contributor_location', 'count']
+    fields = ['contributor_name', 'contributor_location', 'count', 'amount_total', 'amount_democrat', 'amount_republican']
     
     stmt = """
-        select contributor_name, coalesce(m.name, c.contributor_zipcode), count(*)
+        select contributor_name, coalesce(m.name, c.contributor_zipcode), count(*), 
+            sum(amount) as amount_total,
+            sum(case when recipient_party = 'D' then amount else 0 end) as amount_democrat,
+            sum(case when recipient_party = 'R' then amount else 0 end) as amount_republican
         from contribution_contribution c
         left join geo_zip z on c.contributor_zipcode = z.zipcode
         left join geo_msa m on z.msa_id = m.id
@@ -122,4 +138,5 @@ class ContributorGeoHandler(FilterHandler):
         labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
 
         return labeled_result    
+
     

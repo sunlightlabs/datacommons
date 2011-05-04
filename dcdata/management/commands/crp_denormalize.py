@@ -30,13 +30,13 @@ class RecipientFilter(Filter):
         elif recip_id and recip_id.startswith('C'):
             committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
             self.add_committee_recipient(committee, record)
-            
+
         return record
 
     @staticmethod
     def add_empty_recipient(record):
         """ Initialize recipient fields so that nothing is left as 'None'. """
-        
+
         record['recipient_name'] = ''
         record['recipient_party'] = ''
         record['recipient_type'] = ''
@@ -44,15 +44,15 @@ class RecipientFilter(Filter):
         record['recipient_category'] = ''
         record['seat_status'] = ''
         record['seat_result'] = ''
-        
+
         record['recipient_state'] = ''
         record['seat'] = ''
         record['district'] = ''
         record['recipient_state_held'] = ''
         record['seat_held'] = ''
         record['district_held'] = ''
-            
-            
+
+
     @staticmethod
     def get_recip_code_result(recip_code):
         recip_code = recip_code.strip().upper()
@@ -89,7 +89,14 @@ class RecipientFilter(Filter):
         seat_key     = RecipientFilter.format_key('seat', label)
         district_key = RecipientFilter.format_key('district', label)
 
-        if len(seat) == 4:
+        record[seat_key] = ''
+        record[state_key] = ''
+        record[district_key] = ''
+
+        # The strip() is needed to catch the case where CRP leaves
+        # the field "blank," legitimately, but it's actually '    '
+
+        if len(seat.strip()) == 4:
             if seat == 'PRES':
                 record[state_key] = ''
                 record[seat_key] = 'federal:president'
@@ -98,6 +105,7 @@ class RecipientFilter(Filter):
                 if seat[2] == 'S':
                     record[seat_key] = 'federal:senate'
                 else:
+                    # house seats are coded like ('MD04', 'NY10')
                     record[seat_key] = 'federal:house'
                     record[district_key] = "%s-%s" % (seat[:2], seat[2:])
 
