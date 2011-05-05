@@ -1,0 +1,18 @@
+from django.db import models
+
+class ContractorMisconduct(models.Model):
+    contractor = models.CharField(max_length=255, blank=False, null=False)
+    instance = models.CharField(max_length=255, blank=False, null=False)
+
+    penalty_amount = models.IntegerField()
+
+    contracting_party = models.CharField(max_length=255, blank=False, null=False)
+    court_type = models.CharField(max_length=14, blank=True, null=False)
+
+    date = models.DateField()
+    date_significance = models.CharField(max_length=50, blank=True, null=False)
+
+    disposition = models.CharField(max_length=30, blank=True, null=False)
+    enforcement_agency = models.CharField(max_length=255, blank=True, null=False)
+    misconduct_type = models.CharField(max_length=20, blank=False, null=False)
+
