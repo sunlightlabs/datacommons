@@ -28,6 +28,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'sentry.client.middleware.Sentry404CatchMiddleware',
 )
 
 ROOT_URLCONF = 'app.urls'
@@ -51,6 +52,7 @@ INSTALLED_APPS = (
     'dcapi.contributions',
     'dcentity.tools',
     'django_nose',
+    'sentry.client',
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
