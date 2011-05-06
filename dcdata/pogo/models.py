@@ -4,7 +4,7 @@ class ContractorMisconduct(models.Model):
     contractor = models.CharField(max_length=255, blank=False, null=False)
     instance = models.CharField(max_length=255, blank=False, null=False)
 
-    penalty_amount = models.IntegerField()
+    penalty_amount = models.BigIntegerField(null=True)
 
     contracting_party = models.CharField(max_length=255, blank=False, null=False)
     court_type = models.CharField(max_length=14, blank=True, null=False)
@@ -14,5 +14,5 @@ class ContractorMisconduct(models.Model):
 
     disposition = models.CharField(max_length=30, blank=True, null=False)
     enforcement_agency = models.CharField(max_length=255, blank=True, null=False)
-    misconduct_type = models.CharField(max_length=20, blank=False, null=False)
+    misconduct_type = models.CharField(max_length=32, blank=False, null=False)
 
