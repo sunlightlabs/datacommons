@@ -7,7 +7,7 @@ class ContractorMisconduct(models.Model):
     penalty_amount = models.BigIntegerField(null=True)
 
     contracting_party = models.CharField(max_length=255, blank=False, null=False)
-    court_type = models.CharField(max_length=14, blank=True, null=False)
+    court_type = models.CharField(max_length=14, blank=True, null=True)
 
     date = models.DateField()
     date_significance = models.CharField(max_length=50, blank=True, null=False)
