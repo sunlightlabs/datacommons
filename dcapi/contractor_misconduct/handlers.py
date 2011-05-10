@@ -9,7 +9,7 @@ CONTRACTOR_MISCONDUCT_SCHEMA = Schema(
     ComparisonField('penalty_amount', 'penalty_amount', cast=int),
 
     FulltextField('contractor'),
-    FulltextField('enforcement_agency_ft'),
+    FulltextField('enforcement_agency'),
     FulltextField('instance'),
     FulltextField('contracting_party'),
 
