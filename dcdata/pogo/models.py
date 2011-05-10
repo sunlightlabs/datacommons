@@ -11,6 +11,7 @@ class ContractorMisconduct(models.Model):
 
     date = models.DateField()
     date_significance = models.CharField(max_length=50, blank=True, null=False)
+    date_year = models.SmallIntegerField(null=True)
 
     disposition = models.CharField(max_length=30, blank=True, null=False)
     enforcement_agency = models.CharField(max_length=255, blank=True, null=False)
