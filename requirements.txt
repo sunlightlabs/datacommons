@@ -14,3 +14,6 @@ django-indexer
 django-paging
 django-sentry
 -e git+http://github.com/sunlightlabs/name-cleaver.git#egg=name-cleaver
+BeautifulSoup
+scrapelib
+httplib2
