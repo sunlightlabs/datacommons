@@ -3,6 +3,7 @@ from django.db import models
 class Contractor(models.Model):
     name = models.CharField(max_length=255, blank=False, null=False)
     url = models.URLField(blank=False, null=False)
+    contractor_ext_id = models.SmallIntegerField(null=True)
 
 class Misconduct(models.Model):
     contractor = models.ForeignKey(Contractor)
