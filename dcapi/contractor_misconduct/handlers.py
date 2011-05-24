@@ -8,10 +8,10 @@ CONTRACTOR_MISCONDUCT_SCHEMA = Schema(
 
     ComparisonField('penalty_amount', 'penalty_amount', cast=int),
 
-    FulltextField('name_ft', ['name']),
-    FulltextField('enforcement_agency_ft'),
-    FulltextField('instance_ft'),
-    FulltextField('contracting_party_ft'),
+    FulltextField('contractor', ['pogo_contractor.name']),
+    FulltextField('enforcement_agency'),
+    FulltextField('instance'),
+    FulltextField('contracting_party'),
 
 )
 
@@ -27,6 +27,11 @@ class ContractorMisconductFilterHandler(FilterHandler):
     filename = 'contractor_misconduct'
 
     def queryset(self, params):
-        return filter_contractor_misconduct(self._unquote(params))
+        q = filter_contractor_misconduct(self._unquote(params))
 
+        # filter does nothing--it's here to force the join
+        if 'contractor' in params:
+            q = q.filter(contractor__name__isnull=False)
+
+        return q
 
