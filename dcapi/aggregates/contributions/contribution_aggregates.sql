@@ -574,6 +574,10 @@ create table agg_industries_to_cand as
         inner join recipient_associations ra using (transaction_id)
         left join industry_associations ia using (transaction_id)
         left join matchbox_entity me on me.id = ia.entity_id
+        left join matchbox_entityattribute ma on ma.entity_id = ia.entity_id
+        where
+            -- exclude subindustries
+            coalesce(ma.namespace, 'urn:crp:industry') = 'urn:crp:industry'
         group by ra.entity_id, ia.entity_id, coalesce(me.name, 'UNKNOWN'), c.cycle
     )
 
