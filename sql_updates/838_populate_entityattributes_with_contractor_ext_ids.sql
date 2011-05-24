@@ -1,30 +1,5 @@
-insert into matchbox_entityattribute (entity_id, namespace, value) select match_id, 'urn:sunlight:pogo_contractor_url', contractor_ext_id from matching_pogo_matches_20110523_1051 m inner join pogo_contractor c on m.subject_id = c.id where confidence > 2;
---
---
---
---
---
---datacommons=> select distinct namespace from matchbox_entityattribute;
---                   namespace                    
---------------------------------------------------
--- urn:nimsp:organization
--- urn:crp:organization
--- urn:crp:individual
--- urn:crp:recipient
--- urn:nimsp:recipient
--- urn:crp:subindustry
--- urn:nimsp:subindustry
--- urn:sunlight:lobbyist_registration_tracker_url
--- urn:crp:industry
---(9 rows)
---
---Time: 75.152 ms
---datacommons=> \d matchbox_entityattribute
---                                  Table "public.matchbox_entityattribute"
---  Column   |          Type          |                               Modifiers                               
--------------+------------------------+-----------------------------------------------------------------------
--- id        | integer                | not null default nextval('matchbox_entityattribute_id_seq'::regclass)
--- entity_id | uuid                   | not null
--- namespace | character varying(255) | not null
--- value     | character varying(255) | not null
-
+insert into matchbox_entityattribute (entity_id, namespace, value) 
+    select match_id, 'urn:sunlight:pogo_contractor_url', contractor_ext_id 
+    from matching_pogo_matches_20110523_1051 m 
+    inner join pogo_contractor c on m.subject_id = c.id 
+    where confidence > 2;
