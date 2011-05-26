@@ -12,26 +12,32 @@ CONTRACTOR_MISCONDUCT_SCHEMA = Schema(
     FulltextField('enforcement_agency'),
     FulltextField('instance'),
     FulltextField('contracting_party'),
-
 )
 
 
 def filter_contractor_misconduct(request):
-    return CONTRACTOR_MISCONDUCT_SCHEMA.build_filter(Misconduct.objects, request).order_by()
+    q = CONTRACTOR_MISCONDUCT_SCHEMA.build_filter(Misconduct.objects, request).order_by()
+
+    # filter does nothing--it's here to force the join
+    if 'contractor' in request:
+        q = q.filter(contractor__name__isnull=False)
+
+    return q.distinct().select_related()
+
 
 
 class ContractorMisconductFilterHandler(FilterHandler):
-    #fields = ( ('contractor', ('name',),), 'instance', 'penalty_amount', 'contracting_party', 'court_type', 'date', 'date_significance', 'date_year', 'disposition', 'enforcement_agency', 'misconduct_type', 'synopsis')
     model = Misconduct
-    ordering = ['-date','-disposition']
+    ordering = ['-date', '-disposition']
     filename = 'contractor_misconduct'
 
+
     def queryset(self, params):
-        q = filter_contractor_misconduct(self._unquote(params))
+        return filter_contractor_misconduct(self._unquote(params))
 
-        # filter does nothing--it's here to force the join
-        if 'contractor' in params:
-            q = q.filter(contractor__name__isnull=False)
 
-        return q
+    # this flattens out the nested contractor record to come through as 'contractor': 'Company XYZ'
+    @classmethod
+    def contractor(cls, item):
+        return item.contractor.name
 
