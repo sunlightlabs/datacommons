@@ -40,12 +40,11 @@ create table agg_pogo_contractor_misconduct as
             court_type,
             misconduct_type,
             misconduct.url as misconduct_url,
-            rank() over (partition by entity.id, date_year + date_year % 2 order by sum(penalty_amount) desc) as rank
+            rank() over (partition by entity.id, date_year + date_year % 2 order by penalty_amount desc) as rank
         from pogo_misconduct misconduct
         inner join pogo_contractor contractor on misconduct.contractor_id = contractor.id
         inner join assoc_pogo assoc on assoc.misconduct_id = misconduct.id
         inner join matchbox_entity entity on assoc.entity_id = entity.id
-        group by date_year, entity.id, contractor.name, contracting_party, penalty_amount, instance, court_type, misconduct_type, misconduct.url
     )
     select cycle, year, contractor_entity, contractor, contracting_party, penalty_amount, instance, court_type, misconduct_type, misconduct_url
     from misconduct_by_cycle
@@ -56,9 +55,8 @@ create table agg_pogo_contractor_misconduct as
     select cycle, year, contractor_entity, contractor, contracting_party, penalty_amount, instance, court_type, misconduct_type, misconduct_url
     from (
         select -1 as cycle, year, contractor_entity, contractor, contracting_party, penalty_amount, instance, court_type, misconduct_type, misconduct_url,
-            rank() over (partition by contractor_entity order by sum(penalty_amount) desc) as rank
+            rank() over (partition by contractor_entity order by penalty_amount desc) as rank
         from misconduct_by_cycle
-        group by year, contractor_entity, contractor, contracting_party, penalty_amount, instance, court_type, misconduct_type, misconduct_url
     ) x
     where rank <= :agg_top_n
 ;
