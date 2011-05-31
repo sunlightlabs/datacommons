@@ -4,19 +4,15 @@ from dcapi.aggregates.handlers import EntityTopListHandler
 
 class TopContractorMisconductHandler(EntityTopListHandler):
 
-    args = 'entity_id year limit'.split()
-    fields = 'date_year contractor instance penalty_amount contracting_party misconduct_type'.split()
+    args = 'entity_id cycle'.split()
+    fields = 'cycle year contractor_entity contractor penalty_amount contracting_party instance court_type misconduct_type misconduct_url'.split()
+
     stmt = """
-        select {0}
-        from pogo_contractormisconduct cm
-        inner join pogo_contractormisconduct_associations cma
-            on cm.id = cma.contractormisconduct_id
-        inner join matchbox_entity me
-            on me.id = cma.entity_id
+        select cycle, year, contractor_entity, contractor, penalty_amount, contracting_party, instance, court_type, misconduct_type, misconduct_url
+        from agg_pogo_contractor_misconduct cm
         where
-            me.id = %s
-            and date_year = %s
-        limit %s
-        order by penalty_amount desc, date_year desc
+            contractor_entity = %s
+            and cycle = %s
+        order by cycle desc, penalty_amount desc
     """.format(', '.join(fields))
 
