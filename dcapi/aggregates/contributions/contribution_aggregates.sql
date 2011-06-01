@@ -677,6 +677,30 @@ select date_trunc('second', now()) || ' -- create index agg_orgs_from_indiv_idx 
 create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
 
 
+-- Organization PAC Giving
+
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_org_pac_total';
+drop table if exists agg_org_pac_total;
+
+select date_trunc('second', now()) || ' -- create table agg_org_pac_total';
+create table agg_org_pac_total as
+    select
+        ca.entity_id,
+        oe.name as organization_name,
+        cycle,
+        count(*),
+        sum(c.amount) as amount
+    from contributions_organization c
+    inner join recipient_associations ra using (transaction_id)
+    left join contributor_associations ca using (transaction_id)
+    inner join matchbox_entity oe on oe.id = ca.entity_id
+    group by ca.entity_id, oe.name, cycle
+;
+
+select date_trunc('second', now()) || ' -- create index agg_org_pac_total__entity_id';
+create index agg_org_pac_total__entity_id on agg_org_pac_total (entity_id);
+
 
 -- Organizations to Candidate
 
