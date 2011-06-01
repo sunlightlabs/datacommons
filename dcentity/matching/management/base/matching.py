@@ -15,6 +15,8 @@ class MatchingCommand(BaseCommand):
         ),
     )
 
+    name_cleaver = PoliticianNameCleaver
+
     def __init__(self, *args, **kwargs):
         super(MatchingCommand, self).__init__(*args, **kwargs)
         self.subject = None
@@ -27,8 +29,6 @@ class MatchingCommand(BaseCommand):
         self.match_id_type = 'uuid'
 
         self.match_operator = 'icontains'
-
-        self.name_cleaver = PoliticianNameCleaver
 
     @transaction.commit_manually
     def handle(self, *args, **options):

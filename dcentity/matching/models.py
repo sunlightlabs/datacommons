@@ -19,7 +19,6 @@ class Officer(models.Model):
 
 
 class WhiteHouseVisitor(models.Model):
-    id = models.IntegerField(primary_key=True)
     first_name = models.CharField(max_length=64)
     middle_name = models.CharField(max_length=64)
     last_name = models.CharField(max_length=64)
@@ -31,3 +30,12 @@ class WhiteHouseVisitor(models.Model):
         return ' '.join([ x for x in [self.first_name, self.middle_name, self.last_name] if x])
 
     name = property(build_name)
+
+
+class HonorariumRegistrant(models.Model):
+    registrant_ext_id = models.IntegerField()
+    name = models.CharField(max_length=200)
+    total_given = models.BigIntegerField()
+
+    class Meta:
+        db_table = 'honorarium_registrant'
