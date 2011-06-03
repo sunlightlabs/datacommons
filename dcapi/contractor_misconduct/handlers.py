@@ -28,7 +28,7 @@ def filter_contractor_misconduct(request):
 
 class ContractorMisconductFilterHandler(FilterHandler):
     model = Misconduct
-    ordering = ['-date', '-disposition']
+    ordering = ['-penalty_amount', '-date']
     filename = 'contractor_misconduct'
 
 
