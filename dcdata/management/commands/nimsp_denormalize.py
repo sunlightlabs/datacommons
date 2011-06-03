@@ -8,7 +8,6 @@ from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
 from dcdata.management.base.nimsp_importer import BaseNimspImporter
 
 from saucebrush.emitters import CSVEmitter
-from saucebrush.sources import CSVSource
 from saucebrush.filters import *
 
 from settings import LOADING_DIRECTORY
@@ -20,8 +19,6 @@ from dcdata.scripts.nimsp.salt import DCIDFilter, SaltFilter
 
 from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from dcdata.processor import chain_filters, load_data
-from django.core.management.base import BaseCommand, CommandError
-from optparse import make_option
 from dcdata.loading import model_fields
 from dcdata.utils.sql import parse_decimal, parse_int
 
@@ -238,9 +235,6 @@ class NIMSPDenormalize(BaseNimspImporter):
     DONE_DIR     = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/DONE')
     REJECTED_DIR = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/REJECTED')
     OUT_DIR      = os.path.join(LOADING_DIRECTORY, 'nimsp/loading/IN')
-
-    #LOG_PATH = '/home/datacommons/data/auto/log/nimsp_denormalize.log'
-    #TODO: Make base class die if the above variable is not defined
 
     SALTS_DB     = os.path.join(LOADING_DIRECTORY, 'nimsp/salts.db')
 

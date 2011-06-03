@@ -16,8 +16,6 @@ class NIMSPDump2CSV(BaseNimspImporter):
     OUT_DIR      = '/home/datacommons/data/auto/nimsp/denormalized/IN'
     FILE_PATTERN = 'do_dump.txt'
 
-    LOG_PATH = '/home/datacommons/data/auto/log/nimsp_dump.log'
-
     def __init__(self):
         super(NIMSPDump2CSV, self).__init__()
 
