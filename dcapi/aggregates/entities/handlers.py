@@ -46,10 +46,9 @@ get_totals_stmt = """
          where entity_id = %s) e
     using (cycle)
     full outer join (
-        select cycle, count(*)
-        from agg_pogo_contractor_misconduct
-        where contractor_entity = %s
-        group by cycle
+        select cycle, count
+        from agg_pogo_totals
+        where entity_id = %s
     ) cm using (cycle)
 """
 
