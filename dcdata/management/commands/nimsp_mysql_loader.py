@@ -11,8 +11,6 @@ class NimspMysqlLoader(BaseNimspImporter):
     OUT_DIR      = '/home/datacommons/data/auto/nimsp/dump/IN'
     FILE_PATTERN = '*.sql'
 
-    LOG_PATH = '/home/datacommons/data/auto/log/nimsp_mysql_loader.log'
-
 
     def do_for_file(self, file_path):
         file = os.path.basename(file_path)

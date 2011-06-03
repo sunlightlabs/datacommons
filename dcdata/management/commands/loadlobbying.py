@@ -1,10 +1,9 @@
 from dcdata.loading              import Loader, LoaderEmitter
 from dcdata.lobbying.models      import Lobbying, Lobbyist, Agency, Issue, Bill
 from decimal                     import Decimal
-from django.core.management.base import CommandError, BaseCommand
+from dcdata.management.base.importer import BaseImporter
 from django.core                 import management
 from django.db                   import connections
-from optparse                    import make_option
 from saucebrush                  import run_recipe
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
     Filter, FieldMerger
@@ -96,9 +95,10 @@ TRANSACTION_FILTER = TransactionFilter()
 
 class LobbyingHandler(TableHandler):
 
-    def __init__(self, inpath):
+    def __init__(self, inpath=None, log=None):
         super(LobbyingHandler, self).__init__(inpath)
         self.db_table = 'lobbying_lobbying'
+        self.log = log
 
     def pre_drop(self):
         cursor = connections['default'].cursor()
@@ -134,9 +134,10 @@ class LobbyingHandler(TableHandler):
 
 class AgencyHandler(TableHandler):
 
-    def __init__(self, inpath):
+    def __init__(self, inpath=None, log=None):
         super(AgencyHandler, self).__init__(inpath)
         self.db_table = 'lobbying_agency'
+        self.log = log
 
     def run(self):
         run_recipe(
@@ -156,9 +157,10 @@ class AgencyHandler(TableHandler):
 
 class LobbyistHandler(TableHandler):
 
-    def __init__(self, inpath):
+    def __init__(self, inpath=None, log=None):
         super(LobbyistHandler, self).__init__(inpath)
         self.db_table = 'lobbying_lobbyist'
+        self.log = log
 
     def run(self):
         run_recipe(
@@ -179,9 +181,10 @@ class LobbyistHandler(TableHandler):
 
 class IssueHandler(TableHandler):
 
-    def __init__(self, inpath):
+    def __init__(self, inpath=None, log=None):
         super(IssueHandler, self).__init__(inpath)
         self.db_table = 'lobbying_issue'
+        self.log = log
 
     def run(self):
         run_recipe(
@@ -201,9 +204,10 @@ class IssueHandler(TableHandler):
 
 class BillHandler(TableHandler):
 
-    def __init__(self, inpath):
+    def __init__(self, inpath=None, log=None):
         super(BillHandler, self).__init__(inpath)
         self.db_table = 'lobbying_bill'
+        self.log = log
         self.digits = re.compile(r'\D*(\d+)')
         # input values are the keys, target values to match opencongress bill types are the values
         self.bill_type_map = {
@@ -245,55 +249,65 @@ class BillHandler(TableHandler):
 
 
 HANDLERS = {
-    "lob_lobbying": LobbyingHandler,
-    "lob_lobbyist": LobbyistHandler,
-    "lob_issue":    IssueHandler,
-    "lob_agency":   AgencyHandler,
-    "lob_bills":    BillHandler,
+    "denorm_lob_lobbying": LobbyingHandler,
+    "denorm_lob_lobbyist": LobbyistHandler,
+    "denorm_lob_issue":    IssueHandler,
+    "denorm_lob_agency":   AgencyHandler,
+    "denorm_lob_bills":    BillHandler,
 }
 
-SOURCE_FILES = [ 'lob_lobbying', 'lob_lobbyist', 'lob_issue', 'lob_agency', 'lob_bills' ]
+FILES = 'denorm_lob_lobbying.csv denorm_lob_lobbyist.csv denorm_lob_issue.csv denorm_lob_agency.csv denorm_lob_bills.csv'.split()
 
 # main management command
 
-class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),
-        make_option("-f", "--files", dest="files", help="source files", metavar="FILE[,FILE]"),
-    )
+class Command(BaseImporter):
 
-    def handle(self, *args, **options):
+    IN_DIR       = '/home/datacommons/data/auto/lobbying/denormalized/IN'
+    DONE_DIR     = '/home/datacommons/data/auto/lobbying/denormalized/DONE'
+    REJECTED_DIR = '/home/datacommons/data/auto/lobbying/denormalized/REJECTED'
+    FILE_PATTERN = 'denorm_lob_*.csv'
 
-        if 'dataroot' not in options or options['dataroot'] is None:
-            raise CommandError("path to dataroot is required")
 
-        dataroot = os.path.abspath(options['dataroot'])
-        tables = options['files'].split(',') if options['files'] else SOURCE_FILES
+    def do_first(self):
+        for handler in HANDLERS.values():
+            handler_obj = handler(None, self.log)
+            handler_obj.drop()
 
-        handlers = []
-
-        tables.reverse() # this is so that we drop the tables in reverse (dependent-first) order
-        for table in tables:
-            print table
-            inpath = os.path.join(dataroot, "denorm_%s.csv" % table)
-
-            if os.path.exists(inpath):
-                handler_class = HANDLERS.get(table, None)
-
-                if handler_class is None:
-                    raise Exception, "!!! no handler for %s" % table
-                else:
-                    print "found handler"
-                    handler = handler_class(inpath)
-                    handler.drop()
-                    handlers.append(handler)
-
-        print "Syncing database to recreate dropped tables:"
+        self.log.info("Syncing database to recreate dropped tables:")
         management.call_command('syncdb', interactive=False)
 
-        handlers.reverse() # this is to undo the last reverse and load the data in the intended (necessary) order
-        for handler in handlers:
-            handler.post_create()
-            print "loading records for %s" % handler.db_table
+        for handler in HANDLERS.values():
+            handler_obj = handler(None, self.log)
+            handler_obj.post_create()
+
+    def find_eligible_files(self):
+        """
+            Goes through the IN_DIR and finds files in the FILES array to work with
+            We predefine the array so that the tables get loaded in the right order
+        """
+
+        present_files = [ os.path.join(self.IN_DIR, x) for x in FILES if x in os.listdir(self.IN_DIR) ]
+
+        if len(present_files) > 0:
+            for file_path in present_files:
+                self.log.info('Found file {0}'.format(file_path))
+                if self.file_has_not_been_written_to_for_over_a_minute(file_path):
+                    yield file_path
+                else:
+                    self.log.info('File last modified time is too recent. Skipping.')
+        else:
+            self.log.info('No files found.')
+
+
+    def do_for_file(self, file_path):
+        handler_class = HANDLERS.get(os.path.basename(file_path).split('.')[0], None)
+
+        if handler_class is None:
+            self.log.fatal("!!! no handler for {0}".format(file_path))
+        else:
+            self.log.info("Found handler")
+            handler = handler_class(file_path, self.log)
+            self.log.info("Loading records for {0}".format(handler.db_table))
             handler.run()
+            self.archive_file(file_path, True)
 
