@@ -1,16 +1,16 @@
-import os
-
-from dcdata.management.base.nimsp_importer import BaseNimspImporter
+from dcdata.management.base.extractor import Extractor
 
 
-class NimspExtractor(BaseNimspImporter):
+class NimspExtractor(Extractor):
 
-    IN_DIR       = '/home/datacommons/data/auto/nimsp/download/IN'
-    DONE_DIR     = '/home/datacommons/data/auto/nimsp/download/DONE'
-    REJECTED_DIR = '/home/datacommons/data/auto/nimsp/download/REJECTED'
-    OUT_DIR      = '/home/datacommons/data/auto/nimsp/raw/IN'
+    IN_DIR       = '/home/datacommons/data/auto/lobbying/download/IN'
+    DONE_DIR     = '/home/datacommons/data/auto/lobbying/download/DONE'
+    REJECTED_DIR = '/home/datacommons/data/auto/lobbying/download/REJECTED'
+    OUT_DIR      = '/home/datacommons/data/auto/lobbying/raw/IN'
+
     FILE_PATTERN = 'Sunlight.*.tar.gz'
 
+<<<<<<< HEAD
     LOG_PATH = '/home/datacommons/data/auto/log/nimsp_extractor.log'
 
     def do_for_file(self, file_path):
@@ -27,6 +27,10 @@ class NimspExtractor(BaseNimspImporter):
 
     def dry_run_for_file(self, file_path):
         self.log.info('Would extract {0} to {1} and then archive.'.format(os.path.basename(file_path), self.OUT_DIR))
+=======
+    def __init__(self):
+        super(NimspExtractor, self).__init__()
+>>>>>>> 51ed706... Adding a lobbying extractor script for automation. Also doing some related refactoring.
 
 
 Command = NimspExtractor
