@@ -43,7 +43,7 @@ class BaseImporter(BaseCommand):
             (LOGGING_EMAIL['host'], LOGGING_EMAIL['port']), # host
             LOGGING_EMAIL['username'], # from address
             ['arowland@sunlightfoundation.com'], # to addresses
-            'Unhappy NIMSP Loading App', # subject
+            'Unhappy Loading App', # subject
             (LOGGING_EMAIL['username'], LOGGING_EMAIL['password']) # credentials tuple
         )
         eh.setLevel(logging.WARN)
