@@ -7,15 +7,18 @@ import datetime
 
 class MatchingCommand(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option("-b", "--begin_at_count", dest="begin_at_count", \
+        make_option("-b", "--begin-at-count", dest="begin_at_count", \
             help="Number to resume script at", metavar="INTEGER", default=1),
         make_option("-t", "--table", dest="table", help="Table to store matches in", metavar="STRING"),
         make_option("-n", "--insert-non-matches", action='store_true', dest="insert_non_matches",
             help="Store subjects with no potential matches in the table with a confidence of -1.",
         ),
+        make_option("-I", "--do-post-insert", dest="do_post_insert", \
+            help="Perform extra processing after match insertion")
     )
 
     name_cleaver = PoliticianNameCleaver
+    confidence_threshold = 2
 
     def __init__(self, *args, **kwargs):
         super(MatchingCommand, self).__init__(*args, **kwargs)
@@ -76,7 +79,7 @@ class MatchingCommand(BaseCommand):
                     else:
                         confidence = self.get_confidence(match_name, subject_name)
 
-                    if confidence >= 2:
+                    if confidence >= self.confidence_threshold:
                         if not matches_we_like.has_key(confidence):
                             matches_we_like[confidence] = []
 
@@ -88,6 +91,10 @@ class MatchingCommand(BaseCommand):
 
                     for match in matches_we_like[confidence_levels[-1]]:
                         self.insert_match(cursor, table, match, subject, confidence_levels[-1])
+
+                        if options['do_post_insert']:
+                            self.post_insert()
+
                         transaction.commit()
                         print 'Committed.'
 
@@ -112,6 +119,10 @@ class MatchingCommand(BaseCommand):
             which we can then filter more stringently by scoring
         """
         return self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject.last})
+
+
+    def do_after_insert(self, subject, match, confidence):
+        pass
 
 
     def get_confidence(self, name1, name2):
