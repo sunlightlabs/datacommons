@@ -1,10 +1,9 @@
 from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
-from django.core.management.base import CommandError, BaseCommand
+from dcdata.management.base.importer import BaseImporter
 from saucebrush.sources import CSVSource
 from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, FieldAdder
-from saucebrush.emitters import DebugEmitter, CSVEmitter
+from saucebrush.emitters import CSVEmitter
 from saucebrush import run_recipe
-from optparse import make_option
 import os
 
 # util functions
@@ -118,16 +117,17 @@ HANDLERS = {
 
 # management command
 
-class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),)
+class Command(BaseImporter):
+
+    IN_DIR       = '/home/datacommons/data/auto/lobbying/raw/IN'
+    DONE_DIR     = '/home/datacommons/data/auto/lobbying/raw/DONE'
+    REJECTED_DIR = '/home/datacommons/data/auto/lobbying/raw/REJECTED'
+    OUT_DIR      = '/home/datacommons/data/auto/lobbying/denormalized/IN'
+
+    FILE_PATTERN = 'lob_*.txt'
+
 
     def handle(self, *args, **options):
-
-        if 'dataroot' not in options or options['dataroot'] is None:
-            raise CommandError("path to dataroot is required")
-
-        dataroot = os.path.abspath(options['dataroot'])
 
         for table, infields in FILE_TYPES.iteritems():
 
@@ -135,11 +135,12 @@ class Command(BaseCommand):
 
             if handler is not None:
 
-                inpath = os.path.join(dataroot, "%s.txt" % table)
-                outpath = os.path.join(dataroot, "denorm_%s.csv" % table)
+                inpath = os.path.join(self.IN_DIR, "%s.txt" % table)
+                outpath = os.path.join(self.OUT_DIR, "denorm_%s.csv" % table)
 
                 outfields = [field.name for field in MODELS[table]._meta.fields]
 
                 print "Denormalizing %s" % inpath
 
                 handler(inpath, outpath, infields, outfields)
+

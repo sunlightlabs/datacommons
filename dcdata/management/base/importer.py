@@ -10,7 +10,7 @@ class BaseImporter(BaseCommand):
     IN_DIR       = None # '/home/datacommons/data/auto/nimsp/raw/IN'
     DONE_DIR     = None # '/home/datacommons/data/auto/nimsp/raw/DONE'
     REJECTED_DIR = None # '/home/datacommons/data/auto/nimsp/raw/REJECTED'
-    OUT_DIR      = None # '/home/datacommons/data/auto/nimsp/IN'
+    OUT_DIR      = None # '/home/datacommons/data/auto/nimsp/denormalized/IN'
     FILE_PATTERN = None # bash-style, ala '*.sql'
 
     option_list = BaseCommand.option_list + (
