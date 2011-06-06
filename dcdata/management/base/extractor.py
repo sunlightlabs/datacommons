@@ -14,11 +14,11 @@ class Extractor(BaseImporter):
 
     def __init__(self):
         super(Extractor, self).__init__()
-        self._check_attribute(self.IN_DIR)
-        self._check_attribute(self.DONE_DIR)
-        self._check_attribute(self.REJECTED_DIR)
-        self._check_attribute(self.OUT_DIR)
-        self._check_attribute(self.FILE_PATTERN)
+        self._check_attribute('IN_DIR')
+        self._check_attribute('DONE_DIR')
+        self._check_attribute('REJECTED_DIR')
+        self._check_attribute('OUT_DIR')
+        self._check_attribute('FILE_PATTERN')
 
 
     def do_for_file(self, file_path):
