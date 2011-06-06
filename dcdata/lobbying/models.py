@@ -1,13 +1,6 @@
 from django.db import models
 
 
-"""
-FILE_TYPES = {
-    "lob_issue": ('SI_ID','UniqID','IssueID','Issue','SpecIssue','Year'),
-    "lob_bills": ('B_ID','SI_ID','CongNo','Bill_Name'),
-}
-"""
-
 class Lobbying(models.Model):
     transaction_id = models.CharField(max_length=64, primary_key=True, db_index=True)
     transaction_type = models.CharField(max_length=8)
