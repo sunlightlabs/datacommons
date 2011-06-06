@@ -574,6 +574,10 @@ create table agg_industries_to_cand as
         inner join recipient_associations ra using (transaction_id)
         left join industry_associations ia using (transaction_id)
         left join matchbox_entity me on me.id = ia.entity_id
+        left join matchbox_entityattribute ma on ma.entity_id = ia.entity_id
+        where
+            -- exclude subindustries
+            coalesce(ma.namespace, 'urn:crp:industry') = 'urn:crp:industry'
         group by ra.entity_id, ia.entity_id, coalesce(me.name, 'UNKNOWN'), c.cycle
     )
 
@@ -672,6 +676,30 @@ create table agg_orgs_from_indiv as
 select date_trunc('second', now()) || ' -- create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle)';
 create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
 
+
+-- Organization PAC Giving
+
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_org_pac_total';
+drop table if exists agg_org_pac_total;
+
+select date_trunc('second', now()) || ' -- create table agg_org_pac_total';
+create table agg_org_pac_total as
+    select
+        ca.entity_id,
+        oe.name as organization_name,
+        cycle,
+        count(*),
+        sum(c.amount) as amount
+    from contributions_organization c
+    inner join recipient_associations ra using (transaction_id)
+    left join contributor_associations ca using (transaction_id)
+    inner join matchbox_entity oe on oe.id = ca.entity_id
+    group by ca.entity_id, oe.name, cycle
+;
+
+select date_trunc('second', now()) || ' -- create index agg_org_pac_total__entity_id';
+create index agg_org_pac_total__entity_id on agg_org_pac_total (entity_id);
 
 
 -- Organizations to Candidate

@@ -16,9 +16,8 @@ CONTRACTS_SCHEMA = Schema(
     InclusionField('vendor_duns', 'dunsnumber'),
     InclusionField('vendor_parent_duns', 'eeparentduns'),
 
-    FulltextField('agency_name'),
-    FulltextField('contracting_agency_name'),
-    FulltextField('requesting_agency_name'),
+    # agency names have no data. see ticket #835
+    #FulltextField('agency_name', ['agency_name', 'contracting_agency_name', 'requesting_agency_name']),
     FulltextField('vendor_name', ['vendorname']),
     FulltextField('vendor_city', ['city']),
 

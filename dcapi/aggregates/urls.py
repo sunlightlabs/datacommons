@@ -14,13 +14,14 @@ from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
     RegistrantLobbyistsHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
+from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
+    LocalEarmarksHandler
+from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
+
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
-from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
-    LocalEarmarksHandler
-
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need.
 Emitter.unregister('django')
@@ -115,6 +116,9 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
         Resource(TopEarmarksHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/contractor_misconduct\.(?P<emitter_format>.+)$',
+        Resource(TopContractorMisconductHandler, **ad)),
 
     # issues an org hired people to lobby on
     url(r'^org/(?P<entity_id>[a-f0-9]+)/issues\.(?P<emitter_format>.+)',

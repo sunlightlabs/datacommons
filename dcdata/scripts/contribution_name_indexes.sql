@@ -47,7 +47,7 @@ create index contribution_contribution_recipient_name_lower on contribution_cont
 
 -- full text indexes
 
-create text search dictionary datacommons ( template = simple, stopwords = datacommons );
+create text search dictionary datacommons ( template = simple, stopwords = english, datacommons );
 create text search configuration datacommons ( copy = simple );
 alter text search configuration datacommons alter mapping for asciiword with datacommons;
 

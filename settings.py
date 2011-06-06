@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'dcdata',
     'dcdata.contribution',
     'dcdata.contracts',
+    'dcdata.pogo',
     'dcdata.grants',
     'dcdata.lobbying',
     'dcdata.earmarks',
