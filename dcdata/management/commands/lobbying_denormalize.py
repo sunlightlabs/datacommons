@@ -149,13 +149,12 @@ class Command(BaseImporter):
 
 
     def do_for_file(self, file_path):
+        self.log.info('Starting {0}...'.format(file_path))
         table = os.path.basename(file_path).split('.')[0]
-        if not FILE_TYPES.has_key(table):
-            pass
-        else:
-            infields = FILE_TYPES[table]
 
+        if FILE_TYPES.has_key(table):
             handler = HANDLERS.get(table, None)
+            infields = FILE_TYPES[table]
 
             if handler is not None:
 
@@ -164,7 +163,10 @@ class Command(BaseImporter):
 
                 outfields = [field.name for field in MODELS[table]._meta.fields]
 
-                print "Denormalizing %s" % inpath
-
+                self.log.info("Denormalizing {0}".format(inpath))
                 handler(inpath, outpath, infields, outfields)
+
+                self.log.info("Done with {0}.".format(inpath))
+
+        self.archive_file(file_path, timestamp=True)
 
