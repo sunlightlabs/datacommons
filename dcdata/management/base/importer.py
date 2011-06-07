@@ -111,10 +111,7 @@ class BaseImporter(BaseCommand):
                 file_path = os.path.join(self.IN_DIR, file)
                 self.log.info('Found file {0}'.format(file))
                 if fnmatch.fnmatch(file, self.FILE_PATTERN):
-                    # make sure the file has downloaded completely (hasn't been modified in the last minute)
-                    now_epoch = time.time()
-                    last_modified_epoch = os.path.getmtime(file_path)
-                    if now_epoch - last_modified_epoch > 60:
+                    if self.file_has_not_been_written_to_for_over_a_minute(file_path):
                         yield file_path
                     else:
                         self.log.info('File last modified time is too recent. Skipping.')
@@ -160,4 +157,11 @@ class BaseImporter(BaseCommand):
         os.remove(self.pid_file_path)
 
 
+    def file_has_not_been_written_to_for_over_a_minute(self, file_path):
+        """
+            Make sure the file has downloaded completely
+        """
+        now_epoch = time.time()
+        last_modified_epoch = os.path.getmtime(file_path)
+        return now_epoch - last_modified_epoch > 60
 
