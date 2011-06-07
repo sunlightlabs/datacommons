@@ -330,8 +330,7 @@ class Command(BaseImporter):
             We predefine the array so that the tables get loaded in the right order
         """
 
-        files = [ os.path.join(self.IN_DIR, x) for x in FILES ]
-        present_files = [ x for x in files if x in os.listdir(self.IN_DIR) ]
+        present_files = [ os.path.join(self.IN_DIR, x) for x in FILES if x in os.listdir(self.IN_DIR) ]
 
         if len(present_files) > 0:
             for file_path in present_files:
