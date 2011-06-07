@@ -70,17 +70,20 @@ class BaseImporter(BaseCommand):
 
         self.dry_run = options['dry_run']
 
-        try:
-            for file_path in self.find_eligible_files():
-                if not self.dry_run:
+        if not self.dry_run:
+            self.do_first()
+
+        for file_path in self.find_eligible_files():
+            if not self.dry_run:
+                try:
                     self.do_for_file(file_path)
-                else:
-                    self.dry_run_for_file(file_path)
-        except:
-            self.log.exception("Unexpected error:")
-            self.reject_file(file_path)
-        finally:
-            self.destroy_pid_file()
+                except:
+                    self.log.exception("Unexpected error:")
+                    self.reject_file(file_path)
+            else:
+                self.dry_run_for_file(file_path)
+
+        self.destroy_pid_file()
 
         self.log.info('Finished.')
 
@@ -100,6 +103,11 @@ class BaseImporter(BaseCommand):
         pass
 
 
+    # define this (only if necessary) in the derived classes
+    def do_first(self):
+        pass
+
+
     def find_eligible_files(self):
         """
             Goes through the IN_DIR and finds files matching the FILE_PATTERN to act on
@@ -107,7 +115,7 @@ class BaseImporter(BaseCommand):
         files = os.listdir(self.IN_DIR)
 
         if len(files) > 0:
-            for file in os.listdir(self.IN_DIR):
+            for file in files:
                 file_path = os.path.join(self.IN_DIR, file)
                 self.log.info('Found file {0}'.format(file))
                 if fnmatch.fnmatch(file, self.FILE_PATTERN):
