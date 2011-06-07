@@ -350,8 +350,9 @@ class Command(BaseImporter):
         if handler_class is None:
             self.log.fatal("!!! no handler for {0}".format(file_path))
         else:
-            self.log.debug("Found handler")
+            self.log.info("Found handler")
             handler = handler_class(file_path, self.log)
             self.log.info("Loading records for {0}".format(handler.db_table))
             handler.run()
+            self.archive_file(file_path, True)
 
