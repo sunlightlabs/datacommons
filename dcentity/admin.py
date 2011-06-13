@@ -20,6 +20,7 @@ class EntityAdmin(admin.ModelAdmin):
     inlines = [AliasInline, AttributeInline, WikipediaInline, BioguideInline, SunlightInline]
     list_filter = ('type',)
     search_fields = ['name','aliases__alias','id']
+    readonly_fields = ['timestamp','should_delete']
 
 class MergeCandidateAdmin(admin.ModelAdmin):
     list_display = ('name','priority','owner','owner_timestamp')

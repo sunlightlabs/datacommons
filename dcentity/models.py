@@ -126,8 +126,12 @@ class Entity(models.Model):
 
 
 class EntityAlias(models.Model):
+    ENTITY_ALIAS_NAMESPACE_CHOICES = (
+        ('urn:nimsp:organization','nimsp:organization'),
+        ('urn:crp:organization','crp:organization'),
+    )
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
-    namespace = models.CharField(max_length=255, null=False)
+    namespace = models.CharField(max_length=255, null=False, choices = ENTITY_ALIAS_NAMESPACE_CHOICES)
     alias = models.CharField(max_length=255, null=False)
 
     class Meta:
@@ -152,12 +156,24 @@ class EntityNameParts(models.Model):
 
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
+    ATTRIBUTE_NAMESPACE_CHOICES = (
+        ('urn:nimsp:organization','nimsp:organization'),
+        ('urn:crp:individual','crp:individual'),
+        ('urn:sunlight:lobbyist_registration_tracker_url','sunlight:lobbyist_registration_tracker_url'),
+        ('urn:crp:industry','crp:industry'),
+        ('urn:crp:organization','crp:organization'),
+        ('urn:crp:recipient','crp:recipient'),
+        ('urn:nimsp:recipient','nimsp:recipient'),
+        ('urn:crp:subindustry','crp:subindustry'),
+        ('urn:nimsp:subindustry','nimsp:subindustry'),
+        ('urn:pogo:contractor','pogo:contractor'),
+    )
     entity = models.ForeignKey(Entity, related_name='attributes', null=False)
-    namespace = models.CharField(max_length=255, null=False)
+    namespace = models.CharField(max_length=255, null=False, choices=ATTRIBUTE_NAMESPACE_CHOICES)
     value = models.CharField(max_length=255, null=False)
 
     ENTITY_ID_NAMESPACE = 'urn:transparencydata:entity_id'
-
+    
     class Meta:
         ordering = ('namespace',)
         db_table = 'matchbox_entityattribute'
