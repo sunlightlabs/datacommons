@@ -36,9 +36,9 @@ class Entity(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
-    reviewer = models.CharField(max_length=255, default="")
+    #reviewer = models.CharField(max_length=255, default="")
     should_delete = models.BooleanField(default=False, null=False)
-    flagged_on = models.DateTimeField(null=True)
+    flagged_on = models.DateTimeField(null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -131,7 +131,7 @@ class EntityAlias(models.Model):
         ('urn:crp:organization','crp:organization'),
     )
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
-    namespace = models.CharField(max_length=255, null=False, choices = ENTITY_ALIAS_NAMESPACE_CHOICES)
+    namespace = models.CharField(max_length=255, null=False, choices = ENTITY_ALIAS_NAMESPACE_CHOICES, blank=True)
     alias = models.CharField(max_length=255, null=False)
 
     class Meta:
@@ -169,7 +169,7 @@ class EntityAttribute(models.Model):
         ('urn:pogo:contractor','pogo:contractor'),
     )
     entity = models.ForeignKey(Entity, related_name='attributes', null=False)
-    namespace = models.CharField(max_length=255, null=False, choices=ATTRIBUTE_NAMESPACE_CHOICES)
+    namespace = models.CharField(max_length=255, null=False, choices=ATTRIBUTE_NAMESPACE_CHOICES, blank=True)
     value = models.CharField(max_length=255, null=False)
 
     ENTITY_ID_NAMESPACE = 'urn:transparencydata:entity_id'
@@ -313,9 +313,9 @@ class WikipediaInfo(models.Model):
 class SunlightInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='sunlight_info', null=False)
 
-    bio        = models.TextField(null=True)
+    bio        = models.TextField(null=True, blank=True)
     photo_url  = models.URLField(null=True)
-    notes      = models.CharField(max_length=255, null=True)
+    notes      = models.CharField(max_length=255, null=True, blank=True)
     created_on = models.DateField(auto_now_add=True)
     updated_on = models.DateField(auto_now=True, null=True)
 

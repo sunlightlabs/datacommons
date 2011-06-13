@@ -1,5 +1,5 @@
 from django.contrib import admin
-from dcentity.models import Entity, EntityAlias, EntityAttribute, Normalization, MergeCandidate, WikipediaInfo, BioguideInfo, SunlightInfo
+from dcentity.models import Entity, EntityAlias, EntityAttribute, Normalization, MergeCandidate, WikipediaInfo, BioguideInfo, SunlightInfo, VotesmartInfo, IndustryMetadata, PoliticianMetadata, OrganizationMetadata
 
 class AliasInline(admin.TabularInline):
     model = EntityAlias
@@ -15,12 +15,31 @@ class BioguideInline(admin.TabularInline):
 
 class SunlightInline(admin.TabularInline):
     model = SunlightInfo
+    
+class VotesmartInline(admin.TabularInline):
+    model = VotesmartInfo
+
+class IndustryMetadataInline(admin.TabularInline):
+    model = IndustryMetadata
+    fk_name = "entity"
+
+class OrganizationMetadataInline(admin.TabularInline):
+    model = OrganizationMetadata
+    fk_name = "entity"
 
 class EntityAdmin(admin.ModelAdmin):
-    inlines = [AliasInline, AttributeInline, WikipediaInline, BioguideInline, SunlightInline]
+    inlines = [AliasInline, AttributeInline, WikipediaInline, BioguideInline, SunlightInline, VotesmartInline]
+    #PoliticianMetadataInline, IndustryMetadataInline, OrganizationMetadataInline
     list_filter = ('type',)
-    search_fields = ['name','aliases__alias','id']
+    search_fields = ['aliases__alias']
     readonly_fields = ['timestamp','should_delete']
+    """
+    def queryset(self, request):
+            qs = super(MyModelAdmin, self).queryset(request)
+            if request.type = 'politi':
+                return qs
+            return qs.filter(author=request.user)
+    """
 
 class MergeCandidateAdmin(admin.ModelAdmin):
     list_display = ('name','priority','owner','owner_timestamp')

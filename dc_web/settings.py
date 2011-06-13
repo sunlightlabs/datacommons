@@ -78,6 +78,7 @@ INSTALLED_APPS = (
     'dc_web.public',
     'sentry.client',
     'django_nose',
+	'dcentity'
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
