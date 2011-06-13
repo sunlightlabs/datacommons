@@ -272,7 +272,7 @@ class BillHandler(TableHandler):
             CSVSource(open(self.inpath)),
             FieldMerger({'bill_type_raw': ['bill_name']}, lambda x: re.sub(r'[^A-Z]*', '', x), keep_fields=True),
             FieldMerger({'bill_type': ['bill_type_raw']}, lambda x: self.bill_type_map.get(x, None), keep_fields=True),
-            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] if x else None, keep_fields=True),
+            FieldMerger({'bill_no': ['bill_name']}, lambda x: self.digits.match(x).groups()[0] if x and self.digits.match(x) else None, keep_fields=True),
             NoneFilter(),
             IssueFilter(),
             UnicodeFilter(),
