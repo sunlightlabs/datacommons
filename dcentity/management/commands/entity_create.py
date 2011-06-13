@@ -9,11 +9,7 @@ from optparse                    import make_option
 
 
 INDIVIDUAL_CREATE_MAX_WARN = 100
-INDIVIDUAL_DELETE_MAX_WARN = 30
-
 POLITICIAN_CREATE_MAX_WARN = 300
-POLITICIAN_DELETE_MAX_WARN = 50
-
 ORGANIZATION_CREATE_MAX_WARN = 100
 
 class Command(BaseCommand):
@@ -86,11 +82,6 @@ class Command(BaseCommand):
 
         self.today = datetime.today().strftime("%Y%m%d")
         self.cursor = connections['default'].cursor()
-
-        if not options['skip_indivs']:
-            self.flag_individuals_for_deletion()
-        if not options['skip_pols']:
-            self.flag_politicians_for_deletion()
 
         try:
             if not options['skip_indivs']:
@@ -245,88 +236,6 @@ class Command(BaseCommand):
                 build_entity(name, 'politician', attributes)
 
         self.log.info("- Created {0} politician entities.".format(len(results)))
-
-
-    @transaction.commit_on_success()
-    def flag_individuals_for_deletion(self):
-        self.log.info("Starting to flag individuals to delete...")
-        update_sql = """
-            update
-                matchbox_entity
-            set
-                should_delete = 't',
-                flagged_on = statement_timestamp()
-            where id in (
-                select
-                    e.id
-                from
-                    matchbox_entity e
-                inner join
-                    matchbox_entityattribute a
-                        on e.id = a.entity_id
-                where
-                    e.type = 'individual'
-                    and a.namespace = 'urn:crp:individual'
-                    and not exists (
-                        select *
-                        from contribution_contribution c
-                        where c.contributor_ext_id = a.value)
-                    and not exists (
-                        select *
-                        from lobbying_lobbyist
-                        inner join lobbying_report using (transaction_id)
-                        where
-                            lobbyist_ext_id = a.value
-                            and use
-                    )
-            )
-        """
-        self.cursor.execute(update_sql)
-        transaction.set_dirty()
-        self.log.info("- Update finished.")
-
-        updated = self.cursor.rowcount
-
-        if updated > INDIVIDUAL_DELETE_MAX_WARN:
-            self.log.warn("- The script marked {0} individuals to be deleted, but we typically don't see more than {1}".format(updated, INDIVIDUAL_DELETE_MAX_WARN))
-        else:
-            self.log.info("- Marked {0} individuals to be deleted.".format(updated))
-
-
-    @transaction.commit_on_success()
-    def flag_politicians_for_deletion(self):
-        self.log.info("Starting to flag politicians to delete...")
-        update_sql = """
-            update
-                matchbox_entity
-            set
-                should_delete = 't',
-                flagged_on = statement_timestamp()
-            where id in (
-                select
-                    e.id
-                from
-                    matchbox_entity e
-                where
-                    e.type = 'politician'
-                    and not exists (
-                        select *
-                        from contribution_contribution c
-                        inner join matchbox_entityattribute a on e.id = a.entity_id
-                        where c.recipient_ext_id = a.value
-                    )
-            )
-        """
-        self.cursor.execute(update_sql)
-        transaction.set_dirty()
-        self.log.info("- Update finished.")
-
-        updated = self.cursor.rowcount
-
-        if updated > POLITICIAN_DELETE_MAX_WARN:
-            self.log.warn("- The script marked {0} politicians to be deleted, but we typically don't see more than {1}".format(updated, POLITICIAN_DELETE_MAX_WARN))
-        else:
-            self.log.info("- Marked {0} politicians to be deleted.".format(updated))
 
 
 
