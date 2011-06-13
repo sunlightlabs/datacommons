@@ -25,7 +25,7 @@ class UUIDField(models.CharField):
             kwargs['unique'] = True
         super(UUIDField, self).__init__(*args, **kwargs)
 
-    def db_type(self):
+    def db_type(self, connection):
         return 'uuid'
 
     def pre_save(self, model_instance, add):
