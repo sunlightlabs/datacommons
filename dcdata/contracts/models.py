@@ -163,3 +163,7 @@ class Contract(models.Model):
     contracting_agency_name = models.CharField(max_length=255, blank=True)
     requesting_agency_name = models.CharField(max_length=255, blank=True)
     imported_on = models.DateField(auto_now_add=True)
+    
+    def __unicode__(self):
+        return self.vendorname + ' ' + self.registrationdate.isoformat()
+    
