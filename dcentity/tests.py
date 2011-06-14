@@ -1,5 +1,7 @@
 from django.test import TestCase
 
+from django.db import connection, transaction
+
 from dcentity.entity import merge_entities
 from dcentity.models import *
 from dcentity.tools.management.commands.entity_wikipedia_scrape import find_wikipedia_url
@@ -8,14 +10,36 @@ from dcentity.tools.names import *
 from dcentity.tools.wpapi import *
 
 class TestQueries(TestCase):
-
+    
     def setUp(self):
+        #set up latest cycle view for merge testing
+        cursor = connection.cursor()
+        cursor.execute(
+            """create view politician_metadata_latest_cycle_view as 
+            select distinct on (entity_id)
+                    entity_id,
+                    cycle,
+                    state,
+                    state_held,
+                    district,
+                    district_held,
+                    party,
+                    seat,
+                    seat_held,
+                    seat_status,
+                    seat_result
+                from matchbox_politicianmetadata
+                order by entity_id, cycle desc"""
+        )
+        transaction.commit_unless_managed()
+        
         apple = Entity.objects.create(name="Apple")
-        apple.aliases.create(alias="Apple")
+        #apple.aliases.create(alias="Apple")
         apple.aliases.create(alias="Apple Juice")
         apple.attributes.create(namespace='color', value='red')
         apple.attributes.create(namespace='color', value='yellow')
         apple.attributes.create(namespace='texture', value='crisp')
+        apple.politician_metadata_by_cycle.create(party='Fruit', cycle=2010)
         self.apple_id = apple.id
 
         apricot = Entity.objects.create(name="Apricot")
@@ -28,6 +52,7 @@ class TestQueries(TestCase):
         applicot.aliases.create(alias='Applicot')
         self.applicot_id = applicot.id
 
+        self.assertEqual(1, apple.aliases.filter(alias="Apple").count())
         self.assertEqual(3, Entity.objects.count())
         self.assertEqual(4, EntityAlias.objects.count())
         self.assertEqual(5, EntityAttribute.objects.count())
@@ -45,6 +70,11 @@ class TestQueries(TestCase):
         self.assertEqual(1, applicot.aliases.filter(alias='Apple Juice').count())
         self.assertEqual(1, applicot.aliases.filter(alias='Apricot').count())
         self.assertEqual(1, applicot.aliases.filter(alias='Applicot').count())
+    
+    def test_delete_metadata(self):
+        merge_entities([self.apple_id, self.apricot_id], self.applicot_id)    
+        self.assertEqual(0, PoliticianMetadata.objects.filter(entity=self.apple_id).count())
+        #self.assertEqual(0, SunlightInfo.objects.filter(entity=self.apple_id).count())
 
     def test_merge_entities_alias_duplication(self):
         apple = Entity.objects.get(id=self.apple_id)

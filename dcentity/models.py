@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from common.db.fields.uuid_field import UUIDField
-from django.core.signals import post_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime
 
@@ -142,10 +142,15 @@ class EntityAlias(models.Model):
     namespace = models.CharField(max_length=255, null=False, choices = ENTITY_ALIAS_NAMESPACE_CHOICES, blank=True)
     alias = models.CharField(max_length=255, null=False)
     
+    #autosaving name as alias
     @receiver(post_save, sender=Entity)
-    def auto_alias(sender, **kwargs):
-        alias = self.objects.create(entity = sender.pk, namespace = "", alias = sender.name)
-        alias.save()
+    def auto_alias(sender, instance, created, **kwargs):
+        #check for create vs save
+        if created == True and instance.aliases.filter(alias = instance.name).count() == 0:
+            alias = instance.aliases.create(namespace = "", alias = instance.name)
+            alias.save()
+        else:
+            if instance.aliases.filter(alias = instance.name)
 
     class Meta:
         ordering = ('alias',)
@@ -153,7 +158,6 @@ class EntityAlias(models.Model):
 
     def __unicode__(self):
         return self.alias
-
 
 class EntityNameParts(models.Model):
     alias  = models.OneToOneField(EntityAlias, related_name='name_parts', null=False)
@@ -214,8 +218,8 @@ class OrganizationMetadata(ExtensibleModel):
     entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False, unique=True)
 
     lobbying_firm   = models.BooleanField(default=False)
-    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
-    industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
+    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True, on_delete = models.CASCADE)
+    industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True, on_delete = models.CASCADE)
 
     def _child_entities(self):
         return [ x.entity.public_representation() for x in self.entity.child_entity_set.all() ]
@@ -227,7 +231,7 @@ class OrganizationMetadata(ExtensibleModel):
 
 
 class PoliticianMetadata(models.Model):
-    entity = models.ForeignKey(Entity, related_name='politician_metadata_by_cycle', null=False, db_index=True)
+    entity = models.ForeignKey(Entity, related_name='politician_metadata_by_cycle', null=False, db_index=True, on_delete = models.CASCADE)
 
     cycle = models.PositiveSmallIntegerField()
 
@@ -245,7 +249,7 @@ class PoliticianMetadata(models.Model):
         db_table = 'matchbox_politicianmetadata'
 
 class PoliticianMetadataLatest(models.Model):
-    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True)
+    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True, on_delete = models.DO_NOTHING)
 
     cycle = models.PositiveSmallIntegerField()
 
@@ -266,7 +270,7 @@ class PoliticianMetadataLatest(models.Model):
 class IndustryMetadata(ExtensibleModel):
     entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
     should_show_entity = models.BooleanField(default=True)
-    parent_industry = models.ForeignKey(Entity, related_name='child_industry_set', null=True)
+    parent_industry = models.ForeignKey(Entity, related_name='child_industry_set', null=True, on_delete = models.CASCADE)
 
     extended_properties = ['parent_industry', 'child_industries']
 
@@ -279,8 +283,8 @@ class IndustryMetadata(ExtensibleModel):
         db_table = 'matchbox_industrymetadata'
 
 class IndivOrgAffiliations(models.Model):
-    individual_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_organizations")
-    organization_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_individuals")
+    individual_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_organizations", on_delete=models.CASCADE)
+    organization_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_individuals", on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'matchbox_indivorgaffiliations'

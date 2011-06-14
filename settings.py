@@ -57,7 +57,7 @@ INSTALLED_APPS = (
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+#TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 try:
     from local_settings import *
