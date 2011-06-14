@@ -5,6 +5,8 @@ from django.db import models
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from common.db.fields.uuid_field import UUIDField
+from django.core.signals import post_save
+from django.dispatch import receiver
 import datetime
 
 
@@ -28,13 +30,19 @@ class ExtensibleModel(models.Model):
 # models
 #
 
-entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
+#entity_types = ((s, s) for s in getattr(settings, 'ENTITY_TYPES', []))
 
 
 class Entity(models.Model):
+    ENTITY_TYPE_CHOICES = (
+        ('politician','politician'),
+        ('organization','organization'),
+        ('industry','industry'),
+        ('individual','individual'),
+    )
     id = UUIDField(primary_key=True, auto=True)
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
+    type = models.CharField(max_length=255, choices=ENTITY_TYPE_CHOICES, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     #reviewer = models.CharField(max_length=255, default="")
     should_delete = models.BooleanField(default=False, null=False)
@@ -133,6 +141,11 @@ class EntityAlias(models.Model):
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
     namespace = models.CharField(max_length=255, null=False, choices = ENTITY_ALIAS_NAMESPACE_CHOICES, blank=True)
     alias = models.CharField(max_length=255, null=False)
+    
+    @receiver(post_save, sender=Entity)
+    def auto_alias(sender, **kwargs):
+        alias = self.objects.create(entity = sender.pk, namespace = "", alias = sender.name)
+        alias.save()
 
     class Meta:
         ordering = ('alias',)
