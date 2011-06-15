@@ -108,7 +108,6 @@ class Command(BaseCommand):
                     where
                         lobbyist_name != ''
                         and not exists (select * from matchbox_entityattribute where value = lobbyist_ext_id)
-                        and not use
                     group by lobbyist_ext_id
 
                     union
@@ -118,7 +117,6 @@ class Command(BaseCommand):
                     where
                         contributor_name != ''
                         and contributor_ext_id like 'U%'
-                        and not exists (select * from lobbying_lobbyist where lobbyist_ext_id = contributor_ext_id)
                         and not exists (select * from matchbox_entityattribute where value = contributor_ext_id)
                     group by contributor_ext_id
                 )x

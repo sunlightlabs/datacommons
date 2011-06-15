@@ -81,9 +81,9 @@ class Command(BaseCommand):
                     e.type = 'individual'
                     and a.namespace = 'urn:crp:individual'
                     and not exists (
-                        select distinct entity_id from contributor_associations
+                        select distinct entity_id from contributor_associations where entity_id = e.id
                         union all
-                        select distinct entity_id from assoc_lobbying_lobbyist
+                        select distinct entity_id from assoc_lobbying_lobbyist where entity_id = e.id
                     )
             )
         """
@@ -141,6 +141,8 @@ class Command(BaseCommand):
                 type = 'organization'
                 and id not in (
                     select distinct entity_id from organization_associations
+                    union all
+                    select distinct entity_id from parent_organization_associations
                     union all
                     select distinct entity_id from assoc_lobbying_client
                     union all
