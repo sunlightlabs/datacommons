@@ -5,10 +5,11 @@ from django.db import models
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from common.db.fields.uuid_field import UUIDField
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 import datetime
-
+#This is here to avoid making big changes to the database schema. We can remove it later if we decide that's alright.
+from django.core.exceptions import ValidationError
 
 class ExtensibleModel(models.Model):
     def to_dict(self):
@@ -142,15 +143,21 @@ class EntityAlias(models.Model):
     namespace = models.CharField(max_length=255, null=False, choices = ENTITY_ALIAS_NAMESPACE_CHOICES, blank=True)
     alias = models.CharField(max_length=255, null=False)
     
-    #autosaving name as alias
+    #raise a validation error if there's a duplicate alias.
+    #this can alsoc be done using unique_together which requires SQL changes.
+    def save(self, **kwargs):
+        if EntityAlias.objects.filter(alias = self.alias).count() > 0:
+            #raise an error here
+            return False
+        else:
+            super(EntityAlias, self).save()
+
+    #autosave a new entity's name as the first alias
     @receiver(post_save, sender=Entity)
     def auto_alias(sender, instance, created, **kwargs):
         #check for create vs save
-        if created == True and instance.aliases.filter(alias = instance.name).count() == 0:
+        if created == True:
             alias = instance.aliases.create(namespace = "", alias = instance.name)
-            alias.save()
-        else:
-            if instance.aliases.filter(alias = instance.name)
 
     class Meta:
         ordering = ('alias',)
