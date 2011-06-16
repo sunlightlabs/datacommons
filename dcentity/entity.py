@@ -1,6 +1,4 @@
-
 from dcentity.models import *
-
 
 def build_entity(name, type, attributes):
     """ 
@@ -10,8 +8,6 @@ def build_entity(name, type, attributes):
     """
     
     e = Entity.objects.create(name=name, type=type)
-    
-    EntityAlias.objects.create(entity=e, alias=name)
     
     for (namespace, value) in attributes:
         if namespace and value:

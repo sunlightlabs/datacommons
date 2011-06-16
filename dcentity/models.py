@@ -144,14 +144,21 @@ class EntityAlias(models.Model):
     alias = models.CharField(max_length=255, null=False)
     
     #raise a validation error if there's a duplicate alias.
-    #this can alsoc be done using unique_together which requires SQL changes.
-    def save(self, **kwargs):
+    #this can also be done using unique_together, which requires SQL changes.
+    def clean(self):
+        from django.core.exceptions import ValidationError
         if EntityAlias.objects.filter(alias = self.alias).count() > 0:
-            #raise an error here
-            return False
+            raise ValidationError('Alias already exists!')
+    
+    def save(self, *args, **kwargs):
+        from django.core.exceptions import NON_FIELD_ERRORS
+        try:
+            self.full_clean()
+        except ValidationError, e:
+            non_field_errors = e.message_dict[NON_FIELD_ERRORS]
         else:
-            super(EntityAlias, self).save()
-
+            super(EntityAlias, self).save(*args, **kwargs)
+    
     #autosave a new entity's name as the first alias
     @receiver(post_save, sender=Entity)
     def auto_alias(sender, instance, created, **kwargs):
