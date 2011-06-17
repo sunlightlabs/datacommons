@@ -80,11 +80,10 @@ class Command(BaseCommand):
                 where
                     e.type = 'individual'
                     and a.namespace = 'urn:crp:individual'
-                    and not exists (
-                        select distinct entity_id from contributor_associations where entity_id = e.id
-                        union all
-                        select distinct entity_id from assoc_lobbying_lobbyist where entity_id = e.id
-                    )
+                except
+                select distinct entity_id from contributor_associations where entity_id = e.id
+                except
+                select distinct entity_id from assoc_lobbying_lobbyist where entity_id = e.id
             )
         """
         self.cursor.execute(update_sql)
