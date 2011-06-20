@@ -6,7 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 def merge(request):
     return render_to_response(
-        "merge.html",
-        {'entity_list' : Entity.objects.all()},
+        "admin/change_list.html",
+        {'entity_list' : Entity.objects.latest('timestamp')},
         RequestContext(request, {}),
     )

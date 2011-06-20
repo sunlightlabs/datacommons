@@ -5,5 +5,8 @@
 {% block content %}
 <div id="content-main">
 	<h1>Fingers crossed!</h1>
+	{% for e in entity_list %}
+		{{ e.name }}
+	{% endfor %}
 </div>
 {% endblock %}

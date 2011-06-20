@@ -78,7 +78,10 @@ INSTALLED_APPS = (
     'dc_web.public',
     'sentry.client',
     'django_nose',
-	'dcentity'
+	'dcentity',
+	'mail',
+	'oxtail',
+	'sarah_search'
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
