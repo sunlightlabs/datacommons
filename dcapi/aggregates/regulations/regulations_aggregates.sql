@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS agg_regulations_totals;
 CREATE TABLE agg_regulations_totals as
 WITH totals as (
     SELECT 
-        entity_id, docket_id as docket, count(*),
+        entity_id, docket_id as docket, count(*)
     FROM regulations_comments
     INNER JOIN regulations_matches USING (document_id)
     GROUP BY entity_id, docket_id
