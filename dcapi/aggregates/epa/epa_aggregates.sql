@@ -13,7 +13,7 @@ create table assoc_epa_echo as
     from epa_echo_case_identifier c
     inner join epa_echo_defendant d on d.enfocnu = c.enfocnu
     inner join matchbox_entity e on
-        plainto_tsquery('datacommons', coalesce(d.defennm, '')) @@ to_tsvector('datacommons', e.name)
+        to_tsvector('datacommons', d.defennm) @@ plainto_tsquery('datacommons', e.name)
     where
         e.type = 'organization'
 ;
@@ -36,14 +36,15 @@ create table agg_epa_echo_totals as
         select
             entity_id,
             date + date % 2 as cycle,
+            -- WHAT COLUMN IS DATE?? ^^^^
             count(*) as count,
             sum(enfotpa + enfcslp + enfcraa) as amount
-        from epa_echo_case
-        inner join epa_echo_penalty on assoc.case_id = assoc.court_enforcement_no
+        from epa_echo_case_identifier c
+        inner join epa_echo_penalty p on c.enfocnu = p.enfocnu
         --inner join epa_echo_facility
         --inner join epa_echo_defendant
         --inner join epa_echo_milestone
-        inner join assoc_epa_echo assoc on assoc.case_id = case.id
+        inner join assoc_epa_echo assoc on assoc.case_id = c.id
         group by entity_id, date_year + date_year % 2
     )
     select entity_id, cycle, count, amount
