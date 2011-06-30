@@ -26,6 +26,31 @@ select date_trunc('second', now()) || ' -- create index assoc_epa_echo_case_id o
 create index assoc_epa_echo_case_id on assoc_epa_echo (case_id);
 
 
+-- Actions View
+
+select date_trunc('second', now()) || '-- Dropping epa_echo_actions_view';
+drop view epa_echo_actions_view;
+
+select date_trunc('second', now()) || '-- Creating epa_echo_actions_view';
+create view epa_echo_actions_view as
+    select
+        extract('year' from max(subacad))::integer + extract('year' from max(subacad))::integer % 2 as cycle,
+        extract('year' from max(subacad))::integer as year,
+        assoc.entity_id as defendant_entity,
+        defendant_name,
+        c.enfocnu as case_id,
+        enfornm as case_name,
+        coalesce(enfotpa, 0) + coalesce(enfcslp, 0) + coalesce(enfcraa, 0) as amount
+    from epa_echo_case_identifier c
+    inner join epa_echo_penalty p on c.enfocnu = p.enfocnu
+    --inner join epa_echo_facility
+    inner join epa_echo_milestone m on m.enfocnu = c.enfocnu
+    inner join assoc_epa_echo assoc on assoc.case_id = c.id
+    group by entity_id, defendant_name, c.enfocnu, enfornm, enfotpa, enfcslp, enfcraa
+;
+
+
+
 -- Totals
 
 select date_trunc('second', now()) || '-- Dropping totals table';
@@ -36,26 +61,20 @@ select date_trunc('second', now()) || '-- Creating totals table';
 create table agg_epa_echo_totals as
     with cases_by_cycle as (
         select
-            entity_id,
-            date + date % 2 as cycle,
-            -- WHAT COLUMN IS DATE?? ^^^^
-            count(*) as count,
-            sum(enfotpa + enfcslp + enfcraa) as amount
-        from epa_echo_case_identifier c
-        inner join epa_echo_penalty p on c.enfocnu = p.enfocnu
-        --inner join epa_echo_facility
-        --inner join epa_echo_defendant
-        --inner join epa_echo_milestone
-        inner join assoc_epa_echo assoc on assoc.case_id = c.id
-        group by entity_id, date_year + date_year % 2
+            defendant_entity as entity_id,
+            cycle,
+            count(distinct case_id) as count,
+            sum(amount) as amount
+        from epa_echo_actions_view
+        group by defendant_entity, cycle
     )
     select entity_id, cycle, count, amount
-    from case_by_cycle
+    from cases_by_cycle
 
     union all
 
     select entity_id, -1 as cycle, sum(count) as count, sum(amount) as amount
-    from case_by_cycle
+    from cases_by_cycle
     group by entity_id
 ;
 select date_trunc('second', now()) || ' -- create index agg_epa_echo_totals__entity_id on agg_epa_echo_totals (entity_id)';
