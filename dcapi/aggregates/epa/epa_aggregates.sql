@@ -9,11 +9,13 @@ select date_trunc('second', now()) || '-- Creating associations table';
 create table assoc_epa_echo as
     select
         e.id as entity_id,
-        c.id as case_id
+        c.id as case_id,
+        d.defennm as defendant_name
     from epa_echo_case_identifier c
-    inner join epa_echo_defendant d on d.enfocnu = c.enfocnu
-    inner join matchbox_entity e on
-        to_tsvector('datacommons', d.defennm) @@ plainto_tsquery('datacommons', e.name)
+    inner join epa_echo_defendant d
+        on d.enfocnu = c.enfocnu
+    inner join matchbox_entity e
+        on to_tsvector('datacommons', d.defennm) @@ plainto_tsquery('datacommons', e.name)
     where
         e.type = 'organization'
 ;
