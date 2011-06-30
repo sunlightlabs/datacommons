@@ -36,6 +36,7 @@ class Penalty(models.Model):
 
 class Facility(models.Model):
     court_enforcement_no = models.CharField(max_length=20, db_column='enfocnu', db_index=True)
+
     class Meta:
         db_table = 'epa_echo_facility'
 
@@ -53,6 +54,9 @@ class Defendant(models.Model):
 
 class Milestone(models.Model):
     court_enforcement_no = models.CharField(max_length=20, db_column='enfocnu', db_index=True)
+    sub_activity_type_code = models.CharField(max_length=100, db_column='subacty', blank=True, null=True)
+    actual_date = models.DateField(db_column='subacad', blank=True, null=True)
+
     class Meta:
         db_table = 'epa_echo_milestone'
 
