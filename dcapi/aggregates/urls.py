@@ -121,7 +121,7 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/contractor_misconduct\.(?P<emitter_format>.+)$',
         Resource(TopContractorMisconductHandler, **ad)),
 
-    url(r'^org/(?P<entity_id>[a-f0-9]+)/violation_actions\.(?P<emitter_format>.+)$',
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/epa_enforcement_actions\.(?P<emitter_format>.+)$',
         Resource(TopViolationActionsHandler, **ad)),
 
     # issues an org hired people to lobby on
