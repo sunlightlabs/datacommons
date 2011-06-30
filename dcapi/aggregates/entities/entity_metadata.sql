@@ -29,12 +29,10 @@ insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_
             max(ia.entity_id::text) as industry_entity_id
         from
             organization_associations oa
-            left join parent_organization_associations p using (transaction_id)
-            left join industry_associations ia using (transaction_id)
+            left join parent_organization_associations p on oa.transaction_id = p.transaction_id and oa.entity_id != p.entity_id
+            left join industry_associations ia on oa.transaction_id = ia.transaction_id
         group by
             oa.entity_id
-        having
-            max(p.entity_id::text) is null or oa.entity_id::text != max(p.entity_id::text)
     ) contributing_orgs using (entity_id)
     group by entity_id;
 
