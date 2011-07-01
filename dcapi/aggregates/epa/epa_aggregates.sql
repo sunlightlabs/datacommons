@@ -3,14 +3,14 @@
 select date_trunc('second', now()) || '-- Starting EPA aggregate computation...';
 
 select date_trunc('second', now()) || '-- Dropping associations table';
-drop table if exists assoc_epa_echo;
+drop table if exists assoc_epa_echo cascade;
 
 select date_trunc('second', now()) || '-- Creating associations table';
 create table assoc_epa_echo as
     select
         e.id as entity_id,
         c.id as case_id,
-        d.defennm as defendant_name
+        max(d.defennm) as defendant_name
     from epa_echo_case_identifier c
     inner join epa_echo_defendant d
         on d.enfocnu = c.enfocnu
@@ -18,6 +18,8 @@ create table assoc_epa_echo as
         on to_tsvector('datacommons', d.defennm) @@ plainto_tsquery('datacommons', e.name)
     where
         e.type = 'organization'
+    group by
+        e.id, c.id
 ;
 
 select date_trunc('second', now()) || ' -- create index assoc_epa_echo_entity_id on assoc_epa_echo (entity_id)';
@@ -37,7 +39,7 @@ create view epa_echo_actions_view as
         extract('year' from max(subacad))::integer + extract('year' from max(subacad))::integer % 2 as cycle,
         extract('year' from max(subacad))::integer as year,
         assoc.entity_id as defendant_entity,
-        defendant_name,
+        max(defendant_name) as defendant_name,
         c.enfocnu as case_id,
         enfornm as case_name,
         coalesce(enfotpa, 0) + coalesce(enfcslp, 0) + coalesce(enfcraa, 0) as amount
@@ -46,7 +48,7 @@ create view epa_echo_actions_view as
     --inner join epa_echo_facility
     inner join epa_echo_milestone m on m.enfocnu = c.enfocnu
     inner join assoc_epa_echo assoc on assoc.case_id = c.id
-    group by entity_id, defendant_name, c.enfocnu, enfornm, enfotpa, enfcslp, enfcraa
+    group by entity_id, c.enfocnu, enfornm, enfotpa, enfcslp, enfcraa
 ;
 
 
@@ -63,7 +65,7 @@ create table agg_epa_echo_totals as
         select
             defendant_entity as entity_id,
             cycle,
-            count(distinct case_id) as count,
+            count(*) as count,
             sum(amount) as amount
         from epa_echo_actions_view
         group by defendant_entity, cycle
@@ -94,12 +96,13 @@ create table agg_epa_echo_actions as
             cycle,
             year,
             defendant_entity,
-            defendant_name,
-            case_name,
-            amount,
+            max(defendant_name) as defendant_name,
+            max(case_name) as case_name,
+            max(amount) as amount,
             -- location info
             rank() over (partition by defendant_entity, cycle order by amount desc) as rank
         from epa_echo_actions_view
+        group by cycle, defendant_entity
     )
     select cycle, year, defendant_entity, defendant_name, case_name, amount
     from actions_by_cycle
