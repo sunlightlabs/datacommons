@@ -45,7 +45,6 @@ create view epa_echo_actions_view as
         coalesce(enfotpa, 0) + coalesce(enfcslp, 0) + coalesce(enfcraa, 0) as amount
     from epa_echo_case_identifier c
     inner join epa_echo_penalty p on c.enfocnu = p.enfocnu
-    --inner join epa_echo_facility
     inner join epa_echo_milestone m on m.enfocnu = c.enfocnu
     inner join assoc_epa_echo assoc on assoc.case_id = c.id
     group by entity_id, c.enfocnu, enfornm, enfotpa, enfcslp, enfcraa
@@ -97,22 +96,22 @@ create table agg_epa_echo_actions as
             year,
             defendant_entity,
             max(defendant_name) as defendant_name,
+            case_id,
             max(case_name) as case_name,
             max(amount) as amount,
-            -- location info
-            rank() over (partition by defendant_entity, cycle order by amount desc) as rank
+            rank() over (partition by defendant_entity, cycle order by max(amount) desc) as rank
         from epa_echo_actions_view
-        group by cycle, defendant_entity
+        group by cycle, year, defendant_entity, case_id
     )
-    select cycle, year, defendant_entity, defendant_name, case_name, amount
+    select cycle, year, defendant_entity, defendant_name, case_id, case_name, amount
     from actions_by_cycle
     where rank <= :agg_top_n
 
     union all
 
-    select cycle, year, defendant_entity, defendant_name, case_name, amount
+    select cycle, year, defendant_entity, defendant_name, case_id, case_name, amount
     from (
-        select -1 as cycle, year, defendant_entity, defendant_name, case_name, amount,
+        select -1 as cycle, year, defendant_entity, defendant_name, case_id, case_name, amount,
             rank() over (partition by defendant_entity order by amount desc) as rank
         from actions_by_cycle
     ) x
