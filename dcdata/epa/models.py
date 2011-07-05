@@ -36,6 +36,14 @@ class Penalty(models.Model):
 
 class Facility(models.Model):
     court_enforcement_no = models.CharField(max_length=20, db_column='enfocnu', db_index=True)
+    facility_uin = models.CharField(max_length=12, db_column='fcltuin', blank=True, null=True)
+    primary_name = models.CharField(max_length=200, db_column='fcltynm', blank=True, null=True)
+    location_address = models.CharField(max_length=50, db_column='fcltyad', blank=True, null=True)
+    city_name = models.CharField(max_length=50, db_column='fcltcit', blank=True, null=True)
+    state_code = models.CharField(max_length=2, db_column='fcltstc', blank=True, null=True)
+    zip_plus_four = models.CharField(max_length=10, db_column='fcltpst', blank=True, null=True)
+    sic_codes = models.CharField(max_length=29, db_column='fclasic', blank=True, null=True)
+    naics_code = models.CharField(max_length=41, db_column='fanaics', blank=True, null=True)
 
     class Meta:
         db_table = 'epa_echo_facility'
