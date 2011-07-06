@@ -25,7 +25,7 @@ insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_
     full outer join (
         select distinct on (oa.entity_id)
             oa.entity_id,
-            p.entity_id as parent_entity_id,
+            max(p.entity_id::text)::uuid as parent_entity_id,
             ia.entity_id as industry_entity_id
         from
             organization_associations oa
@@ -35,9 +35,9 @@ insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_
         where
             ea.namespace is null or ea.namespace in ('urn:crp:industry', 'urn:nimsp:industry')
         group by
-            oa.entity_id, p.entity_id, ia.entity_id
+            oa.entity_id, ia.entity_id
         order by
-            oa.entity_id, count(distinct ia.transaction_id) desc, count(distinct p.transaction_id) desc
+            oa.entity_id, count(distinct ia.transaction_id) desc
     ) contributing_orgs using (entity_id)
     group by entity_id;
 
