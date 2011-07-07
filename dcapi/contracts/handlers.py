@@ -32,7 +32,16 @@ def filter_contracts(request):
 
 
 class ContractsFilterHandler(FilterHandler):
-    model = Contract
+
+    # imported_on is marked as an auto-generated field/non-editable,
+    # so was getting dropped by Django's model_to_dict serialization,
+    # but still required by the list of fields,
+    # so we pass the list of fields we want directly instead
+
+    fields = Contract._meta.get_all_field_names()
+    fields.remove('imported_on')
+
+
     ordering = ['-fiscal_year','-baseandexercisedoptionsvalue']
     filename = 'contracts'
         
