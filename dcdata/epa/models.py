@@ -12,8 +12,8 @@ class CaseIdentifier(models.Model):
     enforcement_outcome_code = models.CharField(max_length=100, db_column='enfoout', blank=True)
     hq_division = models.CharField(max_length=3, db_column='enfohqd', blank=True)
     branch = models.CharField(max_length=5, db_column='enfobrn', blank=True)
-    is_voluntary_self_disclosure = models.NullBooleanField(db_column='enfovsd')
-    is_multimedia = models.NullBooleanField(db_column='actmmfl')
+    voluntary_self_disclosure_flag = models.CharField(max_length=1, db_column='enfovsd', blank=True)
+    multimedia_flag = models.CharField(max_length=1, db_column='actmmfl', blank=True)
 
     class Meta:
         db_table = 'epa_echo_case_identifier'
@@ -36,7 +36,7 @@ class Penalty(models.Model):
 
 class Facility(models.Model):
     court_enforcement_no = models.CharField(max_length=20, db_column='enfocnu', db_index=True)
-    facility_uin = models.CharField(max_length=12, db_column='fcltuin', blank=True)
+    facility_uin = models.BigIntegerField(db_column='fcltuin', null=True)
     primary_name = models.CharField(max_length=200, db_column='fcltynm', blank=True)
     location_address = models.CharField(max_length=50, db_column='fcltyad', blank=True)
     city_name = models.CharField(max_length=50, db_column='fcltcit', blank=True)
@@ -53,8 +53,8 @@ class Facility(models.Model):
 class Defendant(models.Model):
     court_enforcement_no = models.CharField(max_length=20, db_column='enfocnu', db_index=True)
     name = models.CharField(max_length=50, db_column='defennm', blank=True)
-    is_named_in_complaint = models.NullBooleanField(db_column='defennc')
-    is_named_in_settlement = models.NullBooleanField(db_column='defenns')
+    named_in_complaint_flag = models.CharField(max_length=1, db_column='defennc', blank=True)
+    named_in_settlement_flag = models.CharField(max_length=1, db_column='defenns', blank=True)
 
     class Meta:
         db_table = 'epa_echo_defendant'
