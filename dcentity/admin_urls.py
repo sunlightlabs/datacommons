@@ -1,5 +1,0 @@
-from django.conf.urls.defaults import *
-
-urlpatterns = patterns('',
-    (r'^/mergeform', 'dcentity.admin_views.merge'),
-)

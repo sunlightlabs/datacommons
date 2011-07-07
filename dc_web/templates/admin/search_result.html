@@ -1,0 +1,17 @@
+{% if results %}
+	{% for entity in results %}
+		<tr class="{% cycle 'row1' 'row2' %}">
+			<td class="action-checkbox">
+				<input type="checkbox" name="_selected_action" value="{{entity.id}}" class="action-select">
+			</td>
+			<th><a href="{{entity.id}}/">{{entity.name}}</a></th>
+		</tr>
+	{% endfor %}
+{% else %}
+	<tr class="{% cycle 'row1' 'row2' %}">
+		<td></td>
+		<th>
+			<p>Sorry, no results!</p>
+		</th>
+	</tr>
+{% endif %}

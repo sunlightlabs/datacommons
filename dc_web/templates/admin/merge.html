@@ -1,0 +1,79 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_list %}
+
+{% block extrastyle %}
+	  {{ block.super }}
+	  <link rel="stylesheet" type="text/css" href="/admin/css/changelists.css" />
+{% endblock %}
+
+{% block extrahead %}
+	<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$("#changelist-search input:submit").click(function(event){
+				event.preventDefault();
+				$.get(
+					'/admin/merge/search/',
+
+					{q : $("#searchbar").val(), not : "{{merge_to.id}}" },
+
+					function(data) {
+						$("table#result_list tbody").html(data);
+					}
+				)
+			})
+		});
+	</script>
+{% endblock %}
+
+{% block title %}Merge it on up{% endblock %}
+
+{% block content %}
+<div id="content-main">
+	{% if merge_to != None %}
+	{% if merge_from != None %}
+		<h2>You are merging these entities:</h2>
+			<ul>
+			{% for entity in merge_from %}
+				<li>{{entity.name}}</li>
+			{% endfor %}
+			</ul>
+		<h2>Into {{merge_to.name}}.</h2>
+	{% else %}
+		<h2>You are merging entities into {{merge_to.name}}</h2>
+	{% endif %}
+	<div id="changelist" class="module filtered">
+		<h2>Search for the entity you want to merge in to:</h2>
+		<div>	
+			<form method="get" action="" id="changelist-search">
+				<div>
+				<label for="searchbar"><img alt="Search" src="http://assets.sunlightfoundation.com/admin/1.2/img/admin/icon_searchbox.png"></label>
+				<input type="text" id="searchbar" value="" name="q" size="40">
+				<input type="submit" value="Search">
+				</div>
+			</form>
+		</div>
+		<table cellspacing="0" id="result_list">
+			<thead>
+				<tr>
+					<th class="action-checkbox-column" scope="col">
+						<input type="checkbox" id="action-toggle">
+					</th>
+					<th scope="col">
+						<a href="?ot=asc&amp;o=1">Entity</a>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{ resultlist }}
+			</tbody>
+		</table>
+	</div>
+	{% else %}
+		<h2>Doin' it wrong.
+			<br />
+			<p>First search for an entity by <a href="/admin/dcentity/entity">going here.</a> Kthxbai!</p>
+		</h2>
+	{% endif %}
+</div>
+{% endblock %}

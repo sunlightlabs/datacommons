@@ -54,6 +54,9 @@ INSTALLED_APPS = (
     'dcentity.tools',
     'django_nose',
     'sentry.client',
+    'oxtail.matching',
+    'email_entities',
+    'mail'
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']

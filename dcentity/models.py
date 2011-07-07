@@ -403,5 +403,3 @@ class MergeCandidate(models.Model):
     def is_locked(self):
         ago15min = datetime.datetime.utcnow() - datetime.timedelta(0, 0, 0, 0, 15)
         return self.owner is not None and self.owner_timestamp >= ago15min
-
-

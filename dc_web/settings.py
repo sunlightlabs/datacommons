@@ -1,6 +1,6 @@
 # Django settings for dc_web project.
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -45,6 +45,11 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.load_template_source',
 )
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+  'django.core.context_processors.request',
+  'django.contrib.auth.context_processors.auth'
+)
+
 MIDDLEWARE_CLASSES = (
     'piston.middleware.CommonMiddlewareCompatProxy',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -79,9 +84,6 @@ INSTALLED_APPS = (
     'sentry.client',
     'django_nose',
 	'dcentity',
-	'mail',
-	'oxtail',
-	'sarah_search'
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']

@@ -1,6 +1,3 @@
-
-
-
 select recipient_name, transaction_namespace, recipient_ext_id, max(cycle)
 from contribution_contribution
 where recipient_type = 'P'
