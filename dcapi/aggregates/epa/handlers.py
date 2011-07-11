@@ -3,8 +3,6 @@ from dcapi.aggregates.handlers import EntityTopListHandler
 
 
 class TopViolationActionsHandler(EntityTopListHandler):
-
-    args = 'entity_id cycle'.split()
     fields = 'cycle case_id case_name defendant_name defendant_entity defendants_count other_defendants locations amount year date_significance'.split()
 
     stmt = """
@@ -28,6 +26,7 @@ class TopViolationActionsHandler(EntityTopListHandler):
             and cycle = %s
         group by cycle, case_id, case_name, defendant_name, defendant_entity, f.fcltcit, f.fcltstc, amount, year, date_significance
         order by cycle desc, amount desc
+        limit %s
     """.format(', '.join(fields))
 
 
