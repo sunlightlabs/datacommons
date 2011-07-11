@@ -1,24 +1,24 @@
-{% extends "admin/base_site.html" %}
-{% load i18n static admin_list %}
-
-{% block extrastyle %}
-	  {{ block.super }}
-	  <link rel="stylesheet" type="text/css" href="/admin/css/changelists.css" />
-{% endblock %}
+{% extends "admin/change_list.html" %}
+{% load media %}
 
 {% block extrahead %}
+	{{block.super}}
 	<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+	{% js "js/underscore-min.js" %}
 	<script type="text/javascript">
+		template = _.template("{% filter escapejs %}{% spaceless %}{% include "admin/search_result.mt.html" %}{%  endspaceless %}{% endfilter %}");
 		$(document).ready(function(){
 			$("#changelist-search input:submit").click(function(event){
 				event.preventDefault();
-				$.get(
-					'/admin/merge/search/',
+				alert('o hai');
+				$.getJSON(
+					'http://transparencydata.com/api/1.0/entities.json?callback=?',
 
-					{q : $("#searchbar").val(), not : "{{merge_to.id}}" },
+					{ search : $("#searchbar").val(), apikey : "sunlight9" },
 
 					function(data) {
-						$("table#result_list tbody").html(data);
+						//$("table#result_list tbody").html(data);
+						console.log(data)
 					}
 				)
 			})

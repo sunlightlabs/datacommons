@@ -1,0 +1,17 @@
+<% if results { %>
+	<% for (i =0, i<=results.length, i++) { %>
+		<tr class="<% if i%2 == 0 print('row1') else ('row2') %>">
+			<td class="action-checkbox">
+				<input type="checkbox" name="_selected_action" value="<%= results[i].id %>" class="action-select">
+			</td>
+			<th><a href="<%= results[i].id >/"<%= results[i].name %></a></th>
+		</tr>
+	<% } %>
+<% } else { %>
+	<tr class="row1">
+		<td></td>
+		<th>
+			<p>Sorry, no results!</p>
+		</th>
+	</tr>
+<% } %>
