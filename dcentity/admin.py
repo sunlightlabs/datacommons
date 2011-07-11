@@ -9,15 +9,18 @@ class AttributeInline(admin.TabularInline):
     
 class WikipediaInline(admin.TabularInline):
     model = WikipediaInfo
+    readonly_fields = [x.name for x in  model._meta.fields]
     
 class BioguideInline(admin.TabularInline):
     model = BioguideInfo
+    readonly_fields = [x.name for x in model._meta.fields]
 
 class SunlightInline(admin.TabularInline):
     model = SunlightInfo
     
 class VotesmartInline(admin.TabularInline):
     model = VotesmartInfo
+    readonly_fields = [x.name for x in model._meta.fields]
 
 class IndustryMetadataInline(admin.TabularInline):
     model = IndustryMetadata

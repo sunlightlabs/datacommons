@@ -30,7 +30,7 @@ def merge(request, merge_to, merge_from):
         pass
 
 def search(request):
-    ie = InfluenceExplorer('sunlight9')
+    ie = InfluenceExplorer(settings.API_KEY)
     search = ie.entities.search(request.GET['q'])
     template_vars =  {
         'results' : Entity.objects.filter(id__in = [ x['id'] for x in search ] ).exclude(id=request.GET['not'])
