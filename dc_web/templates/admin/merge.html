@@ -6,74 +6,84 @@
 	<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
 	{% js "js/underscore-min.js" %}
 	<script type="text/javascript">
-		template = _.template("{% filter escapejs %}{% spaceless %}{% include "admin/search_result.mt.html" %}{%  endspaceless %}{% endfilter %}");
 		$(document).ready(function(){
 			$("#changelist-search input:submit").click(function(event){
+				var template = _.template("{% filter escapejs %}{% spaceless %}{% include "admin/search_result.mt.html" %}{%  endspaceless %}{% endfilter %}");
+				var filter = { id : "{{merge_to.id}}", type : "{{merge_to.type}}" }
 				event.preventDefault();
-				alert('o hai');
 				$.getJSON(
 					'http://transparencydata.com/api/1.0/entities.json?callback=?',
 
-					{ search : $("#searchbar").val(), apikey : "sunlight9" },
+					{ search : $("#searchbar").val(), apikey : "{{api_key}}" },
 
 					function(data) {
-						//$("table#result_list tbody").html(data);
-						console.log(data)
+						$("table#result_list tbody input[type='checkbox']:not(:checked)").parents('tr').remove();
+						$("table#result_list tbody").append(template({results:data, filter:filter}));
 					}
 				)
-			})
+			});
+			
+			$('#select-all').click(
+				function() {
+					$("#merge_submit input[type='checkbox']").attr('checked', $(this).is(':checked'));   
+				}
+			)
 		});
 	</script>
 {% endblock %}
 
-{% block title %}Merge it on up{% endblock %}
+{% block title %}Merge{% endblock %}
 
 {% block content %}
 <div id="content-main">
-	{% if merge_to != None %}
-	{% if merge_from != None %}
-		<h2>You are merging these entities:</h2>
-			<ul>
-			{% for entity in merge_from %}
-				<li>{{entity.name}}</li>
+	{% if merge_to %}
+		{% if post %}
+			<h2>Are you sure you want to merge 
+				{% for entity in merge_from %} {% if merge_from.count > 1 and forloop.last %} and {% endif %} <a target="_blank" href="/admin/dcentity/entity/{{entity.id}}" >{{entity.name}}</a>{% if forloop.revcounter > 2 %},{% endif %}{% endfor %} into <a target="_blank" href="/admin/dcentity/entity/{{merge_to.id}}">{{merge_to.name}}</a>? You can't undo this action.</h2>
+		<form method="post">
+			<input type="hidden" name="merge_to" value="{{merge_to.id}}" />
+			{% for entity in  merge_from %}
+			<input type="hidden" name="merge_from" value="{{entity.id}}" />
 			{% endfor %}
-			</ul>
-		<h2>Into {{merge_to.name}}.</h2>
-	{% else %}
-		<h2>You are merging entities into {{merge_to.name}}</h2>
-	{% endif %}
-	<div id="changelist" class="module filtered">
-		<h2>Search for the entity you want to merge in to:</h2>
-		<div>	
-			<form method="get" action="" id="changelist-search">
-				<div>
-				<label for="searchbar"><img alt="Search" src="http://assets.sunlightfoundation.com/admin/1.2/img/admin/icon_searchbox.png"></label>
-				<input type="text" id="searchbar" value="" name="q" size="40">
-				<input type="submit" value="Search">
+			<input type="hidden" name="confirm" value=1 />
+			<input type="submit" value="Yes" />
+			<input type="button" value="No" onclick="javascript:window.history.go(-1)">
+		</form>
+		{% else %}
+			<h2>Merge entities into {{merge_to.name}}</h2>	
+			<div id="changelist" class="module filtered">
+				<h2>Search</h2>
+				<div>	
+					<form method="get" action="" id="changelist-search">
+						<div>
+						<label for="searchbar"><img alt="Search" src="http://assets.sunlightfoundation.com/admin/1.2/img/admin/icon_searchbox.png"></label>
+						<input type="text" id="searchbar" value="" name="q" size="40" placeholder="Search for entities to merge into {{merge_to.name}}">
+						<input type="submit" value="Search">
+						</div>
+					</form>
 				</div>
-			</form>
-		</div>
-		<table cellspacing="0" id="result_list">
-			<thead>
-				<tr>
-					<th class="action-checkbox-column" scope="col">
-						<input type="checkbox" id="action-toggle">
-					</th>
-					<th scope="col">
-						<a href="?ot=asc&amp;o=1">Entity</a>
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				{{ resultlist }}
-			</tbody>
-		</table>
-	</div>
+				<form method="post" action="" id="merge_submit">
+				<table cellspacing="0" id="result_list">
+					<thead>
+						<tr>
+							<th class="action-checkbox-column" scope="col">
+								<input type="checkbox" id="select-all">
+							</th>
+							<th scope="col">
+								<a href="?ot=asc&amp;o=1">Entity</a>
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						{{ resultlist }}
+					</tbody>
+				</table>
+				<input type="submit" value="Merge it" />
+				</form>
+			</div>
+		{% endif %}
 	{% else %}
-		<h2>Doin' it wrong.
-			<br />
-			<p>First search for an entity by <a href="/admin/dcentity/entity">going here.</a> Kthxbai!</p>
-		</h2>
+		<h2>Please search for an entity <a href="/admin/dcentity/entity">here &rarr;</a></h2>
 	{% endif %}
 </div>
 {% endblock %}

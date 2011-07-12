@@ -1,38 +1,39 @@
 from dcentity.models import *
 from dcentity.admin import *
+from dcentity.entity import merge_entities
 from django.template import RequestContext
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from influenceexplorer import InfluenceExplorer
 from dcentity import entity
+from django import forms
 import json
+from django.conf import settings
 
-def merge(request, merge_to, merge_from):
-    if request.method == 'GET':
-        entities = Entity.objects.all()
-        p = Paginator(entities, 25)
-        result = p.page(1)
-        try:
-            merge_to = entities.filter(id=merge_to)[0]
-        except:
-            merge_to = None
-        merge_from = entities.filter(id__in=merge_from.split('/'))
-        
+@staff_member_required
+def merge(request, merge_to = None):
+    try:
+        merge_to = Entity.objects.get(id=merge_to)
+    except:
+        merge_to = None
+    if request.method == 'GET':    
         return render_to_response(
             "admin/merge.html",
-            {'entity_list' : result.object_list, 'merge_from': merge_from, 'merge_to': merge_to},
+            {'merge_to': merge_to, 'api_key': settings.API_KEY},
             RequestContext(request, {}),
         )
     elif request.method == 'POST':
-        pass
-
-def search(request):
-    ie = InfluenceExplorer(settings.API_KEY)
-    search = ie.entities.search(request.GET['q'])
-    template_vars =  {
-        'results' : Entity.objects.filter(id__in = [ x['id'] for x in search ] ).exclude(id=request.GET['not'])
-    }
-    return HttpResponse( render_to_string("admin/search_result.html", template_vars), mimetype="text/html")
+        if 'confirm' in request.POST:
+            merge_entities(request.POST.getlist("merge_from"),request.POST["merge_to"])
+            request.user.message_set.create(message='Merge succesful.')
+            return HttpResponseRedirect("/admin/dcentity/entity/"+request.POST["merge_to"])
+        else:
+            entities = Entity.objects.filter(id__in = request.POST.getlist('to_merge'))
+            return render_to_response(
+                "admin/merge.html",
+                {'merge_from' : entities, 'merge_to': merge_to, 'post':request.POST},
+                RequestContext(request, {}),
+            )
