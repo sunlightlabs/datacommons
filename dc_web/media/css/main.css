@@ -101,7 +101,7 @@ div.introbox {
 	border: solid 2px #A59C82;
 	-moz-border-radius: 5px; 
 	-webkit-border-radius: 5px;
-	display: block;
+	display: none;
 	float: left;
 	margin-top: -2px;
 }
@@ -195,15 +195,19 @@ h4 {
 	margin-bottom: 10px;
 }
 
-h5 {
-	background: url(../images/logo-sunlight.png) top left no-repeat;
-	display: block;
-	height: 52px;
-	width: 115px;
-	text-indent: -9999em;
-	float: left;
-	margin-right: 79px;
-}
+#footer li { float: left; margin-right: 60px;}
+#footer li a { text-indent: -9999em; display: block;  }
+
+#sunlightLogo { background: url(../images/logo_sunlight.jpg) top left no-repeat; height: 59px; width: 131px;}
+#sunlightLogo:hover { background: url(../images/logo_sunlight.jpg) bottom left no-repeat;}
+
+a#openSecrets { background: url(../images/logo_opensecrets.jpg) top left no-repeat; width: 172px; height: 59px;}
+a#openSecrets:hover { background: url(../images/logo_opensecrets.jpg) bottom left no-repeat;}
+
+a#nimsp { background: url(../images/logo_followthemoney.jpg) top left no-repeat; width: 86px; height: 65px; }
+a#nimsp:hover { background: url(../images/logo_followthemoney.jpg) left -66px no-repeat; }
+
+#pogo { background: url(../images/logo_pogo.jpg) left 10px no-repeat; width: 325px; height: 66px; }
 
 em { font-weight: bold; }
 
@@ -383,49 +387,19 @@ li.filter{
 #dataTabs li a {
     background-color: #DBD7CD;
 	border-bottom: 2px solid #A59C82;
-	padding: 10px;
+	padding: 10px 6px;
 }
 
 #dataTabs li a:hover {
 	background-color: #FFF;
 }
 
-body#contracts #dataTabs li#contractsTab a {
+body#contracts #dataTabs li#contractsTab a, body#contributions #dataTabs li#contributionsTab a, body#grants #dataTabs li#grantsTab a, body#lobbying #dataTabs li#lobbyingTab a, body#earmarks #dataTabs li#earmarksTab a, body#contractorMisconduct #dataTabs li#contractorMisconductTab a {
     background-color: #ECEBE6;
     border-bottom: 2px solid #ECEBE6;
 }
 
-body#contracts.index #dataTabs li#contractsTab a {
-    background-color: #FFF;
-    border-bottom: 2px solid #FFF;
-}
-
-body#contributions #dataTabs li#contributionsTab a {
-    background-color: #ECEBE6;
-    border-bottom: 2px solid #ECEBE6;
-}
-
-body#contributions.index #dataTabs li#contributionsTab a {
-    background-color: #FFF;
-    border-bottom: 2px solid #FFF;
-}
-
-body#grants #dataTabs li#grantsTab a {
-    background-color: #ECEBE6;
-    border-bottom: 2px solid #ECEBE6;
-}
-
-body#grants.index #dataTabs li#grantsTab a {
-    background-color: #FFF;
-    border-bottom: 2px solid #FFF;
-}
-
-body#lobbying #dataTabs li#lobbyingTab a {
-    background-color: #ECEBE6;
-    border-bottom: 2px solid #ECEBE6;
-}
-
-body#lobbying.index #dataTabs li#lobbyingTab a {
+body#contracts.index #dataTabs li#contractsTab a, body#contributions.index #dataTabs li#contributionsTab a, body#grants.index #dataTabs li#grantsTab a, body#lobbying.index #dataTabs li#lobbyingTab a, body#earmarks.index #dataTabs li#earmarksTab a, body#contractorMisconduct.index #dataTabs li#contractorMisconductTab a {
     background-color: #FFF;
     border-bottom: 2px solid #FFF;
 }
@@ -447,18 +421,12 @@ body.filteredSearch #contribution {
 	margin-left: 25px;
 }
 
-body#contracts #intro-contributions { display: none; }
-body#contracts #intro-grants { display: none; }
-body#contracts #intro-lobbying { display: none; }
-body#contributions #intro-contracts { display: none; }
-body#contributions #intro-grants { display: none; }
-body#contributions #intro-lobbying { display: none; }
-body#lobbying #intro-contracts { display: none; }
-body#lobbying #intro-contributions { display: none; }
-body#lobbying #intro-grants { display: none; }
-body#grants #intro-contracts { display: none; }
-body#grants #intro-contributions { display: none; }
-body#grants #intro-lobbying { display: none; }
+body#contracts #intro-contracts { display: block; }
+body#contributions #intro-contributions { display: block; }
+body#lobbying #intro-lobbying { display: block; }
+body#grants #intro-grants { display: block; }
+body#earmarks #intro-earmarks { display: block; }
+body#contractorMisconduct #intro-contractor-misconduct { display: block; }
 
 /*single column-------------------------------------------------*/
 
@@ -732,12 +700,6 @@ form#filterBulk li{
 	margin-bottom: 5px;
 }
 
-div.partner a{
-	text-indent: -9999em;
-	display: block;
-	float: left;
-}
-
 p.partner a {
     text-indent: -9999em;
     display: block;
@@ -818,19 +780,6 @@ pre.literal-block {
 	color: #FFF;
 }
 
-a#openSecrets {
-	background: url(../images/logo_opensecrets_color.png) top left no-repeat;
-	width: 138px;
-	height: 52px;
-	margin-right: 78px;
-}
-
-a#nimsp {
-	background: url(../images/nimsp-logo.png) top left no-repeat;
-	width: 86px;
-	height: 67px;
-	margin-right: 78px;
-}
 
 #intro {
 	font-size: 120%;
@@ -876,6 +825,10 @@ a.downloadButton.enabled{
 
 a.downloadButton.enabled:hover{
 	background: url(../images/button-downloadData.png) left -122px no-repeat;
+}
+
+a.downloadButton.calculating {
+    background: url(../images/button-downloadData.png) left -183px no-repeat;
 }
 
 a.previewButton {
@@ -1067,8 +1020,7 @@ span.newpass {
 /* footer ------------------------------------------------------*/
 
 #footerContainer{
-	border-top: 2px solid #71CEF5;
-	background-color: #C9C4B4;
+	background-color: #EDEDE6;
 	height: 125px;
 	margin-top: 30px;
 		
@@ -1081,14 +1033,15 @@ span.newpass {
 	padding-top: 30px;
 }
 
-p#footerText {
+#footerText {
 	font-size: 95%;
 	line-height: 150%;
 	color: #4B3905;
-	text-align: justify;
+	text-align: center;
 	display: block;
-	width: 380px;
+	width: 500px;
 	float: left;
+	margin: 30px 0 40px 220px;
 }
 
 #footerText a {
@@ -1100,10 +1053,19 @@ p#footerText {
     display: none;
 }
 
+.dialog#excellimit {
+    display: none;
+}
+
 .dialog#suggestbulk {
     display: none;
 }
 
 .license p {
     margin: 1em 0;
+}
+
+.errorMessage ul {
+    list-style: disc outside;
+    margin-left: 30px;
 }

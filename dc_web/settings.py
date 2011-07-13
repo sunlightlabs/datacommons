@@ -52,6 +52,7 @@ MIDDLEWARE_CLASSES = (
 #    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'locksmith.auth.middleware.APIKeyMiddleware',
     'dcapi.middleware.APIMiddleware',
+    'sentry.client.middleware.Sentry404CatchMiddleware',
 )
 
 ROOT_URLCONF = 'dc_web.urls'
@@ -70,10 +71,14 @@ INSTALLED_APPS = (
     'dcdata.contribution',
     'dcdata.grants',
     'dcdata.lobbying',
+    'dcdata.earmarks',
     'dcapi',
     'dcapi.aggregates',
     'dcapi.rapportive',
     'dc_web.public',
+    'sentry.client',
+    'django_nose',
+    'gunicorn',
 )
 
 DATABASE_ROUTERS = ['db_router.DataCommonsDBRouter']
@@ -85,6 +90,8 @@ PISTON_STREAM_OUTPUT = True
 LOCKSMITH_STATS_APP = "dcapi"
 LOCKSMITH_STATS_MODEL = "Invocation"
 LOCKSMITH_HUB_URL = "http://services.sunlightlabs.com/analytics/"
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 INTERNAL_IPS = ('127.0.0.1','209.190.229.199')
 DEBUG_TOOLBAR_CONFIG = {
@@ -109,10 +116,20 @@ MEDIASYNC = {
             'js/td.fields.js',
             'js/td.contracts.js'
         ],
+        'contractor_misconduct.js': [
+            'js/td.js',
+            'js/td.fields.js',
+            'js/td.contractor_misconduct.js'
+        ],
         'contributions.js': [
             'js/td.js',
             'js/td.fields.js',
             'js/td.contributions.js'
+        ],
+        'earmarks.js': [
+            'js/td.js',
+            'js/td.fields.js',
+            'js/td.earmarks.js'
         ],
         'grants.js': [
             'js/td.js',
@@ -128,15 +145,18 @@ MEDIASYNC = {
             'js/td.js',
             'js/td.fields.js',
             'js/td.contracts.js',
+            'js/td.earmarks.js',
             'js/td.grants.js',
             'js/td.lobbying.js',
-            'js/td.contributions.js'
+            'js/td.contributions.js',
+            'js/td.contractor_misconduct.js'
         ],
     }
 }
 
 # timeout set to a week
 CACHE_BACKEND = 'memcached://127.0.0.1:11211/?timeout=10080'
+
 
 try:
     from local_settings import *

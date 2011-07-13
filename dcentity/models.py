@@ -1,4 +1,3 @@
-from dcdata.utils.sql import django2sql_names, is_disjoint, dict_union
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.localflavor.us.models import USStateField
@@ -26,67 +25,10 @@ class ExtensibleModel(models.Model):
         abstract = True
 
 #
-# entity reference field
-#
-
-class EntityRefCache(dict):
-    def register(self, model, field):
-        if not model in self:
-            self[model] = []
-        self[model].append(field)
-    def for_model_name(self, name):
-        name = name.lower()
-        for key, value in self.iteritems():
-            if key._meta.object_name.lower() == name:
-                return (key, self[key])
-
-entityref_cache = EntityRefCache()
-
-class EntityRef(models.CharField):
-
-    def __init__(self, related_name, ignore=False, *args, **kwargs):
-        kwargs['max_length'] = 32
-        kwargs['blank'] = True
-        kwargs['null'] = True
-        kwargs['db_index'] = True
-        super(EntityRef, self).__init__(*args, **kwargs)
-        self._ignore = ignore
-        self._label = related_name
-
-    def contribute_to_class(self, cls, name):
-        super(EntityRef, self).contribute_to_class(cls, name)
-        if not self._ignore:
-            entityref_cache.register(cls, name)
-
-    def entity(self):
-        pass
-
-#
 # models
 #
 
 entity_types = [(s, s) for s in getattr(settings, 'ENTITY_TYPES', [])]
-
-class EntityManager(models.Manager):
-
-    def with_id(self, entity_id):
-        return Entity.objects.filter(
-            Q(id=entity_id) | Q(attributes__namespace=EntityAttribute.ENTITY_ID_NAMESPACE, attributes__value=entity_id))
-
-    def with_attribute(self, namespace, value=None):
-        qs = Entity.objects.filter(attributes__namespace=namespace)
-        if value:
-            qs = qs.filter(attributes__value=value)
-        return qs
-
-    # is this used?
-    def merge(self, name, type_, entity_ids):
-        new_entity = Entity(name=name, type=type_)
-        for entity_id in entity_ids:
-            old_entity = Entity.objects.get(pk=entity_id)
-            for model, fields in entityref_cache.iteritems():
-                for field in fields:
-                    model.objects.filter(**{field: old_entity}).update(**{field: new_entity})
 
 
 class Entity(models.Model):
@@ -95,6 +37,8 @@ class Entity(models.Model):
     type = models.CharField(max_length=255, choices=entity_types, blank=True, null=True)
     timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
     reviewer = models.CharField(max_length=255, default="")
+    should_delete = models.BooleanField(default=False, null=False)
+    flagged_on = models.DateTimeField(null=True)
 
     def __unicode__(self):
         return self.name
@@ -119,7 +63,12 @@ class Entity(models.Model):
 
         if len(sources_dict):
             for (source_name, source_dict) in sources_dict:
-                source_dict['source_name'] = source_name
+                [ source_dict.pop(x) for x in source_dict.keys() if source_dict[x] == None ]
+
+                # this is displayed below the bio, so we'll only set it based on that field
+                if source_dict.has_key('bio'):
+                    source_dict['source_name'] = source_name
+
                 compiled_dict.update(source_dict)
 
         return compiled_dict
@@ -131,17 +80,36 @@ class Entity(models.Model):
         metadata = {}
 
         # our type-specific metadata
-        if self.type == 'politician' and hasattr(self, 'politician_metadata'):
-            metadata.update(model_to_dict(self.politician_metadata))
+        if self.type == 'politician' and hasattr(self, 'politician_metadata_by_cycle'):
+            for data_by_cycle in self.politician_metadata_by_cycle.all():
+                metadata[data_by_cycle.cycle] = model_to_dict(data_by_cycle)
+                del(metadata[data_by_cycle.cycle]['cycle'])
+                del(metadata[data_by_cycle.cycle]['id'])
+                del(metadata[data_by_cycle.cycle]['entity'])
+
+            # assign latest cycle to old fields for backwards compatibility
+            # (might not need this going forward)
+            if hasattr(self, 'politician_metadata_for_latest_cycle'):
+                latest = model_to_dict(self.politician_metadata_for_latest_cycle)
+                del(latest['cycle'])
+                del(latest['entity'])
+                metadata.update(latest)
+            else:
+                metadata['seat'] = ''
+                metadata['party'] = ''
+                metadata['state'] = ''
+
         elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
             metadata.update(self.organization_metadata.to_dict())
+
         elif self.type == 'individual':
             # in the future, individuals should probably have their own metadata table,
             # just like the other entity types, but since it would essentially be a
             # dummy table and we only have one attribute (on its own table), leaving it out for now
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
+
         elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
-            metadata.update(model_to_dict(self.industry_metadata))
+            metadata.update(self.industry_metadata.to_dict())
 
         metadata.update(self._get_sourced_data_as_dict())
 
@@ -161,7 +129,6 @@ class EntityAlias(models.Model):
     entity = models.ForeignKey(Entity, related_name='aliases', null=False)
     namespace = models.CharField(max_length=255, null=False)
     alias = models.CharField(max_length=255, null=False)
-    verified = models.BooleanField(default=False)
 
     class Meta:
         ordering = ('alias',)
@@ -171,12 +138,23 @@ class EntityAlias(models.Model):
         return self.alias
 
 
+class EntityNameParts(models.Model):
+    alias  = models.OneToOneField(EntityAlias, related_name='name_parts', null=False)
+    prefix = models.CharField(max_length=3, null=True)
+    first  = models.CharField(max_length=32, null=True)
+    middle = models.CharField(max_length=32, null=True)
+    last   = models.CharField(max_length=32, null=True)
+    suffix = models.CharField(max_length=3, null=True)
+
+    class Meta:
+        db_table = 'matchbox_entitynameparts'
+
+
 # should this be called 'external ID' or attribute?
 class EntityAttribute(models.Model):
     entity = models.ForeignKey(Entity, related_name='attributes', null=False)
     namespace = models.CharField(max_length=255, null=False)
     value = models.CharField(max_length=255, null=False)
-    verified = models.BooleanField(default=False)
 
     ENTITY_ID_NAMESPACE = 'urn:transparencydata:entity_id'
 
@@ -206,8 +184,8 @@ class OrganizationMetadata(ExtensibleModel):
 
     entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False, unique=True)
 
-    lobbying_firm = models.BooleanField(default=False)
-    parent_entity = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
+    lobbying_firm   = models.BooleanField(default=False)
+    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
     industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
 
     def _child_entities(self):
@@ -220,18 +198,53 @@ class OrganizationMetadata(ExtensibleModel):
 
 
 class PoliticianMetadata(models.Model):
-    entity = models.OneToOneField(Entity, related_name='politician_metadata', null=False)
+    entity = models.ForeignKey(Entity, related_name='politician_metadata_by_cycle', null=False, db_index=True)
 
-    state = USStateField(blank=True, null=True)
-    party = models.CharField(max_length=64, blank=True, null=True)
-    seat  = models.CharField(max_length=64, blank=True, null=True)
+    cycle = models.PositiveSmallIntegerField()
+
+    state         = USStateField(blank=True, null=True)
+    state_held    = USStateField(blank=True, null=True)
+    district      = models.CharField(max_length=8, blank=True, null=True)
+    district_held = models.CharField(max_length=8, blank=True, null=True)
+    party         = models.CharField(max_length=64, blank=True, null=True)
+    seat          = models.CharField(max_length=64, blank=True, null=True)
+    seat_held     = models.CharField(max_length=64, blank=True, null=True)
+    seat_status   = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
+    seat_result   = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
 
     class Meta:
         db_table = 'matchbox_politicianmetadata'
 
-class IndustryMetadata(models.Model):
+class PoliticianMetadataLatest(models.Model):
+    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True)
+
+    cycle = models.PositiveSmallIntegerField()
+
+    state         = USStateField(blank=True, null=True)
+    state_held    = USStateField(blank=True, null=True)
+    district      = models.CharField(max_length=8, blank=True, null=True)
+    district_held = models.CharField(max_length=8, blank=True, null=True)
+    party         = models.CharField(max_length=64, blank=True, null=True)
+    seat          = models.CharField(max_length=64, blank=True, null=True)
+    seat_held     = models.CharField(max_length=64, blank=True, null=True)
+    seat_status   = models.CharField(max_length=10, blank=True, choices=(('incumbent', 'Incumbent'), ('challenger', 'Challenger'), ('open', 'Open')))
+    seat_result   = models.CharField(max_length=4, blank=True, choices=(('win', 'Win'), ('loss', 'Loss')))
+
+    class Meta:
+        db_table = 'politician_metadata_latest_cycle_view'
+        managed = False
+
+class IndustryMetadata(ExtensibleModel):
     entity = models.OneToOneField(Entity, related_name='industry_metadata', null=False)
     should_show_entity = models.BooleanField(default=True)
+    parent_industry = models.ForeignKey(Entity, related_name='child_industry_set', null=True)
+
+    extended_properties = ['parent_industry', 'child_industries']
+
+    def _child_industries(self):
+        return [x.entity.public_representation() for x in self.entity.child_industry_set.all()]
+
+    child_industries = property(_child_industries)
 
     class Meta:
         db_table = 'matchbox_industrymetadata'
@@ -272,6 +285,8 @@ class WikipediaInfo(models.Model):
 
     bio        = models.TextField(null=True)
     bio_url    = models.URLField(null=True)
+    photo_url  = models.URLField(null=True)
+
     created_on = models.DateField(auto_now_add=True)
     updated_on = models.DateField(auto_now=True, null=True)
 
@@ -290,6 +305,21 @@ class SunlightInfo(models.Model):
 
     class Meta:
         db_table = 'matchbox_sunlightinfo'
+
+
+class PoliticianRelative(models.Model):
+    entity = models.ForeignKey(Entity, related_name='relatives', null=False)
+
+    raw_name = models.CharField(max_length=150, null=False)
+
+    first_name  = models.CharField(max_length=50, null=True)
+    middle_name = models.CharField(max_length=50, null=True)
+    last_name   = models.CharField(max_length=50, null=True)
+
+    relation = models.CharField(max_length=20, null=False, choices=[('child', 'Child'), ('partner', 'Partner')])
+
+    class Meta:
+        db_table = 'matchbox_politicianrelative'
 
 #
 # merge candidate
@@ -326,15 +356,5 @@ class MergeCandidate(models.Model):
     def is_locked(self):
         ago15min = datetime.datetime.utcnow() - datetime.timedelta(0, 0, 0, 0, 15)
         return self.owner is not None and self.owner_timestamp >= ago15min
-
-
-_entity_names = django2sql_names(Entity)
-_alias_names = django2sql_names(EntityAlias)
-_attribute_names = django2sql_names(EntityAttribute)
-_normalization_names = django2sql_names(Normalization)
-_merge_names = django2sql_names(MergeCandidate)
-
-assert is_disjoint(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
-sql_names = dict_union(_entity_names, _alias_names, _attribute_names, _normalization_names, _merge_names)
 
 

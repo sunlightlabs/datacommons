@@ -14,40 +14,11 @@ from dcentity.tools import utils
 
 def find_wikipedia_url(entity):
     """
-    Returns a tuple of (url, article excerpt) for a given entity, or None if no
+    Returns a tuple of (url, article excerpt, image url) for a given entity, or None if no
     matching article is found.
-    
-    >>> from dcentity.models import PoliticianMetadata
-    >>> e = EntityPlus.objects.create(type='politician', name="foo")
-    >>> a = e.aliases.create(alias='Barack Obama')
-    >>> md = PoliticianMetadata.objects.create(entity=e, 
-    ...         state='', party='D', seat='federal:president')
-    >>> find_wikipedia_url(e)[0]
-    'http://en.wikipedia.org/wiki/Barack_Obama'
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo1")
-    >>> a = e.aliases.create(alias='Atlantic Richfield')
-    >>> find_wikipedia_url(e)[0]
-    'http://en.wikipedia.org/wiki/ARCO'
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo2")
-    >>> a = e.aliases.create(alias='No WP entry for this')
-    >>> print find_wikipedia_url(e)
-    ['', '']
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo4")
-    >>> a = e.aliases.create(alias='159 Group')
-    >>> print find_wikipedia_url(e)
-    ['', '']
-
-    >>> e = EntityPlus.objects.create(type='organization', name="foo5")
-    >>> a = e.aliases.create(alias='188 Claremont')
-    >>> print find_wikipedia_url(e)
-    ['', '']
-
     """
-    empty_result = ['', '']
-    if entity.type == 'individual':
+    empty_result = ['', '', '']
+    if entity.type in ['individual', 'industry']:
         return empty_result
 
     for ename in entity.names:
@@ -55,7 +26,7 @@ def find_wikipedia_url(entity):
         # titles later -- we might exactly match a redirect title, but not
         # match the destination page at all.  Full text search returns only
         # the destination pages, not the redirections.
-        redirects = wpapi.title_search_redirects(ename.search_string()) 
+        redirects = wpapi.title_search_redirects(ename.search_string())
 
         # Full text search!
         results = wpapi.full_text_search(entity.get_search_terms(ename))
@@ -99,8 +70,8 @@ def find_wikipedia_url(entity):
                     if ename.is_company() and not article.is_company():
                         continue
             wikipedia_url = wpapi.article_url(article.title)
-            wikipedia_excerpt = wpapi.get_article_excerpt(article.title)
-            return (wikipedia_url, wikipedia_excerpt)
+            wikipedia_excerpt, image_url = wpapi.get_article_excerpt_and_image_url(article.title)
+            return (wikipedia_url, wikipedia_excerpt, image_url)
     return empty_result
 
 class Command(BaseCommand):
@@ -110,7 +81,7 @@ class Command(BaseCommand):
 results will include:
 
     entity_id, wikipedia_url or '', wikipedia_excerpt or '', datetime of fetch
-    
+
 Entries are not overridden -- if the file already contains a match for a given
 entity_id, it will not be re-queried.  It should thus be efficient to restart
 the process.  If you wish to refresh an entity, delete the row or start with a
@@ -142,18 +113,18 @@ can be accomplished from the Django shell like so:
 
         # Fetch and record new results
         with utils.reopen_csv_writer(output_file) as (rows, writer):
-            self.results = dict((row[0], row) for row in rows)
+            self.results = dict((row[0], row) for row in rows if len(row))
             self.writer = writer
             with utils.reopen_csv_writer(error_file) as (rows, error_writer):
                 self.errors = dict((row[0], row) for row in rows)
                 self.error_writer = error_writer
 
-                qs = EntityPlus.objects.exclude(type='individual')
+                qs = EntityPlus.objects.exclude(type='individual').exclude(type='industry')
                 total = qs.count()
                 # This'll take up to 48 hours
                 for c, entity in enumerate(qs):
                     self._fetch_one(entity, c, total)
-            
+
             # Retry errors once; most of the time it's just an HTTP error
             # thrown by wikipedia.
             with open(error_file, 'w') as error_fh:
@@ -180,18 +151,20 @@ can be accomplished from the Django shell like so:
 
         start = time.time()
         try:
-            url, excerpt = find_wikipedia_url(entity)
+            url, excerpt, image_url = find_wikipedia_url(entity)
         except Exception as e:
             print "EXCEPTION", traceback.format_exc()
             row = (entity.id, entity.names[0].name, str(e.args), traceback.format_exc())
             self._log_error(row)
         else:
-            row = (entity.id, url, excerpt, unicode(datetime.datetime.now()))
+            row = (entity.id, url, image_url, excerpt, unicode(datetime.datetime.now()))
             self.results[row[0]] = row
             self.writer.writerow(row)
-            print "%i/%i" % (c, total), (entity.names[0].name, url), \
+            entity_name = entity.names[0].name if len(entity.names) else '__blank__'
+            print "%i/%i" % (c, total), (entity.names[0].name, url, image_url), \
                 "time:", "%.02f" % (time.time()-start), "seconds"
 
     def _log_error(self, row):
         self.error_writer.writerow(row)
         self.errors[row[0]] = row
+

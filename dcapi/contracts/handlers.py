@@ -1,37 +1,50 @@
-from urllib import unquote_plus
-from piston.handler import BaseHandler
+from dcapi.common.handlers import FilterHandler
+from dcapi.common.schema import InclusionField, FulltextField, ComparisonField
+from dcapi.schema import Schema
 from dcdata.contracts.models import Contract
-from dcapi.contracts import filter_contracts
 
-RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
-DEFAULT_PER_PAGE = 1000
-MAX_PER_PAGE = 100000
+CONTRACTS_SCHEMA = Schema(
+    InclusionField('agency_id', 'agencyid'),
+    InclusionField('contracting_agency_id', 'contractingofficeagencyid'),
+    InclusionField('fiscal_year'),
+    InclusionField('place_distrct', 'congressionaldistrict'),
+    InclusionField('place_state', 'statecode'),
+    InclusionField('requesting_agency_id', 'fundingrequestingagencyid'),
+    InclusionField('vendor_state', 'state'),
+    InclusionField('vendor_zipcode', 'zipcode'),
+    InclusionField('vendor_district', 'vendor_cd'),
+    InclusionField('vendor_duns', 'dunsnumber'),
+    InclusionField('vendor_parent_duns', 'eeparentduns'),
 
-def load_contracts(params, nolimit=False, ordering=True):
-    
-    per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
-    page = int(params.get('page', 1)) - 1
-    
-    offset = page * per_page
-    limit = offset + per_page
-    
-    for param in RESERVED_PARAMS:
-        if param in params:
-            del params[param]
-            
-    unquoted_params = dict([(param, unquote_plus(quoted_value)) for (param, quoted_value) in params.iteritems()])
-    result = filter_contracts(unquoted_params)
-    if ordering:
-        result = result.order_by('-fiscal_year','-current_amount')
-    if not nolimit:
-        result = result[offset:limit]
-          
-    return result
+    # agency names have no data. see ticket #835
+    #FulltextField('agency_name', ['agency_name', 'contracting_agency_name', 'requesting_agency_name']),
+    FulltextField('vendor_name', ['vendorname']),
+    FulltextField('vendor_city', ['city']),
 
-class ContractsFilterHandler(BaseHandler):
-    allowed_methods = ('GET',)
-    model = Contract
+    ComparisonField('obligated_amount', 'obligatedamount', cast=int),
+    ComparisonField('current_amount', 'baseandexercisedoptionsvalue', cast=int),
+    ComparisonField('maximum_amount', 'baseandalloptionsvalue', cast=int)
+)
+
+
+def filter_contracts(request):
+    return CONTRACTS_SCHEMA.build_filter(Contract.objects, request).order_by()
+
+
+class ContractsFilterHandler(FilterHandler):
+
+    # imported_on is marked as an auto-generated field/non-editable,
+    # so was getting dropped by Django's model_to_dict serialization,
+    # but still required by the list of fields,
+    # so we pass the list of fields we want directly instead
+
+    fields = Contract._meta.get_all_field_names()
+    fields.remove('imported_on')
+
+
+    ordering = ['-fiscal_year','-baseandexercisedoptionsvalue']
+    filename = 'contracts'
+        
+    def queryset(self, params):
+        return filter_contracts(self._unquote(params))
     
-    def read(self, request):
-        params = request.GET.copy()
-        return load_contracts(params)

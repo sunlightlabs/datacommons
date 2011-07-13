@@ -5,9 +5,10 @@
     <div class="module">
     	<h2>Available Downloads</h2>	
 		<ul>
-			<li><a href="#all">All</a></li>
-			<li><a href="#state">State</a></li>
-			<li><a href="#federal">Federal</a></li>
+			<li><a href="#campaign_finance">Campaign Finance</a></li>
+			<li><a href="#lobbying">Lobbying</a></li>
+			<li><a href="#earmarks">Earmarks</a></li>
+			<li><a href="#usaspending">Grants & Contracts</a></li>
 		</ul>
     </div>
 
@@ -15,15 +16,9 @@
     	<h2>License</h2>
 		<p>Data returned by this service is subject to the <a href="http://www.fec.gov/pages/brochures/sale_and_use_brochure.pdf">use restrictions set by the Federal Election Commission</a>. By accessing this data, you understand that you are using the data subject to all applicable local, state and federal law, including FEC restrictions.</p>
 		<p>All data licensed under the <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/us/">Creative Commons BY-NC-SA</a> license. By downloading data, you are agreeing to the terms of the license.</p> 
-		<p>Federal records must be attributed to <a href="http://opensecrets.org">OpenSecrets.org</a>.</p> 
-		<p>State records must be attributed to <a href="http://followthemoney.org">FollowTheMoney.org</a>.</p
-    </div>
-
-    <div class="module partner">
-    	<h2>Partnered With</h2>
-    	<a id="openSecrets" href="#"><big>OpenSecrets.org</big><small>Center for Responsive Politics</small></a>
-    	<a id="nimsp" href="#"><big>National Institute on Money in State Politics</big><small>Follow The Money</small></a>
-    	<div class="clear"></div>
+		<p>Federal campaign finance and lobbying data must be attributed to <a href="http://opensecrets.org">OpenSecrets.org</a>.</p> 
+		<p>State campaign finance data must be attributed to <a href="http://followthemoney.org">FollowTheMoney.org</a>.</p>
+		<p>Earmarks data must be attributed to <a href="http://taxpayers.net">Taxpayers for Common Sense</a>.</p>
     </div>
 
 {% endblock %}
@@ -38,10 +33,41 @@
 
     <div class="module whitebox group">
 	
-        <h2 id="all">State and Federal Contributions</h2>
+        <h2 id="campaign_finance">State and Federal Campaign Contributions</h2>
 		<p class="download">
-			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.all.csv.gz">Full data set</a> 1887 MB
+			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.all.csv.gz">Full data set</a> 2.2 GB
 		</p>
+		
+	</div>
+				
+	<div class="module whitebox group">
+		
+        <h2 id="federal">Federal Contributions</h2>
+	
+		<p>Federal records provided by <a href="http://opensecrets.org">OpenSecrets.org</a>.</p>
+		
+		<p class="download">
+			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.csv.gz">All federal campaign contribution records</a> 1 GB
+		</p>
+		
+		<h3 id="state-year">By contribution year</h3>
+		<ol class="download-list">
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.1990.csv.gz">1989 - 1990</a> 28 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.1992.csv.gz">1991 - 1992</a> 42 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.1994.csv.gz">1993 - 1994</a> 43 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.1996.csv.gz">1995 - 1996</a> 60 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.1998.csv.gz">1997 - 1998</a> 50 MB</li>
+		</ol>
+		<ol class="download-list">
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.2000.csv.gz">1999 - 2000</a> 78 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.2002.csv.gz">2001 - 2002</a> 69 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.2004.csv.gz">2003 - 2004</a> 138 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.2006.csv.gz">2005 - 2006</a> 107 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.2008.csv.gz">2007 - 2008</a> 242 MB</li>
+		</ol>
+		<ol class="download-list">
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.fec.2010.csv.gz">2009 - 2010</a> 146 MB</li>
+		</ol>
 		
 	</div>
 		
@@ -52,75 +78,56 @@
 		<p>State records provided by <a href="http://followthemoney.org">FollowTheMoney.org</a>.</p>
 		
 		<p class="download">
-			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.csv.gz">All state campaign contribution records</a> 1037 MB
+			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.csv.gz">All state campaign contribution records</a> 1.2 GB
 		</p>
 		
 		<h3 id="state-year">By contribution year</h3>
 		<ol class="download-list">
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.1992.csv.gz">1991 - 1992</a> 6036 KB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.1994.csv.gz">1993 - 1994</a> 10 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.1996.csv.gz">1995 - 1996</a> 36 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.1998.csv.gz">1997 - 1998</a> 126 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.1990.csv.gz">1989 - 1990</a> 4.5 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.1992.csv.gz">1991 - 1992</a> 6.2 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.1994.csv.gz">1993 - 1994</a> 11 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.1996.csv.gz">1995 - 1996</a> 38 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.1998.csv.gz">1997 - 1998</a> 130 MB</li>
 		</ol>
 		<ol class="download-list">
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.2000.csv.gz">1999 - 2000</a> 111 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.2002.csv.gz">2001 - 2002</a> 175 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.2004.csv.gz">2003 - 2004</a> 161 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.2006.csv.gz">2005 - 2006</a> 216 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.2008.csv.gz">2007 - 2008</a> 174 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.2000.csv.gz">1999 - 2000</a> 115 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.2002.csv.gz">2001 - 2002</a> 180 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.2004.csv.gz">2003 - 2004</a> 168 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.2006.csv.gz">2005 - 2006</a> 217 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.2008.csv.gz">2007 - 2008</a> 178 MB</li>
 		</ol>
 		<ol class="download-list">
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.nimsp.2010.csv.gz">2009 - 2010</a> 18 MB</li>
+			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/contributions.nimsp.2010.csv.gz">2009 - 2010</a> 203 MB</li>
 		</ol>
 		
 	</div>
 	
-	<div class="module whitebox group">
-		
-        <h2 id="federal">Federal Contributions</h2>
 	
-		<p>Federal records provided by <a href="http://opensecrets.org">OpenSecrets.org</a>.</p>
-		
+	<div class="module whitebox group">
+	
+		<h2 id="lobbying">Federal Lobbying</h2>
+		<p>Federal lobbying data provided by <a href="http://opensecrets.org">OpenSecrets.org</a>.</p>		
 		<p class="download">
-			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.csv.gz">All federal campaign contribution records</a> 844 MB
+			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/lobbying.tar.gz">Full data set</a> 182 MB
 		</p>
-		
-		<h3 id="state-year">By contribution year</h3>
-		<ol class="download-list">
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.1992.csv.gz">1991 - 1992</a> 45 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.1994.csv.gz">1993 - 1994</a> 45 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.1996.csv.gz">1995 - 1996</a> 61 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.1998.csv.gz">1997 - 1998</a> 49 MB</li>
-		</ol>
-		<ol class="download-list">
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.2000.csv.gz">1999 - 2000</a> 79 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.2002.csv.gz">2001 - 2002</a> 70 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.2004.csv.gz">2003 - 2004</a> 137 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.2006.csv.gz">2005 - 2006</a> 103 MB</li>
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.2008.csv.gz">2007 - 2008</a> 193 MB</li>
-		</ol>
-		<ol class="download-list">
-			<li><a href="http://datacommons.s3.amazonaws.com/subsets/td-20100927/contributions.fec.2010.csv.gz">2009 - 2010</a> 87 MB</li>
-		</ol>
-		
+	
 	</div>
 	
 	<div class="module whitebox group">
 	
-	    <h2 id="all">Federal Grants</h2>
+		<h2 id="earmarks">Earmarks</h2>
+		<p>Earmarks data provided by <a href="http://taxpayers.net">Taxpayers for Common Sense</a>.</p>
 		<p class="download">
-			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20100914/grants.tgz">Full data set</a> 423 MB
+			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20110419/earmarks.tgz">Full data set</a> 2.7 MB
 		</p>
-		
-	</div>
 	
+	</div>
+
 	<div class="module whitebox group">
 	
-	    <h2 id="all">Federal Contracts</h2>
-		<p class="download">
-			<a href="http://datacommons.s3.amazonaws.com/subsets/td-20100914/contracts.tgz">Full data set</a> 1523 MB
-		</p>
-		
+	    <h2 id="usaspending">Federal Grants & Contracts</h2>
+	    <p>Federal grant and contract data can be downloaded from <a href="http://www.usaspending.gov/data">USASpending.gov</a>.</p>
 	</div>
+
 	
 {% endblock %}

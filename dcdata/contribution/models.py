@@ -1,8 +1,6 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
-from dcdata.models import DataCommonsModel
-from dcentity.models import EntityRef
-from dcdata.utils.sql import django2sql_names
+from dcdata.models import Import
 
 
 NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
@@ -28,11 +26,6 @@ CONTRIBUTOR_TYPES = (
 RECIPIENT_TYPES = (
     ('P','Candidate'),
     ('C','Committee'),
-)
-
-ELECTION_TYPES = (
-    ('G', 'General'),
-    ('P', 'Primary'),
 )
 
 TRANSACTION_TYPES = (
@@ -82,74 +75,74 @@ GENDERS = (
     ('U','Unknown'),
 )
 
-class Contribution(DataCommonsModel):
-    
+class Contribution(models.Model):
+    import_reference = models.ForeignKey(Import)
+
     # cycle and basic transaction fields
     cycle = models.IntegerField()
     transaction_namespace = models.CharField(max_length=64)
     transaction_id = models.CharField(max_length=32) # <cycle>:<fec_transaction_id>, <nimsp_id>
     transaction_type = models.CharField(max_length=32, choices=TRANSACTION_TYPES)
-    filing_id = models.CharField(max_length=128, blank=True, null=True)
+    filing_id = models.CharField(max_length=128, blank=True)
     is_amendment = models.BooleanField(default=False)
-    
+
     # amount and date
     amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
     date = models.DateField(null=True)
-    
+
     # contributor fields
-    contributor_name = models.CharField(max_length=255, blank=True, null=True)
-    contributor_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    contributor_entity = EntityRef('contributor_transactions')
-    contributor_type = models.CharField(max_length=1, choices=CONTRIBUTOR_TYPES, blank=True, null=True)
-    contributor_occupation = models.CharField(max_length=64, blank=True, null=True)
-    contributor_employer = models.CharField(max_length=64, blank=True, null=True)
-    
+    contributor_name = models.CharField(max_length=255, blank=True)
+    contributor_ext_id = models.CharField(max_length=128, blank=True)
+    contributor_type = models.CharField(max_length=1, choices=CONTRIBUTOR_TYPES, blank=True)
+    contributor_occupation = models.CharField(max_length=64, blank=True)
+    contributor_employer = models.CharField(max_length=64, blank=True)
+
     contributor_gender = models.CharField(max_length=1, choices=GENDERS, default='U')
-    contributor_address = models.CharField(max_length=255, blank=True, null=True)
-    contributor_city = models.CharField(max_length=128, blank=True, null=True)
-    contributor_state = USStateField(blank=True, null=True)
-    contributor_zipcode = models.CharField(max_length=5, blank=True, null=True)
-    
-    contributor_category = models.CharField(max_length=8, blank=True, null=True)
-    contributor_category_order = models.CharField(max_length=3, blank=True, null=True)
-    
+    contributor_address = models.CharField(max_length=255, blank=True)
+    contributor_city = models.CharField(max_length=128, blank=True)
+    contributor_state = USStateField(blank=True)
+    contributor_zipcode = models.CharField(max_length=5, blank=True)
+
+    contributor_category = models.CharField(max_length=8, blank=True)
+
     # organization
-    organization_name = models.CharField(max_length=255, blank=True, null=True)
-    organization_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    organization_entity = EntityRef('organization_transactions')
-    
+    organization_name = models.CharField(max_length=255, blank=True)
+    organization_ext_id = models.CharField(max_length=128, blank=True)
+
     # parent organization
-    parent_organization_name = models.CharField(max_length=255, blank=True, null=True)
-    parent_organization_ext_id =  models.CharField(max_length=128, blank=True, null=True)
-    parent_organization_entity = EntityRef('parent_organization_transactions')
-    
+    parent_organization_name = models.CharField(max_length=255, blank=True)
+    parent_organization_ext_id =  models.CharField(max_length=128, blank=True)
+
     # recipient fields
-    recipient_name = models.CharField(max_length=255, blank=True, null=True)
-    recipient_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    recipient_entity = EntityRef('recipient_transactions')
-    recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
-    recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True, null=True)
-    recipient_state = USStateField(blank=True, null=True)
-    
-    recipient_category = models.CharField(max_length=8, blank=True, null=True)
-    recipient_category_order = models.CharField(max_length=3, blank=True, null=True)
-    
+    recipient_name = models.CharField(max_length=255, blank=True)
+    recipient_ext_id = models.CharField(max_length=128, blank=True)
+    recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True)
+    recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True)
+    recipient_state = USStateField(blank=True)
+    recipient_state_held = USStateField(blank=True)
+
+    recipient_category = models.CharField(max_length=8, blank=True)
+
     # committee fields
-    committee_name = models.CharField(max_length=255, blank=True, null=True)
-    committee_ext_id = models.CharField(max_length=128, blank=True, null=True)
-    committee_entity = EntityRef('committee_transactions')
-    committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True, null=True)
-        
+    committee_name = models.CharField(max_length=255, blank=True)
+    committee_ext_id = models.CharField(max_length=128, blank=True)
+    committee_party = models.CharField(max_length=64, choices=PARTIES, blank=True)
+
     # election and seat fields
-    election_type = models.CharField(max_length=64, choices=ELECTION_TYPES, blank=True, null=True)
-    district = models.CharField(max_length=8, blank=True, null=True)
-    seat = models.CharField(max_length=64, choices=SEATS, blank=True, null=True)
-    seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True, null=True)
-    seat_result = models.CharField(max_length=1, choices=SEAT_RESULTS, blank=True, null=True)
-    
+    candidacy_status = models.NullBooleanField(null=True)
+
+    district = models.CharField(max_length=8, blank=True)
+    district_held = models.CharField(max_length=8, blank=True)
+
+    seat = models.CharField(max_length=64, choices=SEATS, blank=True)
+    seat_held = models.CharField(max_length=64, choices=SEATS, blank=True)
+
+    seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True)
+    seat_result = models.CharField(max_length=1, choices=SEAT_RESULTS, blank=True)
+
     class Meta:
         ordering = ('cycle','contributor_name','amount','recipient_name')
-    
+
     def __unicode__(self):
         return u"%s gave %i to %s" % (self.contributor_name or 'unknown', self.amount, self.recipient_name or 'unknown')
 
@@ -159,28 +152,25 @@ class Contribution(DataCommonsModel):
             pass
         elif self.transaction_namespace == UNITTEST_TRANSACTION_NAMESPACE:
             pass
-        elif self.transaction_namespace == CRP_TRANSACTION_NAMESPACE:        
+        elif self.transaction_namespace == CRP_TRANSACTION_NAMESPACE:
             # check transaction type
             if self.date:
                 if self.date.year < 2004 and self.transaction_type == '10levin':
                     raise ValueError, "Levin funds may only occur on or after 2004"
                 elif self.transaction_type == '10soft':
                     raise ValueError, "Soft funds may only occur before 2004"
-        else: 
+        else:
             raise ValueError, "Unhandled transaction_namespace (%s)" % (self.transaction_namespace or 'None')
 
         if len(self.contributor_gender) > 1:
-            raise ValueError, 'Gender of %s is not valid' % self.contributor_gender 
-        
+            raise ValueError, 'Gender of %s is not valid' % self.contributor_gender
+
         if self.contributor_state and len(self.contributor_state) > 2:
             raise ValueError, "State '%s' is not a valid state." % self.contributor_state
-        
+
         if self.date and self.date.year < 1900:
-            raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.date.year 
-        
+            raise ValueError, 'Year %s is not a valid year. Must use 4-digit years.' % self.date.year
+
         # save if all checks passed
         super(Contribution, self).save(**kwargs)
-    
 
-
-sql_names = django2sql_names(Contribution)

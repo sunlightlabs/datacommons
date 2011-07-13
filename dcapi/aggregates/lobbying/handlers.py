@@ -4,7 +4,7 @@ from dcapi.aggregates.handlers import EntityTopListHandler
 
 class OrgRegistrantsHandler(EntityTopListHandler):
     fields = ['registrant_name', 'registrant_entity', 'count', 'amount']
-    
+
     stmt = """
         select registrant_name, registrant_entity, count, amount
         from agg_lobbying_registrants_for_client
@@ -18,7 +18,7 @@ class OrgRegistrantsHandler(EntityTopListHandler):
 
 class OrgIssuesHandler(EntityTopListHandler):
     fields = ['issue', 'count']
-    
+
     stmt = """
         select issue, count
         from agg_lobbying_issues_for_client
@@ -30,8 +30,23 @@ class OrgIssuesHandler(EntityTopListHandler):
     """
 
 
+class OrgBillsHandler(EntityTopListHandler):
+    fields = 'congress_no bill_type bill_no bill_name title cycle count'.split()
+
+    stmt = """
+        select {0}
+        from agg_lobbying_bills_for_client
+        inner join lobbying_billtitle using (bill_type, congress_no, bill_no)
+        where
+            client_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s
+    """.format(', '.join(fields))
+
+
 class OrgLobbyistsHandler(EntityTopListHandler):
-    
+
     fields = ['lobbyist_name', 'lobbyist_entity', 'count']
 
     stmt = """
@@ -41,13 +56,13 @@ class OrgLobbyistsHandler(EntityTopListHandler):
             client_entity = %s
             and cycle = %s
         order by count desc
-        limit %s    
+        limit %s
     """
-    
+
 class IndivRegistrantsHandler(EntityTopListHandler):
-    
+
     fields = ['registrant_name', 'registrant_entity', 'count']
-    
+
     stmt = """
         select registrant_name, registrant_entity, count
         from agg_lobbying_registrants_for_lobbyist
@@ -57,11 +72,11 @@ class IndivRegistrantsHandler(EntityTopListHandler):
         order by count desc
         limit %s
     """
-    
+
 class IndivIssuesHandler(EntityTopListHandler):
-    
+
     fields = ['issue', 'count']
-    
+
     stmt = """
         select issue, count
         from agg_lobbying_issues_for_lobbyist
@@ -71,11 +86,11 @@ class IndivIssuesHandler(EntityTopListHandler):
         order by count desc
         limit %s
     """
-    
-class IndivClientsHandler(EntityTopListHandler):        
-    
+
+class IndivClientsHandler(EntityTopListHandler):
+
     fields = ['client_name', 'client_entity', 'count']
-    
+
     stmt = """
         select client_name, client_entity, count
         from agg_lobbying_clients_for_lobbyist
@@ -84,10 +99,10 @@ class IndivClientsHandler(EntityTopListHandler):
             and cycle = %s
         order by count desc
         limit %s
-    """        
-    
+    """
+
 class RegistrantIssuesHandler(EntityTopListHandler):
-    
+
     fields = ['issue', 'count']
 
     stmt = """
@@ -97,11 +112,26 @@ class RegistrantIssuesHandler(EntityTopListHandler):
             registrant_entity = %s
             and cycle = %s
         order by count desc
-        limit %s        
+        limit %s
     """
 
+class RegistrantBillsHandler(EntityTopListHandler):
+
+    fields = 'congress_no bill_type bill_no bill_name title cycle count'.split()
+
+    stmt = """
+        select {0}
+        from agg_lobbying_bills_for_registrant
+        inner join lobbying_billtitle using (bill_type, congress_no, bill_no)
+        where
+            registrant_entity = %s
+            and cycle = %s
+        order by count desc
+        limit %s
+    """.format(', '.join(fields))
+
 class RegistrantClientsHandler(EntityTopListHandler):
-    
+
     fields = ['client_name', 'client_entity', 'count', 'amount']
 
     stmt = """
@@ -111,12 +141,12 @@ class RegistrantClientsHandler(EntityTopListHandler):
             registrant_entity = %s
             and cycle = %s
         order by amount desc, count desc
-        limit %s        
+        limit %s
     """
 
 
 class RegistrantLobbyistsHandler(EntityTopListHandler):
-        
+
     fields = ['lobbyist_name', 'lobbyist_entity', 'count']
 
     stmt = """
@@ -126,9 +156,9 @@ class RegistrantLobbyistsHandler(EntityTopListHandler):
             registrant_entity = %s
             and cycle = %s
         order by count desc
-        limit %s        
+        limit %s
     """
 
 
 
-    
+

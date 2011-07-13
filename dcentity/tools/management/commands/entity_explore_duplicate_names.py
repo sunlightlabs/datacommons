@@ -79,7 +79,7 @@ Results are presented in one of two ways:
         cursor.execute("""
             SELECT DISTINCT a.entity_id,a.alias,m.state,m.party,m.seat FROM 
             matchbox_entityalias a 
-            LEFT JOIN matchbox_politicianmetadata m ON m.entity_id=a.entity_id
+            LEFT JOIN politician_metadata_latest_cycle_view m ON m.entity_id=a.entity_id
             LEFT JOIN matchbox_entity e ON m.entity_id=e.id
             WHERE e.type = %s
             """, ['politician'])

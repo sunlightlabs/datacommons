@@ -6,18 +6,22 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
     SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
-    TopIndustriesByContributionsHandler, TopOrganizationsByIndustryHandler, \
+    TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
-    OrgIssuesHandler, OrgLobbyistsHandler, IndivRegistrantsHandler, \
-    IndivIssuesHandler, IndivClientsHandler, RegistrantIssuesHandler, \
-    RegistrantClientsHandler, RegistrantLobbyistsHandler
+    OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
+    IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
+    RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
+    RegistrantLobbyistsHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
+from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
+    LocalEarmarksHandler
+from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
+
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
-
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need.
 Emitter.unregister('django')
@@ -63,6 +67,12 @@ urlpatterns = patterns('',
     url(r'^pols/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopPoliticiansByReceiptsHandler, **ad)),
 
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
+        Resource(TopEarmarksHandler, **ad)),
+
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/earmarks/local_breakdown\.(?P<emitter_format>.+)$',
+        Resource(LocalEarmarksHandler, **ad)),
+
     # recipients from a single individual, broken down to show percentages
     url(r'^indiv/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$',
         Resource(IndivPartyBreakdownHandler, **ad)),
@@ -104,9 +114,19 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/registrants\.(?P<emitter_format>.+)$',
         Resource(OrgRegistrantsHandler, **ad)),
 
-    # issues an org hired people to
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
+        Resource(TopEarmarksHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/contractor_misconduct\.(?P<emitter_format>.+)$',
+        Resource(TopContractorMisconductHandler, **ad)),
+
+    # issues an org hired people to lobby on
     url(r'^org/(?P<entity_id>[a-f0-9]+)/issues\.(?P<emitter_format>.+)',
         Resource(OrgIssuesHandler, **ad)),
+
+    # bills an org hired people to lobby on
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/bills\.(?P<emitter_format>.+)',
+        Resource(OrgBillsHandler, **ad)),
 
     # lobbyists who worked with this org.
     url(r'org/(?P<entity_id>[a-f0-9]+)/lobbyists\.(?P<emitter_format>.+)',
@@ -114,6 +134,9 @@ urlpatterns = patterns('',
 
     url(r'org/(?P<entity_id>[a-f0-9]+)/registrant/issues\.(?P<emitter_format>.+)',
         Resource(RegistrantIssuesHandler, **ad)),
+
+    url(r'org/(?P<entity_id>[a-f0-9]+)/registrant/bills\.(?P<emitter_format>.+)',
+        Resource(RegistrantBillsHandler, **ad)),
 
     url(r'org/(?P<entity_id>[a-f0-9]+)/registrant/clients\.(?P<emitter_format>.+)',
         Resource(RegistrantClientsHandler, **ad)),
@@ -133,9 +156,9 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/fed_spending\.(?P<emitter_format>.+)',
         Resource(OrgFedSpendingHandler, **ad)),
 
-    # top N organizations by contributions for a cycle, per industry
-    url(r'^industry/(?P<entity_id>[a-f0-9]+)/orgs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
-        Resource(TopOrganizationsByIndustryHandler, **ad)),
+    # organizations in an industry
+    url(r'^industry/(?P<entity_id>[a-f0-9]+)/orgs\.(?P<emitter_format>.+)$',
+        Resource(IndustryOrgHandler, **ad)),
 )
 
 

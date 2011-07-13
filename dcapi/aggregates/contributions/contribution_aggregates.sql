@@ -127,8 +127,8 @@ create table contributions_all_relevant as
 
 select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
-     
-            
+
+
 -- Contributor Associations
 
 drop table if exists tmp_assoc_indiv_id;
@@ -138,7 +138,9 @@ create table tmp_assoc_indiv_id as
     select entity_id, transaction_id
     from contributions_all_relevant c
     inner join matchbox_entityattribute a
-        on a.value = c.contributor_ext_id
+        on (a.value = c.contributor_ext_id
+            -- a 12th digit of '0' can be ignored
+            or (length(a.value) = 12 and substring(a.value from 12 for 1) = '0' and substring(a.value for 11) = c.contributor_ext_id))
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
@@ -148,7 +150,7 @@ create table tmp_assoc_indiv_id as
             (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
             or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
         );
-        
+
 create index tmp_assoc_indiv_id_entity on tmp_assoc_indiv_id (entity_id);
 create index tmp_assoc_indiv_id_transaction on tmp_assoc_indiv_id (transaction_id);
 
@@ -161,7 +163,7 @@ create table tmp_indiv_names as
     from contributions_all_relevant c
     inner join tmp_assoc_indiv_id a using (transaction_id)
     group by entity_id, contributor_name;
-    
+
 create index tmp_indiv_names_entity on tmp_indiv_names (entity_id);
 create index tmp_indiv_names_name on tmp_indiv_names (lower(name));
 
@@ -170,11 +172,11 @@ drop table if exists tmp_indiv_locations;
 
 select date_trunc('second', now()) || ' -- create table tmp_indiv_locations';
 create table tmp_indiv_locations as
-    select entity_id, msa_name
+    select entity_id, msa_id
     from contributions_all_relevant c
     inner join tmp_assoc_indiv_id a using (transaction_id)
-    inner join zip_msa on c.contributor_zipcode = zipcode
-    group by entity_id, msa_name;
+    inner join geo_zip on c.contributor_zipcode = zipcode
+    group by entity_id, msa_id;
 
 create index tmp_indiv_locations_entity on tmp_indiv_locations (entity_id);
 
@@ -192,9 +194,9 @@ create table contributor_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
+                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
@@ -215,10 +217,10 @@ union
         on lower(n.name) = lower(c.contributor_name)
     inner join tmp_indiv_locations l
         on n.entity_id = l.entity_id
-    inner join zip_msa z
-        on c.contributor_zipcode = z.zipcode and l.msa_name = z.msa_name
+    inner join geo_zip z
+        on c.contributor_zipcode = z.zipcode and l.msa_id = z.msa_id
     group by n.entity_id, c.transaction_id;
-    
+
 
 select date_trunc('second', now()) || ' -- create index contributor_associations_entity_id on contributor_associations (entity_id)';
 create index contributor_associations_entity_id on contributor_associations (entity_id);
@@ -241,9 +243,9 @@ create table organization_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization'
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
+                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
@@ -274,9 +276,9 @@ select date_trunc('second', now()) || ' -- create table parent_organization_asso
                 on e.id = a.entity_id
             where
                 e.type = 'organization'
-                and (a.namespace = ''
+                and ((a.namespace = '' or a.namespace is null)
                     or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                        or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))                
+                        or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
     union
         select a.entity_id, c.transaction_id
         from contributions_all_relevant c
@@ -308,6 +310,15 @@ create table industry_associations as
     inner join matchbox_entity e
         on e.id = a.entity_id
     where
+        e.type = 'industry'
+union all
+    select a.entity_id, c.transaction_id
+    from contributions_all_relevant c
+    inner join matchbox_entityattribute a
+        on lower(c.contributor_category) = lower(a.value)
+    inner join matchbox_entity e
+        on e.id = a.entity_id
+    where
         e.type = 'industry';
 
 select date_trunc('second', now()) || ' -- create index industry_associations_entity_id on industry_associations (entity_id)';
@@ -331,9 +342,9 @@ create table recipient_associations as
         on e.id = a.entity_id
     where
         e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
-        and (a.namespace = ''
+        and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))        
+                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
@@ -359,11 +370,12 @@ drop table if exists agg_contribution_sparklines;
 
 select date_trunc('second', now()) || ' -- create table agg_contribution_sparklines';
 create table agg_contribution_sparklines as
-    select
-        entity_id,
-        cycle,
-        rank() over (partition by entity_id, cycle order by date_trunc('month', c.date)) as step,
-        sum(amount) as amount
+    with by_cycle_sparks as (
+        select
+            entity_id,
+            cycle,
+            date_trunc('month', c.date) as date_step,
+            sum(amount) as amount
         from (
                 table contributor_associations
                 union
@@ -374,27 +386,23 @@ create table agg_contribution_sparklines as
                 table parent_organization_associations
             ) a
             inner join contributions_all_relevant c using (transaction_id)
-        where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
+        where c.date between '19890101' and '20111231'
+            and c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, date_trunc('month', c.date)
+    )
+
+    select entity_id, cycle, date_step::date, amount
+    from by_cycle_sparks
 
     union all
 
     select
         entity_id,
         -1 as cycle,
-        rank() over (partition by entity_id order by date_trunc('quarter', c.date)) as step,
+        date_trunc('quarter', date_step)::date as date_step,
         sum(amount) as amount
-        from (
-                table contributor_associations
-                union
-                table recipient_associations
-                union
-                table organization_associations
-                union
-                table parent_organization_associations
-            ) a
-            inner join contributions_all_relevant c using (transaction_id)
-        group by entity_id, date_trunc('quarter', c.date);
+    from by_cycle_sparks
+    group by entity_id, date_trunc('quarter', date_step)
 ;
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_idx on agg_contribution_sparklines (entity_id, cycle)';
@@ -409,16 +417,30 @@ drop table if exists agg_contribution_sparklines_by_party;
 
 select date_trunc('second', now()) || ' -- create table agg_contribution_sparklines_by_party';
 create table agg_contribution_sparklines_by_party as
-    select
-        entity_id,
-        cycle,
-        recipient_party,
-        rank() over (partition by entity_id, cycle, recipient_party order by date_trunc('month', c.date)) as step,
-        sum(amount) as amount
-        from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
+    with by_cycle_sparks as (
+        select
+            entity_id,
+            cycle,
+            recipient_party,
+            date_trunc('month', c.date) as date_step,
+            sum(amount) as amount
+        from (
+                table contributor_associations
+                union
+                table organization_associations
+                union
+                table parent_organization_associations
+                union all
+                table industry_associations
+            ) a
             inner join contributions_all_relevant c using (transaction_id)
-        where c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
+        where c.date between '19890101' and '20111231'
+            and c.date between date(cycle-1 || '-01-01') and date(cycle || '-12-31')
         group by entity_id, cycle, recipient_party, date_trunc('month', c.date)
+    )
+
+    select entity_id, cycle, recipient_party, date_step::date, amount
+    from by_cycle_sparks
 
     union all
 
@@ -426,11 +448,10 @@ create table agg_contribution_sparklines_by_party as
         entity_id,
         -1 as cycle,
         recipient_party,
-        rank() over (partition by entity_id, recipient_party order by date_trunc('quarter', c.date)) as step,
+        date_trunc('quarter', date_step)::date as date_step,
         sum(amount) as amount
-        from (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) a
-            inner join contributions_all_relevant c using (transaction_id)
-        group by entity_id, recipient_party, date_trunc('quarter', c.date);
+    from by_cycle_sparks
+    group by entity_id, recipient_party, date_trunc('quarter', date_step);
 
 select date_trunc('second', now()) || ' -- create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party)';
 create index agg_contribution_sparklines_by_party_idx on agg_contribution_sparklines_by_party (entity_id, cycle, recipient_party);
@@ -553,6 +574,10 @@ create table agg_industries_to_cand as
         inner join recipient_associations ra using (transaction_id)
         left join industry_associations ia using (transaction_id)
         left join matchbox_entity me on me.id = ia.entity_id
+        left join matchbox_entityattribute ma on ma.entity_id = ia.entity_id
+        where
+            -- exclude subindustries
+            coalesce(ma.namespace, 'urn:crp:industry') = 'urn:crp:industry'
         group by ra.entity_id, ia.entity_id, coalesce(me.name, 'UNKNOWN'), c.cycle
     )
 
@@ -652,9 +677,7 @@ select date_trunc('second', now()) || ' -- create index agg_orgs_from_indiv_idx 
 create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
 
 
-
 -- Organizations to Candidate
-
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_orgs_to_cand';
 drop table if exists agg_orgs_to_cand;
@@ -797,6 +820,7 @@ create table agg_party_from_indiv as
         select ca.entity_id as contributor_entity, c.cycle, c.recipient_party, count(*), sum(c.amount) as amount
         from (table contributions_individual union all table contributions_individual_to_organization) c
         inner join contributor_associations ca using (transaction_id)
+        where recipient_party != ''
         group by ca.entity_id, c.cycle, c.recipient_party
     )
 
@@ -826,6 +850,7 @@ create table agg_party_from_org as
         select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
         from contributions_all_relevant c
         inner join (table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
+        where recipient_party != ''
         group by oa.entity_id, c.cycle, c.recipient_party
     )
 
@@ -886,7 +911,7 @@ create table agg_local_to_politician as
         select ra.entity_id as recipient_entity, c.cycle,
             case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
             count(*), sum(amount) as amount
-        from (table contributions_individual union table contributions_organization) c
+        from contributions_individual c
         inner join recipient_associations ra using (transaction_id)
         group by ra.entity_id, c.cycle, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end
     )
@@ -948,21 +973,21 @@ create table agg_top_orgs_by_industry as
             coalesce(top_indivs.amount, 0) as indivs_amount,
             rank() over (partition by industry_entity, cycle order by (coalesce(top_pacs.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
         from (
-            -- in progress
-            select
-                ia.entity_id as industry_entity,
-                coalesce(oe.name, c.contributor_name) as organization_name,
-                ca.entity_id as organization_entity,
-                c.cycle,
-                count(*),
-                sum(amount) as amount
-            from
-                contributions_organization c -- organization contributions (PACs)
-                inner join industry_associations ia using (transaction_id) -- get the industry
-                left join contributor_associations ca using (transaction_id) -- this is just the direct contributor (PAC)
-                left join matchbox_entity oe on oe.id = ca.entity_id -- get the entity associated with the contributor
-            group by
-                ia.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, c.cycle
+                select
+                    ia.entity_id as industry_entity,
+                    coalesce(oe.name, c.contributor_name) as organization_name,
+                    ca.entity_id as organization_entity,
+                    c.cycle,
+                    count(*),
+                    sum(amount) as amount
+                from
+                    contributions_organization c -- organization contributions (PACs)
+                    inner join industry_associations ia using (transaction_id) -- get the industry
+                    left join organization_associations ca using (transaction_id) -- this is just the direct contributor (PAC)
+                    left join matchbox_entity oe on oe.id = ca.entity_id -- get the entity associated with the contributor
+                where coalesce(oe.name, c.contributor_name) != ''
+                group by
+                    ia.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, c.cycle
             ) top_pacs
             full outer join (
                 select
@@ -971,14 +996,13 @@ create table agg_top_orgs_by_industry as
                     oa.entity_id as organization_entity,
                     c.cycle,
                     count(*),
-                    sum(amount) as amount,
-                    rank() over (partition by oa.entity_id, c.cycle order by sum(amount)) as rank
+                    sum(amount) as amount
                 from
-                    contributions_individual c -- individual contributions
+                    (table contributions_individual union table contributions_individual_to_organization) c -- individual contributions
                     inner join industry_associations ia using (transaction_id) -- get the industry
                     left join organization_associations oa using (transaction_id) -- this is the org associated with the individual
                     left join matchbox_entity oe on oe.id = oa.entity_id -- get the entity associated with the org
-                where c.organization_name != ''
+                where coalesce(oe.name, c.organization_name) != ''
                 group by
                     ia.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, c.cycle
             ) top_indivs

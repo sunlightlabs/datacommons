@@ -1,37 +1,39 @@
-from urllib import unquote_plus
-from piston.handler import BaseHandler
+from dcapi.common.handlers import FilterHandler
+from dcapi.common.schema import InclusionField, FulltextField, ComparisonField
+from dcapi.schema import Schema
 from dcdata.grants.models import Grant
-from dcapi.grants import filter_grants
 
-RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
-DEFAULT_PER_PAGE = 1000
-MAX_PER_PAGE = 100000
+GRANTS_SCHEMA = Schema(
+    InclusionField('assistance_type'),
+    InclusionField('fiscal_year'),
+    InclusionField('recipient_state', 'recipient_state_code'),
+    InclusionField('recipient_type'),
+    
+    FulltextField('agency_ft', ['agency_name']),
+    FulltextField('recipient_ft', ['recipient_name']),
 
-def load_grants(params, nolimit=False, ordering=True):
-    
-    per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
-    page = int(params.get('page', 1)) - 1
-    
-    offset = page * per_page
-    limit = offset + per_page
-    
-    for param in RESERVED_PARAMS:
-        if param in params:
-            del params[param]
-            
-    unquoted_params = dict([(param, unquote_plus(quoted_value)) for (param, quoted_value) in params.iteritems()])
-    result = filter_grants(unquoted_params)
-    if ordering:
-        result = result.order_by('-fiscal_year','-amount_total')
-    if not nolimit:
-        result = result[offset:limit]
-          
-    return result
+    ComparisonField('amount_total', 'total_funding_amount', cast=int)
+)
 
-class GrantsFilterHandler(BaseHandler):
-    allowed_methods = ('GET',)
-    model = Grant
+def filter_grants(request):
+    q = GRANTS_SCHEMA.build_filter(Grant.objects, request).order_by()
+    return q.select_related()
+
+
+class GrantsFilterHandler(FilterHandler):
+
+    # imported_on is marked as an auto-generated field/non-editable,
+    # so was getting dropped by Django's model_to_dict serialization,
+    # but still required by the list of fields,
+    # so we pass the list of fields we want directly instead
+
+    fields = Grant._meta.get_all_field_names()
+    fields.remove('imported_on')
+
+
+    ordering = ['-fiscal_year','-total_funding_amount']
+    filename = 'grants'
+        
+    def queryset(self, params):
+        return filter_grants(self._unquote(params))
     
-    def read(self, request):
-        params = request.GET.copy()
-        return load_grants(params)

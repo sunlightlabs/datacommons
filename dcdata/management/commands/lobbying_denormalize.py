@@ -1,9 +1,9 @@
 from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
 from django.core.management.base import CommandError, BaseCommand
 from saucebrush.sources import CSVSource
-from saucebrush.filters import *
+from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, FieldAdder
 from saucebrush.emitters import DebugEmitter, CSVEmitter
-from saucebrush import Recipe, run_recipe
+from saucebrush import run_recipe
 from optparse import make_option
 import os
 
@@ -23,11 +23,8 @@ def lobbying_handler(inpath, outpath, infields, outfields):
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldRemover('Source'),
-        FieldAdder('registrant_entity', ''),
         FieldMerger({'registrant_name': ('Registrant','RegistrantRaw')}, name_proc),
         FieldMerger({'registrant_is_firm': ('IsFirm',)}, yn_proc),
-        FieldAdder('client_entity', ''),
-        FieldAdder('client_parent_entity', ''),
         FieldMerger({'client_name': ('Client','Client_raw')}, name_proc),
         FieldMerger({'amount': ('Amount',)}, lambda x: float(x or 0)),
         FieldMerger({'affiliate': ('Affiliate',)}, yn_proc),
@@ -53,8 +50,6 @@ def lobbyist_handler(inpath, outpath, infields, outfields):
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldAdder('id', ''),
-        FieldAdder('lobbyist_entity', ''),
-        FieldAdder('candidate_entity', ''),
         FieldMerger({'lobbyist_name': ('Lobbyist','Lobbyist_raw')}, name_proc),
         FieldMerger({'member_of_congress': ('FormerCongMem',)}, yn_proc),
         FieldRenamer({
@@ -73,7 +68,6 @@ def agency_handler(inpath, outpath, infields, outfields):
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldAdder('id', ''),
-        FieldAdder('agency_entity', ''),
         FieldRenamer({
             'transaction': 'UniqID',
             'agency_name': 'Agency',
@@ -99,11 +93,27 @@ def issue_handler(inpath, outpath, infields, outfields):
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
 
+def bills_handler(inpath, outpath, infields, outfields):
+
+    run_recipe(
+        CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        FieldAdder('id', ''),
+        FieldRenamer({
+            'bill_id':     'B_ID',
+            'issue':       'SI_ID',
+            'congress_no': 'CongNo',
+            'bill_name':   'Bill_Name',
+        }),
+        #DebugEmitter(),
+        CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
+    )
+
 HANDLERS = {
     "lob_lobbying": lobbying_handler,
     "lob_lobbyist": lobbyist_handler,
     "lob_agency": agency_handler,
     "lob_issue": issue_handler,
+    "lob_bills": bills_handler,
 }
 
 # management command

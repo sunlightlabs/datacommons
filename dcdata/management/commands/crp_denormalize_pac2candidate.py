@@ -18,7 +18,7 @@ class Pac2CandRecipientFilter(RecipientFilter):
         super(Pac2CandRecipientFilter, self).__init__(candidates, {})
     def process_record(self, record):
         cid = record['cid'].upper()
-        candidate = self._candidates.get('%s:%s' % (record['cycle'], cid), None)
+        candidate = self._candidates.get('%s:%s' % (record['cycle'], cid), "")
         self.add_candidate_recipient(candidate, record)
         return record
 
@@ -29,7 +29,7 @@ class ContributorFilter(Filter):
         self._committees = committees
     def process_record(self, record):
         pac_id = record['pac_id'].upper()
-        committee = self._committees.get('%s:%s' % (record['cycle'], pac_id), None)
+        committee = self._committees.get('%s:%s' % (record['cycle'], pac_id), "")
         if committee:
             record['contributor_name'] = committee['pac_short']
             record['organization_name'] = record['contributor_name']
@@ -66,7 +66,8 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
 
             # add static fields
             FieldAdder('is_amendment', False),
-            FieldAdder('election_type', 'G'),
+
+            FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: "" if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),
 
             # filter through spec
             SpecFilter(SPEC))

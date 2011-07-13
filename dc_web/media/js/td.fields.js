@@ -77,7 +77,7 @@ TD.DataFilter.DateRangeField.render = function() {
         changeYear: true,
         defaultDate: new Date(2009, 0, 1),
         duration: '',
-        yearRange: '1990:2010',
+        yearRange: '1990:2011',
         onSelect: function(dateText, inst) {
             if (!dend.val()) {
                 dend.datepicker('setDate',
@@ -94,7 +94,7 @@ TD.DataFilter.DateRangeField.render = function() {
         changeYear: true,
         defaultDate: null,
         duration: '',
-        yearRange: '1990:2010',
+        yearRange: '1990:2011',
         onSelect: function(dateText, inst) {
             dend.trigger('change');
         }
@@ -182,7 +182,9 @@ TD.DataFilter.DualDropDownField.render = function() {
     
 };
 TD.DataFilter.DualDropDownField.value = function() {
-    return this.node.find('select.first').val() + ',' + this.node.find('select.second').val(); 
+	var first = this.node.find('select.first').val();
+	var second = this.node.find('select.second').val();
+    return (first ? first : '') + ',' + (second ? second : '');
 };
 TD.DataFilter.DualDropDownField.parseValues = function(v) {
     return v.split('|');

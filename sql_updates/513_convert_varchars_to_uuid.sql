@@ -14,7 +14,7 @@ alter TABLE "matchbox_wikipediainfo" drop constraint "matchbox_wikipediainfo_ent
 
 -- drop conflicting indexes
 drop index matchbox_mergecandidate_entity_id_like;
-drop index matchbox_politicianmetadata_entity_id_like
+drop index matchbox_politicianmetadata_entity_id_like;
 
 -- MAKE THE CHANGE
 alter table matchbox_entity               alter column id                     type uuid using id::uuid;

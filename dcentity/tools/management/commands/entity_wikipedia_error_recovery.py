@@ -4,9 +4,9 @@ import datetime
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from dcentity.tools import utils 
+from dcentity.tools import utils
 from dcentity.tools.models import EntityPlus
-from dcentity.tools.management.commands.entity_wikipedia_scrape import find_wikipedia_url 
+from dcentity.tools.management.commands.entity_wikipedia_scrape import find_wikipedia_url
 
 class Command(BaseCommand):
     args = '<error_file> <output_file>'
@@ -59,11 +59,9 @@ thrown, allowing you to fix whatever code might be causing them.
                 print "Attempting:", eid, entity.name
 
                 # Allow errors to be thrown.
-                wp = find_wikipedia_url(entity) or ['', '']
-                row = (entity.id, 
-                       wp[0], 
-                       wp[1],
-                       unicode(datetime.datetime.now()))
+                wp = find_wikipedia_url(entity) or ['', '', '']
+                url, excerpt, image_url = wp
+                row = (entity.id, url, image_url, excerpt, unicode(datetime.datetime.now()))
                 results[row[0]] = row
                 writer.writerow(row)
                 print "  %i/%i" % (len(results), len(eids)),

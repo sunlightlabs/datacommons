@@ -1,26 +1,22 @@
-import hashlib
 import inspect
 import logging
 import sys
 import os
 import re
 
-import MySQLdb
-import psycopg2
-
 from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
+from dcdata.management.base.nimsp_importer import BaseNimspImporter
 
-import saucebrush
-from saucebrush.emitters import CSVEmitter, DebugEmitter
+from saucebrush.emitters import CSVEmitter
 from saucebrush.sources import CSVSource
 from saucebrush.filters import *
 
-from dcdata.utils.dryrub import CountEmitter, VerifiedCSVSource,\
-    CSVFieldVerifier
+from settings import LOADING_DIRECTORY
+
+from dcdata.utils.dryrub import VerifiedCSVSource, CSVFieldVerifier
 
 from dcdata.scripts.nimsp.salt import DCIDFilter, SaltFilter
 
-from settings import OTHER_DATABASES
 
 from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from dcdata.processor import chain_filters, load_data
@@ -76,13 +72,10 @@ class BestAvailableFilter(Filter):
     """ Merge contributor fields using best available value """
 
     def process_record(self, record):
-        def nonempty(value):
-            return value is not None and value != ''
-
-        record['contributor_name'] = record['newcontributor'] if nonempty(record['newcontributor']) else record['contributor'] if nonempty(record['contributor']) else None
-        record['contributor_address'] = record['newaddress'] if nonempty(record['newaddress']) else record['address'] if nonempty(record['address']) else None
-        record['contributor_employer'] = record['employer'] if nonempty(record['employer']) else None
-        record['organization_name'] = record['newemployer'] if nonempty(record['newemployer']) else None
+        record['contributor_name']     = record['newcontributor'] if record['newcontributor'] else record['contributor'] if record['contributor'] else None
+        record['contributor_address']  = record['newaddress']     if record['newaddress']     else record['address']     if record['address']     else None
+        record['contributor_employer'] = record['employer']       if record['employer']       else None
+        record['organization_name']    = record['newemployer']    if record['newemployer']    else None
 
         for f in ('contributor','newcontributor','address','newaddress','employer','newemployer'):
             del(record[f])
@@ -107,14 +100,14 @@ class RecipientFilter(Filter):
         return record
 
 class SeatFilter(Filter):
-    election_type_map = {
-        'CL': 'C', # Utah candidate culling process
-        'L':  'G', # General
-        'LR': 'R', # Judicial retention election (no opponents)
-        'PL': 'P', # Primary
-        'W':  'G', # General
-        'WR': 'R'  # Judicial retention
-        }
+    candidacy_status_map = {
+        'CL': True,  # Utah candidate culling process
+        'L':  True,  # General
+        'LR': True,  # Judicial retention election (no opponents)
+        'PL': False, # Primary
+        'W':  True,  # General
+        'WR': True   # Judicial retention
+    }
     office_code_map = {
         'G': 'state:governor',
         'H': 'state:lower',
@@ -122,7 +115,7 @@ class SeatFilter(Filter):
         'J': 'state:judicial',
         'K': 'state:judicial',
         'O': 'state:office'
-        }
+    }
 
     def process_record(self, record):
         if record['district'] is not None:
@@ -138,7 +131,7 @@ class SeatFilter(Filter):
                 record['seat_result'] = 'W'
             elif record['status'].startswith('L') or record['status'].endswith('L'):
                 record['seat_result'] = 'L'
-        record['election_type'] = self.election_type_map.get(record['status'])
+        record['candidacy_status'] = self.candidacy_status_map.get(record['status'], None)
         return record
 
 
@@ -200,7 +193,8 @@ class ContributorTypeFilter(Filter):
     def process_record(self, record):
         if record['contributor_category'] and record['contributor_category'].startswith(('J1', 'Z2', 'Z9')):
             record['contributor_type'] = None
-        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) or ',' not in record['contributor_name']:
+        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) \
+                or (record['contributor_name'] and ',' not in record['contributor_name']):
             record['contributor_type'] = 'committee'
         else:
             record['contributor_type'] = 'individual'
@@ -210,6 +204,7 @@ class ContributorTypeFilter(Filter):
                 record['organization_name'] = record['contributor_name']
             if not record['organization_ext_id']:
                 record['organization_ext_id'] = record['contributor_ext_id']
+
         return record
 
 
@@ -239,45 +234,30 @@ class UnallocatedEmitter(CSVEmitter):
             super(UnallocatedEmitter, self).emit_record(record)
 
 
-class NIMSPDenormalize(BaseCommand):
+class NIMSPDenormalize(BaseNimspImporter):
 
-    option_list = BaseCommand.option_list + (
-        make_option("-d", "--dataroot", dest="dataroot",
-                      help="path to data directory", metavar="PATH"),
-        make_option("-s", "--saltsdb", dest="saltsdb",
-                    help="path to salts SQLite database", metavar="PATH"),
-        make_option("-i", "--infile", dest="input_path",
-                      help="path to input csv", metavar="FILE"),
-        make_option("-o", "--output_type", dest="output_types", choices=['allocated', 'unallocated', 'both'],
-                    default='both', help="which output files to generate"))
+    IN_DIR       = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/IN')
+    DONE_DIR     = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/DONE')
+    REJECTED_DIR = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/REJECTED')
+    OUT_DIR      = os.path.join(LOADING_DIRECTORY, 'nimsp/loading/IN')
 
-    def handle(self, *args, **options):
-        if 'dataroot' not in options:
-            CommandError("path to dataroot is required")
-        if 'saltsdb' not in options:
-            CommandError("path to saltsdb is required")
+    #LOG_PATH = '/home/datacommons/data/auto/log/nimsp_denormalize.log'
+    #TODO: Make base class die if the above variable is not defined
 
-        dataroot = os.path.abspath(options['dataroot'])
-        assert dataroot
-        if not os.path.exists(dataroot):
-            print "No such directory %s" % dataroot
-            sys.exit(1)
-        saltsdb = os.path.abspath(options['saltsdb'])
-        assert saltsdb
-        if not os.path.exists(saltsdb):
-            print "No such database %s" % saltsdb
-            sys.exit(1)
-        denorm_path = os.path.join(dataroot, 'denormalized')
-        if not os.path.exists(denorm_path):
-            os.makedirs(denorm_path)
+    SALTS_DB     = os.path.join(LOADING_DIRECTORY, 'nimsp/salts.db')
 
-        input_path = options.get('input_path', '') or os.path.join(denorm_path, SQL_DUMP_FILE)
+    FILE_PATTERN = SQL_DUMP_FILE
 
-        if options['output_types'] in ('allocated', 'both'):
-            self.process_allocated(denorm_path, input_path)
+    def do_for_file(self, file_path):
+        self.log.info('Starting allocated records...')
+        self.process_allocated(self.OUT_DIR, file_path)
+        self.log.info('Done with allocated records.')
 
-        if options['output_types'] in ('unallocated', 'both'):
-            self.process_unallocated(denorm_path, saltsdb)
+        self.log.info('Starting unallocated records...')
+        self.process_unallocated(self.OUT_DIR, self.SALTS_DB)
+        self.log.info('Done with unallocated records.')
+
+        self.archive_file(file_path, timestamp=True)
 
     @staticmethod
     def get_allocated_record_processor():
@@ -303,16 +283,16 @@ class NIMSPDenormalize(BaseCommand):
             FieldListFilter(FIELDNAMES + ['contributionid']))
 
     @staticmethod
-    def process_allocated(denorm_path, input_path):
+    def process_allocated(out_dir, input_path):
 
         # create allocated things
-        allocated_csv_filename = os.path.join(denorm_path,'nimsp_allocated_contributions.csv')
-        allocated_csv = open(os.path.join(denorm_path, allocated_csv_filename), 'w')
+        allocated_csv_filename = os.path.join(out_dir,'nimsp_allocated_contributions.csv')
+        allocated_csv = open(allocated_csv_filename, 'w')
         allocated_emitter = AllocatedEmitter(allocated_csv, fieldnames=FIELDNAMES)
 
         # create unallocated things
-        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'w')
+        unallocated_csv_filename = os.path.join(out_dir, 'nimsp_unallocated_contributions.csv.TMP')
+        unallocated_csv = open(unallocated_csv_filename, 'w')
         unallocated_emitter = UnallocatedEmitter(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'])
 
         input_file = open(input_path, 'r')
@@ -342,12 +322,12 @@ class NIMSPDenormalize(BaseCommand):
             dcid)
 
     @staticmethod
-    def process_unallocated(denorm_path, salts_db):
+    def process_unallocated(out_dir, salts_db):
 
-        unallocated_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv.TMP')
-        unallocated_csv = open(os.path.join(denorm_path, unallocated_csv_filename), 'r')
+        unallocated_csv_filename = os.path.join(out_dir, 'nimsp_unallocated_contributions.csv.TMP')
+        unallocated_csv = open(os.path.join(out_dir, unallocated_csv_filename), 'r')
 
-        salted_csv_filename = os.path.join(denorm_path, 'nimsp_unallocated_contributions.csv')
+        salted_csv_filename = os.path.join(out_dir, 'nimsp_unallocated_contributions.csv')
         salted_csv = open(salted_csv_filename, 'w')
 
         source = VerifiedCSVSource(unallocated_csv, fieldnames=FIELDNAMES + ['contributionid'], skiprows=1)

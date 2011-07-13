@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 count(*)
             from
                 matchbox_entity e
-                inner join matchbox_politicianmetadata pm
+                inner join politician_metadata_latest_cycle_view pm
                     on e.id = pm.entity_id
             where
                 seat like 'federal%%'
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                     ea.value as crp_id
                 from
                     matchbox_entity e
-                    inner join matchbox_politicianmetadata pm
+                    inner join politician_metadata_latest_cycle_view pm
                         on e.id = pm.entity_id
                     left join matchbox_entityattribute ea using (entity_id)
                 where
@@ -162,6 +162,12 @@ class Command(BaseCommand):
             fp = urllib2.urlopen(api_call)
         except urllib2.HTTPError:
             return None
+        except urllib2.URLError:
+            try:
+                fp = urllib2.urlopen(api_call)
+            except urllib2.URLError:
+                self.log.warn('Connection timed out.')
+                return None
 
         js = json.loads(fp.read())
 
@@ -170,6 +176,8 @@ class Command(BaseCommand):
     def get_bioguide_info(self, bioguide_id):
         # scrape congress' bioguide site for years of service and official bio
         bio_url = "http://bioguide.congress.gov/scripts/biodisplay.pl?index=%s" % bioguide_id
+        print bio_url
+
         html = urllib2.urlopen(bio_url).read()
         try:
             soup = BeautifulSoup(html, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -177,15 +185,20 @@ class Command(BaseCommand):
             self.log.error("Couldn't parse bioguide info. Sorry. Moving along...")
             return None
 
-        years_of_service = soup.findAll('table')[1].find('tr').findAll('td')[1].findAll('font')[2].next.next.next.strip()
+        try:
+            years_of_service = soup.findAll('table')[1].find('tr').findAll('td')[1].findAll('font')[2].next.next.next.strip()
 
-        bio_a = soup.findAll('table')[1].find('tr').findAll('td')[1].find('p').find('font').extract().renderContents()
-        bio_b = soup.findAll('table')[1].find('tr').findAll('td')[1].find('p').renderContents()
-        biography = bio_a.strip()+' '+bio_b.strip()
+            bio_a = soup.findAll('table')[1].find('tr').findAll('td')[1].find('p').find('font').extract().renderContents()
+            bio_b = soup.findAll('table')[1].find('tr').findAll('td')[1].find('p').renderContents()
+            biography = bio_a.strip()+' '+bio_b.strip()
 
-        # append additional info and return
-        photo_url = self.photo_url(bioguide_id)
-        return biography, bio_url, photo_url, years_of_service
+            # append additional info and return
+            photo_url = self.photo_url(bioguide_id)
+            return biography, bio_url, photo_url, years_of_service
+        except TypeError:
+            self.log.error("Couldn't parse one of the bioguide components from the page. Tough luck, mate. Continuing...")
+            return None
+
 
     def photo_url(self, bioguide_id):
         return "http://assets.sunlightfoundation.com/moc/100x125/%s.jpg" % bioguide_id if bioguide_id else None

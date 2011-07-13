@@ -31,14 +31,13 @@ entity_wikipedia_test <csv_file> <csv_file> ...
 
 entity_explore_duplicate_names
     Fuzzily match politicians' names against each other to help identify
-    possible duplicate entries.  
+    possible duplicate entries.
 
 TESTING:
 
-Tests are written primarily as docstrings in all source files.  Run the tests
-using the default Django test runner.  As Django's test runner doesn't support
-directly testing sub-applications, the dcentity test file is instrumented to
-run dcentity.tools tests.  Run tests with:
+Most of the tests are in dcentity/tests.py, but some remain in doctest form
+in the source files. Therefore, to run all of them, you will need to run
+nose with the --with-doctest flag. Specifying the dcentity app is optional.
 
-    $ python manage.py test dcentity
+    $ python manage.py test --with-doctest dcentity
 
