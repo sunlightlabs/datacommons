@@ -21,7 +21,16 @@ def filter_grants(request):
 
 
 class GrantsFilterHandler(FilterHandler):
-    model = Grant
+
+    # imported_on is marked as an auto-generated field/non-editable,
+    # so was getting dropped by Django's model_to_dict serialization,
+    # but still required by the list of fields,
+    # so we pass the list of fields we want directly instead
+
+    fields = Grant._meta.get_all_field_names()
+    fields.remove('imported_on')
+
+
     ordering = ['-fiscal_year','-total_funding_amount']
     filename = 'grants'
         

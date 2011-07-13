@@ -6,7 +6,6 @@ from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, 
 from dcapi.schema import Schema, FunctionField, Field
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
-from urllib import unquote_plus
 
 
 class MSAField(Field):

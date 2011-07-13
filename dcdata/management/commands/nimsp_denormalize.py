@@ -72,13 +72,10 @@ class BestAvailableFilter(Filter):
     """ Merge contributor fields using best available value """
 
     def process_record(self, record):
-        def nonempty(value):
-            return value is not None and value != ''
-
-        record['contributor_name'] = record['newcontributor'] if nonempty(record['newcontributor']) else record['contributor'] if nonempty(record['contributor']) else None
-        record['contributor_address'] = record['newaddress'] if nonempty(record['newaddress']) else record['address'] if nonempty(record['address']) else None
-        record['contributor_employer'] = record['employer'] if nonempty(record['employer']) else None
-        record['organization_name'] = record['newemployer'] if nonempty(record['newemployer']) else None
+        record['contributor_name']     = record['newcontributor'] if record['newcontributor'] else record['contributor'] if record['contributor'] else None
+        record['contributor_address']  = record['newaddress']     if record['newaddress']     else record['address']     if record['address']     else None
+        record['contributor_employer'] = record['employer']       if record['employer']       else None
+        record['organization_name']    = record['newemployer']    if record['newemployer']    else None
 
         for f in ('contributor','newcontributor','address','newaddress','employer','newemployer'):
             del(record[f])
@@ -196,13 +193,15 @@ class ContributorTypeFilter(Filter):
     def process_record(self, record):
         if record['contributor_category'] and record['contributor_category'].startswith(('J1', 'Z2', 'Z9')):
             record['contributor_type'] = None
-        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) or ',' not in record['contributor_name']:
+        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) \
+                or (record['contributor_name'] and ',' not in record['contributor_name']):
             record['contributor_type'] = 'committee'
         else:
             record['contributor_type'] = 'individual'
 
         if record['contributor_type'] == 'committee' and not record['organization_name']:
             record['organization_name'] = record['contributor_name']
+
         return record
 
 
