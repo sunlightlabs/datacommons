@@ -193,13 +193,15 @@ class ContributorTypeFilter(Filter):
     def process_record(self, record):
         if record['contributor_category'] and record['contributor_category'].startswith(('J1', 'Z2', 'Z9')):
             record['contributor_type'] = None
-        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) or ',' not in record['contributor_name']:
+        elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) \
+                or (record['contributor_name'] and ',' not in record['contributor_name']):
             record['contributor_type'] = 'committee'
         else:
             record['contributor_type'] = 'individual'
 
         if record['contributor_type'] == 'committee' and not record['organization_name']:
             record['organization_name'] = record['contributor_name']
+
         return record
 
 
