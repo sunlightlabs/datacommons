@@ -69,7 +69,7 @@ insert into tmp_matchbox_politicianmetadata (entity_id, cycle, state, state_held
         max(seat_held) as seat_held,
         max(seat_status) as seat_status,
         max(seat_result) as seat_result
-    from contribution_contribution c
+    from contributions_all_relevant c
     inner join recipient_associations ra using (transaction_id)
     inner join matchbox_entity e on e.id = ra.entity_id
     where
