@@ -199,8 +199,11 @@ class ContributorTypeFilter(Filter):
         else:
             record['contributor_type'] = 'individual'
 
-        if record['contributor_type'] == 'committee' and not record['organization_name']:
-            record['organization_name'] = record['contributor_name']
+        if record['contributor_type'] == 'committee':
+            if not record['organization_name']:
+                record['organization_name'] = record['contributor_name']
+            if not record['organization_ext_id']:
+                record['organization_ext_id'] = record['contributor_ext_id']
 
         return record
 
