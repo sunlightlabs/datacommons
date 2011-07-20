@@ -61,7 +61,7 @@ create temp table tmp_matchbox_politicianmetadata as select * from matchbox_poli
 insert into tmp_matchbox_politicianmetadata (entity_id, cycle, state, state_held, district, district_held, party, seat, seat_held, seat_status, seat_result)
     select
         entity_id,
-        cycle,
+        cycle + cycle % 2 as cycle,
         max(recipient_state) as state,
         max(recipient_state_held) as state_held,
         max(district) as district,
@@ -76,7 +76,7 @@ insert into tmp_matchbox_politicianmetadata (entity_id, cycle, state, state_held
     inner join matchbox_entity e on e.id = ra.entity_id
     where
         e.type = 'politician'
-    group by entity_id, cycle
+    group by entity_id, cycle + cycle % 2
 ;
 
 delete from  matchbox_politicianmetadata;

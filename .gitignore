@@ -12,7 +12,7 @@ src/
 *~
 ._*
 .settings/org.eclipse.core.resources.prefs
-dcdata/entities/apidata/
+dcentity/management/commands/apidata/
 dcdata/test_data/denormalized/denorm_indivs.08.csv
 dcdata/test_data/denormalized/denorm_indivs.08.txt
 dcdata/test_data/denormalized/denorm_pac2cand.csv

@@ -1,19 +1,20 @@
-#!/usr/bin/env python
-
 import os, csv
 from django.db import connection, transaction
+from django.core.management.base import BaseCommand
 
-class NicknameImporter(object):
+class Command(BaseCommand):
 
     def set_base_path(self):
         filepath = os.path.abspath(__file__)
         self.path = os.path.split(filepath)[0]
 
     def download_or_update_source_file(self):
-        if not os.path.join(self.path, 'apidata'):
-            os.system('git clone git://github.com/sunlightlabs/apidata.git')
+        apidata_path = os.path.join(self.path, 'apidata')
+        if not apidata_path:
+            os.system('cd {0}'.format(self.path))
+            os.system('git clone https://github.com/sunlightlabs/apidata.git')
         else:
-            os.system('cd apidata && git pull')
+            os.system('cd {0} && git pull'.format(apidata_path))
 
     def get_file_reader(self):
         legislators_file = os.path.join(self.path, 'apidata', 'legislators', 'legislators.csv')
@@ -34,7 +35,7 @@ class NicknameImporter(object):
     def load(self, data):
         cursor = connection.cursor()
 
-        cursor.execute("create temp table tmp_legislator_nicknames(entity_id varchar(32), crp_id varchar(24), first varchar(48), nick varchar(48), last varchar(48))")
+        cursor.execute("create temp table tmp_legislator_nicknames(entity_id uuid, crp_id varchar(24), first varchar(48), nick varchar(48), last varchar(48))")
 
         insert_sql = "insert into tmp_legislator_nicknames (crp_id, first, nick, last) values "
         insert_sql += ','.join(["('{0}', '{1}', '{2}', '{3}')".format(id, first, nick, last) for (id, first, nick, last) in data])
@@ -46,9 +47,9 @@ class NicknameImporter(object):
         num_before = cursor.fetchone()[0]
 
         cursor.execute("""
-            insert into matchbox_entityalias (entity_id, alias)
+            insert into matchbox_entityalias (entity_id, alias, namespace)
                 select
-                    entity_id, nick || ' ' || last
+                    entity_id, nick || ' ' || last, ''
                 from
                     tmp_legislator_nicknames
                 where
@@ -60,7 +61,7 @@ class NicknameImporter(object):
                  union
 
                 select
-                    entity_id, first || ' ' || last, 't'::boolean
+                    entity_id, first || ' ' || last, ''
                 from
                     tmp_legislator_nicknames
                 where
@@ -75,7 +76,7 @@ class NicknameImporter(object):
 
         transaction.commit()
 
-    def run(self):
+    def handle(self, *args, **options):
         #prepare
         self.set_base_path()
         self.download_or_update_source_file()
@@ -86,4 +87,3 @@ class NicknameImporter(object):
         self.load(data)
 
 
-if __name__ == '__main__': NicknameImporter().run()
