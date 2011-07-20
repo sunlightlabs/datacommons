@@ -188,7 +188,7 @@ create table agg_lobbying_totals as
         full outer join
             (select entity_id, cycle, count(r), sum(amount) as amount
             from lobbying_report r
-            inner join (table assoc_lobbying_client union all table assoc_lobbying_client_industry) ca using (transaction_id)
+            inner join (table assoc_lobbying_client union all table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) ca using (transaction_id)
             left join matchbox_organizationmetadata m using (entity_id)
             left join matchbox_entity e on e.id = ca.entity_id
             where

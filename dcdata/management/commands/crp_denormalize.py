@@ -3,7 +3,7 @@ from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
 from django.core.management.base import CommandError, BaseCommand
 from optparse import make_option
-from saucebrush.filters import *
+from saucebrush.filters import Filter, UnicodeFilter
 import csv
 import datetime
 import logging
@@ -179,7 +179,7 @@ def parse_date(date):
         try:
             (m, d, y) = date.split('/')
             return datetime.date(int(y), int(m), int(d))
-        except ValueError, ve:
+        except ValueError:
             logging.warn("error parsing date: %s" % date)
 
 

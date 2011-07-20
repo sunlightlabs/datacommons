@@ -1,5 +1,4 @@
 import re
-import sys
 import json
 import gzip
 import urllib
@@ -18,7 +17,6 @@ import cStringIO as StringIO
 
 from django.conf import settings
 from django.core.cache import cache
-from django.utils.encoding import smart_str
 from django.contrib.localflavor.us.us_states import STATE_CHOICES
 
 from dcentity.tools import names

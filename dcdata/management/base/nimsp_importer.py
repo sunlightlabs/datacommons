@@ -111,7 +111,7 @@ class BaseNimspImporter(BaseCommand):
                 file_path = os.path.join(self.IN_DIR, file)
                 self.log.info('Found file {0}'.format(file))
                 if fnmatch.fnmatch(file, self.FILE_PATTERN):
-                    # make sure the file has downloaded completely (hasn't been modified in the last minute)
+                    # make sure the file has downloaded completely/hasn't been modified in the last minute
                     now_epoch = time.time()
                     last_modified_epoch = os.path.getmtime(file_path)
                     if now_epoch - last_modified_epoch > 60:
