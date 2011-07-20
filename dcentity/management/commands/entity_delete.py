@@ -81,9 +81,9 @@ class Command(BaseCommand):
                     e.type = 'individual'
                     and a.namespace = 'urn:crp:individual'
                 except
-                select distinct entity_id from contributor_associations where entity_id = e.id
+                select entity_id from contributor_associations
                 except
-                select distinct entity_id from assoc_lobbying_lobbyist where entity_id = e.id
+                select entity_id from assoc_lobbying_lobbyist
             )
         """
         self.cursor.execute(update_sql)
