@@ -254,6 +254,11 @@ def get_article_excerpt_and_image_url(title, length=500):
         text = "".join(p.xpath('string()'))
         # remove citations -- we aren't pulling references in
         text = re.sub("\[\d+\]", " ", text)
+
+        # get rid of weird Wikipedia macro stuff -- sorry it couldn't (apparently) be done in xpath
+        # string to replace looks like this: &000000000000001000000010\xa0years
+        text = re.sub("(?u)&0{2,}[1-9]\d*?0{2,}([1-9]\d*)\s*", r'\1 ', text)
+
         if text:
             excerpt.append(text)
             char_count += len(text)
