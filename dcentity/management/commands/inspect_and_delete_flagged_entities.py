@@ -34,7 +34,7 @@ class Command(BaseCommand):
 
         self.log.info("Starting...")
 
-        should_delete_indiv = self.inspect_entities_for_deletion('inidividual')
+        should_delete_indiv = self.inspect_entities_for_deletion('individual')
         should_delete_pols  = self.inspect_entities_for_deletion('politician')
         should_delete_orgs  = self.inspect_entities_for_deletion('organization')
 
