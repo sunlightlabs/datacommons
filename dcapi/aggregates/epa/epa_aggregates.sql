@@ -29,11 +29,8 @@ create table assoc_epa_echo_org_ultorg as
         ultorg.id as ultorg_entity
     from
         epa_echo_org_map m
-        left join matchbox_entity org on lower(trim(both from m.org_name)) = lower(org.name)
-        left join matchbox_entity ultorg on lower(trim(both from m.ultorg_name)) = lower(ultorg.name)
-    where
-        org.type = 'organization'
-        and ultorg.type = 'organization'
+        left join matchbox_entity org on lower(trim(both from m.org_name)) = lower(org.name) and (org.type is null or org.type = 'organization')
+        left join matchbox_entity ultorg on lower(trim(both from m.ultorg_name)) = lower(ultorg.name) and (ultorg.type is null or ultorg.type = 'organization')
 ;
 
 
