@@ -54,7 +54,7 @@ get_totals_stmt = """
     using (cycle)
     full outer join (
         select cycle, docket_count, document_count
-        from agg_regulations_totals
+        from agg_regulations_text_totals
         where entity_id = %s) r
     using (cycle)
 """
