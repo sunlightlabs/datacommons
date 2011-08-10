@@ -1,6 +1,6 @@
 from django.core.management import BaseCommand, CommandError
 from django.db import connection
-import csv
+import csv, re
 
 def create_dockets(outfile):
     writer = csv.writer(outfile)
@@ -9,14 +9,17 @@ def create_dockets(outfile):
     comment_cursor = connection.cursor()
     notice_cursor = connection.cursor()
     
+    agency_splitter = re.compile("[-_]")
+    
     comment_cursor.execute("select distinct docket_id from regulations_comments_full")
     for row in comment_cursor:
         docket_id = row[0]
         
-        agency = docket_id.split('-')[0]
+        agency = agency_splitter.split(docket_id)[0]
         
         # see if there's a most-common commented-on thing
         notice_id = None
+        notice_date = None
         
         notice_cursor.execute("""
             select on_id, count(on_id) as count from regulations_comments_full
@@ -33,7 +36,7 @@ def create_dockets(outfile):
             if notice_cursor.rowcount > 0:
                 notice_row = notice_cursor.fetchone()
                 notice_id = notice_row[0]
-                notice_date = notice_row[1]
+                notice_date = notice_row[1] if notice_row[1] else None
                 notice_title = notice_row[2]
                 print docket_id, 'succeeded with comment_on'
         
@@ -49,21 +52,22 @@ def create_dockets(outfile):
             if notice_cursor.rowcount > 0:
                 notice_row = notice_cursor.fetchone()
                 notice_id = notice_row[0]
-                notice_date = notice_row[1]
+                notice_date = notice_row[1] if notice_row[1] else None
                 notice_title = notice_row[2]
                 print docket_id, 'succeeded with oldest notice/rule/proposed'
         
         # if we still don't know, grab the oldest document in the docket to date it, and make up a name
-        if notice_id is None:
+        if notice_date is None:
             notice_cursor.execute("""
                 select document_id, date_posted from regulations_comments_full where docket_id = 'OSHA-H048-2006-0823' order by date_posted asc limit 1;
                 """,
                 [docket_id]
             )
             notice_row = notice_cursor.fetchone()
-            notice_id = notice_row[0]
             notice_date = notice_row[1]
-            notice_title = 'Untitled %s docket' % agency
+        
+        if notice_id is None:
+            notice_title = 'Untitled %s docket (%s)' % (agency, docket_id)
             print docket_id, 'used oldest document and fake title'
         
         writer.writerow([docket_id, notice_title.encode('utf-8', 'ignore'), agency, notice_date])
