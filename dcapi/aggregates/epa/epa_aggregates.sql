@@ -52,7 +52,8 @@ create table assoc_epa_echo_org as
     from epa_echo_relevant_actions a
     inner join epa_echo_defendant d on d.enfocnu = a.case_num
     inner join epa_echo_org_map m on d.defennm = m.defendant_name
-    inner join matchbox_entity e on e.name = m.org_name or e.name = m.ultorg_name;
+    inner join matchbox_entity e on e.name = m.org_name or e.name = m.ultorg_name
+    group by d.enfocnu, e.id;
 
 
 -- Totals
