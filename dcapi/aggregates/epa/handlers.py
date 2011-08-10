@@ -10,7 +10,7 @@ class TopViolationActionsHandler(EntityTopListHandler):
             cycle,
             case_num,
             case_name,
-            'todo: remove this field' as defendant_name,
+            defendant_name,
             entity_id,
             count(distinct defennm) as defendants_count,
             array_to_string(array_agg(distinct d.defennm), ', ')as other_defendants,

@@ -48,7 +48,7 @@ drop table if exists assoc_epa_echo_org cascade;
 
 select date_trunc('second', now()) || '-- create table assoc_epa_echo_org_ultorg';
 create table assoc_epa_echo_org as
-    select d.enfocnu as case_num, max(d.defennm as defendant_name), e.id as entity_id
+    select d.enfocnu as case_num, max(d.defennm) as defendant_name, e.id as entity_id
     from epa_echo_relevant_actions a
     inner join epa_echo_defendant d on d.enfocnu = a.case_num
     inner join epa_echo_org_map m on d.defennm = m.defendant_name
@@ -99,21 +99,22 @@ create table agg_epa_echo_actions as
     with actions_by_cycle as (
         select
             a.*,
+            o.defendant_name,
             o.entity_id,
             rank() over (partition by entity_id, cycle order by penalty desc) as rank
         from epa_echo_relevant_actions a
         inner join assoc_epa_echo_org o using (case_num)
     )
 
-    select cycle, max_year, entity_id, case_num, case_name, penalty, max_year_significance
+    select cycle, max_year, entity_id, case_num, case_name, defendant_name, penalty, max_year_significance
     from actions_by_cycle
     where rank <= :agg_top_n
 
     union all
 
-    select cycle, max_year, entity_id, case_num, case_name, penalty, max_year_significance
+    select cycle, max_year, entity_id, case_num, case_name, defendant_name, penalty, max_year_significance
     from (
-        select -1 as cycle, max_year, entity_id, case_num, case_name, penalty, max_year_significance,
+        select -1 as cycle, max_year, entity_id, case_num, case_name, defendant_name, penalty, max_year_significance,
             rank() over (partition by entity_id order by penalty desc) as rank
         from actions_by_cycle
     ) x
