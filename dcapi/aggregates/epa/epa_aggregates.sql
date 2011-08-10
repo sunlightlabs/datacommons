@@ -108,7 +108,7 @@ create table agg_epa_echo_actions as
 
     select cycle, max_year, entity_id, case_num, case_name, defendant_name, penalty, max_year_significance
     from actions_by_cycle
-    where rank <= :agg_top_n
+    --where rank <= :agg_top_n
 
     union all
 
@@ -118,7 +118,7 @@ create table agg_epa_echo_actions as
             rank() over (partition by entity_id order by penalty desc) as rank
         from actions_by_cycle
     ) x
-    where rank <= :agg_top_n
+    --where rank <= :agg_top_n
 ;
 
 select date_trunc('second', now()) || ' -- create index agg_epa_echo_actions__defendant_entity on agg_epa_echo_actions (defendant_entity)';

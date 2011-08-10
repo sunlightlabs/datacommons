@@ -26,7 +26,7 @@ class TopViolationActionsHandler(EntityTopListHandler):
             entity_id = %s
             and cycle = %s
         group by cycle, case_num, case_name, defendant_name, entity_id, penalty, max_year, max_year_significance
-        order by cycle desc, penalty desc
+        order by cycle desc, case when count(distinct defennm) = 1 then penalty else -1.0 / penalty end desc
         limit %s
     """.format(', '.join(fields))
 
