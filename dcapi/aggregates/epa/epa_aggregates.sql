@@ -48,7 +48,7 @@ drop table if exists assoc_epa_echo_org cascade;
 
 select date_trunc('second', now()) || '-- create table assoc_epa_echo_org_ultorg';
 create table assoc_epa_echo_org as
-    select d.enfocnu as case_num, e.id as entity_id
+    select d.enfocnu as case_num, max(d.defennm as defendant_name), e.id as entity_id
     from epa_echo_relevant_actions a
     inner join epa_echo_defendant d on d.enfocnu = a.case_num
     inner join epa_echo_org_map m on d.defennm = m.defendant_name
