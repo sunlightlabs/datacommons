@@ -7,7 +7,6 @@ from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
-from influenceexplorer import InfluenceExplorer
 from dcentity import entity
 from django import forms
 import json
@@ -26,14 +25,7 @@ def merge(request, merge_to = None):
             RequestContext(request, {}),
         )
     elif request.method == 'POST':
-        if 'confirm' in request.POST:
-            merge_entities(request.POST.getlist("merge_from"),request.POST["merge_to"])
-            request.user.message_set.create(message='Merge succesful.')
-            return HttpResponseRedirect("/admin/dcentity/entity/"+request.POST["merge_to"])
-        else:
-            entities = Entity.objects.filter(id__in = request.POST.getlist('to_merge'))
-            return render_to_response(
-                "admin/merge.html",
-                {'merge_from' : entities, 'merge_to': merge_to, 'post':request.POST},
-                RequestContext(request, {}),
-            )
+        merge_from = Entity.objects.filter(id__in = request.POST.getlist('to_merge')).values_list('id')
+        merge_entities(merge_from,request.POST["merge_to"])
+        request.user.message_set.create(message=merge_from[0])
+        return HttpResponseRedirect("/admin/dcentity/entity/"+request.POST["merge_to"])

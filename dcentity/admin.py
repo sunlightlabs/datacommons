@@ -49,5 +49,5 @@ class MergeCandidateAdmin(admin.ModelAdmin):
     list_filter = ('priority',)
 
 admin.site.register(Entity, EntityAdmin)
-admin.site.register(Normalization)
-admin.site.register(MergeCandidate, MergeCandidateAdmin)
+#admin.site.register(Normalization)
+#admin.site.register(MergeCandidate, MergeCandidateAdmin)
