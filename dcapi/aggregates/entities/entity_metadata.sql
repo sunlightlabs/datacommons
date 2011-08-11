@@ -51,7 +51,8 @@ commit;
 begin;
 analyze matchbox_organizationmetadata;
 commit;
- Politician Metadata
+
+-- Politician Metadata
 
 begin;
 create temp table tmp_matchbox_politicianmetadata as select * from matchbox_politicianmetadata limit 0;
