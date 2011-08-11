@@ -17,21 +17,6 @@ create table agg_cycles as
 \set agg_top_n 10
 
 
--- CatCodes that should not be included in totals.
--- Taken from the NIMSP column CatCodes.TopSuppress.
-
-
-select date_trunc('second', now()) || ' -- drop table if exists agg_suppressed_catcodes';
-drop table if exists agg_suppressed_catcodes;
-
-select date_trunc('second', now()) || ' -- create table agg_suppressed_catcodes';
-create table agg_suppressed_catcodes as
-    values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'),
-        ('Z9010'), ('Z9020'), ('Z9030'), ('Z9040'),
-        ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
-
-
-
 -- Adjust the odd-year cycles upward
 
 
@@ -62,7 +47,7 @@ create table contributions_individual as
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'P'
         and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
-        and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and substring(c.contributor_category for 1) != 'Z'
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_individual_transaction_id on contributions_individual (transaction_id)';
@@ -81,9 +66,8 @@ create table contributions_individual_to_organization as
     where
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'C'
-        and substring(c.recipient_category for 2) != 'Z4'
         and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
-        and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and substring(c.contributor_category for 1) != 'Z'
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id)';
@@ -104,7 +88,7 @@ create table contributions_organization as
         contributor_type = 'C'
         and recipient_type = 'P'
         and transaction_type in ('', '24k', '24r', '24z')
-        and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and substring(c.contributor_category for 1) != 'Z'
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_organization_transaction_id on contributions_organization (transaction_id)';
