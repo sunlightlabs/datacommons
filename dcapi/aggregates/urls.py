@@ -17,12 +17,14 @@ from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
 from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
+from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
+    RegulationsSubmitterHandler, RegulationsDocketTextHandler, \
+    RegulationsDocketSubmitterHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
-from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, RegulationsSubmitterHandler
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need.
 Emitter.unregister('django')
@@ -124,8 +126,14 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_text\.(?P<emitter_format>.+)$',
         Resource(RegulationsTextHandler, **ad)),
     
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_text_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(RegulationsDocketTextHandler, **ad)),
+    
     url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_submitter\.(?P<emitter_format>.+)$',
         Resource(RegulationsSubmitterHandler, **ad)),
+    
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_submitter_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(RegulationsDocketSubmitterHandler, **ad)),
 
     # issues an org hired people to lobby on
     url(r'^org/(?P<entity_id>[a-f0-9]+)/issues\.(?P<emitter_format>.+)',
