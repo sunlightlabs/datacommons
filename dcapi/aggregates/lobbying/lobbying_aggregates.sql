@@ -170,7 +170,7 @@ create table agg_lobbying_totals as
             (select entity_id, cycle, count(r), sum(amount) as amount
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
-            inner join matchbox_organizationmetadata m using (entity_id)
+            inner join organization_metadata_latest_cycle_view m using (entity_id)
             where
                 m.lobbying_firm = 't'
             group by entity_id, cycle) as firm
@@ -179,7 +179,7 @@ create table agg_lobbying_totals as
             (select entity_id, cycle, count(r), sum(amount) as amount
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
-            left join matchbox_organizationmetadata m using (entity_id)
+            left join organization_metadata_latest_cycle_view m using (entity_id)
             where
                 coalesce(m.lobbying_firm, 'f') = 'f'
                 and lower(r.registrant_name) = lower(r.client_name)
@@ -188,8 +188,8 @@ create table agg_lobbying_totals as
         full outer join
             (select entity_id, cycle, count(r), sum(amount) as amount
             from lobbying_report r
-            inner join (table assoc_lobbying_client union all table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) ca using (transaction_id)
-            left join matchbox_organizationmetadata m using (entity_id)
+            inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) ca using (transaction_id)
+            left join organization_metadata_latest_cycle_view m using (entity_id)
             left join matchbox_entity e on e.id = ca.entity_id
             where
                 coalesce(m.lobbying_firm, 'f') = 'f'

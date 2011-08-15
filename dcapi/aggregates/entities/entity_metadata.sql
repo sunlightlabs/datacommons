@@ -6,40 +6,81 @@
 begin;
 create temp table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
-insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_entity_id, industry_entity_id)
-    select
-        entity_id,
-        bool_or(coalesce(lobbying_firm, 'f')) as lobbying_firm,
-        max(parent_entity_id::text)::uuid as parent_entity_id,
-        max(industry_entity_id::text)::uuid as industry_entity_id
-    from (
-        select
-            entity_id,
-            bool_or(registrant_is_firm) as lobbying_firm
-        from
-            lobbying_report
-            inner join assoc_lobbying_registrant using (transaction_id)
-        group by
-            entity_id
-    ) lobbying_orgs
-    full outer join (
-        select distinct on (oa.entity_id)
-            oa.entity_id,
-            max(p.entity_id::text)::uuid as parent_entity_id,
-            ia.entity_id as industry_entity_id
-        from
-            organization_associations oa
-            left join parent_organization_associations p on oa.transaction_id = p.transaction_id and oa.entity_id != p.entity_id
-            left join industry_associations ia on oa.transaction_id = ia.transaction_id
-            left join matchbox_entityattribute ea on ea.entity_id = ia.entity_id
-        where
-            ea.namespace is null or ea.namespace in ('urn:crp:industry', 'urn:nimsp:industry')
-        group by
-            oa.entity_id, ia.entity_id
-        order by
-            oa.entity_id, count(distinct ia.transaction_id) desc
-    ) contributing_orgs using (entity_id)
-    group by entity_id;
+insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
+    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id)
+    union
+    select distinct entity_id, cycle from agg_entities agg inner join matchbox_entity e on e.id = agg.entity_id where type = 'organization';
+commit;
+
+analyze tmp_matchbox_organizationmetadata;
+commit;
+
+update
+    tmp_matchbox_organizationmetadata as tmp
+set
+    lobbying_firm = x.lobbying_firm
+from (
+    select entity_id, cycle, coalesce(bool_or(registrant_is_firm), 'f') as lobbying_firm
+    from lobbying_report rpt inner join assoc_lobbying_registrant reg using (transaction_id)
+    group by entity_id, cycle
+) x
+where
+    tmp.entity_id = x.entity_id
+    and tmp.cycle = x.cycle
+;
+
+update tmp_matchbox_organizationmetadata set lobbying_firm = 'f' where lobbying_firm is null;
+
+update
+    tmp_matchbox_organizationmetadata as tmp
+set
+    parent_entity_id = x.parent_entity_id
+from (
+    select distinct on (o.entity_id, c.cycle)
+        o.entity_id,
+        c.cycle,
+        p.entity_id as parent_entity_id
+    from
+        organization_associations o
+        inner join parent_organization_associations p using (transaction_id)
+        inner join contributions_all_relevant c using (transaction_id)
+    where
+        o.entity_id != p.entity_id
+    group by
+        o.entity_id, c.cycle, p.entity_id
+    order by
+        o.entity_id, c.cycle, count(distinct p.entity_id) desc
+) x
+where
+    tmp.entity_id = x.entity_id
+    and tmp.cycle = x.cycle
+;
+
+update
+    tmp_matchbox_organizationmetadata as tmp
+set
+    industry_entity_id = x.industry_entity_id
+from (
+    select distinct on (o.entity_id, c.cycle)
+        o.entity_id,
+        c.cycle,
+        i.entity_id as industry_entity_id
+    from
+        organization_associations o
+        inner join industry_associations i using (transaction_id)
+        inner join contributions_all_relevant c using (transaction_id)
+        inner join matchbox_entityattribute ea on ea.entity_id = i.entity_id
+    where
+        ea.namespace in ('urn:crp:industry', 'urn:nimsp:industry')
+    group by
+        o.entity_id, c.cycle, i.entity_id
+    order by
+        o.entity_id, c.cycle, count(distinct i.transaction_id) desc
+) x
+where
+    tmp.entity_id = x.entity_id
+    and tmp.cycle = x.cycle
+;
 
 delete from matchbox_organizationmetadata;
 

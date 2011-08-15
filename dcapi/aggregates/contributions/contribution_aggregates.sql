@@ -278,6 +278,24 @@ select date_trunc('second', now()) || ' -- create index parent_organization_asso
 create index parent_organization_associations_transaction_id on parent_organization_associations (transaction_id);
 
 
+-- "Biggest" Organiztion Associations
+-- preferences parent org when present, otherwise org
+
+select date_trunc('second', now()) || ' -- drop table if exists biggest_organization_associations';
+drop table if exists biggest_organization_associations;
+
+select date_trunc('second', now()) || ' -- create table biggest_organization_associations';
+create table biggest_organization_associations as
+    select coalesce(pa.entity_id, oa.entity_id), transaction_id
+    from organization_associations oa
+    full outer join parent_organization_associations pa using (transaction_id);
+
+select date_trunc('second', now()) || ' -- create index biggest_organization_associations_entity_id on biggest_organization_associations (entity_id)';
+create index biggest_organization_associations_entity_id on biggest_organization_associations (entity_id);
+select date_trunc('second', now()) || ' -- create index biggest_organization_associations_transaction_id on biggest_organization_associations (transaction_id)';
+create index biggest_organization_associations_transaction_id on biggest_organization_associations (transaction_id);
+
+
 -- Industry Associations
 
 select date_trunc('second', now()) || ' -- drop table if exists industry_associations';
@@ -683,7 +701,7 @@ create table agg_orgs_to_cand as
                     ca.entity_id as organization_entity, cycle, count(*), sum(c.amount) as amount
                 from contributions_organization c
                 inner join recipient_associations ra using (transaction_id)
-                left join contributor_associations ca using (transaction_id)
+                left join biggest_organization_associations ca using (transaction_id)
                 left join matchbox_entity oe on oe.id = ca.entity_id
                 group by ra.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, cycle
             ) top_pacs
@@ -692,7 +710,7 @@ create table agg_orgs_to_cand as
                     oa.entity_id as organization_entity, cycle, count(*) as count, sum(amount) as amount
                 from contributions_individual c
                 inner join recipient_associations ra using (transaction_id)
-                left join organization_associations oa using (transaction_id)
+                left join biggest_organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
                 where organization_name != ''
                 group by ra.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, cycle
