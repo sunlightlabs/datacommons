@@ -26,7 +26,7 @@ class Penalty(models.Model):
     federal_penalty_accessed = models.IntegerField(db_column='enfotpa', blank=True, null=True)
     state_local_penality = models.IntegerField(db_column='enfcslp', blank=True, null=True)
     total_sep_amt = models.IntegerField(db_column='enfotsa', blank=True, null=True)
-    total_comp_action = models.IntegerField(db_column='enfccaa', blank=True, null=True)
+    total_comp_action = models.BigIntegerField(db_column='enfccaa', blank=True, null=True)
     cost_recovery_awarded_amt = models.IntegerField(db_column='enfcraa', blank=True, null=True)
 
     class Meta:
