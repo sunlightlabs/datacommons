@@ -155,3 +155,32 @@ begin;
 analyze matchbox_indivorgaffiliations;
 commit;
 
+
+-- Revolving Door Associations
+
+begin;
+create temp table tmp_matchbox_revolvingdoor as select * from matchbox_revolvingdoor limit 0;
+
+insert into tmp_matchbox_revolvingdoor (politician_entity_id, lobbyist_entity_id)
+    select distinct
+        eap.entity_id as politician_entity_id,
+        eal.entity_id as lobbyist_entity_id
+    from
+        lobbying_lobbyist l
+        inner join matchbox_entityattribute eap
+            on eap.value = l.candidate_ext_id
+        inner join matchbox_entityattribute eal
+            on eal.value = l.lobbyist_ext_id
+    where
+        eap.namespace = 'urn:crp:recipient' and eal.namespace = 'urn:crp:individual'
+;
+
+delete from matchbox_revolvingdoor;
+
+insert into matchbox_revolvingdoor (politician_entity_id, lobbyist_entity_id)
+    select politician_entity_id, lobbyist_entity_id from tmp_matchbox_revolvingdoor;
+commit;
+
+begin;
+analyze matchbox_revolvingdoor;
+commit;
