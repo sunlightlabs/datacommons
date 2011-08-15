@@ -4,20 +4,23 @@
 -- Organization Metadata
 
 begin;
-alter table tmp_matchbox_organizationmetadata add column cycle smallint;
 create temp table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
 insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
     select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id)
     union
     select distinct entity_id, cycle from agg_entities agg inner join matchbox_entity e on e.id = agg.entity_id where type = 'organization';
+commit;
+
+analyze tmp_matchbox_organizationmetadata;
+commit;
 
 update
     tmp_matchbox_organizationmetadata as tmp
 set
     lobbying_firm = x.lobbying_firm
 from (
-    select entity_id, cycle, bool_or(registrant_is_firm) as lobbying_firm
+    select entity_id, cycle, coalesce(bool_or(registrant_is_firm), 'f') as lobbying_firm
     from lobbying_report rpt inner join assoc_lobbying_registrant reg using (transaction_id)
     group by entity_id, cycle
 ) x
@@ -25,6 +28,8 @@ where
     tmp.entity_id = x.entity_id
     and tmp.cycle = x.cycle
 ;
+
+update tmp_matchbox_organizationmetadata set lobbying_firm = 'f' where lobbying_firm is null;
 
 update
     tmp_matchbox_organizationmetadata as tmp

@@ -145,7 +145,7 @@ class EntitySearchHandler(BaseHandler):
             on e.id = ft_match.entity_id
         left join politician_metadata_latest_cycle_view pm
             on e.id = pm.entity_id
-        left join matchbox_organizationmetadata om
+        left join organization_metadata_latest_cycle_view om
             on e.id = om.entity_id
         left join agg_lobbying_totals l
             on e.id = l.entity_id
