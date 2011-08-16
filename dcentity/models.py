@@ -105,8 +105,8 @@ class Entity(models.Model):
             if hasattr(self, 'lobbying_activity'):
                 metadata['revolving_door_entity'] = self.lobbying_activity.lobbyist_entity.public_representation()
 
-        elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
-            metadata.update(self.organization_metadata.to_dict())
+        elif self.type == 'organization' and hasattr(self, 'organization_metadata_for_latest_cycle'):
+            metadata.update(self.organization_metadata_for_latest_cycle.to_dict())
 
         elif self.type == 'individual':
             # in the future, individuals should probably have their own metadata table,
@@ -190,7 +190,28 @@ class OrganizationMetadata(ExtensibleModel):
     extended_properties = ['parent_entity', 'child_entities']
     # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
 
-    entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False, unique=True)
+    entity = models.OneToOneField(Entity, related_name='organization_metadata_by_cycle', null=False)
+
+    cycle = models.PositiveSmallIntegerField()
+
+    lobbying_firm   = models.BooleanField(default=False)
+    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True)
+    industry_entity = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True)
+
+    def _child_entities(self):
+        return [ x.entity.public_representation() for x in self.entity.child_entity_set.all() ]
+
+    child_entities = property(_child_entities)
+
+    class Meta:
+        db_table = 'matchbox_organizationmetadata'
+
+
+class OrganizationMetadataLatest(ExtensibleModel):
+    extended_properties = ['parent_entity', 'child_entities']
+    # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
+
+    entity = models.OneToOneField(Entity, related_name='organization_metadata_for_latest_cycle', null=False, primary_key=True)
 
     lobbying_firm   = models.BooleanField(default=False)
     parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
@@ -202,7 +223,8 @@ class OrganizationMetadata(ExtensibleModel):
     child_entities = property(_child_entities)
 
     class Meta:
-        db_table = 'matchbox_organizationmetadata'
+        db_table = 'organization_metadata_latest_cycle_view'
+        managed = False
 
 
 class PoliticianMetadata(models.Model):
