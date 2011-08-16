@@ -122,7 +122,7 @@ create table agg_epa_echo_actions as
     )
 
     select cycle, case_num, case_name, defendant_name, entity_id, num_defendants, defendants, locations,
-        penalty, max_year, max_year_significance,
+        penalty, extract('year' from last_date)::integer, last_date_significance,
         rank
     from actions_by_cycle
     where rank <= :agg_top_n
@@ -132,7 +132,7 @@ create table agg_epa_echo_actions as
     select *
     from (
         select -1 as cycle, case_num, case_name, defendant_name, entity_id, num_defendants, defendants, locations,
-            penalty, max_year, max_year_significance,
+            penalty, extract('year' from last_date)::integer, last_date_significance,
             rank() over (partition by entity_id order by case when num_defendants = 1 then penalty else -1.0 / penalty end desc) as rank
         from actions_by_cycle
     ) x

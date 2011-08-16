@@ -17,8 +17,8 @@ class TopViolationActionsHandler(EntityTopListHandler):
             locations,
             'forgot to include, do in next rebuild' as location_addresses,
             penalty,
-            max_year,
-            max_year_significance
+            last_date,
+            last_date_significance
         from agg_epa_echo_actions a
         where
             entity_id = %s
