@@ -1,22 +1,24 @@
-from dcapi.common.handlers import DenormalizingFilterHandler
+from dcapi.common.handlers import FilterHandler
 from dcapi.common.schema import InclusionField, FulltextField, ComparisonField
 from dcapi.schema import Schema
 from dcdata.epa import models
+from dcdata.epa.models import DenormalizedAction
 
 
 
 EPA_SCHEMA = Schema(
-    InclusionField('court_enforcement_no'),
+    InclusionField('case_num'),
 
+    FulltextField('case_name'),
+    FulltextField('defendant', ['defendants']),
+    FulltextField('location', ['locations']),
     
-    FulltextField('enforcement_name', ['enfornm']),
-    
-#    ComparisonField('amount', 'final_amount'),
+    ComparisonField('penalty'),
 )
 
 
 def filter_epa(request):
-    qs = EPA_SCHEMA.build_filter(models.CaseIdentifier.objects, request)
+    qs = EPA_SCHEMA.build_filter(models.DenormalizedAction.objects, request)
 
     # filters do nothing--just here to force the join that's needed for the fulltext search
 #    if 'city' in request:
@@ -25,18 +27,11 @@ def filter_epa(request):
     return qs.order_by().distinct().select_related()
 
 
-class EPAFilterHandler(DenormalizingFilterHandler):
+class EPAFilterHandler(FilterHandler):
     # todo: ordering should change
-    ordering = ['court_enforcement_no']
+    ordering = ['-penalty']
     filename = 'epa'
-    
-    simple_fields = [
-        'court_enforcement_no',
-        'enforcement_name',
-    ]
-    
-    relation_fields = [
-    ]
+    model = DenormalizedAction
     
     def queryset(self, params):
         return filter_epa(self._unquote(params))

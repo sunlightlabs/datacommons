@@ -17,31 +17,42 @@ select date_trunc('second', now()) || '-- Copying org_map from file';
 
 
 -- relevant actions
+-- NOTE: This table needs to exactly match the model definition so that the TransparencyData search code can access it
 
 drop table if exists epa_echo_actions cascade;
 
 create table epa_echo_actions as
 select i.enfocnu as case_num, max(enfornm) as case_name,
-    extract('year' from (select min(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu))::integer as min_year,
-    extract('year' from (select max(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu))::integer as max_year,
-    (select subacty from epa_echo_milestone m where m.enfocnu = i.enfocnu order by subacad limit 1) as min_year_significance,
-    (select subacty from epa_echo_milestone m where m.enfocnu = i.enfocnu order by subacad desc limit 1) as max_year_significance,
-    (select count(*) from epa_echo_defendant d where d.enfocnu = i.enfocnu) as num_defendants,
+    (select min(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu) as first_date,
+    (select max(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu) as last_date,
+    (select subacty from epa_echo_milestone m where m.enfocnu = i.enfocnu order by subacad limit 1) as first_date_significance,
+    (select subacty from epa_echo_milestone m where m.enfocnu = i.enfocnu order by subacad desc limit 1) as last_date_significance,
     (select sum(coalesce(enfccaa, 0) + coalesce(enfcraa, 0) + coalesce(enfotpa, 0) + coalesce(enfotsa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty,
-    (select count(distinct defennm) from epa_echo_defendant d where d.enfocnu = i.enfocnu) as defendants_count,
+    (select sum(coalesce(enfops, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfops,
+    (select sum(coalesce(enfccaa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfccaa,
+    (select sum(coalesce(enfcraa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as pentaly_enfcraa,
+    (select sum(coalesce(enfotpa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfotpa,
+    (select sum(coalesce(enfotsa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfotsa,
+    (select count(distinct defennm) from epa_echo_defendant d where d.enfocnu = i.enfocnu) as num_defendants,
     (select array_to_string(array_agg(distinct d.defennm), ', ') from epa_echo_defendant d where d.enfocnu = i.enfocnu) as defendants,
     (select array_to_string(array_agg(distinct f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as locations
 from epa_echo_case_identifier i
 group by i.enfocnu;
 
+create index epa_echo_actions_case_num_idx on epa_echo_actions (case_num);
+create index epa_echo_actions_case_name_idx on epa_echo_actions using gin(to_tsvector('datacommons', case_name));
+create index epa_echo_actions_defendants_idx on epa_echo_actions using gin(to_tsvector('datacommons', defendants));
+create index epa_echo_actions_locations_idx on epa_echo_actions using gin(to_tsvector('datacommons', locations));
+create index epa_echo_actions_penalty_idx on epa_echo_actions (penalty);
+
 
 drop view if exists epa_echo_relevant_actions;
 
 create view epa_echo_relevant_actions as
-    select *, max_year + max_year % 2 as cycle
+    select *, extract('year' from last_date)::integer + extract('year' from last_date)::integer % 2 as cycle
     from epa_echo_actions
     where
-        min_year > 2000
+        extract('year' from first_date) > 2000
         and penalty > 1000000;
 
 

@@ -69,3 +69,28 @@ class Milestone(models.Model):
         db_table = 'epa_echo_milestone'
 
 
+class DenormalizedAction(models.Model):
+    case_num = models.CharField(max_length=20, primary_key=True)
+    case_name = models.CharField(max_length=100)
+    first_date = models.DateField(null=True)
+    last_date = models.DateField(null=True)
+    first_date_significance = models.CharField(max_length=64)
+    last_date_significance = models.CharField(max_length=64)
+    penalty = models.BigIntegerField()
+    penalty_enfops = models.BigIntegerField()
+    penalty_enfccaa = models.BigIntegerField()
+    pentaly_enfcraa = models.BigIntegerField()
+    penalty_enfotpa = models.BigIntegerField()
+    penalty_enfotsa = models.BigIntegerField()
+    num_defendants = models.IntegerField()
+    defendants = models.TextField()
+    locations = models.TextField()
+    
+    class Meta:
+        db_table = 'epa_echo_actions'
+
+    
+
+    
+    
+    
