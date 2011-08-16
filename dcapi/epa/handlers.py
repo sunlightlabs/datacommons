@@ -9,7 +9,7 @@ EPA_SCHEMA = Schema(
     InclusionField('court_enforcement_no'),
 
     
-    FulltextField('enforcement_name'),
+    FulltextField('enforcement_name', ['enfornm']),
     
 #    ComparisonField('amount', 'final_amount'),
 )

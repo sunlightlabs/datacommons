@@ -9,6 +9,6 @@ epafilter_handler = Resource(EPAFilterHandler,
                                 authentication=PistonKeyAuthentication())
 
 urlpatterns = patterns('',
-    url(r'^.(?P<emitter_format>json|xls|csv)$', epafilter_handler, name='api_earmarks_filter'),
+    url(r'^.(?P<emitter_format>json|xls|csv)$', epafilter_handler, name='api_epa_filter'),
     url(r'^.(?P<emitter_format>.*)$', no_format),
 )
