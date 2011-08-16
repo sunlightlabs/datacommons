@@ -190,11 +190,13 @@ class OrganizationMetadata(ExtensibleModel):
     extended_properties = ['parent_entity', 'child_entities']
     # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
 
-    entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False, unique=True)
+    entity = models.OneToOneField(Entity, related_name='organization_metadata_by_cycle', null=False)
+
+    cycle = models.PositiveSmallIntegerField()
 
     lobbying_firm   = models.BooleanField(default=False)
-    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
-    industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
+    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True)
+    industry_entity = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True)
 
     def _child_entities(self):
         return [ x.entity.public_representation() for x in self.entity.child_entity_set.all() ]
@@ -209,7 +211,7 @@ class OrganizationMetadataLatest(ExtensibleModel):
     extended_properties = ['parent_entity', 'child_entities']
     # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
 
-    entity = models.OneToOneField(Entity, related_name='organization_metadata_for_latest_cycle', null=False, unique=True)
+    entity = models.OneToOneField(Entity, related_name='organization_metadata_for_latest_cycle', null=False, primary_key=True)
 
     lobbying_firm   = models.BooleanField(default=False)
     parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
