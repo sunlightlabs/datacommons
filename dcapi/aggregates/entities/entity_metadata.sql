@@ -7,9 +7,10 @@ begin;
 create temp table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
 insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
-    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id)
+    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id) where cycle != -1
     union
-    select distinct entity_id, cycle from agg_entities agg inner join matchbox_entity e on e.id = agg.entity_id where type = 'organization';
+    select distinct entity_id, cycle from agg_entities agg inner join matchbox_entity e on e.id = agg.entity_id where type = 'organization' and cycle != -1
+;
 commit;
 
 analyze tmp_matchbox_organizationmetadata;
@@ -84,8 +85,9 @@ where
 
 delete from matchbox_organizationmetadata;
 
-insert into matchbox_organizationmetadata (entity_id, lobbying_firm, parent_entity_id, industry_entity_id)
-    select entity_id, lobbying_firm, parent_entity_id, industry_entity_id from tmp_matchbox_organizationmetadata;
+insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id)
+    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id from tmp_matchbox_organizationmetadata;
+
 commit;
 
 
