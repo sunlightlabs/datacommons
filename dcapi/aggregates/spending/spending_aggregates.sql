@@ -33,10 +33,13 @@ drop table if exists assoc_spending_grants;
 create table assoc_spending_grants as
     select e.id as entity_id, g.id as transaction_id
     from grants_grant g
-    inner join matchbox_entity e
-        on to_tsvector('datacommons', g.recipient_name) @@ plainto_tsquery('datacommons', e.name)
+    inner join matchbox_entityalias a
+        on to_tsvector('datacommons', g.recipient_name) @@ plainto_tsquery('datacommons', a.alias)
+        and g.recipient_name ilike (regexp_replace(lower(a.alias), E'( ?co\\.?$)|( ?corp\\.?$)|( ?inc\\.?$)|( ?assoc\\.?$)', '', 'g') || '%')
+    inner join matchbox_entity e on e.id = a.entity_id
     where
-        e.type = 'organization';
+        e.type = 'organization'
+    group by e.id, g.id;
 
 create index assoc_spending_grants_entity_id on assoc_spending_grants (entity_id);
 create index assoc_spending_grants_transaction_id on assoc_spending_grants (transaction_id);
@@ -49,11 +52,14 @@ drop table if exists assoc_spending_contracts;
 create table assoc_spending_contracts as
     select e.id as entity_id, c.id as transaction_id
     from contracts_contract c
-    inner join matchbox_entity e
-        on to_tsvector('datacommons', c.vendorname) @@ plainto_tsquery('datacommons', e.name)
+    inner join matchbox_entityalias a
+        on to_tsvector('datacommons', c.vendorname) @@ plainto_tsquery('datacommons', a.alias)
+        and c.vendorname ilike (regexp_replace(lower(a.alias), E'( ?co\\.?$)|( ?corp\\.?$)|( ?inc\\.?$)|( ?assoc\\.?$)', '', 'g') || '%')
+    inner join matchbox_entity e on e.id = a.entity_id
     where
-        e.type = 'organization';
-
+        e.type = 'organization'
+    group by e.id, c.id;
+    
 create index assoc_spending_contracts_entity_id on assoc_spending_contracts (entity_id);
 create index assoc_spending_contracts_transaction_id on assoc_spending_contracts (transaction_id);
 
