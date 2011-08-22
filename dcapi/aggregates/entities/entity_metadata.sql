@@ -91,6 +91,7 @@ insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, pare
 commit;
 
 
+vacuum matchbox_organizationmetadata;
 begin;
 analyze matchbox_organizationmetadata;
 commit;
