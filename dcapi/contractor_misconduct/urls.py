@@ -1,6 +1,6 @@
 from dcapi.common.views import no_format
 from dcapi.contractor_misconduct.handlers import ContractorMisconductFilterHandler
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.resource import Resource
 
