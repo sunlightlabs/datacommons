@@ -69,9 +69,8 @@ create index assoc_spending_contracts_transaction_id on assoc_spending_contracts
 
 -- Spending Totals
 
-drop table if exists agg_spending_totals;
 
-create table agg_spending_totals as
+create table tmp_agg_spending_totals as
     with totals_by_cycle as (
         select recipient_entity, cycle,
                 coalesce(grants.count, 0) as grant_count, 
@@ -114,14 +113,16 @@ create table agg_spending_totals as
     from totals_by_cycle
     group by recipient_entity;
 
-create index agg_spending_totals_idx on agg_spending_totals (recipient_entity);
 
+drop table if exists agg_spending_totals;
+alter table tmp_agg_spending_totals rename to agg_spending_totals;
+
+create index agg_spending_totals_idx on agg_spending_totals (recipient_entity);
 
 -- Top Grants & Contracts
 
-drop table if exists agg_spending_org;
 
-create table agg_spending_org as
+create table tmp_agg_spending_org as
     with spending_to_org as (
         select entity_id as recipient_entity, recipient_name, spending_type,
                 cycle, fiscal_year, agency_name, description, amount
@@ -146,5 +147,9 @@ create table agg_spending_org as
     from (select *, rank() over (partition by recipient_entity order by amount desc) as rank from spending_to_org) x
     where rank <= :agg_top_n;
 
+drop table if exists agg_spending_org;
+alter table tmp_agg_spending_org rename to agg_spending_org;
+
 create index agg_spending_org_idx on agg_spending_org (recipient_entity, cycle);
+
 
