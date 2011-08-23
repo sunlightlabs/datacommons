@@ -1,5 +1,5 @@
 
-from dcapi.common.handlers import FilterHandler, DenormalizingFilterHandler
+from dcapi.common.handlers import DenormalizingFilterHandler
 from dcapi.common.schema import InclusionField, ComparisonField, FulltextField
 from dcapi.schema import Schema
 from dcdata.earmarks.models import Earmark

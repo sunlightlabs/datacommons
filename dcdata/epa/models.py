@@ -85,6 +85,7 @@ class DenormalizedAction(models.Model):
     num_defendants = models.IntegerField()
     defendants = models.TextField()
     locations = models.TextField()
+    location_addresses = models.TextField()
     
     class Meta:
         db_table = 'epa_echo_actions'
