@@ -11,7 +11,7 @@ EPA_SCHEMA = Schema(
 
     FulltextField('case_name'),
     FulltextField('defendants', ['defendants']),
-    FulltextField('locations', ['locations']),
+    FulltextField('location_addresses', ['location_addresses']),
     
     ComparisonField('penalty'),
     ComparisonField('first_date'),
