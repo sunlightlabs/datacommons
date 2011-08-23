@@ -19,6 +19,8 @@ select date_trunc('second', now()) || '-- Copying org_map from file';
 -- relevant actions
 -- NOTE: This table needs to exactly match the model definition so that the TransparencyData search code can access it
 
+drop view if exists epa_echo_relevant_actions;
+
 drop table if exists epa_echo_actions cascade;
 
 create table epa_echo_actions as
@@ -35,7 +37,8 @@ select i.enfocnu as case_num, max(enfornm) as case_name,
     (select sum(coalesce(enfotsa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfotsa,
     (select count(distinct defennm) from epa_echo_defendant d where d.enfocnu = i.enfocnu) as num_defendants,
     (select array_to_string(array_agg(distinct d.defennm), ', ') from epa_echo_defendant d where d.enfocnu = i.enfocnu) as defendants,
-    (select array_to_string(array_agg(distinct f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as locations
+    (select array_to_string(array_agg(distinct f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as locations,
+    (select array_to_string(array_agg(distinct f.fcltyad || ', ' || f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as location_addresses
 from epa_echo_case_identifier i
 group by i.enfocnu;
 
@@ -45,8 +48,6 @@ create index epa_echo_actions_defendants_idx on epa_echo_actions using gin(to_ts
 create index epa_echo_actions_locations_idx on epa_echo_actions using gin(to_tsvector('datacommons', locations));
 create index epa_echo_actions_penalty_idx on epa_echo_actions (penalty);
 
-
-drop view if exists epa_echo_relevant_actions;
 
 create view epa_echo_relevant_actions as
     select *, extract('year' from last_date)::integer + extract('year' from last_date)::integer % 2 as cycle
@@ -121,8 +122,8 @@ create table agg_epa_echo_actions as
         inner join assoc_epa_echo_org o using (case_num)
     )
 
-    select cycle, case_num, case_name, defendant_name, entity_id, num_defendants, defendants, locations,
-        penalty, extract('year' from last_date)::integer, last_date_significance,
+    select cycle, case_num, case_name, defendant_name, entity_id, num_defendants, defendants, locations, location_addresses,
+        penalty, extract('year' from last_date)::integer as year, last_date_significance,
         rank
     from actions_by_cycle
     where rank <= :agg_top_n
@@ -131,8 +132,8 @@ create table agg_epa_echo_actions as
 
     select *
     from (
-        select -1 as cycle, case_num, case_name, defendant_name, entity_id, num_defendants, defendants, locations,
-            penalty, extract('year' from last_date)::integer, last_date_significance,
+        select -1 as cycle, case_num, case_name, defendant_name, entity_id, num_defendants, defendants, locations, location_addresses,
+            penalty, extract('year' from last_date)::integer as year, last_date_significance,
             rank() over (partition by entity_id order by case when num_defendants = 1 then penalty else -1.0 / penalty end desc) as rank
         from actions_by_cycle
     ) x

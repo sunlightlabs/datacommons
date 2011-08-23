@@ -15,9 +15,9 @@ class TopViolationActionsHandler(EntityTopListHandler):
             num_defendants,
             defendants,
             locations,
-            'forgot to include, do in next rebuild' as location_addresses,
+            location_addresses,
             penalty,
-            last_date,
+            year,
             last_date_significance
         from agg_epa_echo_actions a
         where
