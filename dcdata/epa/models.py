@@ -79,12 +79,13 @@ class DenormalizedAction(models.Model):
     penalty = models.BigIntegerField()
     penalty_enfops = models.BigIntegerField()
     penalty_enfccaa = models.BigIntegerField()
-    pentaly_enfcraa = models.BigIntegerField()
+    penalty_enfcraa = models.BigIntegerField()
     penalty_enfotpa = models.BigIntegerField()
     penalty_enfotsa = models.BigIntegerField()
     num_defendants = models.IntegerField()
     defendants = models.TextField()
     locations = models.TextField()
+    location_addresses = models.TextField()
     
     class Meta:
         db_table = 'epa_echo_actions'

@@ -43,14 +43,14 @@ from (
         p.entity_id as parent_entity_id
     from
         organization_associations o
-        inner join parent_organization_associations p using (transaction_id)
-        inner join contributions_all_relevant c using (transaction_id)
+        left join parent_organization_associations p using (transaction_id)
+        left join contributions_all_relevant c using (transaction_id)
     where
-        o.entity_id != p.entity_id
+        o.entity_id != p.entity_id or p.entity_id is null
     group by
         o.entity_id, c.cycle, p.entity_id
     order by
-        o.entity_id, c.cycle, count(distinct p.entity_id) desc
+        o.entity_id, c.cycle, count(c.*) desc
 ) x
 where
     tmp.entity_id = x.entity_id
@@ -91,6 +91,7 @@ insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, pare
 commit;
 
 
+vacuum matchbox_organizationmetadata;
 begin;
 analyze matchbox_organizationmetadata;
 commit;

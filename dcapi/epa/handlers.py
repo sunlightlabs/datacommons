@@ -10,10 +10,12 @@ EPA_SCHEMA = Schema(
     InclusionField('case_num'),
 
     FulltextField('case_name'),
-    FulltextField('defendant', ['defendants']),
-    FulltextField('location', ['locations']),
+    FulltextField('defendants', ['defendants']),
+    FulltextField('location_addresses', ['location_addresses']),
     
     ComparisonField('penalty'),
+    ComparisonField('first_date'),
+    ComparisonField('last_date'),
 )
 
 
