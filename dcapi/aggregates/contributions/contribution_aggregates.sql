@@ -580,6 +580,7 @@ create table agg_industries_to_cand as
         where
             -- exclude subindustries
             coalesce(ma.namespace, 'urn:crp:industry') = 'urn:crp:industry'
+            and substring(c.contributor_category for 1) not in ('', 'Y', 'Z')
         group by ra.entity_id, ia.entity_id, coalesce(me.name, 'UNKNOWN'), c.cycle
     )
 
@@ -600,6 +601,38 @@ create table agg_industries_to_cand as
 
 select date_trunc('second', now()) || ' -- create index agg_industries_to_cand_idx on agg_industries_to_cand (recipient_entity, cycle)';
 create index agg_industries_to_cand_idx on agg_industries_to_cand (recipient_entity, cycle);
+
+
+-- Unknown Industry Portion
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_unkown_industries_to_cand';
+drop table if exists agg_unkown_industries_to_cand;
+
+select date_trunc('second', now()) || ' -- create table agg_unkown_industries_to_cand';
+create table agg_unkown_industries_to_cand as
+    with unknown_by_cycle as (
+        select
+            ra.entity_id as recipient_entity,
+            c.cycle,
+            count(*),
+            sum(amount) as amount
+        from (table contributions_individual union table contributions_organization) c
+        inner join recipient_associations ra using (transaction_id)
+        where
+            substring(c.contributor_category for 1) in ('', 'Y', 'Z')
+        group by ra.entity_id, c.cycle
+    )
+
+    table unknown_by_cycle
+    
+    union all
+    
+    select recipient_entity, -1 as cycle, sum(count) as count, sum(amount) as amount
+    from unknown_by_cycle
+    group by recipient_entity;
+
+select date_trunc('second', now()) || ' -- create index agg_unkown_industries_to_cand_idx on agg_unkown_industries_to_cand (recipient_entity, cycle);';
+create index agg_unkown_industries_to_cand_idx on agg_unkown_industries_to_cand (recipient_entity, cycle);
 
 
 -- Candidates from Individual
