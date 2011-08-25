@@ -26,7 +26,7 @@ class Penalty(models.Model):
     federal_penalty_accessed = models.IntegerField(db_column='enfotpa', blank=True, null=True)
     state_local_penality = models.IntegerField(db_column='enfcslp', blank=True, null=True)
     total_sep_amt = models.IntegerField(db_column='enfotsa', blank=True, null=True)
-    total_comp_action = models.IntegerField(db_column='enfccaa', blank=True, null=True)
+    total_comp_action = models.BigIntegerField(db_column='enfccaa', blank=True, null=True)
     cost_recovery_awarded_amt = models.IntegerField(db_column='enfcraa', blank=True, null=True)
 
     class Meta:
@@ -69,3 +69,29 @@ class Milestone(models.Model):
         db_table = 'epa_echo_milestone'
 
 
+class DenormalizedAction(models.Model):
+    case_num = models.CharField(max_length=20, primary_key=True)
+    case_name = models.CharField(max_length=100)
+    first_date = models.DateField(null=True)
+    last_date = models.DateField(null=True)
+    first_date_significance = models.CharField(max_length=64)
+    last_date_significance = models.CharField(max_length=64)
+    penalty = models.BigIntegerField()
+    penalty_enfops = models.BigIntegerField()
+    penalty_enfccaa = models.BigIntegerField()
+    penalty_enfcraa = models.BigIntegerField()
+    penalty_enfotpa = models.BigIntegerField()
+    penalty_enfotsa = models.BigIntegerField()
+    num_defendants = models.IntegerField()
+    defendants = models.TextField()
+    locations = models.TextField()
+    location_addresses = models.TextField()
+    
+    class Meta:
+        db_table = 'epa_echo_actions'
+
+    
+
+    
+    
+    

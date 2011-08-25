@@ -1,6 +1,5 @@
 from dcapi.schema import OperatorField, Operator, Field
-from dcdata.utils.strings.transformers import build_remove_substrings, \
-    build_map_substrings
+from dcdata.utils.strings.transformers import build_map_substrings
 
 EQUAL_OP = '='
 LESS_THAN_OP = '<'
