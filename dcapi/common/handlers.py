@@ -52,3 +52,22 @@ class FilterHandler(BaseHandler):
                         
         return self.queryset(params).order_by(*self.ordering)[offset:limit]
 
+
+class DenormalizingFilterHandler(FilterHandler):
+    simple_fields = []
+    relation_fields = []
+    
+    def __init__(self):
+        self.fields = self.simple_fields + self.relation_fields
+    
+    def _denormalize(self, data):
+        result = dict((field, getattr(data, field)) for field in self.simple_fields)
+        
+        for relation in self.relation_fields:
+            result[relation] = "; ".join(str(o) for o in getattr(data, relation).all())
+        
+        return result
+
+    def read(self, request):
+        for earmark in super(DenormalizingFilterHandler, self).read(request):
+            yield self._denormalize(earmark)

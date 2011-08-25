@@ -21,6 +21,7 @@ urlpatterns = patterns('',
     url(r'^lobbying', include('dcapi.lobbying.urls')),
     url(r'^earmarks', include('dcapi.earmarks.urls')),
     url(r'^misconduct', include('dcapi.contractor_misconduct.urls')),
+    url(r'^epa', include('dcapi.epa.urls')),
     url(r'^aggregates/', include('dcapi.aggregates.urls')),
     url(r'^', include('dcapi.rapportive.urls')),
 )
