@@ -1,5 +1,5 @@
 
-from dcapi.common.handlers import FilterHandler
+from dcapi.common.handlers import DenormalizingFilterHandler
 from dcapi.common.schema import InclusionField, ComparisonField, FulltextField
 from dcapi.schema import Schema
 from dcdata.earmarks.models import Earmark
@@ -33,49 +33,33 @@ def filter_earmarks(request):
         
     return qs.order_by().distinct().select_related()
     
-    
-SIMPLE_FIELDS = [
-    'fiscal_year',
-    'final_amount',
-    'budget_amount',
-    'house_amount',
-    'senate_amount',
-    'omni_amount',
-    'bill',
-    'bill_section',
-    'bill_subsection',
-    'description',
-    'notes',
-    'presidential',
-    'undisclosed',
-]
 
-RELATION_FIELDS = [
-    'members',
-    'locations',
-    'recipients'
-]
-
-EARMARK_FIELDS = SIMPLE_FIELDS + RELATION_FIELDS
-
-
-class EarmarkFilterHandler(FilterHandler):
+class EarmarkFilterHandler(DenormalizingFilterHandler):
     ordering = ['-fiscal_year', '-final_amount']
     filename = 'earmarks'
-    fields = EARMARK_FIELDS
     
-    def _denormalize(self, earmark):
-        result = dict((field, getattr(earmark, field)) for field in SIMPLE_FIELDS)
-        
-        for relation in RELATION_FIELDS:
-            result[relation] = "; ".join(str(o) for o in getattr(earmark, relation).all())
-        
-        return result
-        
+    simple_fields = [
+        'fiscal_year',
+        'final_amount',
+        'budget_amount',
+        'house_amount',
+        'senate_amount',
+        'omni_amount',
+        'bill',
+        'bill_section',
+        'bill_subsection',
+        'description',
+        'notes',
+        'presidential',
+        'undisclosed',
+    ]
+    
+    relation_fields = [
+        'members',
+        'locations',
+        'recipients'
+    ]
+    
     def queryset(self, params):
         return filter_earmarks(self._unquote(params))
-
-    def read(self, request):
-        for earmark in super(EarmarkFilterHandler, self).read(request):
-            yield self._denormalize(earmark)
 
