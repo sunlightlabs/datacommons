@@ -605,11 +605,11 @@ create index agg_industries_to_cand_idx on agg_industries_to_cand (recipient_ent
 
 -- Unknown Industry Portion
 
-select date_trunc('second', now()) || ' -- drop table if exists agg_unkown_industries_to_cand';
-drop table if exists agg_unkown_industries_to_cand;
+select date_trunc('second', now()) || ' -- drop table if exists agg_unknown_industries_to_cand';
+drop table if exists agg_unknown_industries_to_cand;
 
-select date_trunc('second', now()) || ' -- create table agg_unkown_industries_to_cand';
-create table agg_unkown_industries_to_cand as
+select date_trunc('second', now()) || ' -- create table agg_unknown_industries_to_cand';
+create table agg_unknown_industries_to_cand as
     with unknown_by_cycle as (
         select
             ra.entity_id as recipient_entity,
@@ -631,8 +631,8 @@ create table agg_unkown_industries_to_cand as
     from unknown_by_cycle
     group by recipient_entity;
 
-select date_trunc('second', now()) || ' -- create index agg_unkown_industries_to_cand_idx on agg_unkown_industries_to_cand (recipient_entity, cycle);';
-create index agg_unkown_industries_to_cand_idx on agg_unkown_industries_to_cand (recipient_entity, cycle);
+select date_trunc('second', now()) || ' -- create index agg_unknown_industries_to_cand_idx on agg_unknown_industries_to_cand (recipient_entity, cycle);';
+create index agg_unknown_industries_to_cand_idx on agg_unknown_industries_to_cand (recipient_entity, cycle);
 
 
 -- Candidates from Individual
