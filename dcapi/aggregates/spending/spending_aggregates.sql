@@ -37,12 +37,13 @@ drop table if exists assoc_spending_grants;
 
 create table assoc_spending_grants as
     select e.id as entity_id, g.id as transaction_id
-    from grants_grant g
+    from grants_record g
     inner join matchbox_entityalias a on
         standardize_orgname(g.recipient_name) = standardize_orgname(a.alias)
     inner join matchbox_entity e on e.id = a.entity_id
     where
         e.type = 'organization'
+        and g.amount >= 1000000
     group by e.id, g.id;
 
 create index assoc_spending_grants_entity_id on assoc_spending_grants (entity_id);
@@ -55,12 +56,13 @@ drop table if exists assoc_spending_contracts;
 
 create table assoc_spending_contracts as
     select e.id as entity_id, c.id as transaction_id
-    from contracts_contract c
+    from contracts_record c
     inner join matchbox_entityalias a on
-        standardize_orgname(c.vendorname) = standardize_orgname(a.alias)
+        standardize_orgname(c.recipient_name) = standardize_orgname(a.alias)
     inner join matchbox_entity e on e.id = a.entity_id
     where
         e.type = 'organization'
+        and c.amount >= 1000000
     group by e.id, c.id;
     
 create index assoc_spending_contracts_entity_id on assoc_spending_contracts (entity_id);
