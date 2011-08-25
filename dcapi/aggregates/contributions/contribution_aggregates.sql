@@ -11,6 +11,15 @@ create table agg_cycles as
     -- values (2005), (2006), (2007), (2008), (2009), (2010);
     select distinct cycle from contribution_contribution;
 
+create table agg_suppressed_catcodes as values
+    ('Z0000'), ('Z1000'), ('Z1100'), ('Z1200'), ('Z1300'), ('Z1400'),
+    ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'),
+    ('Z4100'), ('Z4200'), ('Z4300'),
+    ('Z5000'), ('Z5100'), ('Z5200'), ('Z5300'),
+    ('Z7777'), 
+    ('Z8888'),
+    ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9800'), ('Z9999');
+
 
 -- Top N: the number of rows to generate for each aggregate
 
@@ -47,7 +56,7 @@ create table contributions_individual as
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'P'
         and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
-        and substring(c.contributor_category for 1) != 'Z'
+        and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_individual_transaction_id on contributions_individual (transaction_id)';
@@ -67,7 +76,7 @@ create table contributions_individual_to_organization as
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'C'
         and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
-        and substring(c.contributor_category for 1) != 'Z'
+        and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id)';
@@ -88,7 +97,7 @@ create table contributions_organization as
         contributor_type = 'C'
         and recipient_type = 'P'
         and transaction_type in ('', '24k', '24r', '24z')
-        and substring(c.contributor_category for 1) != 'Z'
+        and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_organization_transaction_id on contributions_organization (transaction_id)';
@@ -745,8 +754,20 @@ create table agg_orgs_to_cand as
                 inner join recipient_associations ra using (transaction_id)
                 left join biggest_organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
-                where organization_name != ''
+                where 
+                    organization_name != ''
+                    and substring(contributor_category for 3) != 'Z90'
                 group by ra.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, cycle
+                
+                union all
+                
+                select ra.entity_id as recipient_entity, contributor_name as organization_name,
+                    null as organization_entity, cycle, count(*) as count, sum(amount) as amount
+                from contributions_individual c
+                inner join recipient_associations ra using (transaction_id)
+                where
+                    substring(contributor_category for 3) = 'Z90'
+                group by ra.entity_id, contributor_name, cycle
             ) top_indivs
             using (recipient_entity, organization_name, organization_entity, cycle)
     )
