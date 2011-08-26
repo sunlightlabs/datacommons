@@ -11,6 +11,7 @@ create table agg_cycles as
     -- values (2005), (2006), (2007), (2008), (2009), (2010);
     select distinct cycle from contribution_contribution;
 
+drop table if exists agg_suppressed_catcodes;
 create table agg_suppressed_catcodes as values
     ('Z0000'), ('Z1000'), ('Z1100'), ('Z1200'), ('Z1300'), ('Z1400'),
     ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'),
@@ -19,6 +20,33 @@ create table agg_suppressed_catcodes as values
     ('Z7777'), 
     ('Z8888'),
     ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9800'), ('Z9999');
+
+
+-- this table was created by hand reviewing all orgnames that appear more than 200 times
+
+drop table if exists agg_suppressed_orgnames;
+create table agg_suppressed_orgnames as values
+    ('retired'), ('homemaker'), ('attorney'), ('[24i contribution]'), ('self-employed'), ('physician'),
+    ('self'), ('information requested'), ('self employed'), ('[24t contribution]'), ('consultant'), ('investor'),
+    ('[candidate contribution]'), ('n/a'), ('farmer'), ('real estate'), ('none'), ('writer'),
+    ('dentist'), ('info requested'), ('business owner'), ('accountant'), ('artist'), ('rancher'),
+    ('student'), ('realtor'), ('investments'), ('real estate developer'), ('unemployed'), ('requested'),
+    ('owner'), ('developer'), ('businessman'), ('contractor'), ('president'), ('engineer'),
+    ('n'), ('psychologist'), ('real estate broker'), ('executive'), ('private investor'), ('architect'),
+    ('sales'), ('real estate investor'), ('selfemployed'), ('philanthropist'), ('not employed'), ('author'),
+    ('builder'), ('insurance agent'), ('volunteer'), ('construction'), ('insurance'), ('entrepreneur'),
+    ('lobbyist'), ('ceo'), ('n.a'), ('actor'), ('photographer'), ('musician'),
+    ('interior designer'), ('restaurant owner'), ('teacher'), ('designer'), ('surgeon'), ('social worker'),
+    ('veterinarian'), ('psychiatrist'), ('chiropractor'), ('auto dealer'), ('small business owner'), ('optometrist'),
+    ('producer'), ('business'), ('.information requested'), ('financial advisor'), ('pharmacist'), ('psychotherapist'),
+    ('manager'), ('management consultant'), ('general contractor'), ('finance'), ('orthodontist'), ('actress'),
+    ('n.a.'), ('restauranteur'), ('property management'), ('home builder'), ('oil & gas'), ('real estate investments'),
+    ('geologist'), ('professor'), ('farming'), ('real estate agent'), ('na'), ('financial planner'),
+    ('community volunteer'), ('property manager'), ('political consultant'), ('public relations'), ('business consultant'), ('publisher'),
+    ('insurance broker'), ('educator'), ('nurse'), ('orthopedic surgeon'), ('editor'), ('marketing'),
+    ('dairy farmer'), ('investment advisor'), ('freelance writer'), ('investment banker'), ('trader'), ('computer consultant'),
+    ('banker'), ('oral surgeon'), ('business executive'), ('unknown'), ('civic volunteer'), ('filmmaker'),
+    ('economist'), ('');
 
 
 -- Top N: the number of rows to generate for each aggregate
@@ -745,6 +773,8 @@ create table agg_orgs_to_cand as
                 inner join recipient_associations ra using (transaction_id)
                 left join biggest_organization_associations ca using (transaction_id)
                 left join matchbox_entity oe on oe.id = ca.entity_id
+                where
+                    lower(organization_name) not in (select * from agg_suppressed_orgnames)    
                 group by ra.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, cycle
             ) top_pacs
             full outer join (
@@ -755,7 +785,7 @@ create table agg_orgs_to_cand as
                 left join biggest_organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
                 where 
-                    organization_name != ''
+                    lower(organization_name) not in (select * from agg_suppressed_orgnames)
                     and substring(contributor_category for 3) != 'Z90'
                 group by ra.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, cycle
                 
