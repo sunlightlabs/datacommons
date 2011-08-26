@@ -1,4 +1,4 @@
-from django.db import connections
+#from django.db import connections
 from faads import FAADS_FIELDS, CALCULATED_FAADS_FIELDS
 from fpds import FPDS_FIELDS, CALCULATED_FPDS_FIELDS
 import os.path
@@ -10,38 +10,38 @@ class Loader():
     def fpds_fields(self):
         return [ x[0] for x in FPDS_FIELDS ] + [ x[0] for x in CALCULATED_FPDS_FIELDS ]
 
-    def make_faads_sql(self, infile):
+    def print_faads_sql(self, infile):
         table = 'grants_grant'
-        return self.sql_template_postgres(infile, table, self.faads_fields())
+        print self.sql_template_postgres(infile, table, self.faads_fields())
 
-    def make_fpds_sql(self, infile):
+    def print_fpds_sql(self, infile):
         table = 'contracts_contract'
-        return self.sql_template_postgres(infile, table, self.fpds_fields())
+        print self.sql_template_postgres(infile, table, self.fpds_fields())
 
-    def insert_faads(self, infile):
-        table = 'grants_grant'
+    #def insert_faads(self, infile):
+    #    table = 'grants_grant'
 
-        cursor = connections['default'].cursor()
-        
-        #cursor.execute(self.sql_template_postgres(infile, table, self.faads_fields()))
-        cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.faads_fields())
-        
+    #    cursor = connections['default'].cursor()
+    #    
+    #    #cursor.execute(self.sql_template_postgres(infile, table, self.faads_fields()))
+    #    cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.faads_fields())
+    #    
 
-    def insert_fpds(self, infile):
-        table = 'contracts_contract'
+    #def insert_fpds(self, infile):
+    #    table = 'contracts_contract'
 
-        cursor = connections['default'].cursor()
-        
-        # neither verion seems to handle quoted values correctly.
-        # in particular, a pipe in a string value is treated as a delimiter, even though the value is quoted.
-        # works fine using the \copy command in psql, indicating it's probably a psycopg2 bug.
-        #cursor.copy_expert(self.sql_template_postgres(infile, table, self.fpds_fields()))
-        cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.fpds_fields())
+    #    cursor = connections['default'].cursor()
+    #    
+    #    # neither verion seems to handle quoted values correctly.
+    #    # in particular, a pipe in a string value is treated as a delimiter, even though the value is quoted.
+    #    # works fine using the \copy command in psql, indicating it's probably a psycopg2 bug.
+    #    #cursor.copy_expert(self.sql_template_postgres(infile, table, self.fpds_fields()))
+    #    cursor.copy_from(open(infile, 'r'), table, sep='|', null='NULL', columns=self.fpds_fields())
 
 
     def sql_template_postgres(self, file, table, fields):
         return """
-            COPY {1} \
+            \\copy {1} \
             ({2}) \
             FROM '{0}' \
             DELIMITER '|' \

@@ -1,7 +1,7 @@
 
 from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
-    SectorsHandler, IndustriesHandler, PolLocalBreakdownHandler, \
+    SectorsHandler, IndustriesHandler, UnknownIndustriesHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
     SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
@@ -17,6 +17,7 @@ from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
 from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
+from dcapi.aggregates.epa.handlers import TopViolationActionsHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -55,6 +56,10 @@ urlpatterns = patterns('',
     # contributions to a single politician, broken down by industry
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/industries\.(?P<emitter_format>.+)$',
         Resource(IndustriesHandler, **ad)),
+
+    # contributions to a single politician from unknown industries
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/industries_unknown\.(?P<emitter_format>.+)$',
+        Resource(UnknownIndustriesHandler, **ad)),
 
     # contributions to a single politician, broken down to show percentages
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/local_breakdown\.(?P<emitter_format>.+)$',
@@ -119,6 +124,9 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]+)/contractor_misconduct\.(?P<emitter_format>.+)$',
         Resource(TopContractorMisconductHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/epa_enforcement_actions\.(?P<emitter_format>.+)$',
+        Resource(TopViolationActionsHandler, **ad)),
 
     # issues an org hired people to lobby on
     url(r'^org/(?P<entity_id>[a-f0-9]+)/issues\.(?P<emitter_format>.+)',

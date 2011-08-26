@@ -3,7 +3,6 @@ import re
 from dcentity.matching.management.base.matching import MatchingCommand
 from dcentity.matching.models import WhiteHouseVisitor
 from dcentity.models import Entity
-from dcdata.lobbying.models import Lobbyist
 from name_cleaver import SUFFIX_RE
 
 class Command(MatchingCommand):

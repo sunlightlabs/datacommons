@@ -1,7 +1,4 @@
-import re
-import os
 import csv
-import urllib
 from collections import defaultdict
 from pprint import pprint
 from itertools import combinations
@@ -9,7 +6,6 @@ from cStringIO import StringIO
 
 from django.db import connection
 from django.core.management.base import BaseCommand
-from django.conf import settings
 
 from dcentity.tools.names import PersonName, fix_name
 
@@ -44,7 +40,7 @@ Results are presented in one of two ways:
 
     # Totally trusted results
     trusted = [
-            "same state | same party | exact", 
+            "same state | same party | exact",
             "missing one state | same party | exact",
             "same state | diff party; both 3rd | exact",
     ]
@@ -77,8 +73,8 @@ Results are presented in one of two ways:
         cursor = connection.cursor()
         # ORM is way too slow for this on 100,000+ rows.
         cursor.execute("""
-            SELECT DISTINCT a.entity_id,a.alias,m.state,m.party,m.seat FROM 
-            matchbox_entityalias a 
+            SELECT DISTINCT a.entity_id,a.alias,m.state,m.party,m.seat FROM
+            matchbox_entityalias a
             LEFT JOIN politician_metadata_latest_cycle_view m ON m.entity_id=a.entity_id
             LEFT JOIN matchbox_entity e ON m.entity_id=e.id
             WHERE e.type = %s
@@ -89,8 +85,8 @@ Results are presented in one of two ways:
         by_last_name = defaultdict(list)
         for row in rows:
             by_last_name[row[1].last].append(row)
-        count = 0
-        grand_total = len(rows)
+        #count = 0
+        #grand_total = len(rows)
         totals = defaultdict(int)
         groups = defaultdict(list)
         for last_name, entities in by_last_name.iteritems():
@@ -109,7 +105,7 @@ Results are presented in one of two ways:
                     }
                     party_checks = {
                         'same party': party1 == party2,
-                        'diff party; both 3rd': party1 not in "RD" and 
+                        'diff party; both 3rd': party1 not in "RD" and
                             party2 not in "RD" and party1 != party2,
                         'diff party; one 3rd': party1 != party2 and
                             (party1 not in "RD" or party2 not in "RD") and
@@ -130,7 +126,7 @@ Results are presented in one of two ways:
                             return name_checks['exact']
                         key = ", ".join(conditions)
                         name_checks[key] = name_checks.get(key, (
-                            not check(conditions[:-1]) and 
+                            not check(conditions[:-1]) and
                             name1.matches(name2, exact=True, **dict((c, True) for c in conditions))
                         ))
                         return name_checks[key]
@@ -141,7 +137,7 @@ Results are presented in one of two ways:
                                 if check(conds):
                                     return True
                     get_minimum_match()
-                    
+
                     for n1, c1 in state_checks.iteritems():
                         if c1:
                             for n2, c2 in party_checks.iteritems():
@@ -156,7 +152,7 @@ Results are presented in one of two ways:
                                             ))
                                             # Only one name match per entity.
                                             break
-        
+
 
 
         if display == 'full':

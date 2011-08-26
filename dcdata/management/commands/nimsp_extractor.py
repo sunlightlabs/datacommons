@@ -16,7 +16,8 @@ class NimspExtractor(BaseNimspImporter):
     def do_for_file(self, file_path):
         try:
             self.log.info('Extracting to {0}'.format(self.OUT_DIR))
-            os.system('tar -C {0} -xzf {1}'.format(self.OUT_DIR, file_path))
+            # this command needs to remove the top-level date subdirectory that NIMSP added to the archive
+            os.system('tar -C {0} -xzf {1} --transform=\'s,^20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]/,,\''.format(self.OUT_DIR, file_path))
             self.log.info('Archiving.')
             self.archive_file(file_path)
         except:

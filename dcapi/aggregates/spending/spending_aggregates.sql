@@ -1,5 +1,10 @@
 \set agg_top_n 10
 
+DROP FUNCTION IF EXISTS standardize_orgname(text);
+CREATE FUNCTION standardize_orgname(text) RETURNS text AS $$
+    select regexp_replace(lower($1), E'( ?co\\.?$)|( ?corp\\.?$)|( ?corporation$)|( ?company$)|( ?inc\\.?$)|( ?incorporated$)|( ?assoc\\.?$)|( ?association$)|( ?ltd\\.?$)|( ?limited$)|( ?llc\\.?$)', '', 'g') as result;
+$$ LANGUAGE SQL;
+
 
 -- Grants View
 
@@ -32,11 +37,14 @@ drop table if exists assoc_spending_grants;
 
 create table assoc_spending_grants as
     select e.id as entity_id, g.id as transaction_id
-    from grants_grant g
-    inner join matchbox_entity e
-        on to_tsvector('datacommons', g.recipient_name) @@ plainto_tsquery('datacommons', e.name)
+    from grants_record g
+    inner join matchbox_entityalias a on
+        standardize_orgname(g.recipient_name) = standardize_orgname(a.alias)
+    inner join matchbox_entity e on e.id = a.entity_id
     where
-        e.type = 'organization';
+        e.type = 'organization'
+        and g.amount >= 1000000
+    group by e.id, g.id;
 
 create index assoc_spending_grants_entity_id on assoc_spending_grants (entity_id);
 create index assoc_spending_grants_transaction_id on assoc_spending_grants (transaction_id);
@@ -48,21 +56,23 @@ drop table if exists assoc_spending_contracts;
 
 create table assoc_spending_contracts as
     select e.id as entity_id, c.id as transaction_id
-    from contracts_contract c
-    inner join matchbox_entity e
-        on to_tsvector('datacommons', c.vendorname) @@ plainto_tsquery('datacommons', e.name)
+    from contracts_record c
+    inner join matchbox_entityalias a on
+        standardize_orgname(c.recipient_name) = standardize_orgname(a.alias)
+    inner join matchbox_entity e on e.id = a.entity_id
     where
-        e.type = 'organization';
-
+        e.type = 'organization'
+        and c.amount >= 1000000
+    group by e.id, c.id;
+    
 create index assoc_spending_contracts_entity_id on assoc_spending_contracts (entity_id);
 create index assoc_spending_contracts_transaction_id on assoc_spending_contracts (transaction_id);
 
 
 -- Spending Totals
 
-drop table if exists agg_spending_totals;
 
-create table agg_spending_totals as
+create table tmp_agg_spending_totals as
     with totals_by_cycle as (
         select recipient_entity, cycle,
                 coalesce(grants.count, 0) as grant_count, 
@@ -105,14 +115,16 @@ create table agg_spending_totals as
     from totals_by_cycle
     group by recipient_entity;
 
-create index agg_spending_totals_idx on agg_spending_totals (recipient_entity);
 
+drop table if exists agg_spending_totals;
+alter table tmp_agg_spending_totals rename to agg_spending_totals;
+
+create index agg_spending_totals_idx on agg_spending_totals (recipient_entity);
 
 -- Top Grants & Contracts
 
-drop table if exists agg_spending_org;
 
-create table agg_spending_org as
+create table tmp_agg_spending_org as
     with spending_to_org as (
         select entity_id as recipient_entity, recipient_name, spending_type,
                 cycle, fiscal_year, agency_name, description, amount
@@ -137,5 +149,9 @@ create table agg_spending_org as
     from (select *, rank() over (partition by recipient_entity order by amount desc) as rank from spending_to_org) x
     where rank <= :agg_top_n;
 
+drop table if exists agg_spending_org;
+alter table tmp_agg_spending_org rename to agg_spending_org;
+
 create index agg_spending_org_idx on agg_spending_org (recipient_entity, cycle);
+
 
