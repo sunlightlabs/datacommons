@@ -23,18 +23,21 @@ insert into tmp_matchbox_organizationmetadata (entity_id, lobbying_firm, parent_
             entity_id
     ) lobbying_orgs
     full outer join (
-        select
+        select distinct on (oa.entity_id)
             oa.entity_id,
-            max(p.entity_id::text) as parent_entity_id,
-            max(ia.entity_id::text) as industry_entity_id
+            max(p.entity_id::text)::uuid as parent_entity_id,
+            ia.entity_id as industry_entity_id
         from
             organization_associations oa
-            left join parent_organization_associations p using (transaction_id)
-            left join industry_associations ia using (transaction_id)
+            left join parent_organization_associations p on oa.transaction_id = p.transaction_id and oa.entity_id != p.entity_id
+            left join industry_associations ia on oa.transaction_id = ia.transaction_id
+            left join matchbox_entityattribute ea on ea.entity_id = ia.entity_id
+        where
+            ea.namespace is null or ea.namespace in ('urn:crp:industry', 'urn:nimsp:industry')
         group by
-            oa.entity_id
-        having
-            max(p.entity_id::text) is null or oa.entity_id::text != max(p.entity_id::text)
+            oa.entity_id, ia.entity_id
+        order by
+            oa.entity_id, count(distinct ia.transaction_id) desc
     ) contributing_orgs using (entity_id)
     group by entity_id;
 
@@ -48,6 +51,8 @@ commit;
 begin;
 analyze matchbox_organizationmetadata;
 commit;
+
+
 -- Politician Metadata
 
 begin;
@@ -56,7 +61,7 @@ create temp table tmp_matchbox_politicianmetadata as select * from matchbox_poli
 insert into tmp_matchbox_politicianmetadata (entity_id, cycle, state, state_held, district, district_held, party, seat, seat_held, seat_status, seat_result)
     select
         entity_id,
-        cycle,
+        cycle + cycle % 2 as cycle,
         max(recipient_state) as state,
         max(recipient_state_held) as state_held,
         max(district) as district,
@@ -71,7 +76,7 @@ insert into tmp_matchbox_politicianmetadata (entity_id, cycle, state, state_held
     inner join matchbox_entity e on e.id = ra.entity_id
     where
         e.type = 'politician'
-    group by entity_id, cycle
+    group by entity_id, cycle + cycle % 2
 ;
 
 delete from  matchbox_politicianmetadata;
@@ -109,3 +114,32 @@ begin;
 analyze matchbox_indivorgaffiliations;
 commit;
 
+
+-- Revolving Door Associations
+
+begin;
+create temp table tmp_matchbox_revolvingdoor as select * from matchbox_revolvingdoor limit 0;
+
+insert into tmp_matchbox_revolvingdoor (politician_entity_id, lobbyist_entity_id)
+    select distinct
+        eap.entity_id as politician_entity_id,
+        eal.entity_id as lobbyist_entity_id
+    from
+        lobbying_lobbyist l
+        inner join matchbox_entityattribute eap
+            on eap.value = l.candidate_ext_id
+        inner join matchbox_entityattribute eal
+            on eal.value = l.lobbyist_ext_id
+    where
+        eap.namespace = 'urn:crp:recipient' and eal.namespace = 'urn:crp:individual'
+;
+
+delete from matchbox_revolvingdoor;
+
+insert into matchbox_revolvingdoor (politician_entity_id, lobbyist_entity_id)
+    select politician_entity_id, lobbyist_entity_id from tmp_matchbox_revolvingdoor;
+commit;
+
+begin;
+analyze matchbox_revolvingdoor;
+commit;

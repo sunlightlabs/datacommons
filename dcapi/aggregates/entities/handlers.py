@@ -1,6 +1,5 @@
-from dcapi.aggregates.handlers import execute_top, TopListHandler
-from dcentity.models import Entity, EntityAttribute, OrganizationMetadata, PoliticianMetadata, BioguideInfo
-from django.forms.models import model_to_dict
+from dcapi.aggregates.handlers import execute_top
+from dcentity.models import Entity, EntityAttribute, BioguideInfo
 from piston.handler import BaseHandler
 from piston.utils import rc
 from urllib import unquote_plus
@@ -25,7 +24,9 @@ get_totals_stmt = """
             coalesce(contract_amount,    0)::float,
             coalesce(loan_amount,        0)::float,
             coalesce(e.count,            0)::integer,
-            coalesce(e.amount,           0)::float
+            coalesce(e.amount,           0)::float,
+            coalesce(cm.count,           0)::integer,
+            coalesce(epa.count,          0)::integer
      from
          (select *
          from agg_entities
@@ -45,11 +46,21 @@ get_totals_stmt = """
          from agg_earmark_totals
          where entity_id = %s) e
     using (cycle)
+    full outer join (
+        select cycle, count
+        from agg_pogo_totals
+        where entity_id = %s
+    ) cm using (cycle)
+    full outer join (
+        select cycle, count
+        from agg_epa_echo_totals
+        where entity_id = %s
+    ) epa using (cycle)
 """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id):
+    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -57,7 +68,7 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount', 'earmark_count', 'earmark_amount']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount', 'earmark_count', 'earmark_amount', 'contractor_misconduct_count', 'epa_actions_count']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):

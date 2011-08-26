@@ -1,18 +1,29 @@
 
-from dcapi.aggregates.contributions.handlers import *
+from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
+    PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
+    SectorsHandler, IndustriesHandler, UnknownIndustriesHandler, \
+    TopIndustriesLifetimeHandler, PolLocalBreakdownHandler, \
+    PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
+    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
+    SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
+    TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
+    TopIndustriesByContributionsHandler, IndustryOrgHandler, \
+    ContributionAmountHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
     RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
     RegistrantLobbyistsHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
+from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
+    LocalEarmarksHandler
+from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
+from dcapi.aggregates.epa.handlers import TopViolationActionsHandler
+
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
-from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
-    LocalEarmarksHandler
-
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need.
 Emitter.unregister('django')
@@ -50,6 +61,10 @@ urlpatterns = patterns('',
     # contributions to a single politician, broken down by industry
     url(r'^pol/(?P<entity_id>[a-f0-9-]{32,36})/contributors/industries_lifetime\.(?P<emitter_format>.+)$',
         Resource(TopIndustriesLifetimeHandler, **ad)),
+
+    # contributions to a single politician from unknown industries
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/industries_unknown\.(?P<emitter_format>.+)$',
+        Resource(UnknownIndustriesHandler, **ad)),
 
     # contributions to a single politician, broken down to show percentages
     url(r'^pol/(?P<entity_id>[a-f0-9]+)/contributors/local_breakdown\.(?P<emitter_format>.+)$',
@@ -115,6 +130,12 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]+)/earmarks\.(?P<emitter_format>.+)$',
         Resource(TopEarmarksHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/contractor_misconduct\.(?P<emitter_format>.+)$',
+        Resource(TopContractorMisconductHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/epa_enforcement_actions\.(?P<emitter_format>.+)$',
+        Resource(TopViolationActionsHandler, **ad)),
 
     # issues an org hired people to lobby on
     url(r'^org/(?P<entity_id>[a-f0-9]+)/issues\.(?P<emitter_format>.+)',

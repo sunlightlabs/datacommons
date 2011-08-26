@@ -16,9 +16,8 @@ CONTRACTS_SCHEMA = Schema(
     InclusionField('vendor_duns', 'dunsnumber'),
     InclusionField('vendor_parent_duns', 'eeparentduns'),
 
-    FulltextField('agency_name'),
-    FulltextField('contracting_agency_name'),
-    FulltextField('requesting_agency_name'),
+    # agency names have no data. see ticket #835
+    #FulltextField('agency_name', ['agency_name', 'contracting_agency_name', 'requesting_agency_name']),
     FulltextField('vendor_name', ['vendorname']),
     FulltextField('vendor_city', ['city']),
 
@@ -33,7 +32,16 @@ def filter_contracts(request):
 
 
 class ContractsFilterHandler(FilterHandler):
-    model = Contract
+
+    # imported_on is marked as an auto-generated field/non-editable,
+    # so was getting dropped by Django's model_to_dict serialization,
+    # but still required by the list of fields,
+    # so we pass the list of fields we want directly instead
+
+    fields = Contract._meta.get_all_field_names()
+    fields.remove('imported_on')
+
+
     ordering = ['-fiscal_year','-baseandexercisedoptionsvalue']
     filename = 'contracts'
         

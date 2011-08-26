@@ -4,6 +4,7 @@ from django.utils import simplejson
 from django.db.models import Model
 from django.db import connections
 from piston.emitters import Emitter
+from django.forms.models import model_to_dict
 from piston.utils import HttpStatusCode
 from dcapi.models import Invocation
 from dcapi.validate_jsonp import is_valid_jsonp_callback_value
@@ -34,21 +35,22 @@ class StatsLogger(object):
 
 
 class StreamingLoggingEmitter(Emitter):
-    
+
     def construct_record(self, record):
         """ Serialize just one record of the data into a dict.
-        
+
         This is a workaround because the superclass method will only
         serialize the self.data parameter.
         """
-        
+
         old_data = self.data
         try:
             self.data = record
             return self.construct()
         finally:
             self.data = old_data
-            
+
+
     def stream(self, request, stats):
         raise NotImplementedError('please implement this method')
     
@@ -133,6 +135,9 @@ class ExcelEmitter(StreamingLoggingEmitter):
         self.mdyhm_style = XFStyle()
         self.mdyhm_style.num_format_str = 'MM/DD/YYYY h:mm'
 
+    def construct_record(self, record):
+        return record if isinstance(record, dict) else model_to_dict(record)
+
     def write_row(self, ws, row, values):
         col = 0
         for value in values:
@@ -147,32 +152,33 @@ class ExcelEmitter(StreamingLoggingEmitter):
     def stream(self, request, stats):
 
         output = cStringIO.StringIO()
-        
+
         if self.handler.model:
 
             sheet_name = self.handler.model._meta.object_name.lower()
         else:
             sheet_name = 'Sheet1'
-        
+
         wb = xlwt.Workbook()
         ws = wb.add_sheet(sheet_name)
-                
+
         self.write_row(ws, 0, self.fields)
-        
+
         row = 0
         for record in self.data:
             row += 1
-            
+
             record_as_dict = self.construct_record(record)
+
             values = [record_as_dict[f] for f in self.fields]
             self.write_row(ws, row, values)
             stats.log(record)
-        
+
         stats.stats['total'] = row
-        
+
         wb.save(output)
         xls = output.getvalue()
         output.close()
-        
+
         yield xls
 

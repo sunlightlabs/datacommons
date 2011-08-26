@@ -11,25 +11,47 @@ create table agg_cycles as
     -- values (2005), (2006), (2007), (2008), (2009), (2010);
     select distinct cycle from contribution_contribution;
 
+drop table if exists agg_suppressed_catcodes;
+create table agg_suppressed_catcodes as values
+    ('Z0000'), ('Z1000'), ('Z1100'), ('Z1200'), ('Z1300'), ('Z1400'),
+    ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'),
+    ('Z4100'), ('Z4200'), ('Z4300'),
+    ('Z5000'), ('Z5100'), ('Z5200'), ('Z5300'),
+    ('Z7777'), 
+    ('Z8888'),
+    ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9800'), ('Z9999');
+
+
+-- this table was created by hand reviewing all orgnames that appear more than 200 times
+
+drop table if exists agg_suppressed_orgnames;
+create table agg_suppressed_orgnames as values
+    ('retired'), ('homemaker'), ('attorney'), ('[24i contribution]'), ('self-employed'), ('physician'),
+    ('self'), ('information requested'), ('self employed'), ('[24t contribution]'), ('consultant'), ('investor'),
+    ('[candidate contribution]'), ('n/a'), ('farmer'), ('real estate'), ('none'), ('writer'),
+    ('dentist'), ('info requested'), ('business owner'), ('accountant'), ('artist'), ('rancher'),
+    ('student'), ('realtor'), ('investments'), ('real estate developer'), ('unemployed'), ('requested'),
+    ('owner'), ('developer'), ('businessman'), ('contractor'), ('president'), ('engineer'),
+    ('n'), ('psychologist'), ('real estate broker'), ('executive'), ('private investor'), ('architect'),
+    ('sales'), ('real estate investor'), ('selfemployed'), ('philanthropist'), ('not employed'), ('author'),
+    ('builder'), ('insurance agent'), ('volunteer'), ('construction'), ('insurance'), ('entrepreneur'),
+    ('lobbyist'), ('ceo'), ('n.a'), ('actor'), ('photographer'), ('musician'),
+    ('interior designer'), ('restaurant owner'), ('teacher'), ('designer'), ('surgeon'), ('social worker'),
+    ('veterinarian'), ('psychiatrist'), ('chiropractor'), ('auto dealer'), ('small business owner'), ('optometrist'),
+    ('producer'), ('business'), ('.information requested'), ('financial advisor'), ('pharmacist'), ('psychotherapist'),
+    ('manager'), ('management consultant'), ('general contractor'), ('finance'), ('orthodontist'), ('actress'),
+    ('n.a.'), ('restauranteur'), ('property management'), ('home builder'), ('oil & gas'), ('real estate investments'),
+    ('geologist'), ('professor'), ('farming'), ('real estate agent'), ('na'), ('financial planner'),
+    ('community volunteer'), ('property manager'), ('political consultant'), ('public relations'), ('business consultant'), ('publisher'),
+    ('insurance broker'), ('educator'), ('nurse'), ('orthopedic surgeon'), ('editor'), ('marketing'),
+    ('dairy farmer'), ('investment advisor'), ('freelance writer'), ('investment banker'), ('trader'), ('computer consultant'),
+    ('banker'), ('oral surgeon'), ('business executive'), ('unknown'), ('civic volunteer'), ('filmmaker'),
+    ('economist'), ('');
+
 
 -- Top N: the number of rows to generate for each aggregate
 
 \set agg_top_n 10
-
-
--- CatCodes that should not be included in totals.
--- Taken from the NIMSP column CatCodes.TopSuppress.
-
-
-select date_trunc('second', now()) || ' -- drop table if exists agg_suppressed_catcodes';
-drop table if exists agg_suppressed_catcodes;
-
-select date_trunc('second', now()) || ' -- create table agg_suppressed_catcodes';
-create table agg_suppressed_catcodes as
-    values ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'), ('Z7777'), ('Z8888'),
-        ('Z9010'), ('Z9020'), ('Z9030'), ('Z9040'),
-        ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9999');
-
 
 
 -- Adjust the odd-year cycles upward
@@ -81,7 +103,6 @@ create table contributions_individual_to_organization as
     where
         (c.contributor_type is null or c.contributor_type in ('', 'I'))
         and c.recipient_type = 'C'
-        and substring(c.recipient_category for 2) != 'Z4'
         and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
         and cycle in (select * from agg_cycles);
@@ -292,6 +313,24 @@ select date_trunc('second', now()) || ' -- create index parent_organization_asso
 create index parent_organization_associations_entity_id on parent_organization_associations (entity_id);
 select date_trunc('second', now()) || ' -- create index parent_organization_associations_transaction_id on parent_organization_associations (transaction_id)';
 create index parent_organization_associations_transaction_id on parent_organization_associations (transaction_id);
+
+
+-- "Biggest" Organiztion Associations
+-- preferences parent org when present, otherwise org
+
+select date_trunc('second', now()) || ' -- drop table if exists biggest_organization_associations';
+drop table if exists biggest_organization_associations;
+
+select date_trunc('second', now()) || ' -- create table biggest_organization_associations';
+create table biggest_organization_associations as
+    select coalesce(pa.entity_id, oa.entity_id), transaction_id
+    from organization_associations oa
+    full outer join parent_organization_associations pa using (transaction_id);
+
+select date_trunc('second', now()) || ' -- create index biggest_organization_associations_entity_id on biggest_organization_associations (entity_id)';
+create index biggest_organization_associations_entity_id on biggest_organization_associations (entity_id);
+select date_trunc('second', now()) || ' -- create index biggest_organization_associations_transaction_id on biggest_organization_associations (transaction_id)';
+create index biggest_organization_associations_transaction_id on biggest_organization_associations (transaction_id);
 
 
 -- Industry Associations
@@ -574,6 +613,11 @@ create table agg_industries_to_cand as
         inner join recipient_associations ra using (transaction_id)
         left join industry_associations ia using (transaction_id)
         left join matchbox_entity me on me.id = ia.entity_id
+        left join matchbox_entityattribute ma on ma.entity_id = ia.entity_id
+        where
+            -- exclude subindustries
+            coalesce(ma.namespace, 'urn:crp:industry') = 'urn:crp:industry'
+            and substring(c.contributor_category for 1) not in ('', 'Y', 'Z')
         group by ra.entity_id, ia.entity_id, coalesce(me.name, 'UNKNOWN'), c.cycle
     )
 
@@ -594,6 +638,38 @@ create table agg_industries_to_cand as
 
 select date_trunc('second', now()) || ' -- create index agg_industries_to_cand_idx on agg_industries_to_cand (recipient_entity, cycle)';
 create index agg_industries_to_cand_idx on agg_industries_to_cand (recipient_entity, cycle);
+
+
+-- Unknown Industry Portion
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_unknown_industries_to_cand';
+drop table if exists agg_unknown_industries_to_cand;
+
+select date_trunc('second', now()) || ' -- create table agg_unknown_industries_to_cand';
+create table agg_unknown_industries_to_cand as
+    with unknown_by_cycle as (
+        select
+            ra.entity_id as recipient_entity,
+            c.cycle,
+            count(*),
+            sum(amount) as amount
+        from (table contributions_individual union table contributions_organization) c
+        inner join recipient_associations ra using (transaction_id)
+        where
+            substring(c.contributor_category for 1) in ('', 'Y', 'Z')
+        group by ra.entity_id, c.cycle
+    )
+
+    table unknown_by_cycle
+    
+    union all
+    
+    select recipient_entity, -1 as cycle, sum(count) as count, sum(amount) as amount
+    from unknown_by_cycle
+    group by recipient_entity;
+
+select date_trunc('second', now()) || ' -- create index agg_unknown_industries_to_cand_idx on agg_unknown_industries_to_cand (recipient_entity, cycle);';
+create index agg_unknown_industries_to_cand_idx on agg_unknown_industries_to_cand (recipient_entity, cycle);
 
 
 -- Candidates from Individual
@@ -673,9 +749,7 @@ select date_trunc('second', now()) || ' -- create index agg_orgs_from_indiv_idx 
 create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
 
 
-
 -- Organizations to Candidate
-
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_orgs_to_cand';
 drop table if exists agg_orgs_to_cand;
@@ -697,8 +771,10 @@ create table agg_orgs_to_cand as
                     ca.entity_id as organization_entity, cycle, count(*), sum(c.amount) as amount
                 from contributions_organization c
                 inner join recipient_associations ra using (transaction_id)
-                left join contributor_associations ca using (transaction_id)
+                left join biggest_organization_associations ca using (transaction_id)
                 left join matchbox_entity oe on oe.id = ca.entity_id
+                where
+                    lower(organization_name) not in (select * from agg_suppressed_orgnames)    
                 group by ra.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, cycle
             ) top_pacs
             full outer join (
@@ -706,10 +782,22 @@ create table agg_orgs_to_cand as
                     oa.entity_id as organization_entity, cycle, count(*) as count, sum(amount) as amount
                 from contributions_individual c
                 inner join recipient_associations ra using (transaction_id)
-                left join organization_associations oa using (transaction_id)
+                left join biggest_organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
-                where organization_name != ''
+                where 
+                    lower(organization_name) not in (select * from agg_suppressed_orgnames)
+                    and substring(contributor_category for 3) != 'Z90'
                 group by ra.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, cycle
+                
+                union all
+                
+                select ra.entity_id as recipient_entity, contributor_name as organization_name,
+                    null as organization_entity, cycle, count(*) as count, sum(amount) as amount
+                from contributions_individual c
+                inner join recipient_associations ra using (transaction_id)
+                where
+                    substring(contributor_category for 3) = 'Z90'
+                group by ra.entity_id, contributor_name, cycle
             ) top_indivs
             using (recipient_entity, organization_name, organization_entity, cycle)
     )

@@ -73,6 +73,21 @@ class EntityTopListHandler(BaseHandler):
         return check_empty(labeled_result, kwargs['entity_id'])
 
 
+class EntitySingletonHandler(BaseHandler):
+
+    args = ['entity_id', 'cycle']
+    fields = None
+    stmt = None
+
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
+
+        raw_result = execute_one(self.stmt, *[kwargs[param] for param in self.args])
+        labeled_result = dict(zip(self.fields, raw_result))
+
+        return check_empty(labeled_result, kwargs['entity_id'])
+
+
 class PieHandler(BaseHandler):
 
     args = ['entity_id', 'cycle']

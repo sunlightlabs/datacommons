@@ -123,6 +123,13 @@ var TD = {
         currencyFormat: function(s) {
             return $.currency(parseFloat(s));
         },
+        currencyFormatNonZero: function(s, substitute_dash) {
+            if (parseFloat(s) > 0 || parseFloat(s) < 0) {
+                return '$' + $.currency(parseFloat(s));
+            } else {
+                return substitute_dash ? '-' : '0';
+            }
+        },
         toQueryString: function(obj) {
             var qs = ''
             for (attr in obj) {
@@ -629,7 +636,11 @@ TD.DataFilter.prototype.preview = function() {
                     $('span#previewCount').html(data.length);
                     $('div#nodata').hide();
                     $('div#tableScroll').show();
-                }    
+                    $('td.expandable p').expander({
+                        expandText: '[more]',
+                        userCollapseText: '[less]'
+                    });
+                }
                 $('div#loading').hide();
                 if (data.length < 30) {
                     that.downloadNode.addClass('enabled');

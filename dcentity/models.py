@@ -46,6 +46,9 @@ class Entity(models.Model):
     possible_sources = 'sunlight_info wikipedia_info bioguide_info'.split()
 
     def public_representation(self):
+        """
+            Returns a dict of the attributes we want to show in API results
+        """
         return { 'name': self.name, 'id': self.id, 'type': self.type }
 
     def sourced_metadata_in_order(self):
@@ -99,6 +102,9 @@ class Entity(models.Model):
                 metadata['party'] = ''
                 metadata['state'] = ''
 
+            if hasattr(self, 'lobbying_activity'):
+                metadata['revolving_door_entity'] = self.lobbying_activity.lobbyist_entity.public_representation()
+
         elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
             metadata.update(self.organization_metadata.to_dict())
 
@@ -107,6 +113,8 @@ class Entity(models.Model):
             # just like the other entity types, but since it would essentially be a
             # dummy table and we only have one attribute (on its own table), leaving it out for now
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
+            if hasattr(self, 'political_activity'):
+                metadata['revolving_door_entity'] = self.political_activity.politician_entity.public_representation()
 
         elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
             metadata.update(self.industry_metadata.to_dict())
@@ -268,6 +276,15 @@ class IndivOrgAffiliations(models.Model):
 
     class Meta:
         db_table = 'matchbox_indivorgaffiliations'
+
+
+class RevolvingDoor(models.Model):
+    politician_entity = models.OneToOneField(Entity, null=False, related_name='lobbying_activity')
+    lobbyist_entity = models.OneToOneField(Entity, null=False, related_name='political_activity')
+
+    class Meta:
+        db_table = 'matchbox_revolvingdoor'
+
 
 class VotesmartInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='votesmart_info', null=False)

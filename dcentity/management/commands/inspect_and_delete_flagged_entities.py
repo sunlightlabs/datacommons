@@ -1,10 +1,8 @@
 import logging
 
 from django.db                   import connections, transaction
-from dcentity.entity             import build_entity
 from dcentity.models             import Entity
 from django.core.management.base import BaseCommand
-from dcdata.contribution.models  import CRP_TRANSACTION_NAMESPACE, NIMSP_TRANSACTION_NAMESPACE
 from datetime                    import datetime
 
 
@@ -36,51 +34,39 @@ class Command(BaseCommand):
 
         self.log.info("Starting...")
 
-        should_delete_indiv = self.inspect_individuals_for_deletion()
-        should_delete_pols  = self.inspect_politicians_for_deletion()
+        should_delete_indiv = self.inspect_entities_for_deletion('individual')
+        should_delete_pols  = self.inspect_entities_for_deletion('politician')
+        should_delete_orgs  = self.inspect_entities_for_deletion('organization')
 
-        self.delete_individuals(should_delete_indiv)
-        self.delete_politicians(should_delete_pols)
+        self.delete_entities('individual', should_delete_indiv)
+        self.delete_entities('politician', should_delete_pols)
+        self.delete_entities('organization', should_delete_orgs)
 
         self.log.info("Finished.")
 
 
-    def inspect_individuals_for_deletion(self):
-        candidates = Entity.objects.filter(type='individual', should_delete=True).select_related().all()
-
-        return self.inspect_and_prompt(candidates, 'individuals')
-
-
-    def inspect_politicians_for_deletion(self):
-        candidates = Entity.objects.filter(type='politician', should_delete=True).select_related().all()
-
-        return self.inspect_and_prompt(candidates, 'politicians')
+    def inspect_entities_for_deletion(self, entity_type):
+        candidates = Entity.objects.filter(type=entity_type, should_delete=True).select_related().all()
+        return self.inspect_and_prompt(candidates, entity_type)
 
 
-    def delete_individuals(self, should_delete=False):
+    def delete_entities(self, entity_type, should_delete=False):
         if not should_delete:
             return
 
-        self.log.info("Deleting individuals...")
-        Entity.objects.filter(type='individual', should_delete=True).delete()
+        self.log.info("Deleting {0}s...".format(entity_type))
+        Entity.objects.filter(type=entity_type, should_delete=True).delete()
 
-
-    def delete_politicians(self, should_delete=False):
-        if not should_delete:
-            return
-
-        self.log.info("Deleting politicians...")
-        Entity.objects.filter(type='politician', should_delete=True).delete()
 
     def inspect_and_prompt(self, candidates, type):
         if len(candidates) > 0:
             for entity in candidates:
                 self.print_formatted_entity(entity)
         else:
-            self.log.info('No {0} were flagged for deletion.'.format(type))
+            self.log.info('No {0}s were flagged for deletion.'.format(type))
             return False
 
-        choice = raw_input("Do you wish to proceed with deleting these {0}? (Y/[N]): ".format(type))
+        choice = raw_input("Do you wish to proceed with deleting these {0}s? (Y/[N]): ".format(type))
         choice = choice.strip()
 
         return choice.lower() == 'y'
@@ -88,5 +74,5 @@ class Command(BaseCommand):
 
     def print_formatted_entity(self, entity):
         attributes_str = '|'.join([ '::'.join([x.namespace, x.value]) for x in entity.attributes.all() ])
-        self.log.info('{0} ({1}): {2}'.format(entity.name, entity.id, attributes_str))
+        self.log.info('{0} ({1}): {2}'.format(entity.name.encode("utf8", "replace"), entity.id, attributes_str))
 
