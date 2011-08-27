@@ -323,7 +323,7 @@ drop table if exists biggest_organization_associations;
 
 select date_trunc('second', now()) || ' -- create table biggest_organization_associations';
 create table biggest_organization_associations as
-    select coalesce(pa.entity_id, oa.entity_id), transaction_id
+    select coalesce(pa.entity_id, oa.entity_id) as entity_id, transaction_id
     from organization_associations oa
     full outer join parent_organization_associations pa using (transaction_id);
 
@@ -829,7 +829,6 @@ create table agg_orgs_to_cand as
 
 select date_trunc('second', now()) || ' -- create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle)';
 create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle);
-
 
 
 -- Candidates from Organization
