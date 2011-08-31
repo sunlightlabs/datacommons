@@ -8,7 +8,7 @@ from optparse import make_option
 from boto.mturk.question import QuestionForm
 from boto.mturk.connection import MTurkConnection
 from boto.mturk.qualification import Qualifications, PercentAssignmentsApprovedRequirement
-import datetime, sys
+import datetime, sys, re
 from django.conf import settings
 
 question_template = Template("""<?xml version="1.0" encoding="UTF-8"?>
@@ -101,6 +101,8 @@ substitutions = {
     'I': 'Independent'
 }
 
+ampersand_fix = re.compile(r'&([\w.,]*\s)')
+
 def get_hit_xml(id):
     entity = Entity.objects.get(id=id)
     
@@ -111,6 +113,8 @@ def get_hit_xml(id):
     for key in ['seat', 'seat_held', 'party']:
         if key in metadata and metadata[key] in substitutions:
             metadata[key] = substitutions[metadata[key]]
+    
+    metadata['bio'] = ampersand_fix.sub(lambda m: '&amp;%s' % m.group(1), metadata['bio'])
     
     context = Context({'standard_name': standard_name, 'entity': entity, 'metadata': metadata})
     
@@ -135,7 +139,7 @@ class Command(BaseCommand):
         make_option('-n', '--number',
             action='store',
             dest='count',
-            default=1000,
+            default=100000,
             help='Number of tasks to create.'),
         make_option('-d', '--delete',
             action='store_true',
@@ -146,7 +150,22 @@ class Command(BaseCommand):
             action='store_true',
             dest='sandbox',
             default=False,
-            help='Use the sandbox server instead of the production one.')
+            help='Use the sandbox server instead of the production one.'),
+        make_option('-p', '--practice',
+            action='store_true',
+            dest='practice',
+            default=False,
+            help='Print matched IDs to the screen instead of submitting anything.'),
+        make_option('-x', '--exclude',
+            action='store',
+            dest='exclude',
+            default=None,
+            help='CSV file containing a td_id column of already completed IDs not to submit on this batch.'),
+        make_option('-t', '--type',
+            action='store',
+            dest='type',
+            default=None,
+            help='Restrict submissions to a single type.')
     )
     
     def handle(self, *args, **options):
@@ -162,14 +181,29 @@ class Command(BaseCommand):
             for hit in mturk.get_all_hits():
                 mturk.disable_hit(hit.HITId)
         
+        if options['exclude']:
+            exclude_reader = csv.DictReader(open(options['exclude'], 'r'))
+            exclude = set()
+            for row in exclude_reader:
+                exclude.add(row['td_id'])
+        
         # iterate over items and create them one by one
         cursor = connection.cursor()
-        cursor.execute("""
-        select entity_id from matchbox_wikipediainfo where entity_id not in (select entity_id from matchbox_sunlightinfo) and bio != '' and bio is not null order by entity_id limit %s;
-        """,
+        cursor.execute(
+            """
+            select entity_id, type from matchbox_wikipediainfo, matchbox_entity where entity_id not in (select entity_id from matchbox_sunlightinfo where bio is not null) and bio != '' and bio is not null and entity_id = matchbox_entity.id %s order by entity_id limit %s;
+            """ % ("and type = '%s'" % options['type'] if options['type'] else '', '%s'), # hack to put the interpolation string back in for PG to catch it
         [options['count']])
         
         for row in cursor:
+            if options['exclude']:
+                if str(row[0]).replace('-', '') in exclude:
+                    continue
+            
+            if options['practice']:
+                print row[0]
+                continue
+            
             try:
                 hit = mturk.create_hit(
                     question = FakeQuestionForm(get_hit_xml(row[0])),
@@ -178,10 +212,10 @@ class Command(BaseCommand):
                     
                     title = "Wikipedia match validation",
                     description = "We have matched a set of entities in a database to descriptions pulled from Wikipedia via an automated process. Confirm that the match is correct.",
-                    reward = 0.08,
+                    reward = 0.07,
                     duration = datetime.timedelta(days=7),
-                    keywords = ['movie', 'survey'],
-                    approval_delay = datetime.timedelta(days=5),
+                    keywords = ['wikipedia', 'matching'],
+                    approval_delay = datetime.timedelta(days=3),
                     qualifications = Qualifications([PercentAssignmentsApprovedRequirement("GreaterThan", 90)])
                 )
                 print hit[0].HITId
