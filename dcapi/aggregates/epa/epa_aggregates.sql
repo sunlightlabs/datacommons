@@ -90,7 +90,7 @@ create table agg_epa_echo_totals as
         inner join assoc_epa_echo_org o using (case_num)
         group by entity_id, cycle
     )
-    
+
     select entity_id, cycle, count, amount
     from cases_by_cycle
 

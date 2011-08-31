@@ -1,5 +1,5 @@
 
-from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
+from dcapi.aggregates.handlers import EntityTopListHandler, EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
 from django.core.cache import cache
 from piston.handler import BaseHandler
 
@@ -140,6 +140,18 @@ class IndustriesHandler(EntityTopListHandler):
             and cycle = %s
         order by amount desc
         limit %s
+    """
+
+class UnknownIndustriesHandler(EntitySingletonHandler):
+
+    fields = 'count amount'.split()
+
+    stmt = """
+        select count, amount
+        from agg_unknown_industries_to_cand
+        where
+            recipient_entity = %s
+            and cycle = %s
     """
 
 
