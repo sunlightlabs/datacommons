@@ -82,10 +82,14 @@ class EntitySingletonHandler(BaseHandler):
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
 
-        raw_result = execute_one(self.stmt, *[kwargs[param] for param in self.args])
-        labeled_result = dict(zip(self.fields, raw_result))
+        result = execute_one(self.stmt, *[kwargs[param] for param in self.args])
 
-        return check_empty(labeled_result, kwargs['entity_id'])
+        if result:
+            result = dict(zip(self.fields, result))
+        else:
+            return {}
+
+        return check_empty(result, kwargs['entity_id'])
 
 
 class PieHandler(BaseHandler):
