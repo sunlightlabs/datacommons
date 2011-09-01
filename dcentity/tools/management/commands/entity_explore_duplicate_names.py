@@ -83,20 +83,32 @@ Results are presented in one of two ways:
         # Add person name classes
         rows = [(e, PersonName(fix_name(a or "")), s or "", p or "", o or "") for e,a,s,p,o in rows]
         by_last_name = defaultdict(list)
+
+        # group all entities by last name
         for row in rows:
             by_last_name[row[1].last].append(row)
+
         #count = 0
         #grand_total = len(rows)
         totals = defaultdict(int)
         groups = defaultdict(list)
+
         for last_name, entities in by_last_name.iteritems():
             #print count, grand_total, last_name, len(entities)
             #count += len(entities)
-            for eid1, name1, state1, party1, office1 in entities:
-                for eid2, name2, state2, party2, office2 in entities:
-                    # skip if we are the same, or if even maximal fuzziness fails
-                    if eid1 == eid2 or not name1.matches(name2):
+
+            # for each last name, split enities into a groups of state and federal politicians
+            # this will make all the "left sides" of the matches federal and all the right sides state
+            fed_entities =  [ entity for entity in entities if entity[4].startswith('federal') ]
+            state_entities =  [ entity for entity in entities if entity[4].startswith('state') ]
+
+            for eid1, name1, state1, party1, office1 in fed_entities:
+
+                for eid2, name2, state2, party2, office2 in state_entities:
+                    # skip if maximal fuzziness fails
+                    if not name1.matches(name2):
                         continue
+
                     state_checks = {
                         'same state': state1 == state2,
                         'diff state': state1 != state2,
