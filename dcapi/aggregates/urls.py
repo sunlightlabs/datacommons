@@ -18,6 +18,9 @@ from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
 from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
 from dcapi.aggregates.epa.handlers import TopViolationActionsHandler
+from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
+    RegulationsSubmitterHandler, RegulationsDocketTextHandler, \
+    RegulationsDocketSubmitterHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -124,6 +127,18 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]+)/contractor_misconduct\.(?P<emitter_format>.+)$',
         Resource(TopContractorMisconductHandler, **ad)),
+        
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_text\.(?P<emitter_format>.+)$',
+        Resource(RegulationsTextHandler, **ad)),
+    
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_text_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(RegulationsDocketTextHandler, **ad)),
+    
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_submitter\.(?P<emitter_format>.+)$',
+        Resource(RegulationsSubmitterHandler, **ad)),
+    
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/regulations_submitter_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(RegulationsDocketSubmitterHandler, **ad)),
 
     url(r'^org/(?P<entity_id>[a-f0-9]+)/epa_enforcement_actions\.(?P<emitter_format>.+)$',
         Resource(TopViolationActionsHandler, **ad)),
