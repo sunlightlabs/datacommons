@@ -778,26 +778,15 @@ create table agg_orgs_to_cand as
                 group by ra.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, cycle
             ) top_pacs
             full outer join (
-                select ra.entity_id as recipient_entity, coalesce(oe.name, c.organization_name) as organization_name,
+                select ra.entity_id as recipient_entity, coalesce(oe.name, case when organization_name != '' then c.organization_name else contributor_name end) as organization_name,
                     oa.entity_id as organization_entity, cycle, count(*) as count, sum(amount) as amount
                 from contributions_individual c
                 inner join recipient_associations ra using (transaction_id)
                 left join biggest_organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
                 where 
-                    lower(organization_name) not in (select * from agg_suppressed_orgnames)
-                    and substring(contributor_category for 3) != 'Z90'
-                group by ra.entity_id, coalesce(oe.name, c.organization_name), oa.entity_id, cycle
-                
-                union all
-                
-                select ra.entity_id as recipient_entity, contributor_name as organization_name,
-                    null as organization_entity, cycle, count(*) as count, sum(amount) as amount
-                from contributions_individual c
-                inner join recipient_associations ra using (transaction_id)
-                where
-                    substring(contributor_category for 3) = 'Z90'
-                group by ra.entity_id, contributor_name, cycle
+                    lower(case when organization_name != '' then c.organization_name else contributor_name end) not in (select * from agg_suppressed_orgnames)
+                group by ra.entity_id, coalesce(oe.name, case when organization_name != '' then c.organization_name else contributor_name end), oa.entity_id, cycle
             ) top_indivs
             using (recipient_entity, organization_name, organization_entity, cycle)
     )
