@@ -21,6 +21,7 @@ question_template = Template("""<?xml version="1.0" encoding="UTF-8"?>
     <Question>
         <QuestionIdentifier>is_match</QuestionIdentifier>
         <DisplayName>Do this metadata and this description describe the same entity?</DisplayName>
+        <IsRequired>true</IsRequired>
         <QuestionContent>
             <FormattedContent><![CDATA[
                 <h2>Metadata</h2>
@@ -212,8 +213,9 @@ class Command(BaseCommand):
                     
                     title = "Wikipedia match validation",
                     description = "We have matched a set of entities in a database to descriptions pulled from Wikipedia via an automated process. Confirm that the match is correct.",
-                    reward = 0.07,
-                    duration = datetime.timedelta(days=7),
+                    reward = 0.06,
+                    duration = datetime.timedelta(minutes=30),
+                    lifetime = datetime.timedelta(days=7),
                     keywords = ['wikipedia', 'matching'],
                     approval_delay = datetime.timedelta(days=3),
                     qualifications = Qualifications([PercentAssignmentsApprovedRequirement("GreaterThan", 90)])
