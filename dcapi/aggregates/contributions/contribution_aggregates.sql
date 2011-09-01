@@ -850,9 +850,10 @@ create table agg_cands_from_org as
             select oa.entity_id as organization_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
                 cycle, count(*), sum(amount) as amount
             from contributions_individual c
-            inner join (table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
+            inner join (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
             left join recipient_associations ra using (transaction_id)
             left join matchbox_entity re on re.id = ra.entity_id
+            -- todo: this table is now redundant with the agg_cands_from_indiv. Should refactor handler to use this table.
             group by oa.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
         ) top_indivs using (organization_entity, recipient_name, recipient_entity, cycle)
     )
@@ -923,7 +924,7 @@ create table agg_party_from_org as
    with contribs_by_cycle as (
         select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
         from contributions_all_relevant c
-        inner join (table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
+        inner join (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
         where recipient_party != ''
         group by oa.entity_id, c.cycle, c.recipient_party
     )
@@ -954,7 +955,7 @@ create table agg_namespace_from_org as
     with contribs_by_cycle as (
         select oa.entity_id as organization_entity, c.cycle, c.transaction_namespace, count(*), sum(amount) as amount
         from contributions_all_relevant c
-        inner join (table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
+        inner join (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
         group by oa.entity_id, c.cycle, c.transaction_namespace
     )
 
