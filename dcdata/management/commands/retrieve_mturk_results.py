@@ -18,12 +18,25 @@ class Command(BaseCommand):
             dest='sandbox',
             default=False,
             help='Use the sandbox server instead of the production one.'),
+        make_option('-F', '--filter',
+            action='store',
+            dest='filter',
+            default=None,
+            help='Specify one or more HIT properties to narrow the list of data you get back.')
     )
     
     def handle(self, *args, **options):
         # check args
         if len(args) != 1:
             raise CommandError("Please specify one argument.")
+        
+        # set up filters if there are any
+        filters = {}
+        if options['filter']:
+            filter_list = options['filter'].split(',')
+            for filter_item in filter_list:
+                items = filter_item.strip().split('=')
+                filters[items[0]] = items[1]
         
         # create a connection
         mturk = MTurkConnection(
@@ -36,6 +49,13 @@ class Command(BaseCommand):
         workers = set()
         
         for hit in mturk.get_all_hits():
+            # check filters
+            if filters:
+                if any ([getattr(hit, param, None) != filters[param] for param in filters.keys()]):
+                    print 'Skipping hit %s for failure to match filters' % hit.HITId
+                    continue
+                
+            
             row = {'td_id': hit.RequesterAnnotation, 'hit_id': hit.HITId}
             
             assignments = mturk.get_assignments(hit.HITId)
