@@ -153,7 +153,25 @@ insert into tmp_bios_to_delete values
 ('13d3a2c9796746d28b9c8de9b264572a'),
 ('13eafd84a3b94452b102f0e0fc97a09d'),
 ('154cdae1f14f459db383d226a9c54f54'),
-('0b2741f2e5274f4eb5f8428155ef61c5');
+('0b2741f2e5274f4eb5f8428155ef61c5'),
+('fcbd5e1d5bfd451db4ead5cd410087a8'),
+('413cac2e2eb14d779b54e8fd4c0e06b5'),
+('9c1373cdb0204496b01c5b935c625c87'),
+('41666b14f86d4b4ab903ae5ecd293d8d'),
+('fca26a17a4184862a33936f412730b70'),
+('5e8dcd22ac784f838c649086a73d44ae'),
+('3ad7fc5a1f8a4da5ad30c53e9bcb8bd7'),
+('7ca83bb81ab147548552b1fcb0385c9d'),
+('53c6736423f04f9095e61d437efdc8fe'),
+('62f6993b23da4cd694b8ba88f7c19158'),
+('af6eb851cc9d4a13937af7aba0ca96dc'),
+('245b3d83008d42858e68433b02c5bbf1'),
+('f1a227a178d746089b455e6ee10d999d'),
+('aae16061ed5e42e4863bcad4cb7131df'),
+('04a6b0cfbf234d28ba1e88d3f5206c8a'),
+('41554d06938d433d932e479940870fc3'),
+('09510108cbf64938aa54b6ddff87f03f');
+
 
 delete from matchbox_sunlightinfo
 where entity_id in (select * from tmp_bios_to_delete);
