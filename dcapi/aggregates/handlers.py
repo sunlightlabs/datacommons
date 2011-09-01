@@ -84,7 +84,9 @@ class EntitySingletonHandler(BaseHandler):
 
         result = execute_one(self.stmt, *[kwargs[param] for param in self.args])
 
-        if not result:
+        if result:
+            result = dict(zip(self.fields, result))
+        else:
             return {}
 
         return check_empty(result, kwargs['entity_id'])
