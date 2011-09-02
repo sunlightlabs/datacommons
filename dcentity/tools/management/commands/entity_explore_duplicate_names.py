@@ -41,7 +41,6 @@ Results are presented in one of two ways:
     # Totally trusted results
     trusted = [
             "same state | same party | exact",
-            "missing one state | same party | exact",
             "same state | diff party; both 3rd | exact",
     ]
     # Possbly trusted results
@@ -50,6 +49,7 @@ Results are presented in one of two ways:
             "same state | same party | nicknames",
             "same state | same party | initials",
             "same state | same party | missing_suffix",
+            #"missing one state | same party | exact", # this was in trusted, but results were bad
     ]
 
     # Any name matching exactly those in here, with the listed conditions, will be
@@ -101,6 +101,7 @@ Results are presented in one of two ways:
             # this will make all the "left sides" of the matches federal and all the right sides state
             fed_entities =  [ entity for entity in entities if entity[4].startswith('federal') ]
             state_entities =  [ entity for entity in entities if entity[4].startswith('state') ]
+
 
             for eid1, name1, state1, party1, office1 in fed_entities:
 
@@ -158,11 +159,15 @@ Results are presented in one of two ways:
                                         if c3:
                                             key = " | ".join((n1, n2, n3))
                                             totals[key] += 1
-                                            groups[key].append((
+                                            match = (
                                                 (eid1, name1.name, state1, party1, office1),
                                                 (eid2, name2.name, state2, party2, office2)
-                                            ))
-                                            # Only one name match per entity.
+                                            )
+                                            # names can have multiple aliases which cause duplicate entity matches
+                                            # don't add these
+                                            if match not in groups[key]:
+                                                groups[key].append(match)
+
                                             break
 
 
@@ -180,10 +185,7 @@ Results are presented in one of two ways:
             for group in matches:
                 for n1, n2 in groups[group]:
                     if not n1[1] in self.excluded and not n2[1] in self.excluded:
-                        if "federal" in n2[-1]:
-                            writer.writerow(n2 + n1)
-                        else:
-                            writer.writerow(n1 + n2)
+                        writer.writerow(n1 + n2)
             print out.getvalue()
             out.close()
 
