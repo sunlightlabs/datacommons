@@ -1,6 +1,6 @@
 \set agg_top_n 10
 
-
+drop view if exists agg_regulations_collapsed_matches;
 create view agg_regulations_collapsed_matches as
 select document_id, entity_id
 from regulations_text_matches
