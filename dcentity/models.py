@@ -105,6 +105,12 @@ class Entity(models.Model):
             if hasattr(self, 'lobbying_activity'):
                 metadata['revolving_door_entity'] = self.lobbying_activity.lobbyist_entity.public_representation()
 
+            if self.politician_metadata_by_cycle.filter(seat__istartswith='federal').count():
+                metadata['state_politician_entities'] = [ x.state_politician_entity for x in self.state_offices_held.all() ]
+            else:
+                metadata['federal_politician_entities'] = [ x.federal_politician_entity for x in self.federal_offices_held.all() ]
+
+
         elif self.type == 'organization' and hasattr(self, 'organization_metadata_by_cycle'):
             for data_by_cycle in self.organization_metadata_by_cycle.all():
                 metadata[data_by_cycle.cycle] = data_by_cycle.to_dict()
@@ -310,6 +316,17 @@ class RevolvingDoor(models.Model):
 
     class Meta:
         db_table = 'matchbox_revolvingdoor'
+
+
+class StateFederal(models.Model):
+    # counterintuitively, in order to find federal offices for a state politician,
+    # one must look for federal offices via their state entity_id, so the 'related_name'
+    # accessor names are reversed
+    state_politician_entity = models.ForeignKey(Entity, related_name='federal_offices_held')
+    federal_politician_entity = models.ForeignKey(Entity, related_name='state_offices_held')
+
+    class Meta:
+        db_table = 'matchbox_statefederal'
 
 
 class VotesmartInfo(models.Model):
