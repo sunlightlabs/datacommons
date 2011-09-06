@@ -21,9 +21,9 @@ select date_trunc('second', now()) || '-- Copying org_map from file';
 
 drop view if exists epa_echo_relevant_actions;
 
-drop table if exists epa_echo_actions cascade;
+drop table if exists tmp_epa_echo_actions;
 
-create table epa_echo_actions as
+create table tmp_epa_echo_actions as
 select i.enfocnu as case_num, max(enfornm) as case_name,
     (select min(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu) as first_date,
     (select max(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu) as last_date,
@@ -42,6 +42,9 @@ select i.enfocnu as case_num, max(enfornm) as case_name,
     (select array_to_string(array_agg(distinct f.fcltyad || ', ' || f.fcltcit || ', ' || f.fcltstc || ' ' || f.fcltpst), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as location_addresses
 from epa_echo_case_identifier i
 group by i.enfocnu;
+
+drop table if exists epa_echo_actions cascade;
+alter table tmp_epa_echo_actions rename to epa_echo_actions;
 
 create index epa_echo_actions_case_num_idx on epa_echo_actions (case_num);
 create index epa_echo_actions_case_name_idx on epa_echo_actions using gin(to_tsvector('datacommons', case_name));

@@ -35,9 +35,11 @@ def _cycle_in_generator(query, *cycles):
 
 def _for_against_generator(query, for_against):
     if for_against == 'for':
-        query = query.exclude(transaction_type__in=('24a','24n'))
+        query = query.exclude(transaction_type__in=('24a','24n', '29'))
     elif for_against == 'against':
         query = query.filter(transaction_type__in=('24a','24n'))
+    elif for_against == 'electioneering':
+        query = query.filter(transaction_type='29')
     return query
 
 
