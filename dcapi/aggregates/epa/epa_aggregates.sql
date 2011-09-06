@@ -38,7 +38,7 @@ select i.enfocnu as case_num, max(enfornm) as case_name,
     (select count(distinct defennm) from epa_echo_defendant d where d.enfocnu = i.enfocnu) as num_defendants,
     (select array_to_string(array_agg(distinct d.defennm), ', ') from epa_echo_defendant d where d.enfocnu = i.enfocnu) as defendants,
     (select array_to_string(array_agg(distinct f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as locations,
-    (select array_to_string(array_agg(distinct f.fcltyad || ', ' || f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as location_addresses
+    (select array_to_string(array_agg(distinct f.fcltyad || ', ' || f.fcltcit || ', ' || f.fcltstc || ' ' || f.fcltpst), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as location_addresses
 from epa_echo_case_identifier i
 group by i.enfocnu;
 
