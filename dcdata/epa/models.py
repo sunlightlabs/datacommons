@@ -82,6 +82,7 @@ class DenormalizedAction(models.Model):
     penalty_enfcraa = models.BigIntegerField()
     penalty_enfotpa = models.BigIntegerField()
     penalty_enfotsa = models.BigIntegerField()
+    penalty_enfcslp = models.BigIntegerField()
     num_defendants = models.IntegerField()
     defendants = models.TextField()
     location_addresses = models.TextField()
