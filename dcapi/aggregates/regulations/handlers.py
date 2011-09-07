@@ -35,14 +35,12 @@ class RegulationsDocketTextHandler(EntityTopListHandler):
     args = ['entity_id', 'docket_id', 'limit']
     
     stmt = """
-        select document_id, title, type, date_posted, array_agg(object_id || ',' || file_type) as files from
-            (select regulations_text_matches.document_id as document_id, title, type, date_posted, object_id, file_type
-            from regulations_comments_full, regulations_text_matches
-            where
-                regulations_comments_full.document_id = regulations_text_matches.document_id
-                and entity_id = %s
-                and docket_id = %s
-            order by file_type asc, object_id asc) as matches
+        select document_id, title, type, date_posted, array_agg(object_id || ',' || file_type) as files
+        from regulations_comments_full
+        inner join regulations_text_matches using (document_id)
+        where
+            entity_id = %s
+            and docket_id = %s
         group by document_id, title, type, date_posted
         order by date_posted desc, document_id desc
         limit %s"""
