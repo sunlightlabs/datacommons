@@ -35,15 +35,25 @@ class RegulationsDocketTextHandler(EntityTopListHandler):
     args = ['entity_id', 'docket_id', 'limit']
     
     stmt = """
-        select regulations_text_matches.document_id as document_id, min(title) as title, min(type) as type, min(date_posted) as date_posted, array_agg('objectId=' || object_id || '&disposition=inline&contentType=' || file_type) as files
-        from regulations_comments_full, regulations_text_matches
-        where
-            regulations_comments_full.document_id = regulations_text_matches.document_id
-            and entity_id = %s
-            and docket_id = %s
-        group by regulations_text_matches.document_id
-        order by date_posted desc
+        select document_id, title, type, date_posted, array_agg(object_id || ',' || file_type) as files from
+            (select regulations_text_matches.document_id as document_id, title, type, date_posted, object_id, file_type
+            from regulations_comments_full, regulations_text_matches
+            where
+                regulations_comments_full.document_id = regulations_text_matches.document_id
+                and entity_id = %s
+                and docket_id = %s
+            order by file_type asc, object_id asc) as matches
+        group by document_id, title, type, date_posted
+        order by date_posted desc, document_id desc
         limit %s"""
+    
+    def read(self, request, **kwargs):
+        out = super(RegulationsDocketTextHandler, self).read(request, **kwargs)
+        
+        for result in out:
+            result['files'] = [dict(zip(['object_id', 'file_type'], file.split(','))) for file in result['files']]
+        
+        return out
 
 class RegulationsDocketSubmitterHandler(EntityTopListHandler):
     
