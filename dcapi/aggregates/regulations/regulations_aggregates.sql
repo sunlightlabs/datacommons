@@ -1,5 +1,12 @@
 \set agg_top_n 10
 
+
+-- indexes
+
+create index regulations_submitter_matches_entity_id on regulations_submitter_matches (entity_id);
+create index regulations_text_matches_entity_id on regulations_text_matches (entity_id);
+
+
 drop view if exists agg_regulations_collapsed_matches;
 create view agg_regulations_collapsed_matches as
 select document_id, entity_id
