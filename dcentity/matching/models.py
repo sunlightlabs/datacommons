@@ -39,3 +39,13 @@ class HonorariumRegistrant(models.Model):
 
     class Meta:
         db_table = 'honorarium_registrant'
+
+
+class AlecSponsor(models.Model):
+    name = models.CharField(max_length=200)
+    state = models.CharField(max_length=2)
+    is_cosponsor = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'alec_sponsor'
+
