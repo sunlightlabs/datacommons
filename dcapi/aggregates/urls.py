@@ -26,6 +26,8 @@ from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
+from dcapi.aggregates.faca.handlers import FACAAgenciesHandler,\
+    FACACommitteeMembersHandler
 # We are using the default JSONEmitter so no need to explicitly
 # register it. However, unregister those we don't need.
 Emitter.unregister('django')
@@ -182,6 +184,12 @@ urlpatterns = patterns('',
     # organizations in an industry
     url(r'^industry/(?P<entity_id>[a-f0-9]+)/orgs\.(?P<emitter_format>.+)$',
         Resource(IndustryOrgHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/faca\.(?P<emitter_format>.+)$',
+        Resource(FACAAgenciesHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/faca/(?P<agency>.+)\.(?P<emitter_format>.+)$',
+        Resource(FACACommitteeMembersHandler, **ad)),
 )
 
 
