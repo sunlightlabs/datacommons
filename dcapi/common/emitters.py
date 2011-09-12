@@ -2,14 +2,10 @@ from django.core.serializers.json import DateTimeAwareJSONEncoder
 from django.http import HttpResponse
 from django.utils import simplejson
 from django.db.models import Model
-from django.db import connections
 from piston.emitters import Emitter
 from django.forms.models import model_to_dict
 from piston.utils import HttpStatusCode
-from dcapi.models import Invocation
 from dcapi.validate_jsonp import is_valid_jsonp_callback_value
-from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE, CRP_TRANSACTION_NAMESPACE
-from time import time
 import csv
 import cStringIO
 import datetime
@@ -34,7 +30,7 @@ class StatsLogger(object):
         self.stats['total'] += 1
 
 
-class StreamingLoggingEmitter(Emitter):
+class StreamingEmitter(Emitter):
 
     def construct_record(self, record):
         """ Serialize just one record of the data into a dict.
@@ -53,42 +49,28 @@ class StreamingLoggingEmitter(Emitter):
 
     def stream(self, request, stats):
         raise NotImplementedError('please implement this method')
-    
+
     def stream_render(self, request):
         if isinstance(self.data, HttpResponse):
             raise HttpStatusCode(self.data)
         return self.stream_render_generator(request)
-    
+
     def stream_render_generator(self, request):
-        
+
         stats = self.handler.statslogger() if hasattr(self.handler, 'statslogger') else StatsLogger()
-        
-        start_time = time()
-        
+
         for chunk in self.stream(request, stats):
             yield chunk
-            
-        end_time = time()
-            
-        Invocation.objects.create(
-            caller_key=request.apikey.key,
-            method=self.handler.__class__.__name__,
-            query_string=request.META['QUERY_STRING'],
-            total_records=stats.stats['total'],
-            crp_records=stats.stats.get(CRP_TRANSACTION_NAMESPACE, 0),
-            nimsp_records=stats.stats.get(NIMSP_TRANSACTION_NAMESPACE, 0),
-            execution_time=(end_time - start_time) * 1000,
-        )
-        connections['meta'].close()
-        
-            
-class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
-    
+
+
+
+class StreamingJSONEmitter(StreamingEmitter):
+
     def stream(self, request, stats):
-        
+
         cb = request.GET.get('callback', None)
         cb = cb if cb and is_valid_jsonp_callback_value(cb) else None
-                
+
         if cb:
             yield '%s(' % cb
         if isinstance(self.data, (Model, dict)):
@@ -106,13 +88,13 @@ class StreamingLoggingJSONEmitter(StreamingLoggingEmitter):
                     yield ',%s' % seria
                 stats.log(record)
             yield ']'
-        
+
         if cb:
             yield ');'
 
 
-class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
-    
+class StreamingCSVEmitter(StreamingEmitter):
+
     def stream(self, request, stats):
         f = AmnesiacFile()
         writer = csv.DictWriter(f, fieldnames=self.fields)
@@ -123,15 +105,15 @@ class StreamingLoggingCSVEmitter(StreamingLoggingEmitter):
             yield f.read()
 
 
-class ExcelEmitter(StreamingLoggingEmitter):
-    
+class ExcelEmitter(StreamingEmitter):
+
     def __init__(self, *args, **kwargs):
-        
+
         super(ExcelEmitter, self).__init__(*args, **kwargs)
-        
+
         self.mdy_style = XFStyle()
         self.mdy_style.num_format_str = 'MM/DD/YYYY'
-    
+
         self.mdyhm_style = XFStyle()
         self.mdyhm_style.num_format_str = 'MM/DD/YYYY h:mm'
 
@@ -148,7 +130,7 @@ class ExcelEmitter(StreamingLoggingEmitter):
             else:
                 ws.write(row, col, value)
             col += 1
-    
+
     def stream(self, request, stats):
 
         output = cStringIO.StringIO()

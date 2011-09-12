@@ -1,9 +1,9 @@
 from django.conf.urls.defaults import *
-from dcapi.common.emitters import StreamingLoggingCSVEmitter, StreamingLoggingJSONEmitter, ExcelEmitter
+from dcapi.common.emitters import StreamingCSVEmitter, StreamingJSONEmitter, ExcelEmitter
 from piston.emitters import Emitter
 
-Emitter.register('json', StreamingLoggingJSONEmitter, 'application/json; charset=utf-8')
-Emitter.register('csv', StreamingLoggingCSVEmitter, 'text/csv; charset=utf-8')
+Emitter.register('json', StreamingJSONEmitter, 'application/json; charset=utf-8')
+Emitter.register('csv', StreamingCSVEmitter, 'text/csv; charset=utf-8')
 Emitter.register('xls', ExcelEmitter, 'application/vnd.ms-excel; charset=utf-8')
 Emitter.unregister('django')
 Emitter.unregister('pickle')
