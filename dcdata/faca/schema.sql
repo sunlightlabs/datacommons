@@ -1,4 +1,4 @@
-
+-- tables need to be populated with the CSVs extracted from the MS Access DB with the mdb-export command
 
 CREATE TABLE faca_agencies
  (
