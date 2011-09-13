@@ -1,29 +1,32 @@
-drop table faca_records;
-
+drop index if exists faca_records_org_id;
+delete from faca_records;
+    
 -- think I can change the original schema to use varchar rather than char, and the the trims shouldn't be needed
 -- grouping on affiliation be problematic: sometimes the same person is listed with slight variants in affliation in different years.
 --      I think we can rely on names being unique within a particular committee. So should really use the most common affliation string.
 --          on the other hand, what about when there's been a significant title change...maybe we do want to show that.
 
-create table faca_records as
+insert into faca_records 
+    (agency_abbr, agency_name, committee_name, member_name, affiliation, 
+    chair, org_name, org_id, appointment_type, appointment_term, pay_plan,
+    pay_source, member_designation, represented_group, start_date, end_date)
 select 
-    AgencyAbbr as AgencyAbbr, 
-    AgencyName as AgencyName, 
-    CommitteeName as CommitteeName, 
-    replace(m.FirstName || ' ' || m.MiddleName || ' ' || m.LastName, '.', '') as MemberName, 
+    AgencyAbbr as agency_abbr, 
+    AgencyName as agency_name, 
+    CommitteeName as committee_name, 
+    replace(m.FirstName || ' ' || m.MiddleName || ' ' || m.LastName, '.', '') as member_name, 
     OccupationOrAffiliation as affiliation,
-    Chairperson = 'Yes' Chair, 
+    Chairperson = 'Yes' chair, 
     e.name as org_name, 
     e.id as org_id,
-    AppointmentType,
-	AppointmentTerm,
-	PayPlan,
-	PaySource,
-	MemberDesignation,
-	RepresentedGroup,
-    min(case when StartDate = '' then null else StartDate::timestamp end) as StartDate, 
-    max(case when EndDate = '' then null else EndDate::timestamp end) as EndDate,
-    count(*)
+    AppointmentType as appointment_type,
+	AppointmentTerm as appointment_term,
+	PayPlan as pay_plan,
+	PaySource as pay_source,
+	MemberDesignation as member_designation,
+	RepresentedGroup as represented_group,
+    min(case when StartDate = '' then null else StartDate::timestamp end) as start_date, 
+    max(case when EndDate = '' then null else EndDate::timestamp end) as end_date
 from faca_committees
 inner join faca_agencies using (AID)
 inner join faca_members m using (CID)
