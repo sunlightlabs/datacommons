@@ -1,4 +1,10 @@
 drop index if exists faca_records_org_id;
+drop index if exists faca_records_agency_abbr_ft;
+drop index if exists faca_records_agency_name_ft;
+drop index if exists faca_records_committee_name_ft;
+drop index if exists faca_records_member_name_ft;
+drop index if exists faca_records_affiliation_ft;
+
 delete from faca_records;
     
 -- think I can change the original schema to use varchar rather than char, and the the trims shouldn't be needed
@@ -49,4 +55,10 @@ group by
 	RepresentedGroup;
     
 create index faca_records_org_id on faca_records (org_id);
+create index faca_records_agency_abbr_ft on faca_records using gin(to_tsvector('datacommons', agency_abbr));
+create index faca_records_agency_name_ft on faca_records using gin(to_tsvector('datacommons', agency_name));
+create index faca_records_committee_name_ft on faca_records using gin(to_tsvector('datacommons', committee_name));
+create index faca_records_member_name_ft on faca_records using gin(to_tsvector('datacommons', member_name));
+create index faca_records_affiliation_ft on faca_records using gin(to_tsvector('datacommons', affiliation));
 
+        
