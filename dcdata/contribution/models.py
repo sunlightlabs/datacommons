@@ -191,6 +191,8 @@ class Bundle(models.Model):
     filing_date = models.DateField(null=True) # RECEIPT_DT
     first_image_num = models.BigIntegerField() # BEGIN_IMAGE_NUM: the first "page number" in FEC's document ID's
 
+    should_ignore = models.NullBooleanField(null=True) # our field: three-valued boolean
+
 
 
 class LobbyistBundle(models.Model):
@@ -224,5 +226,3 @@ class LobbyistBundle(models.Model):
     # semi_annual_amount
 
     receipt_type = models.CharField(max_length=3, null=True)
-
-
