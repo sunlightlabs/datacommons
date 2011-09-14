@@ -9,7 +9,7 @@ def _year_generator(q, year):
 
 
 FACA_SCHEMA = Schema(
-    FulltextField('agency', ['agency_abbr', 'agency_name']),
+    FulltextField('agency_name', ['agency_abbr', 'agency_name']),
     FulltextField('committee_name'),
     FulltextField('member_name'),
     FulltextField('affiliation'),
