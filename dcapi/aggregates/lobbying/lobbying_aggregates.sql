@@ -161,32 +161,32 @@ create table agg_lobbying_totals as
             coalesce(non_firm_registrant.amount, coalesce(non_firm_client.amount, 0)) as non_firm_spending,
             coalesce(firm.amount, 0) as firm_income
         from
-            (select entity_id, cycle, count(r)
+            (select entity_id, r.cycle, count(r)
             from lobbying_report r
             inner join lobbying_lobbyist l using (transaction_id)
             inner join assoc_lobbying_lobbyist la using (id)
-            group by entity_id, cycle) as lobbyist
+            group by entity_id, r.cycle) as lobbyist
         full outer join
-            (select entity_id, cycle, count(r), sum(amount) as amount
+            (select entity_id, r.cycle, count(r), sum(amount) as amount
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
             inner join organization_metadata_latest_cycle_view m using (entity_id)
             where
                 m.lobbying_firm = 't'
-            group by entity_id, cycle) as firm
+            group by entity_id, r.cycle) as firm
         using (entity_id, cycle)
         full outer join
-            (select entity_id, cycle, count(r), sum(amount) as amount
+            (select entity_id, r.cycle, count(r), sum(amount) as amount
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
             left join organization_metadata_latest_cycle_view m using (entity_id)
             where
                 coalesce(m.lobbying_firm, 'f') = 'f'
                 and lower(r.registrant_name) = lower(r.client_name)
-            group by entity_id, cycle) as non_firm_registrant
+            group by entity_id, r.cycle) as non_firm_registrant
         using (entity_id, cycle)
         full outer join
-            (select entity_id, cycle, count(r), sum(amount) as amount
+            (select entity_id, r.cycle, count(r), sum(amount) as amount
             from lobbying_report r
             inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) ca using (transaction_id)
             left join organization_metadata_latest_cycle_view m using (entity_id)
@@ -194,7 +194,7 @@ create table agg_lobbying_totals as
             where
                 coalesce(m.lobbying_firm, 'f') = 'f'
                 and case when e.type = 'industry' then r.include_in_industry_totals else 't' end
-            group by entity_id, cycle) as non_firm_client
+            group by entity_id, r.cycle) as non_firm_client
         using (entity_id, cycle)
     )
 
