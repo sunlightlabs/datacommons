@@ -1,4 +1,5 @@
 from dcapi.aggregates.handlers import EntityTopListHandler
+import itertools
 
 
 class FACAAgenciesHandler(EntityTopListHandler):
@@ -32,3 +33,15 @@ class FACACommitteeMembersHandler(EntityTopListHandler):
         order by committee_name, member_name, start_date
         limit %s
     """
+    
+    def read(self, request, **kwargs):
+        results = super(FACACommitteeMembersHandler, self).read(request, **kwargs)
+        
+        grouped = [{
+           'committee_name': item[0],
+           'memberships': list(item[1]),
+        } for item in itertools.groupby(results, lambda x: x['committee_name'])]
+        
+        grouped_and_sorted = sorted(grouped, key=lambda x: len(x['memberships']), reverse=True)
+        
+        return grouped_and_sorted
