@@ -48,46 +48,76 @@ from tmp_overlapping_or_amended_bundles o
 where o.file_num_a = cb.file_num
 ;
 
--- NOTE: The table below, right now, is matchbox_committeerecipient (committee_id, entity_id)
--- QUESTIONS: What do committee recipients look like? What type of entity (politicions, other committees)
--- are they, and do they change over time? Do we need to key them by cycle or file_num?
--- The command to build this table is:
--- insert into matchbox_committeerecipient (committee_id, entity_id) select distinct c.id, entity_id from contribution_contribution ctb inner join recipient_associations using (transaction_id) inner join matchbox_committee c on ctb.committee_ext_id = c.fec_id where ctb.contributor_type = 'C' and cycle >= 2008 and transaction_namespace = 'urn:fec:transaction' and recipient_type in ('P', 'C');
 
---create table assoc_bundle_committee_to_recipient as
---    select distinct
---        committee_ext_id,
---        entity_id
---    from
---        contribution_contribution
---        inner join recipient_associations using (transaction_id)
---;
-
+drop table if exists assoc_bundle_recipients;
 create table assoc_bundle_recipients as
     select
-        file_num as report_id,
-        entity_id as recipient_entity_id
+        file_num,
+        entity_id
     from
         contribution_bundle
-        inner join matchbox_committee on committee_fec_id = fec_id
-        inner join matchbox_committeerecipient using (committee_id)
-;
-
--- this is the query that's having trouble finishing.
---insert into matchbox_committeerecipient (committee_id, entity_id) select distinct c.id, entity_id from contribution_contribution ctb inner join recipient_associations using (transaction_id) inner join matchbox_committee c on ctb.committee_ext_id = c.fec_id where ctb.contributor_type = 'C' and cycle >= 2008 and transaction_namespace = 'urn:fec:transaction' and recipient_type in ('P', 'C');
+        inner join contribution_committee on committee_fec_id = committee_id
+        inner join matchbox_entityattribute on recipient_id = value
+    where
+        namespace = 'urn:crp:recipient';
 
 
-create table assoc_bundle_donors as
-    select
-        id as bundle_id,
-        le.id as lobbyist_entity_id,
-        lfe.id as lobbying_firm_entity_id
-    from
-        contribution_lobbyistbundle lb
-        -- it would be nice if the table below looked more like assoc_bundler_lobbyist_donor
-        left join bundler_lobbyist_matches_curated lmc on lb.id = lmc.subject_id
-        -- this table (or similar) has yet to be created
-        left join assoc_bundle_lobbyist_employer lfe on lmc.id = lfe.id
-;
+-- uncomment these lines to re-import the manual validations
 
+-- drop table if exists assoc_bundler_matches_manual;
+-- create table assoc_bundler_matches_manual (
+--     name varchar(255),
+--     entity_id uuid   
+-- );
+-- \copy assoc_bundler_matches_manual from bundler_matches.csv csv header
+
+
+drop table if exists assoc_bundler_firms;
+create table assoc_bundler_firms as
+select b.id as bundle_id, entity_id
+from contribution_lobbyistbundle b
+inner join assoc_bundler_matches_manual a on
+    b.name = a.name or b.employer = a.name
+inner join matchbox_entity e on e.id = a.entity_id
+where
+    e.type = 'organization'
+group by b.id, entity_id;
+
+
+drop table if exists assoc_bundler_lobbyists;
+create table assoc_bundler_lobbyists as
+select b.id as bundle_id, entity_id
+from contribution_lobbyistbundle b
+inner join assoc_bundler_matches_manual a on
+    b.name = a.name
+inner join matchbox_entity e on e.id = a.entity_id
+where
+    e.type = 'individual'
+group by b.id, entity_id;
+
+
+drop table if exists agg_bundling;
+create table agg_bundling as
+select
+    re.id as recipient_id, coalesce(re.name, cb.committee_name) as recipient_name,
+    fe.id as firm_id, coalesce(fe.name, lb.name) as firm_name,
+    le.id as lobbyist_id, coalesce(le.name, lb.name) as lobbyist_name,
+    case when report_year % 2 = 0 then report_year else report_year + 1 end as cycle,
+    sum(amount) as amount
+from contribution_bundle cb
+inner join contribution_lobbyistbundle lb on cb.file_num = lb.file_num_id
+left join assoc_bundle_recipients ra on ra.file_num = cb.file_num
+left join matchbox_entity re on re.id = ra.entity_id
+left join assoc_bundler_firms fa on fa.bundle_id = lb.id
+left join matchbox_entity fe on fe.id = fa.entity_id
+left join assoc_bundler_lobbyists la on la.bundle_id = lb.id
+left join matchbox_entity le on le.id = la.entity_id
+where
+    not cb.should_ignore
+group by 
+    re.id, coalesce(re.name, cb.committee_name),
+    fe.id , coalesce(fe.name, lb.name),
+    le.id, coalesce(le.name, lb.name),
+    case when report_year % 2 = 0 then report_year else report_year + 1 end;
+    
 

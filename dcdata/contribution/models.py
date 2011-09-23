@@ -193,7 +193,25 @@ class Bundle(models.Model):
 
     should_ignore = models.NullBooleanField(null=True) # our field: three-valued boolean
 
+# This is a straight import of the CRP committee table.
+# We're primarily intersted in the mapping from committee IDs to candidate IDs.
 
+class Committee(models.Model):
+    cycle = models.IntegerField()
+    committee_id = models.CharField(max_length=9)
+    short_name = models.CharField(max_length=40)
+    sponsor = models.CharField(max_length=40, null=True)
+    organization_name = models.CharField(max_length=40)
+    recipient_id = models.CharField(max_length=9)
+    recipient_code = models.CharField(max_length=2)
+    fec_candidate_id = models.CharField(max_length=9)
+    party = models.CharField(max_length=1)
+    category = models.CharField(max_length=5)
+    category_source = models.CharField(max_length=40)
+    sensitive = models.CharField(max_length=1)
+    foreign = models.IntegerField()
+    active = models.IntegerField()
+    
 
 class LobbyistBundle(models.Model):
     file_num = models.ForeignKey('Bundle') # FILE_NUM
