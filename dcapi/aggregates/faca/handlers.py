@@ -1,4 +1,4 @@
-from dcapi.aggregates.handlers import EntityTopListHandler
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
 import itertools
 
 
@@ -17,21 +17,21 @@ class FACAAgenciesHandler(EntityTopListHandler):
         limit %s
     """
 
-class FACACommitteeMembersHandler(EntityTopListHandler):
+class FACACommitteeMembersHandler(TopListHandler):
     
-    args = ['entity_id', 'agency', 'cycle', 'limit']
+    args = ['entity_id', 'agency', 'cycle']
     
     fields = ['committee_name', 'member_name', 'chair', 'affiliation', 'start_date', 'end_date']
     
     stmt = """
-        select committee_name, member_name, chair, affiliation, start_date, end_date
+        select committee_name, member_name, chair, affiliation, min(start_date) as start_date, max(end_date) as end_date
         from faca_records, (values (%s::uuid, %s, %s::integer)) as params (entity_id, agency, cycle)
         where
             org_id = params.entity_id
             and agency_abbr = params.agency
             and (params.cycle = -1 or params.cycle between extract(year from start_date) and extract(year from end_date) + 1)
+        group by committee_name, member_name, chair, affiliation
         order by committee_name, member_name, start_date
-        limit %s
     """
     
     def read(self, request, **kwargs):
