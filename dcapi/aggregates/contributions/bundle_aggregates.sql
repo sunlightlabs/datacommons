@@ -67,7 +67,7 @@ create table assoc_bundle_recipients as
 -- drop table if exists assoc_bundler_matches_manual;
 -- create table assoc_bundler_matches_manual (
 --     name varchar(255),
---     entity_id uuid   
+--     entity_id uuid
 -- );
 -- \copy assoc_bundler_matches_manual from bundler_matches.csv csv header
 
@@ -99,9 +99,12 @@ group by b.id, entity_id;
 drop table if exists agg_bundling;
 create table agg_bundling as
 select
-    re.id as recipient_id, coalesce(re.name, cb.committee_name) as recipient_name,
-    fe.id as firm_id, coalesce(fe.name, lb.name) as firm_name,
-    le.id as lobbyist_id, coalesce(le.name, lb.name) as lobbyist_name,
+    re.id                                as recipient_id,
+    coalesce(re.name, cb.committee_name) as recipient_name,
+    fe.id                                as firm_id,
+    coalesce(fe.name, lb.name)           as firm_name,
+    le.id                                as lobbyist_id,
+    coalesce(le.name, lb.name)           as lobbyist_name,
     case when report_year % 2 = 0 then report_year else report_year + 1 end as cycle,
     sum(amount) as amount
 from contribution_bundle cb
@@ -114,10 +117,10 @@ left join assoc_bundler_lobbyists la on la.bundle_id = lb.id
 left join matchbox_entity le on le.id = la.entity_id
 where
     not cb.should_ignore
-group by 
+group by
     re.id, coalesce(re.name, cb.committee_name),
     fe.id , coalesce(fe.name, lb.name),
     le.id, coalesce(le.name, lb.name),
     case when report_year % 2 = 0 then report_year else report_year + 1 end;
-    
+
 
