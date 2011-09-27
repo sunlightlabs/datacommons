@@ -64,7 +64,8 @@ SELECT
     count(distinct docket) as docket_count,
     sum(count) as document_count
 FROM totals
-WHERE year is not null
+WHERE 
+    year >= 1989
 GROUP BY entity_id, (case when year % 2 = 0 then year else year + 1 end)
 ;
 
@@ -119,6 +120,7 @@ SELECT
     count(distinct docket) as docket_count,
     sum(count) as document_count
 FROM totals
-WHERE year is not null
+WHERE 
+    year >= 1989
 GROUP BY entity_id, (case when year % 2 = 0 then year else year + 1 end)
 ;
