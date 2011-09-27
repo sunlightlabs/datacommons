@@ -3,24 +3,26 @@ from dcapi.aggregates.handlers import EntityTopListHandler
 
 class BundleHandler(EntityTopListHandler):
     args = 'entity_id entity_id entity_id cycle cycle limit'.split()
-    fields = 'recipient_entity recipient_name firm_entity firm_name lobbyist_entity lobbyist_name amount'.split()
+    fields = 'recipient_entity recipient_name recipient_type firm_entity firm_name lobbyist_entity lobbyist_name amount'.split()
 
     stmt = """
         select
             recipient_id,
             recipient_name,
+            e.type as recipient_type,
             firm_id,
             firm_name,
             lobbyist_id,
             lobbyist_name,
             sum(coalesce(amount, 0))
         from
-            agg_bundling
+            agg_bundling b
+            left join matchbox_entity e on b.recipient_id = e.id
         where
             (recipient_id = %s or firm_id = %s or lobbyist_id = %s)
             and case when %s = -1 then 1 = 1 else cycle = %s end
         group by
-            recipient_id, recipient_name, firm_id, firm_name, lobbyist_id, lobbyist_name
+            recipient_id, recipient_name, e.type, firm_id, firm_name, lobbyist_id, lobbyist_name
         order by sum(coalesce(amount, 0)) desc
         limit %s
     """
