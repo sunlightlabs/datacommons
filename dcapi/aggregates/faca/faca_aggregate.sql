@@ -82,3 +82,17 @@ group by org_id, agency_abbr, agency_name, committee_name, member_firstlast, cha
 create index agg_faca_records_org_idx on agg_faca_records (org_id);
 create index agg_faca_records_agency_org_idx on agg_faca_records(org_id, agency_abbr);
 
+
+drop table if exists agg_faca_totals;
+
+create table agg_faca_totals as
+select org_id, cycle, count(distinct member_name) as member_count, count(distinct committee_name) as committee_count
+from agg_faca_records,
+    (values (-1), (1990), (1992), (1994), (1996), (1998), (2000), (2002), (2004), (2006), (2008), (2010), (2012)) as cycles (cycle)
+where
+    cycle = -1 or cycle between extract(year from start_date) and extract(year from end_date) + 1
+group by org_id, cycle;
+
+create index agg_faca_totals_idx on agg_faca_totals (org_id, cycle);
+    
+    
