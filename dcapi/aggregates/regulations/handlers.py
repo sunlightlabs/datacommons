@@ -6,7 +6,7 @@ class RegulationsTextHandler(EntityTopListHandler):
     fields = "agency docket year count title".split()
     
     stmt = """
-        select agg_regulations_text.agency as agency, docket, cast(year as int) as year, count, title
+        select agg_regulations_text.agency as agency, docket, cast(agg_regulations_text.year as int) as year, count, title
         from agg_regulations_text, regulations_dockets
         where
             entity_id = %s
@@ -20,7 +20,7 @@ class RegulationsSubmitterHandler(EntityTopListHandler):
     fields = "agency docket year count title".split()
 
     stmt = """
-        select agg_regulations_submitter.agency as agency, docket, cast(year as int) as year, count, title
+        select agg_regulations_submitter.agency as agency, docket, cast(agg_regulations_submitter.year as int) as year, count, title
         from agg_regulations_submitter, regulations_dockets
         where
             entity_id = %s
