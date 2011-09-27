@@ -21,16 +21,16 @@ class FACACommitteeMembersHandler(TopListHandler):
     
     args = ['entity_id', 'agency', 'cycle']
     
-    fields = ['committee_name', 'member_name', 'chair', 'affiliation', 'start_date', 'end_date']
+    fields = ['committee_name', 'committee_url', 'member_name', 'chair', 'affiliation', 'start_date', 'end_date']
     
     stmt = """
-        select committee_name, member_name, chair, affiliation, min(start_date) as start_date, max(end_date) as end_date
+        select committee_name, committee_url, member_name, chair, affiliation, min(start_date) as start_date, max(end_date) as end_date
         from faca_records, (values (%s::uuid, %s, %s::integer)) as params (entity_id, agency, cycle)
         where
             org_id = params.entity_id
             and agency_abbr = params.agency
             and (params.cycle = -1 or params.cycle between extract(year from start_date) and extract(year from end_date) + 1)
-        group by committee_name, member_name, chair, affiliation
+        group by committee_name, committee_url, member_name, chair, affiliation
         order by committee_name, member_name, start_date
     """
     
@@ -38,9 +38,10 @@ class FACACommitteeMembersHandler(TopListHandler):
         results = super(FACACommitteeMembersHandler, self).read(request, **kwargs)
         
         grouped = [{
-           'committee_name': item[0],
+           'committee_name': item[0][0],
+           'committee_url': item[0][1],
            'memberships': list(item[1]),
-        } for item in itertools.groupby(results, lambda x: x['committee_name'])]
+        } for item in itertools.groupby(results, lambda x: (x['committee_name'], x['committee_url']))]
         
         grouped_and_sorted = sorted(grouped, key=lambda x: len(x['memberships']), reverse=True)
         
