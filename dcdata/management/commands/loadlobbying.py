@@ -6,34 +6,13 @@ from django.core                 import management
 from django.db                   import connections
 from optparse                    import make_option
 from saucebrush                  import run_recipe
-from saucebrush.emitters         import Emitter
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
     Filter, FieldMerger
 from saucebrush.sources          import CSVSource
+from dcdata.management.commands.util import NoneFilter, CountEmitter, TableHandler
 
 import os, re
 
-# util emitters and filters
-
-class CountEmitter(Emitter):
-    def __init__(self, every=1000, *args, **kwargs):
-        super(CountEmitter, self).__init__(*args, **kwargs)
-        self.count = 0
-        self.every = every
-    def emit_record(self, record):
-        if record:
-            self.count += 1
-            if self.count % self.every == 0:
-                print self.count
-    def done(self):
-        print "%s total records" % self.count
-
-class NoneFilter(Filter):
-    def process_record(self, record):
-        for key, value in record.iteritems():
-            if isinstance(value, basestring) and value.strip() == '':
-                record[key] = None
-        return record
 
 class TransactionFilter(Filter):
     def __init__(self):
@@ -114,26 +93,6 @@ class LobbyistLoader(Loader):
 # handlers
 
 TRANSACTION_FILTER = TransactionFilter()
-
-class TableHandler(object):
-    db_table = None
-    inpath = None
-
-    def __init__(self, inpath):
-        self.inpath = inpath
-
-    def pre_drop(self):
-        pass
-
-    def post_create(self):
-        pass
-
-    def drop(self):
-        self.pre_drop()
-        print "Dropping {0}.".format(self.db_table)
-        cursor = connections['default'].cursor()
-        cursor.execute("drop table {0} cascade".format(self.db_table))
-
 
 class LobbyingHandler(TableHandler):
 
@@ -247,25 +206,25 @@ class BillHandler(TableHandler):
         self.db_table = 'lobbying_bill'
         self.digits = re.compile(r'\D*(\d+)')
         # input values are the keys, target values to match opencongress bill types are the values
-        self.bill_type_map = { 
-            'H':       'h',  
-            'HR':      'h',  
-            'HCON':    'hc', 
-            'HCONRES': 'hc', 
-            'HJ':      'hj', 
-            'HJRES':   'hj', 
-            'HRES':    'hr', 
-            'HRRES':   'hr', 
-            'S':       's',  
-            'SR':      's',  
-            'SCON':    'sc', 
-            'SCONRES': 'sc', 
-            'SJ':      'sj', 
-            'SJES':    'sj', 
-            'SJRES':   'sj', 
-            'SRES':    'sr', 
+        self.bill_type_map = {
+            'H':       'h',
+            'HR':      'h',
+            'HCON':    'hc',
+            'HCONRES': 'hc',
+            'HJ':      'hj',
+            'HJRES':   'hj',
+            'HRES':    'hr',
+            'HRRES':   'hr',
+            'S':       's',
+            'SR':      's',
+            'SCON':    'sc',
+            'SCONRES': 'sc',
+            'SJ':      'sj',
+            'SJES':    'sj',
+            'SJRES':   'sj',
+            'SRES':    'sr',
         }
-        
+
 
     def run(self):
         run_recipe(

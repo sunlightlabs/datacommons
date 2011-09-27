@@ -10,25 +10,36 @@ ALL_CYCLES = '-1'
 DEFAULT_LIMIT = '10'
 DEFAULT_CYCLE = ALL_CYCLES
 
+class SQLBindingError(Exception):
+    pass
+
 
 def execute_top(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt, args)
+
+    execute(cursor, stmt, args)
+
     return list(cursor)
 
 def execute_pie(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt, args)
+    execute(cursor, stmt, args)
     return dict([(category, (count, amount)) for (category, count, amount) in cursor])
 
 def execute_one(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt, args)
+    execute(cursor, stmt, args)
 
     if cursor.rowcount <= 0:
         return None
     else:
         return cursor.fetchone()
+
+def execute(cursor, stmt, args):
+    try:
+        cursor.execute(stmt, args)
+    except IndexError:
+        raise SQLBindingError("You didn't include the right number of binding parameters in your query.")
 
 
 def check_empty(result, *entity_ids):

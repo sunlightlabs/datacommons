@@ -8,6 +8,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler
+from dcapi.aggregates.contributions.bundle_handlers import BundleHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
@@ -190,6 +191,10 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]+)/faca/(?P<agency>.+)\.(?P<emitter_format>.+)$',
         Resource(FACACommitteeMembersHandler, **ad)),
+
+    # bundling
+    url(r'^(org|indiv|pol)/(?P<entity_id>[a-f0-9]+)/bundles\.(?P<emitter_format>.+)$',
+            Resource(BundleHandler, **ad)),
 )
 
 
