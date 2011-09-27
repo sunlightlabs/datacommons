@@ -29,6 +29,8 @@ get_totals_stmt = """
             coalesce(epa.count,          0)::integer,
             coalesce(r.docket_count,     0)::integer,
             coalesce(r.document_count,   0)::integer,
+            coalesce(rs.docket_count,    0)::integer,
+            coalesce(rs.document_count,  0)::integer,
             coalesce(f.member_count,     0)::integer,
             coalesce(f.committee_count,  0)::integer
     from
@@ -66,6 +68,11 @@ get_totals_stmt = """
         where entity_id = %s) r
     using (cycle)
     full outer join (
+        select cycle, docket_count, document_count
+        from agg_regulations_submitter_totals
+        where entity_id = %s) rs
+    using (cycle)
+    full outer join (
         select cycle, member_count, committee_count
         from agg_faca_totals
         where org_id = %s) f
@@ -74,7 +81,7 @@ get_totals_stmt = """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id):
+    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -88,7 +95,7 @@ class EntityHandler(BaseHandler):
                      'earmark_count', 'earmark_amount', 
                      'contractor_misconduct_count',
                      'epa_actions_count',
-                     'regs_docket_count', 'regs_document_count',
+                     'regs_docket_count', 'regs_document_count', 'regs_submitted_docket_count', 'regs_submitted_document_count',
                      'faca_member_count', 'faca_committee_count']
     ext_id_fields = ['namespace', 'id']
 
