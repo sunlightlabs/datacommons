@@ -62,10 +62,10 @@ class MatchingCommand(BaseCommand):
                     continue
 
                 # search match entities
-                potential_matches = self.get_potential_matches_for_subject(subject_name)
+                potential_matches = self.get_potential_matches_for_subject(subject_name, subject)
                 print 'Potential matches: {0}'.format(potential_matches.count())
 
-                if options['insert_non_matches'] and not len(potential_matches):
+                if options['insert_non_matches'] and potential_matches.count() == 0:
                     # a confidence of -1 means no potential matches were found
                     self.insert_match(cursor, table, None, subject, -1)
 
@@ -113,12 +113,12 @@ class MatchingCommand(BaseCommand):
         return name
 
 
-    def get_potential_matches_for_subject(self, subject):
+    def get_potential_matches_for_subject(self, subject_name, subject_obj):
         """
             Takes a name cleaver object and ideally returns a loosely matched set of objects
             which we can then filter more stringently by scoring
         """
-        return self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject.last})
+        return self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.last})
 
 
     def do_after_insert(self, subject, match, confidence):

@@ -10,6 +10,7 @@ def create_dockets(outfile):
     notice_cursor = connection.cursor()
     
     agency_splitter = re.compile("[-_]")
+    year_finder = re.compile("[_-](\d{4})[_-]")
     
     comment_cursor.execute("select distinct docket_id from regulations_comments_full")
     for row in comment_cursor:
@@ -59,12 +60,23 @@ def create_dockets(outfile):
         # if we still don't know, grab the oldest document in the docket to date it, and make up a name
         if notice_date is None:
             notice_cursor.execute("""
-                select document_id, date_posted from regulations_comments_full where docket_id = 'OSHA-H048-2006-0823' order by date_posted asc limit 1;
+                select document_id, date_posted from regulations_comments_full where docket_id = %s order by date_posted asc limit 1;
                 """,
                 [docket_id]
             )
             notice_row = notice_cursor.fetchone()
-            notice_date = notice_row[1]
+            if notice_row[1]:
+                notice_date = notice_row[1]
+        
+        # if we *still* don't know the date, assign one by looking at the docket ID for year and doing January 1 of that year
+        if notice_date is None or notice_date == "":
+            year_match = year_finder.search(docket_id)
+            if year_match and year_match.groups():
+                notice_date = '%s-01-01' % year_match.groups()[0]
+        
+        # if we **still** don't know the date, make it null
+        if notice_date is None or notice_date == "":
+            notice_date = '\N'
         
         if notice_id is None:
             notice_title = 'Untitled %s docket (%s)' % (agency, docket_id)

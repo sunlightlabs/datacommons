@@ -13,6 +13,7 @@ from time import time
 import csv
 import cStringIO
 import datetime
+import uuid
 from xlwt import XFStyle
 import xlwt
 
@@ -145,6 +146,8 @@ class ExcelEmitter(StreamingLoggingEmitter):
                 ws.write(row, col, value, self.mdyhm_style)
             elif isinstance(value, datetime.date):
                 ws.write(row, col, value, self.mdy_style)
+            elif isinstance(value, uuid.UUID):
+                ws.write(row, col, str(value))
             else:
                 ws.write(row, col, value)
             col += 1
