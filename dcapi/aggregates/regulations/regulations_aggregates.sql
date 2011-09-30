@@ -39,6 +39,9 @@ FROM (
 where rank <= :agg_top_n
 ;
 
+create index agg_regulations_text_entity_cycle_idx on agg_regulations_text (entity_id, cycle);
+create index agg_regulations_text_docket_idx on agg_regulations_text (docket);
+    
 
 DROP TABLE IF EXISTS agg_regulations_text_totals;
 CREATE TABLE agg_regulations_text_totals as
@@ -69,6 +72,7 @@ WHERE
 GROUP BY entity_id, (case when year % 2 = 0 then year else year + 1 end)
 ;
 
+create index agg_regulations_text_totals_idx on agg_regulations_text_totals (entity_id, cycle);
 
 DROP TABLE IF EXISTS agg_regulations_submitter;
 CREATE TABLE agg_regulations_submitter as
@@ -94,6 +98,9 @@ FROM (
     from ranked_aggregates) x
 where rank <= :agg_top_n
 ;
+
+create index agg_regulations_submitter_entity_cycle_idx on agg_regulations_submitter (entity_id, cycle);
+create index agg_regulations_submitter_docket_idx on agg_regulations_submitter (docket);
 
 
 DROP TABLE IF EXISTS agg_regulations_submitter_totals;
@@ -124,3 +131,6 @@ WHERE
     year >= 1989
 GROUP BY entity_id, (case when year % 2 = 0 then year else year + 1 end)
 ;
+
+create index agg_regulations_submitter_totals_idx on agg_regulations_submitter_totals (entity_id, cycle);
+
