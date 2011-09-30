@@ -190,6 +190,7 @@ class Bundle(models.Model):
     semi_annual_amount = models.IntegerField(null=True) # SEMI_AN_BUNDLED_CONTB
     filing_date = models.DateField(null=True) # RECEIPT_DT
     first_image_num = models.BigIntegerField() # BEGIN_IMAGE_NUM: the first "page number" in FEC's document ID's
+    pdf_url = models.URLField()
 
     should_ignore = models.NullBooleanField(null=True) # our field: three-valued boolean
 
@@ -211,7 +212,7 @@ class Committee(models.Model):
     sensitive = models.CharField(max_length=1)
     foreign = models.IntegerField()
     active = models.IntegerField()
-    
+
 
 class LobbyistBundle(models.Model):
     file_num = models.ForeignKey('Bundle') # FILE_NUM

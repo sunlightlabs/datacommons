@@ -37,6 +37,8 @@ def execute_one(stmt, *args):
 
 def execute(cursor, stmt, args):
     try:
+        # Just gonna leave this here...
+        # print cursor.mogrify(stmt, args)
         cursor.execute(stmt, args)
     except IndexError:
         raise SQLBindingError("You didn't include the right number of binding parameters in your query.")
