@@ -1,11 +1,17 @@
+from django.db.models import Q
+
 from dcapi.common.handlers import FilterHandler
 from dcapi.common.schema import FulltextField
 from dcapi.schema import Schema, FunctionField
 from dcdata.faca.models import FACARecord
 
 
-def _year_generator(q, year):
-    return q.filter(start_date__lte="%s-12-31" % year, end_date__gte="%s-01-01" % year)
+def _year_generator(q, *years):
+    or_query = Q()
+    for year in years:
+        or_query.add(Q(start_date__lte="%s-12-31" % year, end_date__gte="%s-01-01" % year), Q.OR)
+    
+    return q.filter(or_query)
 
 
 FACA_SCHEMA = Schema(
