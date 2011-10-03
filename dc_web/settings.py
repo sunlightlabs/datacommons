@@ -66,13 +66,16 @@ INSTALLED_APPS = (
     'debug_toolbar',
     'mediasync',
     'locksmith.auth',
+    'locksmith.logparse',
+    'dcdata.contribution',
     'dcdata',
     'dcdata.contracts',
-    'dcdata.contribution',
     'dcdata.grants',
     'dcdata.lobbying',
     'dcdata.earmarks',
     'dcdata.epa',
+    'dcdata.faca',
+    'dcentity.matching',
     'dcapi',
     'dcapi.aggregates',
     'dcapi.rapportive',
@@ -92,6 +95,7 @@ LOCKSMITH_STATS_APP = "dcapi"
 LOCKSMITH_STATS_MODEL = "Invocation"
 LOCKSMITH_HUB_URL = "http://services.sunlightlabs.com/analytics/"
 LOCKSMITH_HTTP_HEADER = None
+LOCKSMITH_LOG_PATH = '/var/log/nginx/dc_web_access.log'
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
@@ -149,6 +153,11 @@ MEDIASYNC = {
             'js/td.fields.js',
             'js/td.lobbying.js'
         ],
+        'faca.js': [
+            'js/td.js',
+            'js/td.fields.js',
+            'js/td.faca.js'
+        ],
         'index.js': [
             'js/td.js',
             'js/td.fields.js',
@@ -157,6 +166,7 @@ MEDIASYNC = {
             'js/td.epa_echo.js',
             'js/td.grants.js',
             'js/td.lobbying.js',
+            'js/td.faca.js',
             'js/td.contributions.js',
             'js/td.contractor_misconduct.js'
         ],
@@ -167,7 +177,4 @@ MEDIASYNC = {
 CACHE_BACKEND = 'memcached://127.0.0.1:11211/?timeout=10080'
 
 
-try:
-    from local_settings import *
-except ImportError:
-    pass
+from local_settings import *

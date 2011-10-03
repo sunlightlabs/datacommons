@@ -13,7 +13,7 @@ class OrganizationalMatchingCommand(MatchingCommand):
         return not isinstance(subject_name, OrganizationName)
 
 
-    def get_potential_matches_for_subject(self, subject):
+    def get_potential_matches_for_subject(self, subject_name, subject_obj):
         """
             Takes a name cleaver-ed object and ideally returns a loosely matched set of objects
             which we can then filter more stringently by scoring
@@ -21,19 +21,19 @@ class OrganizationalMatchingCommand(MatchingCommand):
         # if we don't get a wide range of matches from the kernel of the name here...
         # which would be the case for names like "Massachusetts Inst. of Technology"
         # which will fail the "icontains" operator when the kernel is 'Massachusetts Technology'
-        matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject.kernel()})
+        matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.kernel()})
         # try the normal name
         if not matches.count():
-            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject.name})
+            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.name})
         # and if that doesn't work, try the expanded name 'Massachusetts Institute of Technology'
         if not matches.count():
-            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject.expand()})
+            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.expand()})
         # and if that doesn't work, try a wildcard search
         if not matches.count():
-            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, 'iregex'): re.sub(' ', '.*', subject.kernel())})
+            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, 'iregex'): re.sub(' ', '.*', subject_name.kernel())})
         # and if that doesn't work, try the CRP-style firm name
         if not matches.count():
-            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, 'istartswith'): self.crp_style_firm_name(subject, False)})
+            matches = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, 'istartswith'): self.crp_style_firm_name(subject_name, False)})
 
         return matches
 

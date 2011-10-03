@@ -9,7 +9,7 @@ from uuid import UUID
 
 
 get_totals_stmt = """
-     select cycle,
+    select cycle,
             coalesce(contributor_count,  0)::integer,
             coalesce(recipient_count,    0)::integer,
             coalesce(contributor_amount, 0)::float,
@@ -28,22 +28,26 @@ get_totals_stmt = """
             coalesce(cm.count,           0)::integer,
             coalesce(epa.count,          0)::integer,
             coalesce(r.docket_count,     0)::integer,
-            coalesce(r.document_count,   0)::integer
-     from
+            coalesce(r.document_count,   0)::integer,
+            coalesce(rs.docket_count,    0)::integer,
+            coalesce(rs.document_count,  0)::integer,
+            coalesce(f.member_count,     0)::integer,
+            coalesce(f.committee_count,  0)::integer
+    from
          (select *
          from agg_entities
          where entity_id = %s) c
-     full outer join
+    full outer join
          (select *
          from agg_lobbying_totals
          where entity_id = %s) l
-     using (cycle)
-     full outer join
+    using (cycle)
+    full outer join
          (select *
          from agg_spending_totals
          where recipient_entity = %s) s
-     using (cycle)
-     full outer join
+    using (cycle)
+    full outer join
          (select *
          from agg_earmark_totals
          where entity_id = %s) e
@@ -51,23 +55,33 @@ get_totals_stmt = """
     full outer join (
         select cycle, count
         from agg_pogo_totals
-        where entity_id = %s
-    ) cm using (cycle)
+        where entity_id = %s) cm 
+    using (cycle)
     full outer join (
         select cycle, count
         from agg_epa_echo_totals
-        where entity_id = %s
-    ) epa using (cycle)
+        where entity_id = %s) epa
+    using (cycle)
     full outer join (
         select cycle, docket_count, document_count
         from agg_regulations_text_totals
         where entity_id = %s) r
     using (cycle)
+    full outer join (
+        select cycle, docket_count, document_count
+        from agg_regulations_submitter_totals
+        where entity_id = %s) rs
+    using (cycle)
+    full outer join (
+        select cycle, member_count, committee_count
+        from agg_faca_totals
+        where org_id = %s) f
+    using (cycle)
 """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id):
+    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -81,7 +95,8 @@ class EntityHandler(BaseHandler):
                      'earmark_count', 'earmark_amount', 
                      'contractor_misconduct_count',
                      'epa_actions_count',
-                     'regs_docket_count', 'regs_document_count']
+                     'regs_docket_count', 'regs_document_count', 'regs_submitted_docket_count', 'regs_submitted_document_count',
+                     'faca_member_count', 'faca_committee_count']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
