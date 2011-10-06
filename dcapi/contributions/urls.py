@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import url, patterns
 from piston.resource import Resource
 from dcapi.contributions.handlers import ContributionFilterHandler,\
     ContributorGeoHandler
