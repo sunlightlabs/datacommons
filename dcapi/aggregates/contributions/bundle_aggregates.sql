@@ -36,7 +36,6 @@ create table tmp_overlapping_or_amended_bundles as
         and (a.start_date, a.end_date) overlaps (b.start_date, b.end_date)
 ;
 
--- TODO: check if this is coming out right
 update contribution_bundle cb
 set supercedes_id = file_num_a
 from tmp_overlapping_or_amended_bundles o
@@ -48,6 +47,18 @@ from tmp_overlapping_or_amended_bundles o
 where o.file_num_a = cb.file_num
 ;
 
+
+select distinct on (committee_name, report_year) image_num, name, amount, ytd_amount
+from contribution_lobbyistbundle 
+inner join contribution_bundle on file_num = file_num_id 
+where (contribution_lobbyistbundle.name, committee_name, report_year) in (
+    select name, committee_name, report_year 
+    from contribution_lobbyistbundle lb 
+    inner join contribution_bundle b on lb.file_num_id = b.file_num 
+    group by lb.name, b.committee_name, report_year 
+    having min(amount) is null
+)
+order by committee_name, report_year, filing_date desc;
 
 drop table if exists assoc_bundle_recipients;
 create table assoc_bundle_recipients as
@@ -122,5 +133,4 @@ group by
     fe.id , coalesce(fe.name, lb.name),
     le.id, coalesce(le.name, lb.name),
     case when report_year % 2 = 0 then report_year else report_year + 1 end;
-
 
