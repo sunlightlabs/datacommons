@@ -4,15 +4,14 @@ from optparse import make_option
 from saucebrush import run_recipe
 from saucebrush.sources import CSVSource
 from saucebrush.filters import Filter, FieldRenamer, FieldModifier, \
-    FieldRemover, UnicodeFilter
-from saucebrush.emitters import DjangoModelEmitter
+    FieldRemover, UnicodeFilter, FieldCopier
+from saucebrush.emitters import DjangoModelEmitter, DebugEmitter
 from dcdata.contribution.models import Bundle, LobbyistBundle
 from dcdata.management.commands.util import NoneFilter, CountEmitter, \
     TableHandler
 from datetime import datetime
 
 
-#from django.core.exceptions import DoesNotExist
 import os
 
 class BundleFilter(Filter):
@@ -33,6 +32,7 @@ class BundleFilter(Filter):
         if bundle:
             record['file_num'] = bundle
             return record
+
 
 class BundleHandler(TableHandler):
     field_map = dict(
@@ -68,6 +68,10 @@ class BundleHandler(TableHandler):
             # Convert date formats
             FieldModifier('start_date end_date filing_date'.split(), \
                     lambda x: datetime.strptime(x, '%m/%d/%y') if x else None),
+            # TODO: These following two lines (and the field value) need to be thoroughly tested on the next bundling load
+            FieldCopier({'pdf_url': 'first_image_num'}),
+            FieldModifier('pdf_url', \
+                    lambda x: 'http://query.nictusa.com/pdf/{0}/{1}/{1}.pdf'.format(x[-3:], x)),
             NoneFilter(),
             UnicodeFilter(),
             CountEmitter(every=200),
