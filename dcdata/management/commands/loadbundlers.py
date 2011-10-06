@@ -75,6 +75,7 @@ class BundleHandler(TableHandler):
             NoneFilter(),
             UnicodeFilter(),
             CountEmitter(every=200),
+            #DebugEmitter(),
             DjangoModelEmitter('settings', Bundle)
         )
 
@@ -122,6 +123,7 @@ class LobbyistBundleHandler(TableHandler):
             NoneFilter(),
             UnicodeFilter(),
             CountEmitter(every=500),
+            #DebugEmitter(),
             DjangoModelEmitter('settings', LobbyistBundle)
         )
 
@@ -139,6 +141,9 @@ class Command(BaseCommand):
 
         bundle_file = os.path.abspath(options['bundle_file'])
         lobbyists_file = os.path.abspath(options['lobbyists_file'])
+
+        if not (bundle_file and lobbyists_file):
+            raise CommandError, "Both file paths must exist"
 
         if not (os.path.exists(bundle_file) and os.path.exists(lobbyists_file)):
             raise CommandError, "Both file paths must exist"
