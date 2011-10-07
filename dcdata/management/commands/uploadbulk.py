@@ -24,7 +24,7 @@ class Command(BaseCommand):
     args = "<filename>"
     help = "Uploads a bulk file to S3."
     option_list = BaseCommand.option_list + (
-        make_option('-z', '--gzip', action='store_true', dest='gzip', default=False, help='Compress the file using gzip (caution: compressed file will be stored in-memory)'),
+        make_option('-z', '--zip', action='store_true', dest='zip', default=False, help='Compress the file using zip (caution: compressed file will be stored in-memory)'),
     )
     
     def handle(self, *files, **options):
@@ -49,27 +49,26 @@ class Command(BaseCommand):
             pass
 
         
+        # just the name of the uncompressed file that was passed in
         upload_filename = os.path.basename(filename)
         
+        # the name it will have on S3 (uncompressed)
         url = os.path.join(url, upload_filename)
-        
-        if options['gzip']:
-            url = url + '.gz'
-        
-        file = open(filename)
-        
+
+        if options['zip']:
+            url = url + '.zip'
+            upload_filename = upload_filename + '.zip'
+
         sys.stdout.write("Preparing to upload %s to path %s...\n" % (filename, url))
-        if options['gzip']:
-            from gzip import GzipFile
-            
+        if options['zip']:
+            import zipfile
+
             sys.stdout.write("Compressing file...\n")
-            upload = StringIO()
-            zfile = GzipFile(mode='wb', fileobj=upload)
-            zfile.writelines(file)
+            zfile = zipfile.ZipFile(upload_filename, 'w', allowZip64=True)
+            zfile.write(filename, compress_type=zipfile.ZIP_DEFLATED)
             zfile.close()
-            file.close()
-        else:
-            upload = file
+
+        upload = open(upload_filename)
         
         k = Key(self.bucket)
         k.key = url
@@ -77,5 +76,7 @@ class Command(BaseCommand):
         sys.stdout.write('Uploading...\n')
         k.set_contents_from_file(upload, cb=progress, num_cb=20)
         k.make_public()
+
+        upload.close()
         
         sys.stdout.write('Upload complete.\n')
