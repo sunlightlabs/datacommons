@@ -255,31 +255,23 @@ class LobbyistBundlingDenormalized(models.Model):
     committee_name = models.CharField(max_length=255) # CMTE_NM
     report_year = models.SmallIntegerField() # RPT_YR
     report_type = models.CharField(max_length=3) # RPT_TP
-    is_amendment = models.BooleanField() #AMNDT_IND Values in file: (N)ew/(A)mendment
-    report_type_description = models.CharField(max_length=255) # RPT_TP_DESC
     start_date = models.DateField(null=True) # CVG_START_DT
     end_date = models.DateField(null=True) # CVG_END_DT
-    reporting_period_amount = models.IntegerField(null=True) # QTR_MON_BUNDLED_CONTB
-    semi_annual_amount = models.IntegerField(null=True) # SEMI_AN_BUNDLED_CONTB
-    filing_date = models.DateField(null=True) # RECEIPT_DT
-    first_image_num = models.BigIntegerField() # BEGIN_IMAGE_NUM: the first "page number" in FEC's document ID's
-
-    should_ignore = models.NullBooleanField(null=True) # our field: three-valued boolean
-    image_num = models.BigIntegerField() # IMAGE_NUM: the FEC's actual document ID
+    pdf_url = models.URLField()
     contributor_fec_id = models.CharField(max_length=9, null=True) # CONTBR_ID
-    name = models.CharField(max_length=255) # CONTBR_NM
+    lobbyist_name = models.CharField(max_length=255) # CONTBR_NM
+    firm_name = models.CharField(max_length=255, null=True) # CONTBR_EMPLOYER
+    amount = models.IntegerField(null=True) # CONTB_RECEIPT_AMT
+    ytd_amount = models.IntegerField(null=True) # CONTB_AGGREGATE_YTD
+    recipient_name = models.CharField(max_length=255)
     street_addr1 = models.CharField(max_length=255) # CONTBR_ST1
     street_addr2 = models.CharField(max_length=255, null=True) # CONTBR_ST2
     city = models.CharField(max_length=255) # CONTBR_CITY
     state = models.CharField(max_length=2) # CONTBR_ST
     zip_code = models.CharField(max_length=10) # CONTBR_ZIP
-    employer = models.CharField(max_length=255, null=True) # CONTBR_EMPLOYER
     occupation = models.CharField(max_length=255, null=True) # CONTBR_OCCUPATION
-    amount = models.IntegerField(null=True) # CONTB_RECEIPT_AMT
-    ytd_amount = models.IntegerField(null=True) # CONTB_AGGREGATE_YTD
-
-    receipt_type = models.CharField(max_length=3, null=True)
 
     class Meta:
         managed = False
+        db_table = 'lobbyist_bundling_denormalized_view'
 

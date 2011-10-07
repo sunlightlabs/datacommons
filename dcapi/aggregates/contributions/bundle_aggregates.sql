@@ -82,6 +82,11 @@ create table assoc_bundle_recipients as
 -- );
 -- \copy assoc_bundler_matches_manual from bundler_matches.csv csv header
 
+-- note: the recipients table above uses file_num, but these below use the id PK
+-- should probably pick one and fix it to be consistent
+
+-- the contribution_committee table is missing from staging, preventing
+-- these aggregates from loading properly
 
 drop table if exists assoc_bundler_firms;
 create table assoc_bundler_firms as

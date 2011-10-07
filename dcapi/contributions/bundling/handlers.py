@@ -12,7 +12,7 @@ BUNDLING_SCHEMA = Schema(
 )
 
 def filter_bundling(request):
-    return BUNDLING_SCHEMA.build_filter(LobbyistBundlingDenormalized)
+    return BUNDLING_SCHEMA.build_filter(LobbyistBundlingDenormalized.objects, request)
 
 
 class BundlingFilterHandler(FilterHandler):
