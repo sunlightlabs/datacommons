@@ -31,7 +31,7 @@ class ContributorFilter(Filter):
         if committee:
             record['contributor_name'] = committee['pac_short']
             record['organization_name'] = record['contributor_name']
-            record['organization_ext_id'] = record['contributor_ext_id']
+            record['organization_ext_id'] = record['pac_id']
             record['contributor_party'] = committee['party']
         return record
 
