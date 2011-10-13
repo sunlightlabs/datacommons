@@ -1,15 +1,13 @@
-
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import CSVEmitter
 from saucebrush.utils import Files
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
-import saucebrush
-
-from crp_denormalize import *
+from crp_denormalize import RecipientFilter, Filter, CRPDenormalizeBase, \
+    SpecFilter, parse_date_iso, CatCodeFilter, SPEC, FILE_TYPES, FIELDNAMES
 from dcdata.processor import chain_filters, load_data
-from optparse import make_option
-from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier,\
-    VerifiedCSVSource
+from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
+
+import os.path
 
 
 

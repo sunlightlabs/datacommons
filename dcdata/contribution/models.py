@@ -196,6 +196,8 @@ class Bundle(models.Model):
 
 # This is a straight import of the CRP committee table.
 # We're primarily intersted in the mapping from committee IDs to candidate IDs.
+# command to reload the table is:
+#   \copy contribution_committee (cycle, committee_id, short_name, sponsor, organization_name, recipient_id, recipient_code, fec_candidate_id, party, category, category_source, sensitive, "foreign", active) from cmtes10.txt csv quote '|' force not null party, organization_name, recipient_code, category, category_source, sensitive, short_name
 
 class Committee(models.Model):
     cycle = models.IntegerField()
@@ -212,6 +214,8 @@ class Committee(models.Model):
     sensitive = models.CharField(max_length=1)
     foreign = models.IntegerField()
     active = models.IntegerField()
+    
+
 
 
 class LobbyistBundle(models.Model):
