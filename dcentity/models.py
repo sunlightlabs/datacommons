@@ -233,7 +233,7 @@ class OrganizationMetadataLatest(ExtensibleModel):
     extended_properties = ['parent_entity', 'child_entities']
     # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
 
-    entity = models.OneToOneField(Entity, related_name='organization_metadata_for_latest_cycle', null=False, primary_key=True)
+    entity = models.OneToOneField(Entity, related_name='organization_metadata_for_latest_cycle', null=False, primary_key=True, on_delete=models.DO_NOTHING)
 
     cycle = models.PositiveSmallIntegerField()
 
@@ -269,7 +269,7 @@ class PoliticianMetadata(models.Model):
         db_table = 'matchbox_politicianmetadata'
 
 class PoliticianMetadataLatest(models.Model):
-    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True)
+    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True, on_delete=models.DO_NOTHING)
 
     cycle = models.PositiveSmallIntegerField()
 

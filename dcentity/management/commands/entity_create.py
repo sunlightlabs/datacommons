@@ -94,7 +94,7 @@ class Command(BaseCommand):
             self.log.error(e)
 
 
-    @transaction.commit_on_success()
+    @transaction.commit_manually()
     def create_individuals(self):
         self.log.info("Starting to find individuals to create...")
 
@@ -124,7 +124,7 @@ class Command(BaseCommand):
         """.format(self.today)
 
         self.cursor.execute(creation_sql, None)
-        transaction.set_dirty()
+        transaction.commit()
         self.log.info("- Table tmp_individuals_%s populated." % self.today)
 
         self.cursor.execute("select name, id from tmp_individuals_%s" % self.today)
@@ -140,10 +140,11 @@ class Command(BaseCommand):
             else:
                 build_entity(name, 'individual', [('urn:crp:individual', crp_id)])
 
+        transaction.commit()
         self.log.info("- Created {0} individual entities.".format(len(results)))
 
 
-    @transaction.commit_on_success()
+    @transaction.commit_manually()
     def create_organizations(self):
         self.log.info("Starting to find organizations to create...")
 
@@ -166,7 +167,7 @@ class Command(BaseCommand):
                 group by lower(registrant_name)
         """.format(self.today)
         self.cursor.execute(tmp_sql, None)
-        transaction.set_dirty()
+        transaction.commit()
         self.log.info("- Table tmp_lobbying_orgs_{0} populated.".format(self.today))
 
         self.cursor.execute("select name, nimsp_id, crp_id from tmp_lobbying_orgs_{0}".format(self.today))
@@ -188,10 +189,11 @@ class Command(BaseCommand):
 
                 build_entity(name, 'organization', attributes)
 
+        transaction.commit()
         self.log.info("- Created {0} organization entities.".format(len(results)))
 
 
-    @transaction.commit_on_success()
+    @transaction.commit_manually()
     def create_politicians(self):
         self.log.info("Starting to find politicians to create...")
 
@@ -208,11 +210,12 @@ class Command(BaseCommand):
                 group by transaction_namespace, recipient_ext_id
         """.format(self.today)
         self.cursor.execute(tmp_sql, None)
-        transaction.set_dirty()
+        transaction.commit()
         self.log.info("- Table tmp_politicians_{0} populated.".format(self.today))
 
         self.cursor.execute("select name, namespace, id from tmp_politicians_{0}".format(self.today), None)
         results = self.cursor.fetchall()
+        transaction.commit()
 
         if not self.force_pols and len(results) > POLITICIAN_CREATE_MAX_WARN:
             raise EntityManagementError("The number of politicians set to be created is {0}. The max this script will create automatically is {1}.".format(len(results), POLITICIAN_CREATE_MAX_WARN))
@@ -233,6 +236,7 @@ class Command(BaseCommand):
 
                 build_entity(name, 'politician', attributes)
 
+        transaction.commit()
         self.log.info("- Created {0} politician entities.".format(len(results)))
 
 
