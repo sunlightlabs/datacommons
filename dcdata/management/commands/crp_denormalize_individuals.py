@@ -1,20 +1,18 @@
 import sys
-import logging
 import os
-from optparse import make_option
-from django.core.management.base import CommandError
-from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier,\
-    VerifiedCSVSource
+from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer,\
-    Filter
-from saucebrush.emitters import CSVEmitter, DebugEmitter
+from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, \
+    FieldRenamer, Filter
+from saucebrush.emitters import CSVEmitter
 
 from dcdata.processor import chain_filters, load_data
-from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
+from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
-from crp_denormalize import *
+from crp_denormalize import CRPDenormalizeBase, parse_date_iso, \
+    RecipientFilter, FECOccupationFilter, CatCodeFilter, SpecFilter, \
+    SPEC, FIELDNAMES
 
 ### Filters
 
