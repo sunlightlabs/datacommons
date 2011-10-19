@@ -168,7 +168,7 @@ class Command(BaseCommand):
 
                 union all
 
-                select client_ext_id as crp_id, 0 as nimsp_id, max(l.client_name) as name
+                select coalesce(client_ext_id, 0::varchar(128)) as crp_id, 0 as nimsp_id, max(l.client_name) as name
                 from lobbying_lobbying l
                 where
                     l.use = 't'
