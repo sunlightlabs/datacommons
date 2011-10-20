@@ -151,7 +151,7 @@ class Command(BaseCommand):
         self.cursor.execute('drop table if exists tmp_lobbying_orgs_{0}'.format(self.today), None)
         tmp_sql = """
             create table tmp_lobbying_orgs_{0} as
-                select 0 as crp_id, 0 as nimsp_id, max(l.registrant_name) as name
+                select 0::varchar(128) as crp_id, 0 as nimsp_id, max(l.registrant_name) as name
                 from lobbying_lobbying l
                 where
                     l.use = 't'
@@ -165,6 +165,40 @@ class Command(BaseCommand):
                             and lower(l.registrant_name) = lower(a.alias)
                     )
                 group by lower(registrant_name)
+
+                union
+
+                select coalesce(client_ext_id, 0::varchar(128)) as crp_id, 0 as nimsp_id, max(l.client_name) as name
+                from lobbying_lobbying l
+                where
+                    l.use = 't'
+                    and client_name != ''
+                    and not exists (
+                        select *
+                        from matchbox_entity e
+                        inner join matchbox_entityalias a on e.id = a.entity_id
+                        where
+                            e.type = 'organization'
+                            and lower(l.client_name) = lower(a.alias)
+                    )
+                group by lower(client_name), client_ext_id
+
+                union
+
+                select 0::varchar(128) as crp_id, 0 as nimsp_id, max(l.client_parent_name) as name
+                from lobbying_lobbying l
+                where
+                    l.use = 't'
+                    and client_parent_name != ''
+                    and not exists (
+                        select *
+                        from matchbox_entity e
+                        inner join matchbox_entityalias a on e.id = a.entity_id
+                        where
+                            e.type = 'organization'
+                            and lower(l.client_parent_name) = lower(a.alias)
+                    )
+                group by lower(client_parent_name)
         """.format(self.today)
         self.cursor.execute(tmp_sql, None)
         transaction.commit()
@@ -172,6 +206,7 @@ class Command(BaseCommand):
 
         self.cursor.execute("select name, nimsp_id, crp_id from tmp_lobbying_orgs_{0}".format(self.today))
         results = self.cursor.fetchall()
+        transaction.rollback()
 
         if not self.force_orgs and len(results) > ORGANIZATION_CREATE_MAX_WARN:
             raise EntityManagementError("The number of organizations set to be created is {0}. The max this script will create automatically is {1}.".format(len(results), ORGANIZATION_CREATE_MAX_WARN))
