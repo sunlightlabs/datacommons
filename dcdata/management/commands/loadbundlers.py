@@ -100,7 +100,7 @@ class LobbyistBundleHandler(TableHandler):
         employer = 'CONTBR_EMPLOYER',
         occupation = 'CONTBR_OCCUPATION',
         amount = 'CONTB_RECEIPT_AMT',
-        ytd_amount = 'CONTB_AGGREGATE_YTD',
+        semi_annual_amount = 'CONTB_AGGREGATE_YTD',
         reporting_period_amount_all = 'QTR_MON_BUNDLED_CONTB',
         semi_annual_amount_all = 'SEMI_AN_BUNDLED_CONTB',
         receipt_type = 'RECEIPT_TP',
@@ -118,7 +118,7 @@ class LobbyistBundleHandler(TableHandler):
             BundleFilter(),
             #FieldModifier('file_num', lambda x: Bundle.objects.get(pk=x)),
             # Convert any stray floats to integers
-            FieldModifier('amount ytd_amount'.split(), \
+            FieldModifier('amount semi_annual_amount'.split(), \
                     lambda x: int(round(float(x))) if x else None),
             NoneFilter(),
             UnicodeFilter(),
