@@ -77,7 +77,7 @@ select
     le.id                                as lobbyist_id,
     coalesce(le.name, lb.name)           as lobbyist_name,
     case when report_year % 2 = 0 then report_year else report_year + 1 end as cycle,
-    sum(coalesce(ytd_amount, amount)) as amount
+    sum(coalesce(lb.semi_annual_amount, amount)) as amount
 from contribution_bundle_latest cb
 inner join contribution_lobbyistbundle lb on cb.file_num = lb.file_num_id
 left join assoc_bundle_recipients ra on ra.file_num = cb.file_num

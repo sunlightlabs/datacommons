@@ -5,10 +5,8 @@ from dcdata.contribution.models import LobbyistBundlingDenormalized
 
 
 BUNDLING_SCHEMA = Schema(
-    FulltextField('committee_name'),
-    FulltextField('recipient_name'),
-    FulltextField('lobbyist_name'),
-    FulltextField('firm_name'),
+    FulltextField('recipient_name', ['committee_name', 'recipient_name']),
+    FulltextField('lobbyist_name', ['lobbyist_name', 'firm_name']),
 )
 
 def filter_bundling(request):

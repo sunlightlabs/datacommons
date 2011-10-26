@@ -243,7 +243,7 @@ class LobbyistBundle(models.Model):
     employer = models.CharField(max_length=255, null=True) # CONTBR_EMPLOYER
     occupation = models.CharField(max_length=255, null=True) # CONTBR_OCCUPATION
     amount = models.IntegerField(null=True) # CONTB_RECEIPT_AMT
-    ytd_amount = models.IntegerField(null=True) # CONTB_AGGREGATE_YTD
+    semi_annual_amount = models.IntegerField(null=True) # CONTB_AGGREGATE_YTD
 
     # reporting_period_amount
     # semi_annual_amount
@@ -266,7 +266,7 @@ class LobbyistBundlingDenormalized(models.Model):
     lobbyist_name = models.CharField(max_length=255) # CONTBR_NM
     firm_name = models.CharField(max_length=255, null=True) # CONTBR_EMPLOYER
     amount = models.IntegerField(null=True) # CONTB_RECEIPT_AMT
-    ytd_amount = models.IntegerField(null=True) # CONTB_AGGREGATE_YTD
+    semi_annual_amount = models.IntegerField(null=True) # CONTB_AGGREGATE_YTD
     recipient_name = models.CharField(max_length=255)
     street_addr1 = models.CharField(max_length=255) # CONTBR_ST1
     street_addr2 = models.CharField(max_length=255, null=True) # CONTBR_ST2

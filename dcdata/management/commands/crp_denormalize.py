@@ -140,14 +140,21 @@ def load_catcodes(dataroot):
 def load_candidates(dataroot):
     candidates = { }
     fields = FILE_TYPES['cands']
+
     for cycle in CYCLES:
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cands%s.txt' % cycle)
         reader = csv.DictReader(open(path), fieldnames=fields, quotechar="|")
+
         for record in reader:
             key = "%s:%s" % (record.pop('cycle'), record['cid'].upper())
             del record['fec_cand_id']
             del record['no_pacs']
+
+            if candidates.has_key(key) and not (record['curr_cand'] == 'Y' and record['cycle_cand'] == 'Y'):
+                continue
+
             candidates[key] = record
+
     return candidates
 
 
