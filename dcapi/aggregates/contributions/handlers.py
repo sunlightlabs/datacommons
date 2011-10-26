@@ -126,6 +126,20 @@ class OrgRecipientsHandler(EntityTopListHandler):
         limit %s
     """
 
+class OrgPACRecipientsHandler(EntityTopListHandler):
+
+    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
+
+    stmt = """
+        select recipient_name, recipient_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+        from
+            agg_pacs_from_org
+        where
+            organization_entity = %s
+            and cycle = %s
+        order by total_amount desc
+        limit %s
+    """
 
 class IndustriesHandler(EntityTopListHandler):
 
