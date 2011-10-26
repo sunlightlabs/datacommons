@@ -10,11 +10,11 @@ insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
     select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id) where cycle != -1
     union
     select distinct entity_id, cycle from agg_entities agg inner join matchbox_entity e on e.id = agg.entity_id where type = 'organization' and cycle != -1
+    union
+    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_client using (transaction_id) where cycle != -1
+    union
+    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_client_parent using (transaction_id) where cycle != -1
 ;
-commit;
-
-analyze tmp_matchbox_organizationmetadata;
-commit;
 
 update
     tmp_matchbox_organizationmetadata as tmp
@@ -32,6 +32,7 @@ where
 
 update tmp_matchbox_organizationmetadata set lobbying_firm = 'f' where lobbying_firm is null;
 
+-- populate parent company from contributions
 update
     tmp_matchbox_organizationmetadata as tmp
 set
@@ -56,6 +57,35 @@ where
     tmp.entity_id = x.entity_id
     and tmp.cycle = x.cycle
 ;
+
+-- populate parent company from lobbying
+update
+    tmp_matchbox_organizationmetadata as tmp
+set
+    parent_entity_id = x.parent_entity_id
+from (
+    select distinct on (lc.entity_id, r.cycle)
+        lc.entity_id,
+        r.cycle,
+        lcp.entity_id as parent_entity_id
+    from
+        assoc_lobbying_client lc
+        inner join assoc_lobbying_client_parent lcp using (transaction_id)
+        inner join lobbying_report r using (transaction_id)
+    where
+        lc.entity_id != lcp.entity_id
+        and use
+    group by
+        lc.entity_id, r.cycle, lcp.entity_id
+    order by
+        lc.entity_id, r.cycle, count(r.*) desc
+) x
+where
+    tmp.entity_id = x.entity_id
+    and tmp.cycle = x.cycle
+    and tmp.parent_entity_id is null
+;
+
 
 update
     tmp_matchbox_organizationmetadata as tmp

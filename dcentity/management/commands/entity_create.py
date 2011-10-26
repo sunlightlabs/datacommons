@@ -166,9 +166,9 @@ class Command(BaseCommand):
                     )
                 group by lower(registrant_name)
 
-                union all
+                union
 
-                select client_ext_id as crp_id, 0 as nimsp_id, max(l.client_name) as name
+                select coalesce(client_ext_id, 0::varchar(128)) as crp_id, 0 as nimsp_id, max(l.client_name) as name
                 from lobbying_lobbying l
                 where
                     l.use = 't'
@@ -183,7 +183,7 @@ class Command(BaseCommand):
                     )
                 group by lower(client_name), client_ext_id
 
-                union all
+                union
 
                 select 0::varchar(128) as crp_id, 0 as nimsp_id, max(l.client_parent_name) as name
                 from lobbying_lobbying l
