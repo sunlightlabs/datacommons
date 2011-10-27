@@ -1,0 +1,1 @@
+alter table contribution_lobbyistbundle rename ytd_amount to semi_annual_amount;
