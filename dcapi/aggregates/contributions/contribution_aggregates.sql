@@ -250,7 +250,7 @@ union
         c.contributor_type = 'C'
         and (
             (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction' )
-            or (a.namespace = 'urn:nismp:organization' and c.transaction_namespace = 'urn:nimsp:transaction')
+            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction')
         )
 union
     select * from tmp_assoc_indiv_id
