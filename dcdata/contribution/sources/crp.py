@@ -1,4 +1,5 @@
-CYCLES = [str(year)[2:] for year in range(1990, 2012, 2)]
+# range is not inclusive of the last value
+CYCLES = [str(year)[2:] for year in range(1990, 2014, 2)]
 
 FILE_TYPES = {
     'cands': ['cycle','fec_cand_id','cid','first_last_p','party','dist_id_run_for','dist_id_curr','curr_cand','cycle_cand','crp_ico','recip_code','no_pacs'],

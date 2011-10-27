@@ -111,8 +111,7 @@ select date_trunc('second', now()) || ' -- create index contributions_individual
 create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id);
 
 
--- Only contributions that should be included in totals from organizations
-
+-- Organization contributions to candidates
 
 select date_trunc('second', now()) || ' -- drop table if exists contributions_organization';
 drop table if exists contributions_organization;
@@ -132,6 +131,27 @@ select date_trunc('second', now()) || ' -- create index contributions_organizati
 create index contributions_organization_transaction_id on contributions_organization (transaction_id);
 
 
+-- Organization contributions to PACs
+
+select date_trunc('second', now()) || ' -- drop table if exists contributions_org_to_pac';
+drop table if exists contributions_org_to_pac;
+
+select date_trunc('second', now()) || ' -- create table contributions_org_to_pac';
+create table contributions_org_to_pac as
+    select *
+    from contributions_even_cycles c
+    where
+        contributor_type = 'C'
+        and recipient_type = 'C'
+        and transaction_type in ('', '24k', '24r', '24z')
+        and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and cycle in (select * from agg_cycles);
+
+select date_trunc('second', now()) || ' -- create index contributions_org_to_pac_transaction_id on contributions_org_to_pac (transaction_id)';
+create index contributions_org_to_pac_transaction_id on contributions_org_to_pac (transaction_id);
+
+
+
 -- All contributions that we can aggregate
 
 
@@ -144,7 +164,10 @@ create table contributions_all_relevant as
     union all
     table contributions_individual_to_organization
     union all
-    table contributions_organization;
+    table contributions_organization
+    union all
+    table contributions_org_to_pac
+;
 
 select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
@@ -227,7 +250,7 @@ union
         c.contributor_type = 'C'
         and (
             (a.namespace = 'urn:crp:organization' and c.transaction_namespace = 'urn:fec:transaction' )
-            or (a.namespace = 'urn:nismp:organization' and c.transaction_namespace = 'urn:nimsp:transaction')
+            or (a.namespace = 'urn:nimsp:organization' and c.transaction_namespace = 'urn:nimsp:transaction')
         )
 union
     select * from tmp_assoc_indiv_id
@@ -661,9 +684,9 @@ create table agg_unknown_industries_to_cand as
     )
 
     table unknown_by_cycle
-    
+
     union all
-    
+
     select recipient_entity, -1 as cycle, sum(count) as count, sum(amount) as amount
     from unknown_by_cycle
     group by recipient_entity;
@@ -672,8 +695,7 @@ select date_trunc('second', now()) || ' -- create index agg_unknown_industries_t
 create index agg_unknown_industries_to_cand_idx on agg_unknown_industries_to_cand (recipient_entity, cycle);
 
 
--- Candidates from Individual
-
+-- Individuals: Top Politician Recipients
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_cands_from_indiv';
 drop table if exists agg_cands_from_indiv;
@@ -710,9 +732,7 @@ select date_trunc('second', now()) || ' -- create index agg_cands_from_indiv_idx
 create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle);
 
 
-
--- Organizations from Individual
-
+-- Individuals: Top Organization Recipients
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_orgs_from_indiv';
 drop table if exists agg_orgs_from_indiv;
@@ -749,7 +769,7 @@ select date_trunc('second', now()) || ' -- create index agg_orgs_from_indiv_idx 
 create index agg_orgs_from_indiv_idx on agg_orgs_from_indiv (contributor_entity, cycle);
 
 
--- Organizations to Candidate
+-- Politicians: Top Donor Organizations
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_orgs_to_cand';
 drop table if exists agg_orgs_to_cand;
@@ -820,8 +840,7 @@ select date_trunc('second', now()) || ' -- create index agg_orgs_to_cand_idx on 
 create index agg_orgs_to_cand_idx on agg_orgs_to_cand (recipient_entity, cycle);
 
 
--- Candidates from Organization
-
+-- Organizations: Top Politician Recipients
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_cands_from_org';
 drop table if exists agg_cands_from_org;
@@ -880,6 +899,71 @@ create table agg_cands_from_org as
 
 select date_trunc('second', now()) || ' -- create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, cycle)';
 create index agg_cands_from_org_idx on agg_cands_from_org (organization_entity, cycle);
+
+
+-- Organizations: Top PAC Recipients
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_pacs_from_org';
+drop table if exists agg_pacs_from_org;
+
+select date_trunc('second', now()) || ' -- create table agg_pacs_from_org';
+create table agg_pacs_from_org as
+    with top_direct_and_indiv_contributions_by_cycle as (
+        select organization_entity, recipient_name, recipient_entity, cycle,
+            coalesce(top_direct.count, 0) + coalesce(top_indivs.count, 0) as total_count,
+            coalesce(top_direct.count, 0) as pacs_count,
+            coalesce(top_indivs.count, 0) as indivs_count,
+            coalesce(top_direct.amount, 0) + coalesce(top_indivs.amount, 0) as total_amount,
+            coalesce(top_direct.amount, 0) as pacs_amount,
+            coalesce(top_indivs.amount, 0) as indivs_amount,
+            rank() over (partition by organization_entity, cycle order by (coalesce(top_direct.amount, 0) + coalesce(top_indivs.amount, 0)) desc) as rank
+        from (
+            select ca.entity_id as organization_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
+                cycle, count(*), sum(c.amount) as amount
+            from contributions_org_to_pac c
+            inner join (table organization_associations union table parent_organization_associations union all table industry_associations) ca using (transaction_id)
+            left join recipient_associations ra using (transaction_id)
+            left join matchbox_entity re on re.id = ra.entity_id
+            group by ca.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
+        ) top_direct
+        full outer join (
+            select oa.entity_id as organization_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
+                cycle, count(*), sum(amount) as amount
+            from contributions_individual_to_organization c
+            inner join (table contributor_associations
+                union table organization_associations
+                union table parent_organization_associations
+                union all table industry_associations
+            ) oa using (transaction_id)
+            left join recipient_associations ra using (transaction_id)
+            left join matchbox_entity re on re.id = ra.entity_id
+            group by oa.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
+        ) top_indivs using (organization_entity, recipient_name, recipient_entity, cycle)
+    )
+
+    select organization_entity, recipient_name, recipient_entity, cycle,
+        total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+    from top_direct_and_indiv_contributions_by_cycle
+    where rank <= :agg_top_n
+
+    union all
+
+    select organization_entity, recipient_name, recipient_entity, -1,
+        total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+    from (
+        select organization_entity, recipient_name, recipient_entity,
+            sum(total_count) as total_count, sum(pacs_count) as pacs_count, sum(indivs_count) as indivs_count,
+            sum(total_amount) as total_amount, sum(pacs_amount) as pacs_amount, sum(indivs_amount) as indivs_amount,
+            rank() over (partition by organization_entity order by sum(total_amount) desc) as rank
+        from top_direct_and_indiv_contributions_by_cycle
+        group by organization_entity, recipient_name, recipient_entity
+    ) x
+    where rank <= :agg_top_n
+    ;
+
+select date_trunc('second', now()) || ' -- create index agg_pacs_from_org_idx on agg_pacs_from_org (organization_entity, cycle)';
+create index agg_pacs_from_org_idx on agg_pacs_from_org (organization_entity, cycle);
+
 
 
 

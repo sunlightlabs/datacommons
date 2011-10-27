@@ -7,7 +7,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
-    ContributionAmountHandler
+    ContributionAmountHandler, OrgPACRecipientsHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
@@ -114,6 +114,10 @@ urlpatterns = patterns('',
     # recipients from a single org//pac
     url(r'^org/(?P<entity_id>[a-f0-9]+)/recipients\.(?P<emitter_format>.+)$',
         Resource(OrgRecipientsHandler, **ad)),
+
+    # pac recipients from an org
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/recipient_pacs\.(?P<emitter_format>.+)$',
+        Resource(OrgPACRecipientsHandler, **ad)),
 
     # recipients from a single org, broken down to show percentages
     url(r'^org/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$',
