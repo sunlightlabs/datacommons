@@ -22,7 +22,7 @@ class CaseIdentifier(models.Model):
 
 
 class Penalty(models.Model):
-    activity_id = models.ForeignKey(CaseIdentifier)
+    activity_id = models.ForeignKey(CaseIdentifier, db_column='activity_id')
     penalty_sought = models.IntegerField(db_column='enfops', blank=True, null=True)
     federal_penalty_accessed = models.IntegerField(db_column='enfotpa', blank=True, null=True)
     state_local_penality = models.IntegerField(db_column='enfcslp', blank=True, null=True)
@@ -36,7 +36,7 @@ class Penalty(models.Model):
 
 
 class Facility(models.Model):
-    activity_id = models.ForeignKey(CaseIdentifier)
+    activity_id = models.ForeignKey(CaseIdentifier, db_column='activity_id')
     facility_uin = models.BigIntegerField(db_column='fcltuin', null=True)
     primary_name = models.CharField(max_length=200, db_column='fcltynm', blank=True)
     location_address = models.CharField(max_length=50, db_column='fcltyad', blank=True)
@@ -52,7 +52,7 @@ class Facility(models.Model):
 
 
 class Defendant(models.Model):
-    activity_id = models.ForeignKey(CaseIdentifier)
+    activity_id = models.ForeignKey(CaseIdentifier, db_column='activity_id')
     name = models.CharField(max_length=50, db_column='defennm', blank=True)
     named_in_complaint_flag = models.CharField(max_length=1, db_column='defennc', blank=True)
     named_in_settlement_flag = models.CharField(max_length=1, db_column='defenns', blank=True)
@@ -62,7 +62,7 @@ class Defendant(models.Model):
 
 
 class Milestone(models.Model):
-    activity_id = models.ForeignKey(CaseIdentifier)
+    activity_id = models.ForeignKey(CaseIdentifier, db_column='activity_id')
     sub_activity_type_code = models.CharField(max_length=100, db_column='subacty', blank=True)
     actual_date = models.DateField(db_column='subacad', blank=True, null=True)
 
