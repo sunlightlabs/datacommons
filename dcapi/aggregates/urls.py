@@ -7,7 +7,8 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
-    ContributionAmountHandler
+    ContributionAmountHandler, OrgPACRecipientsHandler
+from dcapi.aggregates.contributions.bundle_handlers import BundleHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
@@ -114,6 +115,10 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]+)/recipients\.(?P<emitter_format>.+)$',
         Resource(OrgRecipientsHandler, **ad)),
 
+    # pac recipients from an org
+    url(r'^org/(?P<entity_id>[a-f0-9]+)/recipient_pacs\.(?P<emitter_format>.+)$',
+        Resource(OrgPACRecipientsHandler, **ad)),
+
     # recipients from a single org, broken down to show percentages
     url(r'^org/(?P<entity_id>[a-f0-9]+)/recipients/party_breakdown\.(?P<emitter_format>.+)$',
         Resource(OrgPartyBreakdownHandler, **ad)),
@@ -190,6 +195,10 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]+)/faca/(?P<agency>.+)\.(?P<emitter_format>.+)$',
         Resource(FACACommitteeMembersHandler, **ad)),
+
+    # bundling
+    url(r'^(org|indiv|pol)/(?P<entity_id>[a-f0-9]+)/bundles\.(?P<emitter_format>.+)$',
+            Resource(BundleHandler, **ad)),
 )
 
 

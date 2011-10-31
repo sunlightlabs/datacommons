@@ -9,6 +9,7 @@ from dcapi.validate_jsonp import is_valid_jsonp_callback_value
 import csv
 import cStringIO
 import datetime
+import uuid
 from xlwt import XFStyle
 import xlwt
 
@@ -127,6 +128,8 @@ class ExcelEmitter(StreamingEmitter):
                 ws.write(row, col, value, self.mdyhm_style)
             elif isinstance(value, datetime.date):
                 ws.write(row, col, value, self.mdy_style)
+            elif isinstance(value, uuid.UUID):
+                ws.write(row, col, str(value))
             else:
                 ws.write(row, col, value)
             col += 1
@@ -144,7 +147,9 @@ class ExcelEmitter(StreamingEmitter):
         wb = xlwt.Workbook()
         ws = wb.add_sheet(sheet_name)
 
-        self.write_row(ws, 0, self.fields)
+        sorted_fields = sorted(self.fields) # output the spreadsheets with columns in alphabetical order
+
+        self.write_row(ws, 0, sorted_fields)
 
         row = 0
         for record in self.data:
@@ -152,7 +157,7 @@ class ExcelEmitter(StreamingEmitter):
 
             record_as_dict = self.construct_record(record)
 
-            values = [record_as_dict[f] for f in self.fields]
+            values = [record_as_dict[f] for f in sorted_fields]
             self.write_row(ws, row, values)
             stats.log(record)
 

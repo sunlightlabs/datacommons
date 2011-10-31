@@ -49,3 +49,12 @@ class AlecSponsor(models.Model):
     class Meta:
         db_table = 'alec_sponsor'
 
+
+class Fortune100Company(models.Model):
+    rank = models.SmallIntegerField(null=False)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'fortune_100'
+
+
