@@ -7,4 +7,4 @@ class APIMiddleware(object):
             request.session[RETURN_ENTITIES_KEY] = True
         elif use_entities == '0':
             request.session[RETURN_ENTITIES_KEY] = False
-            
+
