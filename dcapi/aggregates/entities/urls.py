@@ -3,12 +3,7 @@ from handlers import EntityHandler, EntitySearchHandler, EntityAttributeHandler,
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
 from piston.resource import Resource
-#from dcapi.common.emitters import StreamingLoggingCSVEmitter, StreamingLoggingJSONEmitter
 
-# streamingloggingemitters need to be rewritten but for now we'll just
-# use the base included json emitter
-# Emitter.register('json', StreamingLoggingJSONEmitter, 'application/json')
-# Emitter.register('csv', StreamingLoggingCSVEmitter, 'text/csv')
 Emitter.unregister('django')
 Emitter.unregister('pickle')
 Emitter.unregister('xml')
