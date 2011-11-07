@@ -16,3 +16,4 @@ django-sentry
 BeautifulSoup
 scrapelib
 httplib2
+csvkit
