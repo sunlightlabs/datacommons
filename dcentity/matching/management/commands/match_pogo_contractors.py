@@ -1,4 +1,5 @@
-from dcentity.matching.management.base.matching import OrganizationalMatchingCommand
+from dcentity.matching.management.base.organizational_matching \
+        import OrganizationalMatchingCommand
 from dcdata.pogo.models import Contractor
 from dcentity.models import Entity
 
