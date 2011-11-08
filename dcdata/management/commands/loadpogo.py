@@ -4,6 +4,7 @@ from django.db import transaction
 
 import os.path
 import csv
+import re
 from datetime import datetime
 
 CONTRACTORS_FIELDS = 'contractor url'.split()
@@ -19,9 +20,11 @@ class Command(BaseCommand):
         for row in contractors_reader:
             # TODO: This can take over the regex processing to get contractor_ext_id from the URL
             # (currently being done in a one-off SQL script)
+            contractor_ext_id = re.search(r'ContractorID=(\d+)', row['URL']).groups()[0]
             Contractor.objects.create(
                 name = row['Contractor'],
                 url = row['URL'],
+                contractor_ext_id = contractor_ext_id,
             )
 
 
