@@ -70,12 +70,12 @@ group by lb.id, entity_id;
 drop table if exists agg_bundling;
 create table agg_bundling as
 select
-    re.id                                as recipient_id,
-    coalesce(re.name, cb.committee_name) as recipient_name,
-    fe.id                                as firm_id,
-    coalesce(fe.name, lb.name)           as firm_name,
-    le.id                                as lobbyist_id,
-    coalesce(le.name, lb.name)           as lobbyist_name,
+    re.id                                   as recipient_id,
+    coalesce(re.name, cb.committee_name)    as recipient_name,
+    fe.id                                   as firm_id,
+    coalesce(fe.name, lb.employer, lb.name) as firm_name,
+    le.id                                   as lobbyist_id,
+    coalesce(le.name, fe.name, lb.name)     as lobbyist_name,
     case when report_year % 2 = 0 then report_year else report_year + 1 end as cycle,
     sum(coalesce(lb.semi_annual_amount, amount)) as amount
 from contribution_bundle_latest cb
@@ -88,8 +88,8 @@ left join assoc_bundler_lobbyists la on la.bundle_id = lb.id
 left join matchbox_entity le on le.id = la.entity_id
 group by
     re.id, coalesce(re.name, cb.committee_name),
-    fe.id , coalesce(fe.name, lb.name),
-    le.id, coalesce(le.name, lb.name),
+    fe.id , coalesce(fe.name, lb.employer, lb.name),
+    le.id, coalesce(le.name, fe.name, lb.name),
     case when report_year % 2 = 0 then report_year else report_year + 1 end;
 
 drop view if exists lobbyist_bundling_denormalized_view;
