@@ -219,7 +219,7 @@ class Committee(models.Model):
 
 
 class LobbyistBundle(models.Model):
-    file_num = models.ForeignKey('Bundle') # FILE_NUM
+    file_num = models.ForeignKey('Bundle', db_column='file_num') # FILE_NUM
 
     """
     following are fields in the worksheet which duplicate the BundledContribution fields

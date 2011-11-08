@@ -43,8 +43,7 @@ drop table if exists assoc_bundler_firms;
 create table assoc_bundler_firms as
 select lb.id as bundle_id, entity_id
 from contribution_bundle_latest cb -- this table here only to restrict which lobbyistbundles are used.
-inner join contribution_lobbyistbundle lb on 
-    cb.file_num = lb.file_num_id
+inner join contribution_lobbyistbundle lb using (file_num)
 inner join assoc_bundler_matches_manual a on
     lb.name = a.name or lb.employer = a.name
 inner join matchbox_entity e on e.id = a.entity_id
@@ -57,8 +56,7 @@ drop table if exists assoc_bundler_lobbyists;
 create table assoc_bundler_lobbyists as
 select lb.id as bundle_id, entity_id
 from contribution_bundle_latest cb -- this table here only to restrict which lobbyistbundles are used.
-inner join contribution_lobbyistbundle lb on 
-    cb.file_num = lb.file_num_id
+inner join contribution_lobbyistbundle lb using (file_num)
 inner join assoc_bundler_matches_manual a on
     lb.name = a.name
 inner join matchbox_entity e on e.id = a.entity_id
@@ -79,8 +77,8 @@ select
     case when report_year % 2 = 0 then report_year else report_year + 1 end as cycle,
     sum(coalesce(lb.semi_annual_amount, amount)) as amount
 from contribution_bundle_latest cb
-inner join contribution_lobbyistbundle lb on cb.file_num = lb.file_num_id
-left join assoc_bundle_recipients ra on ra.file_num = cb.file_num
+inner join contribution_lobbyistbundle lb using (file_num)
+left join assoc_bundle_recipients ra using (file_num)
 left join matchbox_entity re on re.id = ra.entity_id
 left join assoc_bundler_firms fa on fa.bundle_id = lb.id
 left join matchbox_entity fe on fe.id = fa.entity_id
@@ -116,7 +114,7 @@ create view lobbyist_bundling_denormalized_view as
         lb.semi_annual_amount,
         pdf_url
     from contribution_bundle cb
-        inner join contribution_lobbyistbundle lb on file_num = file_num_id
+        inner join contribution_lobbyistbundle lb using (file_num)
         left join assoc_bundle_recipients abr using (file_num)
         left join matchbox_entity re on abr.entity_id = re.id
         left join assoc_bundler_lobbyists abl on abl.bundle_id = lb.id
