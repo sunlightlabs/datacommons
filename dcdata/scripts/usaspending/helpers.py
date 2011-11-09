@@ -21,7 +21,7 @@ def nullable(value):
     return value
 
 def nullable_float(value):
-    if value == '':
+    if value == '' or value == 'N/A':
         return None
     
     return float(value)
