@@ -1,3 +1,5 @@
+update contribution_lobbyistbundle set semi_annual_amount = null where semi_annual_amount = 0;
+
 drop function if exists semi_annual(date) cascade;
 create function semi_annual(date) returns text as $$
     select extract(year from $1)::text || '/' || case when extract(month from $1) > 6 then '1' else '0' end
