@@ -12,6 +12,8 @@ import re
 import sys
 import logging
 
+from dcdata.management.commands.base.importer import BaseImporter
+
 
 CONTRACT_STRINGS = dict([(f.name, f.max_length) for f in Contract._meta.fields if isinstance(f, CharField)])
 GRANT_STRINGS = dict([(f.name, f.max_length) for f in Grant._meta.fields if isinstance(f, CharField)])

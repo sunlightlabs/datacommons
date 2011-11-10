@@ -2,7 +2,7 @@ from helpers import nullable_float, splitCode, transformFlag, nullable, \
         nullable_int, agency_name_lookup, recovery_act, datestamp, \
         first_char
 
-FPDS_FIELDS = [
+FIELDS = [
 ('unique_transaction_id', None),
 ('transaction_status', None),
 ('obligatedamount', nullable_float),
@@ -159,21 +159,13 @@ FPDS_FIELDS = [
 ('otherstatutoryauthority', None),
 ('interagencycontractingauthority', splitCode),
 ('isserviceprovider', transformFlag),
-
 ]
 
-CALCULATED_FPDS_FIELDS = [
+CALCULATED_FIELDS = [
         ('agency_name', 'agencyid', agency_name_lookup),
         ('contracting_agency_name', 'contractingofficeagencyid', agency_name_lookup),
         ('requesting_agency_name', 'fundingrequestingagencyid', agency_name_lookup),
         ('imported_on', None, datestamp),
 ]
 
-
-
-
-
-        
-    
-    
     
