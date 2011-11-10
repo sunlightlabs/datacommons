@@ -65,6 +65,14 @@ def upload(source_dir):
         c.copy_expert("COPY %s FROM STDIN CSV HEADER" % conf.sql_table, infile)
 
 
+def _execute_file(cursor, filename):
+    contents = " ".join(open(filename, 'r'))
+    statements = contents.split(';')
+    
+    for statement in statements:
+        cursor.execute(statement)
+
+
 def reload_fec(dir=None):
     if not dir:
         dir = tempfile.mkdtemp()
