@@ -1,7 +1,8 @@
-from helpers import *
+from helpers import splitCode, nullable, recovery_act, datestamp, \
+        splitInt, correctionLateIndicator
 
 
-FAADS_FIELDS = [('unique_transaction_id', None),
+FIELDS = [('unique_transaction_id', None),
                 ('transaction_status', None),
                 ('fyq', None),
                 ('cfda_program_num', None),
@@ -57,7 +58,7 @@ FAADS_FIELDS = [('unique_transaction_id', None),
                 ('uri', None),
                 ('recipient_state_code', splitCode)]
 
-CALCULATED_FAADS_FIELDS = [
+CALCULATED_FIELDS = [
     ('imported_on', None, datestamp)
 ]
 
