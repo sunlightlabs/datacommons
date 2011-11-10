@@ -86,7 +86,8 @@ class BaseImporter(BaseCommand):
                     self.dry_run_for_file(file_path)
         except:
             self.log.exception("Unexpected error:")
-            self.reject_file(file_path)
+            if file_path:
+                self.reject_file(file_path)
         finally:
             self.destroy_pid_file()
 
