@@ -14,11 +14,13 @@ FEC_CONFIG = [
     F('ftp://ftp.fec.gov/FEC/cm12.zip', 'foiacm.dta', 'fec_committee_master_schema.csv', 'fec_committees'),
     F('ftp://ftp.fec.gov/FEC/cn12.zip', 'foiacn.dta', 'fec_candidate_master_schema.csv', 'fec_candidates'),
     F('ftp://ftp.fec.gov/FEC/indiv12.zip', 'itcont.dta', 'fec_individual_contributions.csv', 'fec_indiv_import'),
-    F('ftp://ftp.fec.gov/FEC/pas212.zip', 'itoth.dta', 'fec_contributions_to_candidates.csv', 'fec_pac2cand'),
-    F('ftp://ftp.fec.gov/FEC/oth12.zip', 'itpas2.dta', 'fec_committee_transactions.csv', 'fec_pac2pac')
+    F('ftp://ftp.fec.gov/FEC/pas212.zip', 'itpas2.dta', 'fec_contributions_to_candidates.csv', 'fec_pac2cand_import'),
+    F('ftp://ftp.fec.gov/FEC/oth12.zip', 'itoth.dta', 'fec_committee_transactions.csv', 'fec_pac2pac_import')
 ]
 
 SCHEMA_ROOT = os.path.abspath('../ffs/us/fec/')
+
+SQL_RELOAD_FILE = os.path.join(os.path.dirname(__file__), 'reload_fec.sql')
 
 
 def download(destination_dir):
@@ -51,13 +53,12 @@ def fec_2_csv(source_dir):
     for conf in FEC_CONFIG:       
         outfile = open(os.path.join(abs_source, conf.dta_file.split(".")[0] + ".csv"), 'w')
         subprocess.check_call(
-            ['in2csv', '--f=fixed', '--schema=%s' % os.path.join(SCHEMA_ROOT, conf.schema_file), os.path.join(abs_source, conf.dta_file + ".utf8")],
-            stdout=outfile)
+            ['sort -u %s | in2csv -f fixed --schema=%s' % (os.path.join(abs_source, conf.dta_file + ".utf8"), os.path.join(SCHEMA_ROOT, conf.schema_file))],
+            shell=True, stdout=outfile)
 
 
-def upload(source_dir):
+def upload(c, source_dir):
     abs_source = os.path.expanduser(source_dir)
-    c = connection.cursor()
     
     for conf in FEC_CONFIG:
         infile = open(os.path.join(abs_source, conf.dta_file.split(".")[0] + ".csv"), 'r')
@@ -65,11 +66,12 @@ def upload(source_dir):
         c.copy_expert("COPY %s FROM STDIN CSV HEADER" % conf.sql_table, infile)
 
 
-def _execute_file(cursor, filename):
-    contents = " ".join(open(filename, 'r'))
-    statements = contents.split(';')
+def execute_file(cursor, filename):
+    contents = " ".join([line for line in open(filename, 'r') if line[0:2] != '--'])
+    statements = contents.split(';')[:-1] # split on semi-colon. Last element will be trailing whitespace
     
     for statement in statements:
+        print "Executing %s" % statement
         cursor.execute(statement)
 
 
@@ -89,8 +91,13 @@ def reload_fec(dir=None):
     print "Concerting to CSV..."
     fec_2_csv(dir)
     
+    c = connection.cursor()
+    
     print "Uploading data..."
-    upload(dir)
+    upload(c, dir)
+    
+    print "Processing uploaded data..."
+    execute_file(c, SQL_RELOAD_FILE)
     
     print "Done."
     
