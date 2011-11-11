@@ -15,9 +15,9 @@ class BaseUSASpendingConverter(BaseImporter):
     """
 
     IN_DIR =       '/home/usaspending/usaspending/latest/datafeeds'
-    DONE_DIR =     '/home/usaspending/usaspending/latest/datafeeds/DONE'
-    REJECTED_DIR = '/home/usaspending/usaspending/latest/datafeeds/REJECTED'
-    OUT_DIR =      '/home/usaspending/usaspending/latest/datafeeds/OUT'
+    DONE_DIR =     '/home/usaspending/usaspending/latest/DONE'
+    REJECTED_DIR = '/home/usaspending/usaspending/latest/REJECTED'
+    OUT_DIR =      '/home/usaspending/usaspending/latest/OUT'
     FILE_PATTERN = '*_All_*.csv' # bash-style, ala '*.sql'
 
     email_subject = 'Unhappy USASpending App'
