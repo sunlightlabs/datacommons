@@ -34,13 +34,17 @@ class BaseUSASpendingConverter(BaseImporter):
         # check in each separate importer
 
         if not self.file_is_right_type(file_path):
+            self.log.info("Doesn't match file pattern for this importer. Skipping.")
             return
 
         self.log.info("Starting...")
 
         outfile_name = '{0}_{1}.csv'.format(self.outfile_basename, self.get_year_from_file_path(file_path))
+        outfile_path = os.path.join(self.OUT_DIR, outfile_name)
 
-        self.parse_file(file_path, outfile_name, self.module.FIELDS, self.get_string_fields(), self.module.CALCULATED_FIELDS)
+        self.parse_file(file_path, outfile_path, self.module.FIELDS, self.get_string_fields(), self.module.CALCULATED_FIELDS)
+
+        self.archive_file(file_path, True)
 
         self.log.info("Done.")
 
