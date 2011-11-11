@@ -18,7 +18,7 @@ class BaseUSASpendingConverter(BaseImporter):
     DONE_DIR =     '/home/usaspending/usaspending/latest/datafeeds/DONE'
     REJECTED_DIR = '/home/usaspending/usaspending/latest/datafeeds/REJECTED'
     OUT_DIR =      '/home/usaspending/usaspending/latest/datafeeds/OUT'
-    FILE_PATTERN = None # bash-style, ala '*.sql'
+    FILE_PATTERN = '*_All_*.csv' # bash-style, ala '*.sql'
 
     email_subject = 'Unhappy USASpending App'
 
@@ -29,6 +29,13 @@ class BaseUSASpendingConverter(BaseImporter):
 
 
     def do_for_file(self, file_path):
+        # Since all the files for both contracts and grants importers start out
+        # in the same directory, we make the file pattern permissive and do an extra
+        # check in each separate importer
+
+        if not self.file_is_right_type(file_path):
+            return
+
         self.log.info("Starting...")
 
         outfile_name = '{0}_{1}.csv'.format(self.outfile_basename, self.get_year_from_file_path(file_path))
@@ -41,6 +48,10 @@ class BaseUSASpendingConverter(BaseImporter):
     def outfile_path(self, infile):
         outfile = '{0}_{1}.csv'.format(self.outfile_basename, self.get_year_from_file_path(infile))
         return os.path.join([self.OUT_DIR, outfile])
+
+
+    def file_is_right_type(self, file_):
+        raise NotImplementedError("file_is_right_type() must be defined in the child class")
 
 
     def parse_file(self, input_, output, fields, string_lengths, calculated_fields=None):

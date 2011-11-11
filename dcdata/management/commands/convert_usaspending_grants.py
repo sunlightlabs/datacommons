@@ -14,4 +14,7 @@ class Command(BaseUSASpendingConverter):
     def __init__(self):
         super(Command, self).__init__()
 
+    
+    def file_is_right_type(self, file_):
+        return 'Contracts' not in file_
 
