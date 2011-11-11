@@ -4,8 +4,6 @@ from dcdata.scripts.usaspending import fpds
 
 
 class Command(BaseUSASpendingConverter):
-    FILE_PATTERN = '*_All_Contracts_Full_*.csv' # bash-style, ala '*.sql'
-
     modelclass = Contract
     outfile_basename = 'contracts'
     module = fpds
