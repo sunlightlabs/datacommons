@@ -14,6 +14,6 @@ class Command(BaseUSASpendingConverter):
         super(Command, self).__init__()
 
 
-    def extra_filename_check(self, file_):
+    def file_is_right_type(self, file_):
         return 'Contracts' in file_
 
