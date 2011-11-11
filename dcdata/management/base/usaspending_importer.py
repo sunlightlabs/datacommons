@@ -47,7 +47,7 @@ class BaseUSASpendingConverter(BaseImporter):
 
     def outfile_path(self, infile):
         outfile = '{0}_{1}.csv'.format(self.outfile_basename, self.get_year_from_file_path(infile))
-        return os.path.join([self.OUT_DIR, outfile])
+        return os.path.join(self.OUT_DIR, outfile)
 
 
     def file_is_right_type(self, file_):
