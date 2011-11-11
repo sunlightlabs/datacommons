@@ -128,7 +128,7 @@ class BaseImporter(BaseCommand):
                     else:
                         self.log.info('File last modified time is too recent. Skipping.')
                 else:
-                    self.log.warning('{0} doesn\'t match the file pattern. Rejecting.'.format(file))
+                    self.log.warning('{0} doesn\'t match the file pattern ({1}). Rejecting.'.format(file, self.FILE_PATTERN))
                     self.reject_file(file)
         else:
             self.log.info('No files found.')
