@@ -56,7 +56,7 @@ class BaseUSASpendingConverter(BaseImporter):
 
     def parse_file(self, input_, output, fields, string_lengths, calculated_fields=None):
         reader = csv.DictReader(input_)
-        writer = csv.writer(output, delimiter='|')
+        writer = csv.writer(open(output, 'w'), delimiter='|')
 
         def null_transform(value):
             return value
