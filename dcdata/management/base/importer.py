@@ -88,16 +88,16 @@ class BaseImporter(BaseCommand):
 
     def try_file(self, file_path):
         try:
-            if not self.dry_run:
-                self.do_for_file(file_path)
-            else:
-                self.dry_run_for_file(file_path)
+            self.file_func(file_path)
         except:
             self.log.exception("Unexpected error:")
             self.reject_file(file_path)
 
-    # define this in the derived classes
+    def file_func(self):
+        return self.dry_run_for_file if self.dry_run else self.do_for_file
 
+
+    # define this in the derived classes
     def do_for_file(self, file_path):
         """
             The meat of the operation happens here.
