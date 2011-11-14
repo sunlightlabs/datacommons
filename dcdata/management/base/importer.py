@@ -9,7 +9,7 @@ import datetime
 from settings import LOGGING_EMAIL, LOGGING_DIRECTORY, TMP_DIRECTORY
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
-
+from multiprocessing import Pool
 
 class BaseImporter(BaseCommand):
 
@@ -78,23 +78,24 @@ class BaseImporter(BaseCommand):
 
         self.dry_run = options['dry_run']
 
-        file_func = self.dry_run_for_file if self.dry_run else self.do_for_file
-
-        self.main_loop(file_func)
+        pool = Pool(processes=2)
+        pool.map(self.try_file, self.find_eligible_files())
 
         self.destroy_pid_file()
 
         self.log.info('Finished.')
 
 
-    def main_loop(self, file_func):
-        for file_path in self.find_eligible_files():
-            try:
-                file_func(file_path)
-            except:
-                self.log.exception("Unexpected error:")
-                self.reject_file(file_path)
-                break
+    def file_func(self):
+        return self.dry_run_for_file if self.dry_run else self.do_for_file
+
+
+    def try_file(self, file_path):
+        try:
+            self.file_func(file_path)
+        except:
+            self.log.exception("Unexpected error:")
+            self.reject_file(file_path)
 
 
     # define this in the derived classes
