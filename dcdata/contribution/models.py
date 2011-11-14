@@ -255,25 +255,27 @@ class LobbyistBundle(models.Model):
 class LobbyistBundlingDenormalized(models.Model):
     """ This class is intended for use in TD """
     file_num = models.IntegerField(primary_key=True) # FILE_NUM
-    committee_fec_id = models.CharField(max_length=9) # CMTE_ID
     committee_name = models.CharField(max_length=255) # CMTE_NM
+    committee_fec_id = models.CharField(max_length=9) # CMTE_ID
     report_year = models.SmallIntegerField() # RPT_YR
     report_type = models.CharField(max_length=3) # RPT_TP
     start_date = models.DateField(null=True) # CVG_START_DT
     end_date = models.DateField(null=True) # CVG_END_DT
-    pdf_url = models.URLField()
-    contributor_fec_id = models.CharField(max_length=9, null=True) # CONTBR_ID
-    lobbyist_name = models.CharField(max_length=255) # CONTBR_NM
-    firm_name = models.CharField(max_length=255, null=True) # CONTBR_EMPLOYER
-    amount = models.IntegerField(null=True) # CONTB_RECEIPT_AMT
+    period_amount = models.IntegerField(null=True) # CONTB_RECEIPT_AMT
     semi_annual_amount = models.IntegerField(null=True) # CONTB_AGGREGATE_YTD
-    recipient_name = models.CharField(max_length=255)
+    standardized_recipient_name = models.CharField(max_length=255)
+    standardized_lobbyist_name = models.CharField(max_length=255) # CONTBR_NM
+    standardized_firm_name = models.CharField(max_length=255, null=True) # CONTBR_EMPLOYER
+    bundler_name = models.CharField(max_length=255)
+    bundler_employer = models.CharField(max_length=255)
+    bundler_occupation = models.CharField(max_length=255)
+    bundler_fec_id = models.CharField(max_length=9, null=True) # CONTBR_ID
     street_addr1 = models.CharField(max_length=255) # CONTBR_ST1
     street_addr2 = models.CharField(max_length=255, null=True) # CONTBR_ST2
     city = models.CharField(max_length=255) # CONTBR_CITY
     state = models.CharField(max_length=2) # CONTBR_ST
     zip_code = models.CharField(max_length=10) # CONTBR_ZIP
-    occupation = models.CharField(max_length=255, null=True) # CONTBR_OCCUPATION
+    pdf_url = models.URLField()
 
     class Meta:
         managed = False
