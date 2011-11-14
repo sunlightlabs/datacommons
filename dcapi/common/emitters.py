@@ -147,9 +147,7 @@ class ExcelEmitter(StreamingEmitter):
         wb = xlwt.Workbook()
         ws = wb.add_sheet(sheet_name)
 
-        sorted_fields = sorted(self.fields) # output the spreadsheets with columns in alphabetical order
-
-        self.write_row(ws, 0, sorted_fields)
+        self.write_row(ws, 0, self.fields)
 
         row = 0
         for record in self.data:
@@ -157,7 +155,7 @@ class ExcelEmitter(StreamingEmitter):
 
             record_as_dict = self.construct_record(record)
 
-            values = [record_as_dict[f] for f in sorted_fields]
+            values = [record_as_dict[f] for f in self.fields]
             self.write_row(ws, row, values)
             stats.log(record)
 
