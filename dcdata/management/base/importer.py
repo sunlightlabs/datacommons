@@ -9,6 +9,7 @@ import datetime
 from settings import LOGGING_EMAIL, LOGGING_DIRECTORY, TMP_DIRECTORY
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
+from joblib import Parallel, delayed
 
 
 class BaseImporter(BaseCommand):
@@ -74,27 +75,26 @@ class BaseImporter(BaseCommand):
         self.die_if_already_running()
         self.set_pid_file()
 
-        self.log.info('Starting {0}'.format(self.class_name))
-
         self.dry_run = options['dry_run']
 
-        file_func = self.dry_run_for_file if self.dry_run else self.do_for_file
+        self.log.info('Starting {0}'.format(self.class_name))
 
-        self.main_loop(file_func)
+        Parallel(n_jobs=2)(delayed(self.try_file)(file_path) for file_path in self.find_eligible_files())
 
         self.destroy_pid_file()
 
         self.log.info('Finished.')
 
 
-    def main_loop(self, file_func):
-        for file_path in self.find_eligible_files():
-            try:
-                file_func(file_path)
-            except:
-                self.log.exception("Unexpected error:")
-                self.reject_file(file_path)
-                break
+    def try_file(self, file_path):
+        try:
+            self.file_func(file_path)
+        except:
+            self.log.exception("Unexpected error:")
+            self.reject_file(file_path)
+
+    def file_func(self):
+        return self.dry_run_for_file if self.dry_run else self.do_for_file
 
 
     # define this in the derived classes
