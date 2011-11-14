@@ -10,17 +10,19 @@ from django.db import connection
 
 F = namedtuple('F', ['url', 'dta_file', 'schema_file', 'sql_table'])
 
+# note: tables will be created/destroyed in this order. So must do dependant tables first to avoid constraint errors.
 FEC_CONFIG = [
-    F('ftp://ftp.fec.gov/FEC/cm12.zip', 'foiacm.dta', 'fec_committee_master_schema.csv', 'fec_committees'),
-    F('ftp://ftp.fec.gov/FEC/cn12.zip', 'foiacn.dta', 'fec_candidate_master_schema.csv', 'fec_candidates'),
     F('ftp://ftp.fec.gov/FEC/indiv12.zip', 'itcont.dta', 'fec_individual_contributions.csv', 'fec_indiv_import'),
     F('ftp://ftp.fec.gov/FEC/pas212.zip', 'itpas2.dta', 'fec_contributions_to_candidates.csv', 'fec_pac2cand_import'),
-    F('ftp://ftp.fec.gov/FEC/oth12.zip', 'itoth.dta', 'fec_committee_transactions.csv', 'fec_pac2pac_import')
+    F('ftp://ftp.fec.gov/FEC/oth12.zip', 'itoth.dta', 'fec_committee_transactions.csv', 'fec_pac2pac_import'),
+    F('ftp://ftp.fec.gov/FEC/cm12.zip', 'foiacm.dta', 'fec_committee_master_schema.csv', 'fec_committees'),
+    F('ftp://ftp.fec.gov/FEC/cn12.zip', 'foiacn.dta', 'fec_candidate_master_schema.csv', 'fec_candidates'),
 ]
 
 SCHEMA_ROOT = os.path.abspath('../ffs/us/fec/')
 
-SQL_RELOAD_FILE = os.path.join(os.path.dirname(__file__), 'reload_fec.sql')
+SQL_PRELOAD_FILE = os.path.join(os.path.dirname(__file__), 'preload.sql')
+SQL_POSTLOAD_FILE = os.path.join(os.path.dirname(__file__), 'postload.sql')
 
 
 def download(destination_dir):
@@ -34,7 +36,7 @@ def download(destination_dir):
 
 def extract(source_dir):
     abs_source = os.path.expanduser(source_dir)
-    subprocess.check_call(['unzip', os.path.join(abs_source, "*.zip"), "-d" + abs_source])
+    subprocess.check_call(['unzip', '-u', os.path.join(abs_source, "*.zip"), "-d" + abs_source])
     
     
 def fix_unicode(source_dir):
@@ -94,10 +96,11 @@ def reload_fec(dir=None):
     c = connection.cursor()
     
     print "Uploading data..."
+    execute_file(c, SQL_PRELOAD_FILE)
     upload(c, dir)
     
     print "Processing uploaded data..."
-    execute_file(c, SQL_RELOAD_FILE)
+    execute_file(c, SQL_POSTLOAD_FILE)
     
     print "Done."
     
