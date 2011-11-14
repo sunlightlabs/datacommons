@@ -78,20 +78,23 @@ class BaseImporter(BaseCommand):
 
         self.dry_run = options['dry_run']
 
-        try:
-            for file_path in self.find_eligible_files():
-                if not self.dry_run:
-                    self.do_for_file(file_path)
-                else:
-                    self.dry_run_for_file(file_path)
-        except:
-            self.log.exception("Unexpected error:")
-            if file_path:
-                self.reject_file(file_path)
-        finally:
-            self.destroy_pid_file()
+        file_func = self.dry_run_for_file if self.dry_run else self.do_for_file
+
+        self.main_loop(file_func)
+
+        self.destroy_pid_file()
 
         self.log.info('Finished.')
+
+
+    def main_loop(self, file_func):
+        for file_path in self.find_eligible_files():
+            try:
+                file_func(file_path)
+            except:
+                self.log.exception("Unexpected error:")
+                self.reject_file(file_path)
+                break
 
 
     # define this in the derived classes
