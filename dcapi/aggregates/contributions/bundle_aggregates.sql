@@ -102,6 +102,8 @@ create view lobbyist_bundling_denormalized_view as
         cb.report_type,
         cb.start_date,
         cb.end_date,
+        lb.semi_annual_amount,
+        lb.amount as period_amount,
         re.name as standardized_recipient_name,
         le.name as standardized_lobbyist_name,
         fe.name as standardized_firm_name,
@@ -114,8 +116,6 @@ create view lobbyist_bundling_denormalized_view as
         lb.city,
         lb.state,
         lb.zip_code,
-        lb.amount as period_amount,
-        lb.semi_annual_amount,
         pdf_url
     from contribution_bundle cb
         inner join contribution_lobbyistbundle lb using (file_num)
