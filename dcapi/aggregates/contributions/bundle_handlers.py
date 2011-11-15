@@ -1,4 +1,4 @@
-from dcapi.aggregates.handlers import EntityTopListHandler
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
 
 
 class BundleHandler(EntityTopListHandler):
@@ -28,3 +28,53 @@ class BundleHandler(EntityTopListHandler):
     """
     #from faca_records, (values (%s::uuid, %s, %s::integer)) as params (entity_id, agency, cycle)
 
+
+class RecipientExplorerHandler(TopListHandler):
+    
+    args = 'cycle cycle'.split()
+    fields = "recipient_name recipient_id total count".split()
+    
+    stmt = """
+        select recipient_name, recipient_id, sum(amount) as total_amount, count(*)
+        from agg_bundling
+        where
+            %s = -1 or cycle = %s
+        group by recipient_name, recipient_id
+        order by total_amount desc
+    """
+    
+class FirmExplorerHandler(TopListHandler):
+
+    args = 'cycle cycle'.split()
+    fields = "recipient_name recipient_id total count".split()
+
+    stmt = """
+        select firm_name, firm_id, sum(amount) as total_amount, count(*)
+        from agg_bundling
+        where
+            %s = -1 or cycle = %s
+        group by firm_name, firm_id
+        order by total_amount desc
+    """
+
+class DetailExplorerHandler(TopListHandler):
+    
+    args = 'cycle cycle name name name'.split()
+    fields = 'recipient_name recipient_id firm_name firm_id lobbyist_name lobbyist_id total_amount count'.split()
+    
+    stmt = """
+        select recipient_name, recipient_id, firm_name, firm_id, lobbyist_name, lobbyist_id, sum(amount) as total_amount, count(*)
+        from agg_bundling
+        where
+            %s = -1 or cycle = %s
+            and (recipient_name = %s or firm_name = %s or lobbyist_name = %s)
+        group by recipient_name, recipient_id, firm_name, firm_id, lobbyist_name, lobbyist_id
+        order by total_amount desc
+    """
+
+    def read(self, request, **kwargs):
+        kwargs.update({'name': request.GET.get('name', '')})
+        
+        return super(DetailExplorerHandler, self).read(request, **kwargs)
+        
+    

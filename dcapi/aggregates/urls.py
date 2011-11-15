@@ -8,7 +8,8 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler, OrgPACRecipientsHandler
-from dcapi.aggregates.contributions.bundle_handlers import BundleHandler
+from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
+    RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
@@ -199,6 +200,16 @@ urlpatterns = patterns('',
     # bundling
     url(r'^(org|indiv|pol)/(?P<entity_id>[a-f0-9]+)/bundles\.(?P<emitter_format>.+)$',
             Resource(BundleHandler, **ad)),
+            
+    url(r'^lobbyist_bundling/recipients\.(?P<emitter_format>.+)$',
+        Resource(RecipientExplorerHandler, **ad)),
+        
+    url(r'^lobbyist_bundling/firms\.(?P<emitter_format>.+)$',
+        Resource(FirmExplorerHandler, **ad)),
+    
+    url(r'^lobbyist_bundling/transactions\.(?P<emitter_format>.+)$',
+        Resource(DetailExplorerHandler, **ad)),
+    
 )
 
 
