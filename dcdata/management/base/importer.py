@@ -89,12 +89,15 @@ class BaseImporter(BaseCommand):
 
     def main_loop(self, file_func):
         for file_path in self.find_eligible_files():
-            try:
-                file_func(file_path)
-            except:
-                self.log.exception("Unexpected error:")
-                self.reject_file(file_path)
-                break
+            if not os.path.exists(file_path):
+                continue
+            else:
+                try:
+                    file_func(file_path)
+                except:
+                    self.log.exception("Unexpected error:")
+                    self.reject_file(file_path)
+                    break
 
 
     # define this in the derived classes
