@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponsePermanentRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from dcdata import contracts
+import json
 
 from locksmith.auth.models import ApiKey
 
@@ -73,8 +74,16 @@ def lookup(self, dataset, field):
 
 def search_count(request, search_resource):
     params = request.GET.copy()
-    c = search_resource.handler.queryset(params).order_by().count() 
-    return HttpResponse("%i" % c, content_type='text/plain')
+    
+    callback = params.get('callback', None)
+    if callback:
+        del params['callback']
+    
+    c = search_resource.handler.queryset(params).order_by().count()
+    if callback:
+        return HttpResponse("%s(%i)" % (callback, c), content_type='text/javascript')
+    else:
+        return HttpResponse("%i" % c, content_type='application/json')
     
     
 def search_preview(request, search_resource):
