@@ -66,7 +66,7 @@ class DetailExplorerHandler(TopListHandler):
         select recipient_name, recipient_id, firm_name, firm_id, lobbyist_name, lobbyist_id, sum(amount) as total_amount, count(*)
         from agg_bundling
         where
-            %s = -1 or cycle = %s
+            (%s = -1 or cycle = %s)
             and (recipient_name = %s or firm_name = %s or lobbyist_name = %s)
         group by recipient_name, recipient_id, firm_name, firm_id, lobbyist_name, lobbyist_id
         order by total_amount desc
