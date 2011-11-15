@@ -113,6 +113,7 @@ DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': False,
 }
 
+from public.sync_util import git_cache_fix
 MEDIASYNC = {
     'JOINED': {
         'css/all.css': [
@@ -185,7 +186,8 @@ MEDIASYNC = {
             'js/td.contributions.js',
             'js/td.contractor_misconduct.js'
         ],
-    }
+    },
+    'CACHE_BUSTER': git_cache_fix
 }
 
 # timeout set to a week
