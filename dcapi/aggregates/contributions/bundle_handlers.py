@@ -46,7 +46,7 @@ class RecipientExplorerHandler(TopListHandler):
 class FirmExplorerHandler(TopListHandler):
 
     args = 'cycle cycle'.split()
-    fields = "recipient_name recipient_id total count".split()
+    fields = "firm_name firm_id total count".split()
 
     stmt = """
         select firm_name, firm_id, sum(amount) as total_amount, count(*)
