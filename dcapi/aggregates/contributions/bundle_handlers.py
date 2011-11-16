@@ -75,6 +75,26 @@ class DetailExplorerHandler(TopListHandler):
     def read(self, request, **kwargs):
         kwargs.update({'name': request.GET.get('name', '')})
         
-        return super(DetailExplorerHandler, self).read(request, **kwargs)
+        out = super(DetailExplorerHandler, self).read(request, **kwargs)
+        
+        from name_cleaver import OrganizationNameCleaver, IndividualNameCleaver, PoliticianNameCleaver
+        from django.contrib.humanize.templatetags.humanize import intcomma
+        from django.template.defaultfilters import slugify
+        
+        for row in out:
+            row['lobbyist_name_standardized'] = IndividualNameCleaver(row['lobbyist_name']).parse() if row['lobbyist_name'] else row['lobbyist_name']
+            row['lobbyist_name_slug'] = slugify(row['lobbyist_name_standardized'])
+            
+            row['firm_name_standardized'] = OrganizationNameCleaver(row['firm_name']).parse() if row['firm_name'] else row['firm_name']
+            row['firm_name_slug'] = slugify(row['firm_name_standardized'])
+            
+            if row['recipient_id']:
+                row['recipient_name_standardized'] = PoliticianNameCleaver(row['recipient_name']).parse()
+            else:
+                row['recipient_name_standardized'] = OrganizationNameCleaver(row['recipient_name']).parse()
+            row['recipient_name_slug'] = slugify(row['recipient_name_standardized'])
+            
+            row['total_amount_standardized'] = intcomma(row['total_amount'])
+        return out
         
     

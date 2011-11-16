@@ -17,3 +17,4 @@ BeautifulSoup
 scrapelib
 httplib2
 csvkit
+-e git://github.com/sunlightlabs/name-cleaver.git#egg=name-cleaver
