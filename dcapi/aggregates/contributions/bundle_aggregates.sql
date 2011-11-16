@@ -90,7 +90,7 @@ group by
     re.id, coalesce(re.name, cb.committee_name),
     fe.id , coalesce(fe.name, lb.employer, lb.name),
     le.id, coalesce(le.name, fe.name, lb.name),
-    case when report_year % 2 = 0 then report_year else report_year + 1 end;
+    cycle;
 
 drop view if exists lobbyist_bundling_denormalized_view;
 create view lobbyist_bundling_denormalized_view as
@@ -120,7 +120,7 @@ create view lobbyist_bundling_denormalized_view as
         lb.state,
         lb.zip_code,
         pdf_url
-    from contribution_bundle cb
+    from contribution_bundle_latest cb
         inner join contribution_lobbyistbundle lb using (file_num)
         left join assoc_bundle_recipients abr using (file_num)
         left join matchbox_entity re on abr.entity_id = re.id
@@ -128,5 +128,4 @@ create view lobbyist_bundling_denormalized_view as
         left join matchbox_entity le on abl.entity_id = le.id
         left join assoc_bundler_firms abf on abf.bundle_id = lb.id
         left join matchbox_entity fe on abf.entity_id = fe.id
-    where not should_ignore
 ;
