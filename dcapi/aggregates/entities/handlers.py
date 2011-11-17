@@ -1,3 +1,5 @@
+import re
+
 from dcapi.aggregates.handlers import execute_top
 from dcentity.models import Entity, EntityAttribute, BioguideInfo
 from piston.handler import BaseHandler
@@ -5,7 +7,6 @@ from piston.utils import rc
 from urllib import unquote_plus
 from django.core.exceptions import ObjectDoesNotExist
 from uuid import UUID
-
 
 
 get_totals_stmt = """
@@ -192,11 +193,11 @@ class EntitySearchHandler(BaseHandler):
             error_response.write("Must include a query in the 'search' parameter.")
             return error_response
 
-        parsed_query = ' & '.join(unquote_plus(query).split(' '))
-
+        parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
         raw_result = execute_top(self.stmt, parsed_query)
 
         return [dict(zip(self.fields, row)) for row in raw_result]
+
 
 class EntitySimpleHandler(BaseHandler):
     allowed_methods = ('GET',)
