@@ -1,6 +1,6 @@
 
-drop table if exists fec_candidates;
-create table fec_candidates (
+drop table if exists fec_candidates_import;
+create table fec_candidates_import (
     candidate_id varchar(9) PRIMARY KEY,
     candidate_name varchar(38),
     party_designation1 varchar(3),
@@ -107,19 +107,19 @@ CREATE TABLE fec_candidate_summaries (
     incumbent_challenger_open varchar(1),
     party varchar(1),
     party_designation varchar(3),
-    total_receipts integer,
-    authorized_transfers_from integer,
-    total_disbursements integer,
-    transfers_to_authorized integer,
-    beginning_cash integer,
-    ending_cash integer,
-    contributions_from_candidate integer,
-    loans_from_candidate integer,
-    other_loans integer,
-    candidate_loan_repayments integer,
-    other_loan_repayments integer,
-    debts_owed_by integer,
-    total_individual_contributions integer,
+    total_receipts integer,                             -- 22
+    authorized_transfers_from integer,                  -- 18
+    total_disbursements integer,                        -- 30
+    transfers_to_authorized integer,                    -- 24
+    beginning_cash integer,                             -- 6
+    ending_cash integer,                                -- 10
+    contributions_from_candidate integer,               -- 17d
+    loans_from_candidate integer,                       -- 19a
+    other_loans integer,                                -- 19b
+    candidate_loan_repayments integer,                  -- 27a
+    other_loan_repayments integer,                      -- 27b
+    debts_owed_by integer,                              -- 12
+    total_individual_contributions integer,             -- 17a
     state_code varchar(2),
     district varchar(2),
     special_election_status varchar(1),
@@ -127,11 +127,11 @@ CREATE TABLE fec_candidate_summaries (
     runoff_election_status varchar(1),
     general_election_status varchar(1),
     general_election_ct varchar(3),
-    contributions_from_other_committees integer,
-    contributions_from_party_committees integer,
+    contributions_from_other_committees integer,        -- 17c
+    contributions_from_party_committees integer,        -- 17b
     ending_date varchar(8),
-    refunds_to_individuals integer,
-    refunds_to_committees integer
+    refunds_to_individuals integer,                     -- 28a
+    refunds_to_committees integer                       -- 28b & 28c?
 );
 
 
