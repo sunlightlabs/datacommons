@@ -41,3 +41,7 @@ insert into matchbox_entityattribute (entity_id, namespace, value) values
     ('888e893cbc424e818ec86cc37f16a611', 'urn:pogo:contractor', 109),
     ('e78f1ee68e164caf93a9e4f268f4433b', 'urn:pogo:contractor', 158)
 ;
+
+-- add this entity which was merged, Creative Associates International
+
+insert into matchbox_entityattribute(entity_id, namespace, value) values ('01b0b757-614c-4077-916d-366400d286ce', 'urn:pogo:contractor', 203);
