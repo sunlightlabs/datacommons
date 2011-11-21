@@ -100,7 +100,7 @@ class EntitySingletonHandler(BaseHandler):
         if result:
             result = dict(zip(self.fields, result))
         else:
-            return {}
+            result = {}
 
         return check_empty(result, kwargs['entity_id'])
 

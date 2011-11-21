@@ -23,6 +23,8 @@ from dcapi.aggregates.epa.handlers import TopViolationActionsHandler
 from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
     RegulationsSubmitterHandler, RegulationsDocketTextHandler, \
     RegulationsDocketSubmitterHandler
+from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CandidateStateHandler, \
+    CandidateTimelineHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -210,6 +212,14 @@ urlpatterns = patterns('',
     url(r'^lobbyist_bundling/transactions\.(?P<emitter_format>.+)$',
         Resource(DetailExplorerHandler, **ad)),
     
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/fec_summary\.(?P<emitter_format>.+)$',
+        Resource(CandidateSummaryHandler, **ad)),
+        
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/fec_local_breakdown\.(?P<emitter_format>.+)$',
+        Resource(CandidateStateHandler, **ad)),
+        
+    url(r'^pol/(?P<entity_id>[a-f0-9]+)/fec_timeline\.(?P<emitter_format>.+)$',
+        Resource(CandidateTimelineHandler, **ad)),
 )
 
 
