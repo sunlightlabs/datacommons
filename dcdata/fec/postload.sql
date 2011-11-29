@@ -14,10 +14,11 @@ from fec_candidates_import;
 
 drop table if exists fec_indiv;
 create table fec_indiv as
-select fec_record, filer_id, transaction_type, contributor_lender_transfer as contributor_name, state, occupation, 
+select fec_record, filer_id, amendment, transaction_type, contributor_lender_transfer as contributor_name, state, occupation, election_type,
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount
 from fec_indiv_import;
+create index fec_indiv_filer_id on fec_indiv (filer_id);
 
 drop table if exists fec_pac2cand;
 create table fec_pac2cand as
@@ -34,6 +35,9 @@ select fec_record, filer_id, transaction_type, contributor_lender_transfer as co
     overpunch(amount) as amount,
     other_id
 from fec_pac2pac_import;   
+
+
+create index fec_candidate_summaries_candidate_id on fec_candidate_summaries (candidate_id);
 
 
 -- these three are unfortunately not true in the data
