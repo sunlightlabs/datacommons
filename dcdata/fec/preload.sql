@@ -1,0 +1,1 @@
+drop index if exists fec_candidate_summaries_candidate_id;
