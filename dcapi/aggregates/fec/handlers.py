@@ -48,10 +48,13 @@ class CandidateStateHandler(PieHandler):
 
 class CandidateTimelineHandler(TopListHandler):
 
-    candidates_fields = "candidate_id canidate_name race party incumbent".split()
+    candidates_fields = "entity_id candidate_id candidate_name race party incumbent".split()
     candidates_stmt = """
-        select candidate_id, candidate_name, race, party_designation1, incumbent_challenger_open
-        from fec_candidates
+        select entity_id, candidate_id, e.name, race, party_designation1, incumbent_challenger_open
+        from fec_candidates c
+        inner join tmp_fec_crp_ids ids on c.candidate_id = ids.fec_candidate_id
+        inner join matchbox_entityattribute a on ids.crp_candidate_id = a.value and a.namespace = 'urn:crp:recipient'
+        inner join matchbox_entity e on a.entity_id = e.id
         where
             election_year = '12'
             and candidate_status = 'C'
