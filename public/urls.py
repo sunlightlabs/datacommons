@@ -10,7 +10,7 @@ from dcapi.contributions.bundling.urls import bundlingfilter_handler
 
 from django.conf.urls.defaults import patterns, url
 
-urlpatterns = patterns('dc_web.public.views',        
+urlpatterns = patterns('public.views',        
     # contracts
     url(r'^download/contracts/$', 'search_download', {'search_resource': contractsfilter_handler},  name="data_contracts_download"),
     url(r'^data/contracts/$', 'search_preview', {'search_resource': contractsfilter_handler}, name="data_contracts"),
