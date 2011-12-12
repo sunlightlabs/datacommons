@@ -10,6 +10,9 @@ from dcapi.contributions.bundling.urls import bundlingfilter_handler
 
 from django.conf.urls.defaults import patterns, url
 
+# we don't actually use this here, but this change prevents weird behavior that leads to nondeterminism in the download links
+from dcapi.urls import Emitter
+
 urlpatterns = patterns('public.views',        
     # contracts
     url(r'^contracts/download/$', 'search_download', {'search_resource': contractsfilter_handler},  name="data_contracts_download"),
