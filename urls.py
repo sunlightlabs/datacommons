@@ -9,7 +9,7 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/1.0/', include('dcapi.urls')),
     url(r'^api/locksmith/', include('locksmith.auth.urls')),
-    url(r'^', include('public.urls')),
+    url(r'^data/', include('public.urls')),
 )
 
 if (settings.DEBUG):  
