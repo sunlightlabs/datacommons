@@ -20,6 +20,20 @@ FEC_CONFIG = [
     F('ftp://ftp.fec.gov/FEC/webl12.zip', 'FECWEB/webl12.dat', 'fec_candidate_summary.csv', 'fec_candidate_summaries'),
 ]
 
+# for loading PAC summaries. Used for SuperDonors project, but not currently used in Brisket.
+FEC_PAC_SUMMARY_CONFIG = [
+    F('ftp://ftp.fec.gov/FEC/webk%s.zip' % year, 'FECWEB/webk%s.dat' % year, 'fec_pac_summary.csv', 'fec_pac_summaries_%s' % year)
+    for year in '00 02 04 06 08 10'.split()
+] + [
+    F('ftp://ftp.fec.gov/FEC/1992/pacsum92.zip', 'NP921.TAP', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
+    F('ftp://ftp.fec.gov/FEC/1994/pacsum94.zip', 'PACSUM94.DAT', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
+    F('ftp://ftp.fec.gov/FEC/1996/pacsum96.zip', 'PACSUM96.DAT', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
+    F('ftp://ftp.fec.gov/FEC/1998/pacsum98.zip', 'R98/RDATA/NPTAP1.TAP', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
+    F('ftp://ftp.fec.gov/FEC/2000/pacsum00.zip', 'pacsum%s.txt', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
+    F('ftp://ftp.fec.gov/FEC/2002/pacsum02.zip', 'pacsum%s.txt', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
+    F('ftp://ftp.fec.gov/FEC/2004/pacsum04.zip', 'pacsum%s.txt', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
+]
+
 SCHEMA_ROOT = os.path.abspath('../ffs/us/fec/')
 
 SQL_PRELOAD_FILE = os.path.join(os.path.dirname(__file__), 'preload.sql')
@@ -32,6 +46,7 @@ def download(destination_dir):
     
     for conf in FEC_CONFIG:
         local_file = os.path.join(destination_dir, conf.url.split("/")[-1])
+        print "downloading %s to %s..." % (conf.url, local_file)
         urllib.urlretrieve(conf.url, local_file)
         
 
@@ -102,6 +117,6 @@ def reload_fec(dir=None):
     
     print "Processing uploaded data..."
     execute_file(c, SQL_POSTLOAD_FILE)
-    
+        
     print "Done."
     

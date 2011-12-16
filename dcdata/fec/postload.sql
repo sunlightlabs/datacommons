@@ -52,4 +52,39 @@ create index fec_candidate_summaries_candidate_id on fec_candidate_summaries (ca
 -- alter table fec_pac2pac add constraint fec_pac2pac_filer_id foreign key (filer_id) references fec_committees (committee_id);
 
 
-
+-- used only in the "One Percent of One Percent" project
+-- alter table fec_pac_summaries add column cycle integer;
+-- insert into fec_pac_summaries
+--     select *, 2010 from fec_pac_summaries_10
+--     union all    
+--     select *, 2008 from fec_pac_summaries_08
+--     union all
+--     select *, 2006 from fec_pac_summaries_06
+--     union all
+--     select *, 2004 from fec_pac_summaries_04
+--     union all
+--     select *, 2002 from fec_pac_summaries_02
+--     union all
+--     select *, 2000 from fec_pac_summaries_00
+--     union all
+--     select *, 1998 from fec_pac_summaries_98
+--     union all
+--     select *, 1996 from fec_pac_summaries_96;
+--     
+-- alter table fec_candidate_summaries add column cycle integer;
+-- insert into fec_candidate_summaries
+--     select *, 2010 from fec_candidate_summaries_10
+--     union all
+--     select *, 2008 from fec_candidate_summaries_08
+--     union all
+--     select *, 2006 from fec_candidate_summaries_06
+--     union all
+--     select *, 2004 from fec_candidate_summaries_04
+--     union all
+--     select *, 2002 from fec_candidate_summaries_02
+--     union all
+--     select *, 2000 from fec_candidate_summaries_00
+--     union all
+--     select *, 1998 from fec_candidate_summaries_98
+--     union all
+--     select *, 1996 from fec_candidate_summaries_96;
