@@ -104,7 +104,7 @@ class LobbyingHandler(TableHandler):
                 'registrant_is_firm','use'), lambda x: x == 'True'),
             NoneFilter(),
             UnicodeFilter(),
-            CountEmitter(every=20000, logger=self.log),
+            CountEmitter(every=20000, log=self.log),
             LoaderEmitter(LobbyingLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
@@ -126,7 +126,7 @@ class AgencyHandler(TableHandler):
             FieldModifier('year', lambda x: int(x) if x else None),
             NoneFilter(),
             UnicodeFilter(),
-            CountEmitter(every=5000, logger=self.log),
+            CountEmitter(every=5000, log=self.log),
             LoaderEmitter(AgencyLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
@@ -149,7 +149,7 @@ class LobbyistHandler(TableHandler):
             FieldModifier('member_of_congress', lambda x: x == 'True'),
             NoneFilter(),
             UnicodeFilter(),
-            CountEmitter(every=10000, logger=self.log),
+            CountEmitter(every=10000, log=self.log),
             LoaderEmitter(LobbyistLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
@@ -172,7 +172,7 @@ class IssueHandler(TableHandler):
             NoneFilter(),
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
             UnicodeFilter(),
-            CountEmitter(every=5000, logger=self.log),
+            CountEmitter(every=5000, log=self.log),
             LoaderEmitter(IssueLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
@@ -217,7 +217,7 @@ class BillHandler(TableHandler):
             NoneFilter(),
             IssueFilter(),
             UnicodeFilter(),
-            CountEmitter(every=5000, logger=self.log),
+            CountEmitter(every=20000, log=self.log),
             LoaderEmitter(BillLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
