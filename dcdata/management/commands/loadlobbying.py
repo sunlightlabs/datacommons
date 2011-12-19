@@ -126,7 +126,7 @@ class AgencyHandler(TableHandler):
             FieldModifier('year', lambda x: int(x) if x else None),
             NoneFilter(),
             UnicodeFilter(),
-            CountEmitter(every=5000, log=self.log),
+            CountEmitter(every=10000, log=self.log),
             LoaderEmitter(AgencyLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
@@ -149,7 +149,7 @@ class LobbyistHandler(TableHandler):
             FieldModifier('member_of_congress', lambda x: x == 'True'),
             NoneFilter(),
             UnicodeFilter(),
-            CountEmitter(every=10000, log=self.log),
+            CountEmitter(every=20000, log=self.log),
             LoaderEmitter(LobbyistLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
@@ -172,7 +172,7 @@ class IssueHandler(TableHandler):
             NoneFilter(),
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
             UnicodeFilter(),
-            CountEmitter(every=5000, log=self.log),
+            CountEmitter(every=10000, log=self.log),
             LoaderEmitter(IssueLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
