@@ -6,8 +6,9 @@ from django.core                 import management
 from django.db                   import connections
 from saucebrush                  import run_recipe
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
-    Filter, FieldMerger
+    Filter, FieldMerger, FieldRenamer
 from saucebrush.sources          import CSVSource
+from saucebrush.emitters         import DebugEmitter
 from dcdata.management.commands.util import NoneFilter, CountEmitter, \
     TableHandler
 
@@ -46,7 +47,7 @@ class AgencyLoader(Loader):
     def __init__(self, *args, **kwargs):
         super(AgencyLoader, self).__init__(*args, **kwargs)
     def get_instance(self, record):
-        return self.model(transaction=record['transaction'], agency_ext_id=record['agency_ext_id'])
+        return self.model(agency_ext_id=record['agency_ext_id'])
 
 class IssueLoader(Loader):
     model = Issue
@@ -70,7 +71,7 @@ class LobbyistLoader(Loader):
         if record['transaction'] is None:
             return
 
-        return self.model(transaction=record['transaction'], lobbyist_ext_id=record['lobbyist_ext_id'])
+        return self.model(lobbyist_ext_id=record['lobbyist_ext_id'])
 
 # handlers
 
@@ -124,8 +125,10 @@ class AgencyHandler(TableHandler):
         run_recipe(
             CSVSource(open(self.inpath)),
             FieldModifier('year', lambda x: int(x) if x else None),
+            FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
             UnicodeFilter(),
+            DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
             LoaderEmitter(AgencyLoader(
                 source=self.inpath,
@@ -147,8 +150,10 @@ class LobbyistHandler(TableHandler):
             CSVSource(open(self.inpath)),
             FieldModifier('year', lambda x: int(x) if x else None),
             FieldModifier('member_of_congress', lambda x: x == 'True'),
+            FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
             UnicodeFilter(),
+            DebugEmitter(),
             CountEmitter(every=20000, log=self.log),
             LoaderEmitter(LobbyistLoader(
                 source=self.inpath,
@@ -169,9 +174,11 @@ class IssueHandler(TableHandler):
         run_recipe(
             CSVSource(open(self.inpath)),
             FieldModifier('year', lambda x: int(x) if x else None),
+            FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
             UnicodeFilter(),
+            DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
             LoaderEmitter(IssueLoader(
                 source=self.inpath,
@@ -217,6 +224,7 @@ class BillHandler(TableHandler):
             NoneFilter(),
             IssueFilter(),
             UnicodeFilter(),
+            #DebugEmitter(),
             CountEmitter(every=20000, log=self.log),
             LoaderEmitter(BillLoader(
                 source=self.inpath,
