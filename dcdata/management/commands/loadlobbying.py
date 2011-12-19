@@ -8,28 +8,11 @@ from saucebrush                  import run_recipe
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
     Filter, FieldMerger
 from saucebrush.sources          import CSVSource
-from dcdata.management.commands.util import NoneFilter, CountEmitter, TableHandler
+from dcdata.management.commands.util import NoneFilter, CountEmitter, \
+    TableHandler
 
 import os, re
 
-
-class TransactionFilter(Filter):
-    def __init__(self):
-        self._cache = {}
-    def process_record(self, record):
-        transaction_id = record['transaction']
-        transaction = self._cache.get(transaction_id, None)
-        if transaction is None:
-            try:
-                #print "loading transaction %s from database" % transaction_id
-                transaction = Lobbying.objects.get(pk=transaction_id)
-                self._cache[transaction_id] = transaction
-                #print "\t* loaded"
-            except Lobbying.DoesNotExist:
-                pass #print "\t* does not exist"
-        if transaction:
-            record['transaction'] = transaction
-            return record
 
 class IssueFilter(Filter):
     def __init__(self):
@@ -91,8 +74,6 @@ class LobbyistLoader(Loader):
 
 # handlers
 
-TRANSACTION_FILTER = TransactionFilter()
-
 class LobbyingHandler(TableHandler):
 
     def __init__(self, inpath=None, log=None):
@@ -144,7 +125,6 @@ class AgencyHandler(TableHandler):
             CSVSource(open(self.inpath)),
             FieldModifier('year', lambda x: int(x) if x else None),
             NoneFilter(),
-            TRANSACTION_FILTER,
             UnicodeFilter(),
             CountEmitter(every=1000),
             LoaderEmitter(AgencyLoader(
@@ -168,7 +148,6 @@ class LobbyistHandler(TableHandler):
             FieldModifier('year', lambda x: int(x) if x else None),
             FieldModifier('member_of_congress', lambda x: x == 'True'),
             NoneFilter(),
-            TRANSACTION_FILTER,
             UnicodeFilter(),
             CountEmitter(every=1000),
             LoaderEmitter(LobbyistLoader(
@@ -192,7 +171,6 @@ class IssueHandler(TableHandler):
             FieldModifier('year', lambda x: int(x) if x else None),
             NoneFilter(),
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
-            TRANSACTION_FILTER,
             UnicodeFilter(),
             CountEmitter(every=1000),
             LoaderEmitter(IssueLoader(
