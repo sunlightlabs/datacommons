@@ -4,24 +4,24 @@ from saucebrush.filters  import Filter
 
 
 class CountEmitter(Emitter):
-    def __init__(self, every=1000, logger=None, *args, **kwargs):
+    def __init__(self, every=1000, log=None, *args, **kwargs):
         super(CountEmitter, self).__init__(*args, **kwargs)
         self.count = 0
         self.every = every
-        self.logger = logger
+        self.log = log
 
     def emit_record(self, record):
         if record:
             self.count += 1
             if self.count % self.every == 0:
-                if self.logger:
-                    self.logger.info("{0} records output...".format(self.count))
+                if self.log:
+                    self.log.info("{0} records output...".format(self.count))
                 else:
                     print self.count
 
     def done(self):
-        if self.logger:
-            self.logger.info("{0} total records output.".format(self.count))
+        if self.log:
+            self.log.info("{0} total records output.".format(self.count))
         else:
             print "{0} total records output.".format(self.count)
 
