@@ -110,6 +110,7 @@ class LobbyingHandler(TableHandler):
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+                log=self.log,
             )),
         )
 
@@ -128,12 +129,13 @@ class AgencyHandler(TableHandler):
             FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
             UnicodeFilter(),
-            DebugEmitter(),
+            #DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
             LoaderEmitter(AgencyLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+                log=self.log,
             ), commit_every=100),
         )
 
@@ -153,12 +155,13 @@ class LobbyistHandler(TableHandler):
             FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
             UnicodeFilter(),
-            DebugEmitter(),
+            #DebugEmitter(),
             CountEmitter(every=20000, log=self.log),
             LoaderEmitter(LobbyistLoader(
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+                log=self.log,
             ), commit_every=100),
         )
 
@@ -184,6 +187,7 @@ class IssueHandler(TableHandler):
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+                log=self.log,
             ), commit_every=100),
         )
 
@@ -230,6 +234,7 @@ class BillHandler(TableHandler):
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
+                log=self.log,
             ), commit_every=1),
         )
 
