@@ -15,6 +15,23 @@ from dcdata.management.commands.util import NoneFilter, CountEmitter, \
 import os, re
 
 
+class TransactionFilter(Filter):
+    def __init__(self):
+        self._cache = {}
+    def process_record(self, record):
+        transaction_id = record['transaction']
+        transaction = self._cache.get(transaction_id, False)
+        if not transaction:
+            try:
+                #print "loading transaction %s from database" % transaction_id
+                transaction = Lobbying.objects.get(pk=transaction_id)
+                self._cache[transaction_id] = True
+                #print "\t* loaded"
+            except Lobbying.DoesNotExist:
+                pass #print "\t* does not exist"
+        if transaction:
+            return record
+
 class IssueFilter(Filter):
     def __init__(self):
         self._cache = {}
@@ -75,6 +92,8 @@ class LobbyistLoader(Loader):
 
 # handlers
 
+TRANSACTION_FILTER = TransactionFilter()
+
 class LobbyingHandler(TableHandler):
 
     def __init__(self, inpath=None, log=None):
@@ -128,6 +147,7 @@ class AgencyHandler(TableHandler):
             FieldModifier('year', lambda x: int(x) if x else None),
             FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
+            TRANSACTION_FILTER,
             UnicodeFilter(),
             #DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
@@ -154,6 +174,7 @@ class LobbyistHandler(TableHandler):
             FieldModifier('member_of_congress', lambda x: x == 'True'),
             FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
+            TRANSACTION_FILTER,
             UnicodeFilter(),
             #DebugEmitter(),
             CountEmitter(every=20000, log=self.log),
@@ -180,6 +201,7 @@ class IssueHandler(TableHandler):
             FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
+            TRANSACTION_FILTER,
             UnicodeFilter(),
             DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
