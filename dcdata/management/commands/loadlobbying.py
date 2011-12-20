@@ -20,17 +20,24 @@ class TransactionFilter(Filter):
         self._cache = {}
     def process_record(self, record):
         transaction_id = record['transaction']
-        transaction = self._cache.get(transaction_id, False)
-        if not transaction:
-            try:
-                #print "loading transaction %s from database" % transaction_id
-                transaction = Lobbying.objects.get(pk=transaction_id)
-                self._cache[transaction_id] = True
-                #print "\t* loaded"
-            except Lobbying.DoesNotExist:
-                pass #print "\t* does not exist"
-        if transaction:
+        """
+        We'll cache which transaction_ids exist in the database, since
+        a good number of records come through with non-existant ID's.
+        Cache values:
+        -1: value not tried yet
+        0: no match
+        1 or greater: match
+        """
+        transaction_match = self._cache.get(transaction_id, -1)
+
+        if transaction_match == -1:
+            matched_id_count = Lobbying.objects.filter(pk=transaction_id).count()
+            self._cache[transaction_id] = matched_id_count
+            if matched_id_count:
+                return record
+        elif transaction_match >= 1:
             return record
+
 
 class IssueFilter(Filter):
     def __init__(self):
