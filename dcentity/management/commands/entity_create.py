@@ -57,6 +57,10 @@ class Command(BaseCommand):
             default=False,
             help='Skip organizations',
         ),
+        make_option('-a', '--namespace',
+            dest='namespace',
+            help='Operate on only one namespace: [crp, nimsp]'
+        ),
     )
 
     def __init__(self):
@@ -79,9 +83,11 @@ class Command(BaseCommand):
         self.force_indivs = options['force_indivs']
         self.force_pols = options['force_pols']
         self.force_orgs = options['force_orgs']
+        self.namespace = options['namespace']
 
         self.today = datetime.today().strftime("%Y%m%d")
         self.cursor = connections['default'].cursor()
+
 
         try:
             if not options['skip_indivs']:
@@ -118,10 +124,11 @@ class Command(BaseCommand):
                         contributor_name != ''
                         and contributor_ext_id like 'U%'
                         and not exists (select * from matchbox_entityattribute where value = contributor_ext_id)
+                        {1}
                     group by contributor_ext_id
                 )x
                 group by id
-        """.format(self.today)
+        """.format(self.today, self.get_namespace_clause())
 
         self.cursor.execute(creation_sql, None)
         transaction.commit()
@@ -242,8 +249,9 @@ class Command(BaseCommand):
                     and recipient_name != ''
                     and recipient_ext_id != ''
                     and not exists (select * from matchbox_entityattribute where value = recipient_ext_id)
+                    {1}
                 group by transaction_namespace, recipient_ext_id
-        """.format(self.today)
+        """.format(self.today, self.get_namespace_clause())
         self.cursor.execute(tmp_sql, None)
         transaction.commit()
         self.log.info("- Table tmp_politicians_{0} populated.".format(self.today))
@@ -273,6 +281,17 @@ class Command(BaseCommand):
 
         transaction.commit()
         self.log.info("- Created {0} politician entities.".format(len(results)))
+
+
+    def get_namespace_clause(self):
+        namespace_clause = ''
+        if self.namespace:
+            if self.namespace == 'crp':
+                namespace_clause = 'and transaction_namespace = \'{0}\''.format(CRP_TRANSACTION_NAMESPACE)
+            elif self.namespace == 'nimsp':
+                namespace_clause = 'and transaction_namespace = \'{0}\''.format(NIMSP_TRANSACTION_NAMESPACE)
+
+        return namespace_clause
 
 
 
