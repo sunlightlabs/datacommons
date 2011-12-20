@@ -1,10 +1,9 @@
 from dcdata.models import Import
 from dcdata.processor import TerminateProcessingException, SkipRecordException
 from django.db import transaction
-from django.db.models import get_app, get_model, get_models
+from django.db.models import get_model
 from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter
-import datetime
 import sys
 
 #
