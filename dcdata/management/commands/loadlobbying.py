@@ -47,12 +47,12 @@ class AgencyLoader(Loader):
     def __init__(self, *args, **kwargs):
         super(AgencyLoader, self).__init__(*args, **kwargs)
     def get_instance(self, record):
-        return self.model(agency_ext_id=record['agency_ext_id'])
+        return self.model(transaction_id=record['transaction_id'], agency_ext_id=record['agency_ext_id'])
 
 class IssueLoader(Loader):
     model = Issue
     def get_instance(self, record):
-        return self.model(id=record['id'])
+        return self.model(id=record['id'], transaction_id=record['transaction_id'])
 
 class BillLoader(Loader):
     model = Bill
