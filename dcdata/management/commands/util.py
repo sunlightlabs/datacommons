@@ -42,8 +42,9 @@ class TableHandler(object):
     db_table = None
     inpath = None
 
-    def __init__(self, inpath):
+    def __init__(self, inpath, log=None):
         self.inpath = inpath
+        self.log = log
 
     def pre_drop(self):
         pass
@@ -53,7 +54,10 @@ class TableHandler(object):
 
     def drop(self):
         self.pre_drop()
-        print "Dropping {0}.".format(self.db_table)
+        if self.log:
+            self.log.info("Dropping {0}.".format(self.db_table))
+        else:
+            print "Dropping {0}.".format(self.db_table)
         cursor = connections['default'].cursor()
         cursor.execute("drop table {0} cascade".format(self.db_table))
 

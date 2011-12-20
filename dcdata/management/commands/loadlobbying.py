@@ -134,7 +134,7 @@ class AgencyHandler(TableHandler):
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-            ), commit_every=10000),
+            ), commit_every=100),
         )
 
 
@@ -159,7 +159,7 @@ class LobbyistHandler(TableHandler):
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-            ), commit_every=10000),
+            ), commit_every=100),
         )
 
 
@@ -184,7 +184,7 @@ class IssueHandler(TableHandler):
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-            ), commit_every=10000),
+            ), commit_every=100),
         )
 
 class BillHandler(TableHandler):
@@ -230,7 +230,7 @@ class BillHandler(TableHandler):
                 source=self.inpath,
                 description='load from denormalized CSVs',
                 imported_by="loadlobbying (%s)" % os.getenv('LOGNAME', 'unknown'),
-            ), commit_every=10000),
+            ), commit_every=1),
         )
 
 
@@ -263,7 +263,7 @@ class Command(BaseImporter):
         management.call_command('syncdb', interactive=False)
 
         for handler in HANDLERS.values():
-            handler_obj = handler(None, self.log)
+            handler_obj = handler(None, log=self.log)
             handler_obj.post_create()
 
     def find_eligible_files(self):
