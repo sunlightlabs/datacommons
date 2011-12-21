@@ -209,7 +209,7 @@ class IssueHandler(TableHandler):
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
             TRANSACTION_FILTER,
             UnicodeFilter(),
-            DebugEmitter(),
+            #DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
             LoaderEmitter(IssueLoader(
                 source=self.inpath,
