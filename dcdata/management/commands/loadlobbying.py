@@ -26,17 +26,18 @@ class TransactionFilter(Filter):
         Cache values:
         -1: value not tried yet
         0: no match
-        1 or greater: match
+        1: match
         """
         transaction_match = self._cache.get(transaction_id, -1)
 
         if transaction_match == -1:
-            matched_id_count = Lobbying.objects.filter(pk=transaction_id).count()
-            self._cache[transaction_id] = matched_id_count
-            if matched_id_count:
-                return record
-        elif transaction_match >= 1:
+            transaction_match = Lobbying.objects.filter(pk=transaction_id).count()
+            self._cache[transaction_id] = transaction_match
+
+        if transaction_match:
             return record
+        else:
+            print "Skipped record for transaction {0}".format(transaction_id)
 
 
 class IssueFilter(Filter):
