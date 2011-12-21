@@ -19,7 +19,7 @@ class TransactionFilter(Filter):
     def __init__(self):
         self._cache = {}
     def process_record(self, record):
-        transaction_id = record['transaction']
+        transaction_id = record.get('transaction', record.get('transaction_id'))
         """
         We'll cache which transaction_ids exist in the database, since
         a good number of records come through with non-existant ID's.
@@ -36,8 +36,6 @@ class TransactionFilter(Filter):
 
         if transaction_match:
             return record
-        else:
-            print "Skipped record for transaction {0}".format(transaction_id)
 
 
 class IssueFilter(Filter):
