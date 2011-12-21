@@ -150,7 +150,7 @@ class LoaderEmitter(Emitter):
     def __init__(self, loader, commit_every=0):
         super(LoaderEmitter, self).__init__()
         self._loader = loader
-        self._commit_every = 0
+        self._commit_every = commit_every
         self._count = 0
     def process_record(self, record):
         self.emit_record(record)
