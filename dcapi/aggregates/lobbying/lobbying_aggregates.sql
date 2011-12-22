@@ -5,7 +5,7 @@
 -- Maps years to 2-year cycles and only includes valid reports
 
 select date_trunc('second', now()) || ' -- drop view if exists lobbying_report';
-drop view if exists lobbying_report;
+drop view if exists lobbying_report cascade;
 
 -- NOTE: if you update the code in this view, you also need to update it in the loadlobbying command
 -- (which has to drop and recreate it in order to drop and recreate the other tables before loading their data)
