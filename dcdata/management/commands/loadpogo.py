@@ -12,14 +12,14 @@ INSTANCES_FIELDS = 'contractor instance penalty_amount contracting_party court_t
 
 
 class Command(BaseCommand):
+    args = '<contractors_file, misconduct_file>'
+    help = 'Takes a contractors file and a misconduct file and populates the database with them. The user should truncate the tables first.'
 
     @transaction.commit_on_success
     def handle(self, contractors_file, misconduct_file, **options):
         contractors_reader = csv.DictReader(open(os.path.abspath(contractors_file), 'r'))
 
         for row in contractors_reader:
-            # TODO: This can take over the regex processing to get contractor_ext_id from the URL
-            # (currently being done in a one-off SQL script)
             contractor_ext_id = re.search(r'ContractorID=(\d+)', row['URL']).groups()[0]
             Contractor.objects.create(
                 name = row['Contractor'],
