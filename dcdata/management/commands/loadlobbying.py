@@ -8,7 +8,6 @@ from saucebrush                  import run_recipe
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
     Filter, FieldMerger, FieldRenamer
 from saucebrush.sources          import CSVSource
-from saucebrush.emitters         import DebugEmitter
 from dcdata.management.commands.util import NoneFilter, CountEmitter, \
     TableHandler
 
@@ -91,10 +90,11 @@ class LobbyistLoader(Loader):
 
     def get_instance(self, record):
 
-        if record['transaction'] is None:
+        if record['transaction_id'] is None:
             return
 
-        return self.model(lobbyist_ext_id=record['lobbyist_ext_id'])
+        return self.model(transaction_id=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
+
 
 # handlers
 
@@ -155,7 +155,6 @@ class AgencyHandler(TableHandler):
             NoneFilter(),
             TRANSACTION_FILTER,
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
             LoaderEmitter(AgencyLoader(
                 source=self.inpath,
@@ -182,7 +181,6 @@ class LobbyistHandler(TableHandler):
             NoneFilter(),
             TRANSACTION_FILTER,
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=20000, log=self.log),
             LoaderEmitter(LobbyistLoader(
                 source=self.inpath,
@@ -209,7 +207,6 @@ class IssueHandler(TableHandler):
             FieldModifier('specific_issue', lambda x: '' if x is None else x),
             TRANSACTION_FILTER,
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=10000, log=self.log),
             LoaderEmitter(IssueLoader(
                 source=self.inpath,
@@ -256,7 +253,6 @@ class BillHandler(TableHandler):
             NoneFilter(),
             IssueFilter(),
             UnicodeFilter(),
-            #DebugEmitter(),
             CountEmitter(every=20000, log=self.log),
             LoaderEmitter(BillLoader(
                 source=self.inpath,
