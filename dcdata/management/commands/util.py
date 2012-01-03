@@ -4,17 +4,26 @@ from saucebrush.filters  import Filter
 
 
 class CountEmitter(Emitter):
-    def __init__(self, every=1000, *args, **kwargs):
+    def __init__(self, every=1000, log=None, *args, **kwargs):
         super(CountEmitter, self).__init__(*args, **kwargs)
         self.count = 0
         self.every = every
+        self.log = log
+
     def emit_record(self, record):
         if record:
             self.count += 1
             if self.count % self.every == 0:
-                print self.count
+                if self.log:
+                    self.log.info("{0} records output...".format(self.count))
+                else:
+                    print self.count
+
     def done(self):
-        print "%s total records" % self.count
+        if self.log:
+            self.log.info("{0} total records output.".format(self.count))
+        else:
+            print "{0} total records output.".format(self.count)
 
 
 class NoneFilter(Filter):
@@ -33,8 +42,9 @@ class TableHandler(object):
     db_table = None
     inpath = None
 
-    def __init__(self, inpath):
+    def __init__(self, inpath, log=None):
         self.inpath = inpath
+        self.log = log
 
     def pre_drop(self):
         pass
@@ -44,7 +54,10 @@ class TableHandler(object):
 
     def drop(self):
         self.pre_drop()
-        print "Dropping {0}.".format(self.db_table)
+        if self.log:
+            self.log.info("Dropping {0}.".format(self.db_table))
+        else:
+            print "Dropping {0}.".format(self.db_table)
         cursor = connections['default'].cursor()
         cursor.execute("drop table {0} cascade".format(self.db_table))
 

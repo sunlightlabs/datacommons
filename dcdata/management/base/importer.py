@@ -16,7 +16,7 @@ class BaseImporter(BaseCommand):
     IN_DIR       = None # '/home/datacommons/data/auto/nimsp/raw/IN'
     DONE_DIR     = None # '/home/datacommons/data/auto/nimsp/raw/DONE'
     REJECTED_DIR = None # '/home/datacommons/data/auto/nimsp/raw/REJECTED'
-    OUT_DIR      = None # '/home/datacommons/data/auto/nimsp/IN'
+    OUT_DIR      = None # '/home/datacommons/data/auto/nimsp/denormalized/IN'
     FILE_PATTERN = None # bash-style, ala '*.sql'
 
     email_subject = 'Unhappy Loading App'
@@ -115,6 +115,11 @@ class BaseImporter(BaseCommand):
         pass
 
 
+    # define this (only if necessary) in the derived classes
+    def do_first(self):
+        pass
+
+
     def find_eligible_files(self):
         """
             Goes through the IN_DIR and finds files matching the FILE_PATTERN to act on
@@ -122,14 +127,11 @@ class BaseImporter(BaseCommand):
         files = os.listdir(self.IN_DIR)
 
         if len(files) > 0:
-            for file in os.listdir(self.IN_DIR):
+            for file in files:
                 file_path = os.path.join(self.IN_DIR, file)
                 self.log.info('Found file {0}'.format(file))
                 if fnmatch.fnmatch(file, self.FILE_PATTERN):
-                    # make sure the file has downloaded completely/hasn't been modified in the last minute
-                    now_epoch = time.time()
-                    last_modified_epoch = os.path.getmtime(file_path)
-                    if now_epoch - last_modified_epoch > 60:
+                    if self.file_has_not_been_written_to_for_over_a_minute(file_path):
                         yield file_path
                     else:
                         self.log.info('File last modified time is too recent. Skipping.')
@@ -174,4 +176,12 @@ class BaseImporter(BaseCommand):
     def destroy_pid_file(self):
         os.remove(self.pid_file_path)
 
+
+    def file_has_not_been_written_to_for_over_a_minute(self, file_path):
+        """
+            Make sure the file has downloaded completely
+        """
+        now_epoch = time.time()
+        last_modified_epoch = os.path.getmtime(file_path)
+        return now_epoch - last_modified_epoch > 60
 

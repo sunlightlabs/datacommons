@@ -1,11 +1,11 @@
-from dcdata.lobbying.sources.crp import FILE_TYPES, MODELS
-from django.core.management.base import CommandError, BaseCommand
+from dcdata.lobbying.models import Lobbying, Lobbyist, Issue, Bill, Agency
+from dcdata.management.base.importer import BaseImporter
 from saucebrush.sources import CSVSource
-from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, FieldAdder
-from saucebrush.emitters import DebugEmitter, CSVEmitter
+from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, \
+        FieldAdder, FieldModifier
+from saucebrush.emitters import CSVEmitter
 from saucebrush import run_recipe
-from optparse import make_option
-import os
+import os, os.path
 
 # util functions
 
@@ -89,6 +89,7 @@ def issue_handler(inpath, outpath, infields, outfields):
             'specific_issue': 'SpecIssue',
             'year': 'Year',
         }),
+        FieldModifier(('general_issue', 'specific_issue'), lambda x: x.replace('\n', ' ')),
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
@@ -116,30 +117,58 @@ HANDLERS = {
     "lob_bills": bills_handler,
 }
 
+FILE_TYPES = {
+    "lob_lobbying": ('Uniqid','RegistrantRaw','Registrant','IsFirm',
+                     'Client_raw','Client','Ultorg','Amount','Catcode',
+                     'Source','Self','IncludeNSFS','Use','Ind','Year',
+                     'Type','TypeLong','OrgID','Affiliate'),
+    "lob_lobbyist": ('Uniqid','Lobbyist','Lobbyist_raw','LobbyistID',
+                     'Year','OfficalPos','CID','FormerCongMem'),
+    "lob_agency": ('UniqID','AgencyID','Agency'),
+    # "lob_indus": ('Ultorg','Client','Total','Year','Catcode'),
+    "lob_issue": ('SI_ID','UniqID','IssueID','Issue','SpecIssue','Year'),
+    "lob_bills": ('B_ID','SI_ID','CongNo','Bill_Name'),
+    # "lob_rpt": ('TypeLong','Typecode'),
+}
+
+MODELS = {
+    "lob_lobbying": Lobbying,
+    "lob_lobbyist": Lobbyist,
+    "lob_agency": Agency,
+    "lob_issue": Issue,
+    "lob_bills": Bill,
+}
 # management command
 
-class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option("-d", "--dataroot", dest="dataroot", help="path to data directory", metavar="PATH"),)
+class Command(BaseImporter):
 
-    def handle(self, *args, **options):
+    IN_DIR       = '/home/datacommons/data/auto/lobbying/raw/IN'
+    DONE_DIR     = '/home/datacommons/data/auto/lobbying/raw/DONE'
+    REJECTED_DIR = '/home/datacommons/data/auto/lobbying/raw/REJECTED'
+    OUT_DIR      = '/home/datacommons/data/auto/lobbying/denormalized/IN'
 
-        if 'dataroot' not in options or options['dataroot'] is None:
-            raise CommandError("path to dataroot is required")
+    FILE_PATTERN = 'lob_*.txt'
 
-        dataroot = os.path.abspath(options['dataroot'])
 
-        for table, infields in FILE_TYPES.iteritems():
+    def do_for_file(self, file_path):
+        self.log.info('Starting {0}...'.format(file_path))
+        table = os.path.basename(file_path).split('.')[0]
 
+        if FILE_TYPES.has_key(table):
             handler = HANDLERS.get(table, None)
+            infields = FILE_TYPES[table]
 
             if handler is not None:
 
-                inpath = os.path.join(dataroot, "%s.txt" % table)
-                outpath = os.path.join(dataroot, "denorm_%s.csv" % table)
+                inpath = os.path.join(self.IN_DIR, "%s.txt" % table)
+                outpath = os.path.join(self.OUT_DIR, "denorm_%s.csv" % table)
 
                 outfields = [field.name for field in MODELS[table]._meta.fields]
 
-                print "Denormalizing %s" % inpath
-
+                self.log.info("Denormalizing {0}".format(inpath))
                 handler(inpath, outpath, infields, outfields)
+
+                self.log.info("Done with {0}.".format(inpath))
+
+        self.archive_file(file_path, timestamp=True)
+

@@ -85,6 +85,7 @@ create table contributions_individual as
         and c.recipient_type = 'P'
         and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and c.recipient_category not like 'Z4%'
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_individual_transaction_id on contributions_individual (transaction_id)';
@@ -105,6 +106,7 @@ create table contributions_individual_to_organization as
         and c.recipient_type = 'C'
         and c.transaction_type in ('', '10', '11', '15', '15e', '15j', '22y')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and c.recipient_category not like 'Z4%'
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_individual_to_organization_transaction_id on contributions_individual_to_organization (transaction_id)';
@@ -125,6 +127,7 @@ create table contributions_organization as
         and recipient_type = 'P'
         and transaction_type in ('', '24k', '24r', '24z')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and c.recipient_category not like 'Z4%'
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_organization_transaction_id on contributions_organization (transaction_id)';
@@ -145,6 +148,7 @@ create table contributions_org_to_pac as
         and recipient_type = 'C'
         and transaction_type in ('', '24k', '24r', '24z')
         and c.contributor_category not in (select * from agg_suppressed_catcodes)
+        and c.recipient_category not like 'Z4%'
         and cycle in (select * from agg_cycles);
 
 select date_trunc('second', now()) || ' -- create index contributions_org_to_pac_transaction_id on contributions_org_to_pac (transaction_id)';
