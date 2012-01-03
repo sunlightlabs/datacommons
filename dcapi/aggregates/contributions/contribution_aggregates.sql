@@ -64,9 +64,9 @@ select date_trunc('second', now()) || ' -- create view contributions_even_cycles
 create view contributions_even_cycles as
     select transaction_id, transaction_namespace, transaction_type, amount,
         case when cycle % 2 = 0 then cycle else cycle + 1 end as cycle, date,
-        contributor_name, contributor_ext_id, contributor_type, contributor_category, contributor_state, contributor_zipcode,
+        contributor_name, contributor_ext_id, contributor_type, contributor_category, contributor_occupation, contributor_state, contributor_zipcode,
         organization_name, organization_ext_id, parent_organization_name, parent_organization_ext_id,
-        recipient_name, recipient_ext_id, recipient_type, recipient_party, recipient_state, recipient_category
+        recipient_name, recipient_ext_id, recipient_type, recipient_party, recipient_state, recipient_category, seat
     from contribution_contribution;
 
 
