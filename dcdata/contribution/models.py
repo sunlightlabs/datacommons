@@ -88,7 +88,7 @@ class Contribution(models.Model):
 
     # amount and date
     amount = models.DecimalField(default=0, max_digits=15, decimal_places=2)
-    date = models.DateField(null=True)
+    date = models.DateField(null=True, db_index=True)
 
     # contributor fields
     contributor_name = models.CharField(max_length=255, blank=True)
