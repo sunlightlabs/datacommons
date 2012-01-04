@@ -12,7 +12,7 @@ urlpatterns = patterns('',
     url(r'^api/1.0/', include('dcapi.urls')),
     url(r'^api/locksmith/', include('locksmith.auth.urls')),
     url(r'^data/', include('public.urls')),
-    url(r'^(?P<old_url>.*)$', redirect_to, {'url': DATA_BASE_URL + '%(old_url)s', 'query_string': True}),
+    url(r'^(?P<old_url>.*)$', redirect_to, {'url': DATA_BASE_URL + '%(old_url)s?r', 'query_string': True}),
 )
 
 if (settings.DEBUG):  
