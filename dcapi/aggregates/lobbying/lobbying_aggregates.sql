@@ -136,7 +136,7 @@ create table assoc_lobbying_lobbyist as
     select a.entity_id, l.id
     from matchbox_entityattribute a
     inner join lobbying_lobbyist l
-        on a.value = l.lobbyist_ext_id
+        on substring(a.value for 11) = substring(l.lobbyist_ext_id for 11)
     where
         a.namespace = 'urn:crp:individual';
 
