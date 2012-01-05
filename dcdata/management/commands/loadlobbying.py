@@ -95,7 +95,6 @@ class LobbyistLoader(Loader):
 
         return self.model(transaction_id=record['transaction_id'], lobbyist_ext_id=record['lobbyist_ext_id'])
 
-
 # handlers
 
 TRANSACTION_FILTER = TransactionFilter()
@@ -276,7 +275,6 @@ FILES = 'denorm_lob_lobbying.csv denorm_lob_lobbyist.csv denorm_lob_issue.csv de
 # main management command
 
 class Command(BaseImporter):
-
     IN_DIR       = '/home/datacommons/data/auto/lobbying/denormalized/IN'
     DONE_DIR     = '/home/datacommons/data/auto/lobbying/denormalized/DONE'
     REJECTED_DIR = '/home/datacommons/data/auto/lobbying/denormalized/REJECTED'

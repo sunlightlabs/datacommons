@@ -12,51 +12,6 @@ API_KEY = getattr(settings, 'SYSTEM_API_KEY', None)
 if not API_KEY:
     raise ImproperlyConfigured("SYSTEM_API_KEY is a required parameter")
 
-def index(request):
-    return render_to_response('index.html', context_instance=RequestContext(request))
-
-def filter(request):
-    return HttpResponsePermanentRedirect('/contributions/')
-
-def filter_contracts(request):
-    return render_to_response('filter_contracts.html', context_instance=RequestContext(request))
-
-def filter_contractor_misconduct(request):
-    return render_to_response('filter_contractor_misconduct.html', context_instance=RequestContext(request))
-
-def filter_epa_echo(request):
-    return render_to_response('filter_epa_echo.html', context_instance=RequestContext(request))
-
-def filter_faca(request):
-    return render_to_response('filter_faca.html', context_instance=RequestContext(request))
-
-def filter_contributions(request):
-    return render_to_response('filter_contributions.html', context_instance=RequestContext(request))
-
-def filter_bundling(request):
-    return render_to_response('filter_bundling.html', context_instance=RequestContext(request))
-
-def filter_earmarks(request):
-    return render_to_response('filter_earmarks.html', context_instance=RequestContext(request))
-
-def filter_grants(request):
-    return render_to_response('filter_grants.html', context_instance=RequestContext(request))
-
-def filter_lobbying(request):
-    return render_to_response('filter_lobbying.html', context_instance=RequestContext(request))
-        
-def api_index(request):
-    return render_to_response('api/index.html', context_instance=RequestContext(request))
-
-def api_aggregate_contributions(request):
-    return render_to_response('api/aggregates_contributions.html', context_instance=RequestContext(request))
-    
-def bulk_index(request):
-    return render_to_response('bulk/index.html', context_instance=RequestContext(request))
-        
-def doc_index(request):
-    return render_to_response('docs/index.html', context_instance=RequestContext(request))
-
 #
 # lookups documentation
 #
