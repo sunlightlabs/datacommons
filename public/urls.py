@@ -25,7 +25,7 @@ urlpatterns = patterns('public.views',
     url(r'^contributions/count/$', 'search_count', {'search_resource': contributionfilter_handler}, name="data_contributions_count"),
     
     # earmarks
-    url(r'^download/earmarks/$', 'search_download', {'search_resource': earmarkfilter_handler},  name="data_earmarks_download"),
+    url(r'^earmarks/download/$', 'search_download', {'search_resource': earmarkfilter_handler},  name="data_earmarks_download"),
     url(r'^earmarks/$', 'search_preview', {'search_resource': earmarkfilter_handler}, name="data_earmarks"),
     url(r'^earmarks/count/$', 'search_count', {'search_resource': earmarkfilter_handler}, name="data_earmarks_count"),
      
