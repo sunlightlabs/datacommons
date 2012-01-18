@@ -3,11 +3,9 @@
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-ADMINS = (
-    #('Your Name', 'your_email@domain.com'),
+SENTRY_ADMINS = (
+    'arowland@sunlightfoundation.com',
 )
-
-MANAGERS = ADMINS
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
