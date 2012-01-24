@@ -93,30 +93,35 @@ def execute_file(cursor, filename):
         cursor.execute(statement)
 
 
-def reload_fec(dir=None):
-    if not dir:
-        dir = tempfile.mkdtemp()
+def update_csv(dir):
     
     print "Downloading files to %s..." % dir
     download(dir)
-    
+
     print "Extracting files..."
     extract(dir)
-    
+
     print "Converting to unicode..."
     fix_unicode(dir)
-    
+
     print "Concerting to CSV..."
     fec_2_csv(dir)
     
+def update_db(dir):
+    
     c = connection.cursor()
     
-    print "Uploading data..."
     execute_file(c, SQL_PRELOAD_FILE)
+
+    print "Uploading data..."
     upload(c, dir)
     
     print "Processing uploaded data..."
     execute_file(c, SQL_POSTLOAD_FILE)
         
     print "Done."
-    
+
+
+def reload_fec(dir):
+    update_csv(dir)
+    update_db(dir)

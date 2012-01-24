@@ -3,7 +3,8 @@ drop view if exists agg_fec_candidate_rankings;
 create view agg_fec_candidate_rankings as
 select candidate_id, substring(race for 1) as race,
     rank() over (partition by substring(race for 1) order by total_receipts desc) as total_receipts_rank,
-    rank() over (partition by substring(race for 1) order by ending_cash desc) as cash_on_hand_rank
+    rank() over (partition by substring(race for 1) order by ending_cash desc) as cash_on_hand_rank,
+    rank() over (partition by substring(race for 1) order by total_disbursements desc) as total_disbursements_rank
 from fec_candidates c
 inner join fec_candidate_summaries s using (candidate_id)
 where
