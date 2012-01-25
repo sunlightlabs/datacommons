@@ -17,7 +17,7 @@ FEC_CONFIG = [
     F('ftp://ftp.fec.gov/FEC/oth12.zip', 'itoth.dta', 'fec_committee_transactions.csv', 'fec_pac2pac_import'),
     F('ftp://ftp.fec.gov/FEC/cm12.zip', 'foiacm.dta', 'fec_committee_master_schema.csv', 'fec_committees'),
     F('ftp://ftp.fec.gov/FEC/cn12.zip', 'foiacn.dta', 'fec_candidate_master_schema.csv', 'fec_candidates_import'),
-    F('ftp://ftp.fec.gov/FEC/webl12.zip', 'FECWEB/webl12.dat', 'fec_candidate_summary.csv', 'fec_candidate_summaries'),
+    F('ftp://ftp.fec.gov/FEC/webl12.zip', 'FECWEB/webl12.dat', 'fec_candidate_summary.csv', 'fec_candidate_summaries_import'),
 ]
 
 # for loading PAC summaries. Used for SuperDonors project, but not currently used in Brisket.
@@ -93,30 +93,35 @@ def execute_file(cursor, filename):
         cursor.execute(statement)
 
 
-def reload_fec(dir=None):
-    if not dir:
-        dir = tempfile.mkdtemp()
+def update_csv(dir):
     
     print "Downloading files to %s..." % dir
     download(dir)
-    
+
     print "Extracting files..."
     extract(dir)
-    
+
     print "Converting to unicode..."
     fix_unicode(dir)
-    
+
     print "Concerting to CSV..."
     fec_2_csv(dir)
     
+def update_db(dir):
+    
     c = connection.cursor()
     
-    print "Uploading data..."
     execute_file(c, SQL_PRELOAD_FILE)
+
+    print "Uploading data..."
     upload(c, dir)
     
     print "Processing uploaded data..."
     execute_file(c, SQL_POSTLOAD_FILE)
         
     print "Done."
-    
+
+
+def reload_fec(dir):
+    update_csv(dir)
+    update_db(dir)

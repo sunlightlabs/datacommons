@@ -37,6 +37,16 @@ select fec_record, filer_id, transaction_type, contributor_lender_transfer as co
 from fec_pac2pac_import;   
 
 
+drop table if exists fec_candidate_summaries;
+create table fec_candidate_summaries as
+select candidate_id, total_receipts, ending_cash, total_disbursements,
+    candidate_loan_repayments, other_loan_repayments, refunds_to_individuals, refunds_to_committees,
+    contributions_from_other_committees, contributions_from_party_committees,
+    contributions_from_candidate, loans_from_candidate,
+    authorized_transfers_from, total_individual_contributions,
+    (substring(ending_date for 4 from 5) || substring(ending_date for 2 from 1) || substring(ending_date for 2 from 3))::date as ending_date
+from fec_candidate_summaries_import;
+
 create index fec_candidate_summaries_candidate_id on fec_candidate_summaries (candidate_id);
 
 
