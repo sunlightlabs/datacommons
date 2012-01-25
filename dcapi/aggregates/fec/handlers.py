@@ -5,11 +5,11 @@ from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopLis
 class CandidateSummaryHandler(EntitySingletonHandler):
         
     args = ['entity_id']    
-    fields = "total_raised total_receipts_rank total_disbursements_rank cash_on_hand_rank max_rank contributions_indiv contributions_pac contributions_party contributions_candidate transfers_in disbursements cash_on_hand".split()
+    fields = "total_raised total_receipts_rank total_disbursements_rank cash_on_hand_rank max_rank contributions_indiv contributions_pac contributions_party contributions_candidate transfers_in disbursements cash_on_hand date".split()
     
     stmt = """
         select
-            total_receipts - (candidate_loan_repayments + other_loan_repayments + refunds_to_individuals + refunds_to_committees) as tota_raised,
+            total_receipts - (candidate_loan_repayments + other_loan_repayments + refunds_to_individuals + refunds_to_committees) as total_raised,
             r.total_receipts_rank,
             r.cash_on_hand_rank,
             r.total_disbursements_rank,
@@ -20,7 +20,8 @@ class CandidateSummaryHandler(EntitySingletonHandler):
             contributions_from_candidate + loans_from_candidate - candidate_loan_repayments as contributions_from_candidate,
             authorized_transfers_from,
             total_disbursements,
-            ending_cash
+            ending_cash,
+            ending_date
         from fec_candidates c
         inner join fec_candidate_summaries s using (candidate_id)
         inner join tmp_fec_crp_ids i on s.candidate_id = i.fec_candidate_id
