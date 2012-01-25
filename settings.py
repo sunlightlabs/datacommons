@@ -78,6 +78,7 @@ INSTALLED_APPS = (
     'dcapi.aggregates',
     'dcapi.rapportive',
     'public',
+    'sentry',
     'raven.contrib.django',
     'django_nose',
     'gunicorn',
