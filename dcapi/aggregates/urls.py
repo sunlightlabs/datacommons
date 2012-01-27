@@ -218,7 +218,7 @@ urlpatterns = patterns('',
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_local_breakdown\.(?P<emitter_format>.+)$',
         Resource(CandidateStateHandler, **ad)),
         
-    url(r'^pol/(?P<entity_id>[a-f1-9]{32})/fec_timeline\.(?P<emitter_format>.+)$',
+    url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_timeline\.(?P<emitter_format>.+)$',
         Resource(CandidateTimelineHandler, **ad)),
 )
 
