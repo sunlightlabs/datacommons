@@ -17,7 +17,10 @@ drop table if exists agg_fec_candidate_timeline;
 create table agg_fec_candidate_timeline as
 select candidate_id, race, (date - '2011-01-01') / 7 as week, count(*), sum(amount) as amount
 from fec_candidates c
+inner join fec_candidate_summaries s using (candidate_id)
 inner join (select filer_id, date, amount from fec_indiv union all select other_id, date, amount from fec_pac2cand) t on c.committee_id = t.filer_id
+where
+    t.date <= s.ending_date -- there was a problem with forward-dated contributions throwing off charts 
 group by candidate_id, race, week;
 
 drop table if exists agg_fec_candidate_cumulative_timeline;

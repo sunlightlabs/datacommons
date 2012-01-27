@@ -4,7 +4,7 @@ from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopLis
 
 class CandidateSummaryHandler(EntitySingletonHandler):
         
-    args = ['entity_id']    
+    args = ['cycle', 'entity_id']    
     fields = "total_raised total_receipts_rank total_disbursements_rank cash_on_hand_rank max_rank contributions_indiv contributions_pac contributions_party contributions_candidate transfers_in disbursements cash_on_hand date".split()
     
     stmt = """
@@ -24,8 +24,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
             ending_date
         from fec_candidates c
         inner join fec_candidate_summaries s using (candidate_id)
-        inner join tmp_fec_crp_ids i on s.candidate_id = i.fec_candidate_id
-        inner join matchbox_entityattribute a on i.crp_candidate_id = a.value and a.namespace = 'urn:crp:recipient'
+        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
         inner join agg_fec_candidate_rankings r using (candidate_id)
         where
             a.entity_id = %s
@@ -34,7 +33,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
 
 class CandidateStateHandler(PieHandler):
     
-    args = ['entity_id']
+    args = ['cycle', 'entity_id']
     
     stmt = """
         select
@@ -43,8 +42,7 @@ class CandidateStateHandler(PieHandler):
             count(*)
         from fec_candidates c
         inner join fec_indiv i on c.committee_id = i.filer_id
-        inner join tmp_fec_crp_ids ids on c.candidate_id = ids.fec_candidate_id
-        inner join matchbox_entityattribute a on ids.crp_candidate_id = a.value and a.namespace = 'urn:crp:recipient'
+        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
         where
             a.entity_id = %s
         group by local
@@ -56,8 +54,7 @@ class CandidateTimelineHandler(TopListHandler):
     candidates_stmt = """
         select entity_id, candidate_id, e.name, race, party_designation1, incumbent_challenger_open
         from fec_candidates c
-        inner join tmp_fec_crp_ids ids on c.candidate_id = ids.fec_candidate_id
-        inner join matchbox_entityattribute a on ids.crp_candidate_id = a.value and a.namespace = 'urn:crp:recipient'
+        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:2012'
         inner join matchbox_entity e on a.entity_id = e.id
         where
             election_year = '12'
@@ -65,8 +62,7 @@ class CandidateTimelineHandler(TopListHandler):
             and race in 
                 (select race
                 from fec_candidates c
-                inner join tmp_fec_crp_ids ids on c.candidate_id = ids.fec_candidate_id
-                inner join matchbox_entityattribute a on ids.crp_candidate_id = a.value and a.namespace = 'urn:crp:recipient'
+                inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
                 where
                     candidate_status = 'C'
                     and a.entity_id = %s)
@@ -86,7 +82,7 @@ class CandidateTimelineHandler(TopListHandler):
     def read(self, request, **kwargs):
         c = connection.cursor()
         
-        raw_candidates_result = execute_top(self.candidates_stmt, kwargs['entity_id'])
+        raw_candidates_result = execute_top(self.candidates_stmt, request.GET['cycle'], kwargs['entity_id'])
         candidates = [dict(zip(self.candidates_fields, row)) for row in raw_candidates_result]
         
         # this makes a separate query for each candidate
