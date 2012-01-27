@@ -10,8 +10,11 @@ class NimspExtractor(Extractor):
 
     FILE_PATTERN = 'Sunlight.*.tar.gz'
 
-<<<<<<< HEAD
     LOG_PATH = '/home/datacommons/data/auto/log/nimsp_extractor.log'
+
+    def __init__(self):
+        super(NimspExtractor, self).__init__()
+
 
     def do_for_file(self, file_path):
         try:
@@ -27,10 +30,6 @@ class NimspExtractor(Extractor):
 
     def dry_run_for_file(self, file_path):
         self.log.info('Would extract {0} to {1} and then archive.'.format(os.path.basename(file_path), self.OUT_DIR))
-=======
-    def __init__(self):
-        super(NimspExtractor, self).__init__()
->>>>>>> 51ed706... Adding a lobbying extractor script for automation. Also doing some related refactoring.
 
 
 Command = NimspExtractor
