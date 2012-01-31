@@ -4,10 +4,10 @@ import os
 
 class NimspExtractor(Extractor):
 
-    IN_DIR       = '/home/datacommons/data/auto/lobbying/download/IN'
-    DONE_DIR     = '/home/datacommons/data/auto/lobbying/download/DONE'
-    REJECTED_DIR = '/home/datacommons/data/auto/lobbying/download/REJECTED'
-    OUT_DIR      = '/home/datacommons/data/auto/lobbying/raw/IN'
+    IN_DIR       = '/home/datacommons/data/auto/nimsp/download/IN'
+    DONE_DIR     = '/home/datacommons/data/auto/nimsp/download/DONE'
+    REJECTED_DIR = '/home/datacommons/data/auto/nimsp/download/REJECTED'
+    OUT_DIR      = '/home/datacommons/data/auto/nimsp/raw/IN'
 
     FILE_PATTERN = 'Sunlight.*.tar.gz'
 
