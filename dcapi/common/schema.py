@@ -80,7 +80,7 @@ class IndustryField(Field):
         return self._add_industry_clauses(query, cats, orders)
 
 
-_punctuation_to_spaces = dict([(c, ' ') for c in "'&|!():*"])
+_punctuation_to_spaces = dict([(c, ' ') for c in "'&|!():*\\"])
 _strip_postgres_ft_operators = build_map_substrings(_punctuation_to_spaces)
 
 def query_to_ft_sql(*searches):
