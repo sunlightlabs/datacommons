@@ -2,6 +2,7 @@
 
 from dcdata.contracts.models import Contract
 from dcdata.grants.models import Grant
+from dcdata.management.base import BaseImporter
 from django.db.models.fields import CharField
 import csv
 import faads
@@ -12,14 +13,12 @@ import re
 import sys
 import logging
 
-from dcdata.management.commands.base.importer import BaseImporter
-
 
 CONTRACT_STRINGS = dict([(f.name, f.max_length) for f in Contract._meta.fields if isinstance(f, CharField)])
 GRANT_STRINGS = dict([(f.name, f.max_length) for f in Grant._meta.fields if isinstance(f, CharField)])
 
 
-class USASpendingDenormalizer:
+class USASpendingDenormalizer(BaseImporter):
     re_contracts = re.compile('.*[cC]ontracts.*.')
 
     def __init__(self, logger=None):
