@@ -44,7 +44,7 @@ def load_data(input_iterator, record_processor, output_func, log=None):
             log_func('Skipping processing of input record: "%s"\n' % record)
             log_func('Exception: %s\n' % e)
             if e.traceback:
-                log_func(traceback.format_tb(e.traceback))
+                log_func(repr(traceback.format_tb(e.traceback)))
 
             if not log:
                 sys.stderr.flush()
