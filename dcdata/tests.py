@@ -409,10 +409,6 @@ class TestLoadContributions(TestCase):
         processor = LoadContributions.get_record_processor(loader.import_session)
         output = LoaderEmitter(loader).process_record
 
-        sys.stderr.write('Will this show up????')
-
-        self.assertEqual(0, Contribution.objects.all().count())
-
         load_data(source, processor, output)
 
         self.assertEqual(1, Contribution.objects.all().count())
