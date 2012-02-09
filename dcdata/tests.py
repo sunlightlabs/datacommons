@@ -342,13 +342,11 @@ class TestLoadContributions(TestCase):
         denormalizer = CRPDenormalizeIndividual.get_record_processor({}, {}, {})
 
         load_data([input_record], denormalizer, denormalized_records.append)
-        
+
         print denormalized_records[0]
 
         self.assertEqual(1, len(denormalized_records))
         self.assertEqual(u'123.45', denormalized_records[0]['amount'])
-
-        Contribution.objects.all().delete()
 
         loader = ContributionLoader(
                 source='unittest',
@@ -559,15 +557,15 @@ class TestEarmarks(TestCase):
         ',,3000000,,3000000,,"101st Airborne/Air Assault Injury Prevention and Performance Enhancement Initiative","Fort Campbell",,"KY","Defense","Research, Development, Test & Evaluation","Army",,,,,,"Corker; Specter","R; D","TN; PA",,,"University of Pittsburgh",',
         ',,500000,,500000,,"10th Avenue South Corridor Extension, Waverly, IA","Waverly",,"IA","Transportation-Housing and Urban Development","Federal Highway Administration","Surface Transportation Priorities",,"Braley","D","IA",,"Grassley; Harkin","R; D","IA; IA",,,,',
         ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
-    ]    
-    
+    ]
+
     def test_raw_fields(self):
         source = VerifiedCSVSource(self.csv2008[0:1], EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, None)
         output = list()
-        
+
         load_data(source, processor, output.append)
-        
+
         self.assertEqual(1, len(output))
         self.assertEqual("Abercrombie", output[0]['house_members'])
         self.assertEqual("D", output[0]['house_parties'])
@@ -576,27 +574,25 @@ class TestEarmarks(TestCase):
         self.assertEqual("Bingaman; Cochran; Kennedy", output[0]['senate_members'])
         self.assertEqual("D; R; D", output[0]['senate_parties'])
         self.assertEqual("NM; MS; MA", output[0]['senate_states'])
-        
-    
+
+
     def test_process_earmarks(self):
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, None)
         output = list()
-        
+
         load_data(source, processor, output.append)
-        
+
         self.assertEqual(9, len(output))
-        
+
     def test_save_earmarks(self):
-        Earmark.objects.all().delete()
-        Member.objects.all().delete()
         import_ref = Import.objects.create()
-        
+
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
-        
+
         load_data(source, processor, save_earmark)
-        
+
         self.assertEqual(9, Earmark.objects.count())
         self.assertEqual(18, Member.objects.count())
 
@@ -604,27 +600,25 @@ class TestEarmarks(TestCase):
         variants = [
             ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo,Undisclosed,,',
             ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo & Und.,Undisclosed (President),,',
-            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President and Member(s),O & M-Disclosed,,',                        
-            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",Judiciary,O & M-Undisclosed,,',                        
-            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",something wrong,Something else entirely,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President and Member(s),O & M-Disclosed,,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",Judiciary,O & M-Undisclosed,,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",something wrong,Something else entirely,,',
         ]
 
-        Earmark.objects.all().delete()
-        Member.objects.all().delete()
         import_ref = Import.objects.create()
-        
+
         source = VerifiedCSVSource(variants, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
         load_data(source, processor, save_earmark)
 
         self.assertEqual(5, Earmark.objects.count())
-        
+
         self.assertEqual(1, Earmark.objects.filter(undisclosed='u').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='p').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='o').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='m').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='').count())
-        
+
         self.assertEqual(1, Earmark.objects.filter(presidential='p').count())
         self.assertEqual(1, Earmark.objects.filter(presidential='u').count())
         self.assertEqual(1, Earmark.objects.filter(presidential='m').count())
