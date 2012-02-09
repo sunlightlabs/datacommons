@@ -144,7 +144,7 @@ class MultiFieldConversionFilter(Filter):
                 try:
                     record[key] = self._name_to_func[key](record[key])
                 except:
-                    warn(record, "Could not convert value '%s': %s" % (record[key], sys.exc_info()[0]))
+                    warn(record, "Could not convert value for key: '%s'; value :'%s': %s" % (key, record[key], sys.exc_info()[0]))
                     record[key] = None
 
         return record
