@@ -21,6 +21,9 @@ class BaseImporter(BaseCommand):
 
     email_subject = 'Unhappy Loading App'
 
+    # initializing this here so that tests which don't call handle() don't fail
+    dry_run = None
+
     option_list = BaseCommand.option_list + (
         make_option('--dry-run', '-d',
             action='store_true',
