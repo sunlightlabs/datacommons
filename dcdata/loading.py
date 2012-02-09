@@ -37,7 +37,9 @@ class Loader(object):
     
     def __init__(self, source, description, imported_by, **kwargs):
 
-        self.log = kwargs['log']
+        self.log_func = sys.stderr.write
+        if kwargs.get('log'):
+            self.log_func = log.warn
         
         # populate a fieldname/field mapping of model fields
         self.fields = { }
@@ -98,8 +100,8 @@ class Loader(object):
         try:
             obj.save()
         except ValueError:
-            self.log.warn(record)
-            self.log.warn('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
+            self.log_func(record)
+            self.log_func('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
             raise SkipRecordException('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])            
         except:
             print record
