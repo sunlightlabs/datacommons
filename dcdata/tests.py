@@ -181,9 +181,8 @@ class TestNIMSPDenormalize(TestCase):
 
     @attr('nimsp')
     def test_contributor_type(self):
-        input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
-                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0",\
-                        "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+        input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent","MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0","0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+
         source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
         output = list()
 
@@ -193,9 +192,8 @@ class TestNIMSPDenormalize(TestCase):
 
         assert_record_contains(self, {'contributor_type': 'individual', 'organization_name': "Adams & Boswell"}, output[0])
 
-        input_string = '"3327568","341.66","2006-11-07","Kent Adams","Kent Adams",\
-                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","A1000","0","0",\
-                        "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+        input_string = '"3327568","341.66","2006-11-07","Kent Adams","Kent Adams","MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","A1000","0","0","0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+
         source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
         output = list()
 
