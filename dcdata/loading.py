@@ -5,6 +5,7 @@ from django.db.models import get_model
 from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter
 import sys
+import traceback
 
 #
 # saucebrush loading filters
@@ -38,7 +39,8 @@ class Loader(object):
     def __init__(self, source, description, imported_by, **kwargs):
 
         self.log_func = sys.stderr.write
-        if kwargs.get('log'):
+        log = kwargs.get('log')
+        if log:
             self.log_func = log.warn
         
         # populate a fieldname/field mapping of model fields
@@ -99,12 +101,14 @@ class Loader(object):
         
         try:
             obj.save()
-        except ValueError:
-            self.log_func(record)
-            self.log_func('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
-            raise SkipRecordException('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])            
+        except ValueError, e:
+            #import pprint
+            #self.log_func(pprint.pformat(record))
+            #self.log_func('Error saving record to database: %s' % repr(traceback.format_exc(e)))
+            raise SkipRecordException(e)
         except:
-            print record
+            import pprint
+            pprint.pprint(record)
             print 'Fatal error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2]
             raise TerminateProcessingException('Fatal error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
     

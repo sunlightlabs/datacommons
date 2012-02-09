@@ -145,28 +145,19 @@ class TestNIMSPDenormalize(TestCase):
     @attr('nimsp')
     def test_command_do_for_file(self):
         nd = NIMSPDenormalize()
-        nd.do_for_file(os.path.join(dataroot, 'denormalized/nimsp_partial_denormalization.csv'))
+        nd.do_for_file(os.path.join(nd.IN_DIR, 'nimsp_partial_denormalization.csv'))
 
-        allocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_allocated_contributions.csv')
-        unallocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_unallocated_contributions.csv')
+        allocated_path = os.path.join(nd.OUT_DIR, 'nimsp_allocated_contributions.csv')
+        unallocated_path = os.path.join(nd.OUT_DIR, 'nimsp_unallocated_contributions.csv')
         self.assertEqual(9, sum(1 for _ in open(allocated_path, 'r')))
         self.assertEqual(4, sum(1 for _ in open(unallocated_path, 'r')))
 
+        # remove script output files
         os.remove(allocated_path)
         os.remove(unallocated_path)
 
-
-    def test_recipient_state(self):
-        """
-            The call to test_command, below, originally accessed the 'loadcontributions' command,
-            which has been removed because it was testing too much at once. This test, since it
-            tests only loaded contributions, should be rewritten and moved elsewhere. (TODO)
-        """
-        raise SkipTest
-        self.test_command()
-
-        self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
-        self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
+        # undo the script's archiving of our test file
+        os.rename(nd.archived_file_path, os.path.join(nd.IN_DIR, 'nimsp_partial_denormalization.csv'))
 
 
     @attr('nimsp')
@@ -361,13 +352,16 @@ class TestLoadContributions(TestCase):
         self.assertEqual(1, Contribution.objects.all().count())
         self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
 
+
     @attr('crp')
     @attr('nimsp')
     def test_bad_value(self):
         # the second record has an out-of-range date
-        input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,|BOTTGER, ANTHONY|,,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
-                      ',,1998,urn:nimsp:transaction,227059e3c32af276f5b37642922e415c,,,False,200,0922-09-08,|TRICK, BILL|,,,,,,,BOX 2730,TUSCALOOSA,AL,35403,B1500,,,,,,,,|BENTLEY, ROBERT J|,3188,,R,politician,AL,,,,,,,G,AL-21,state:upper,,L',
-                      ',,2006,urn:nimsp:transaction,dd0af37dca3bf26b2aa602e4d8756c19,,,False,8,2006-11-07,|BRAKE, PATRICK|,,,,UTILITY WORKER,CITY OF PORTLAND,,73728 SOLD RD,RAINIER,OR,97048,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,']
+        input_rows = [
+            ',,1990,urn:nimsp:transaction,4d7fb87bd9c298fa9213192ef4132f7a,,,False,3000,2010-10-01,"ABNEY, PAT",,,,,,,,,,Z9020,,,,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,1990,urn:nimsp:transaction,1e54c96b1e5c3de2616d847effe9d679,,,False,1000,0922-10-02,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,committee,STAT EMPLOYEES UNION,,,XXX,ANCHORAGE,AK,,L1200,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,AMERICAN FEDERATION OF STATE COUNTY & MUNICIPAL EMPLOYEES/AFSCME,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,2010,urn:nimsp:transaction,3ebbe6c350c60d7848bee589b1b43d5a,,,False,5000,2010-09-01,3M,5,committee,N/A,N/A,,3M CENTER BUILDING 225-1S-15,ST PAUL,MN,55144,M0000,3M,,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,committee,IA,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,,,,,,,',
+        ]
 
         loader = ContributionLoader(
                 source='unittest',
@@ -384,10 +378,48 @@ class TestLoadContributions(TestCase):
         load_data(source, processor, output)
         sys.stderr = old_stderr
 
-        self.assertTrue(mystderr.getvalue())
+        self.assertRegexpMatches(mystderr.getvalue(), 'Exception: Year 922 is not a valid year\.')
         self.assertEqual(2, Contribution.objects.count())
-        
-        
+        self.assertEqual(1, Contribution.objects.filter(recipient_state='AK').count())
+        self.assertEqual(1, Contribution.objects.filter(recipient_state='IA').count())
+        self.assertEqual(1, Contribution.objects.filter(district='AK-7').count())
+        self.assertEqual(1, Contribution.objects.filter(seat_result='L').count())
+
+
+    @attr('nimsp')
+    def test_recipient_state(self):
+        input_rows = [
+            # import_reference, cycle transaction_namespace transaction_id transaction_type filing_id is_amendment amount date contributor_name contributor_ext_id contributor_type contributor_occupation contributor_employer contributor_gender contributor_address contributor_city contributor_state contributor_zipcode contributor_category organization_name organization_ext_id parent_organization_name parent_organization_ext_id recipient_name recipient_ext_id recipient_party recipient_type recipient_state recipient_state_held recipient_category committee_name committee_ext_id committee_party candidacy_status district district_held seat seat_held seat_status seat_result
+            ',,1990,urn:nimsp:transaction,4d7fb87bd9c298fa9213192ef4132f7a,,,False,3000,2010-10-01,"ABNEY, PAT",,,,,,,,,,Z9020,,,,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,1990,urn:nimsp:transaction,1e54c96b1e5c3de2616d847effe9d679,,,False,1000,2010-10-02,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,committee,STAT EMPLOYEES UNION,,,XXX,ANCHORAGE,AK,,L1200,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,AMERICAN FEDERATION OF STATE COUNTY & MUNICIPAL EMPLOYEES/AFSCME,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,2010,urn:nimsp:transaction,3ebbe6c350c60d7848bee589b1b43d5a,,,False,5000,2010-09-01,3M,5,committee,N/A,N/A,,3M CENTER BUILDING 225-1S-15,ST PAUL,MN,55144,M0000,3M,,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,committee,IA,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,,,,,,,',
+        ]
+
+        loader = ContributionLoader(
+                source='unittest',
+                description='unittest',
+                imported_by='unittest'
+            )
+        source = CSVSource(input_rows, model_fields('contribution.Contribution'))
+        processor = LoadContributions.get_record_processor(loader.import_session)
+        output = LoaderEmitter(loader).process_record
+
+        load_data(source, processor, output)
+
+        # leaving this here: snippet to pretty print Django objects for debugging
+        #import pprint
+        #for obj in Contribution.objects.all():
+        #    dict_ = zip([ x.name for x in Contribution._meta.fields ], [ x.value_to_string(obj) for x in Contribution._meta.fields])
+        #    print pprint.pformat(dict_)
+
+        self.assertEqual(2, Contribution.objects.filter(recipient_state='AK').count())
+        self.assertEqual(1, Contribution.objects.filter(recipient_state='IA').count())
+        # making sure to test some of the last fields on the model, too
+        # because when CSV parsing goes wrong, these will definitely go wrong
+        self.assertEqual(2, Contribution.objects.filter(district='AK-7').count())
+        self.assertEqual(2, Contribution.objects.filter(seat_result='L').count())
+
+
     @attr('crp')
     @attr('nimsp')
     @attr('crp_bogus_warnings')
