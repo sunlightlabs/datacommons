@@ -53,6 +53,7 @@ def assert_record_contains(tester, expected, actual):
 
 class TestRecipientFilter(TestCase):
 
+    @attr('crp')
     def test(self):
         processor = CRPDenormalizeIndividual.get_record_processor((),
                                                                   load_candidates(dataroot),
@@ -125,6 +126,7 @@ class TestNIMSPDenormalize(TestCase):
                 os.remove(path)
 
 
+    @attr('nimsp')
     def test_salting(self):
         input_string = '"3327568","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
@@ -140,6 +142,7 @@ class TestNIMSPDenormalize(TestCase):
         self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
 
 
+    @attr('nimsp')
     def test_command_do_for_file(self):
         nd = NIMSPDenormalize()
         nd.do_for_file(os.path.join(dataroot, 'denormalized/nimsp_partial_denormalization.csv'))
@@ -166,6 +169,7 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
 
 
+    @attr('nimsp')
     def test_salt_filter(self):
         connection = sqlite3.connect(self.salts_db_path)
         connection.cursor().execute('delete from salts where nimsp_id = 9999')
@@ -184,6 +188,7 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(2, len(output))
 
 
+    @attr('nimsp')
     def test_contributor_type(self):
         input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0",\
@@ -359,6 +364,7 @@ class TestLoadContributions(TestCase):
         self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
 
     @attr('crp')
+    @attr('nimsp')
     def test_bad_value(self):
         # the second record has an out-of-range date
         input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,|BOTTGER, ANTHONY|,,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
@@ -385,6 +391,7 @@ class TestLoadContributions(TestCase):
         
         
     @attr('crp')
+    @attr('nimsp')
     @attr('crp_bogus_warnings')
     def test_bogus_warnings(self):
         """ When running the full loadcontributions, I get about 1.7M warnings of records with extra fields.
@@ -415,6 +422,8 @@ class TestLoadContributions(TestCase):
 
 class TestProcessor(TestCase):
 
+    @attr('nimsp')
+    @attr('crp')
     def test_chain(self):
         f = compose_one2many()
 
@@ -442,6 +451,8 @@ class TestProcessor(TestCase):
 
         self.assertEqual(['acd', 'ace', 'acf', 'bcd', 'bce', 'bcf'], list(f('')))
 
+    @attr('nimsp')
+    @attr('crp')
     def test_filters(self):
         class Cube(YieldFilter):
             def process_record(self, r):
@@ -466,6 +477,8 @@ class TestProcessor(TestCase):
         self.assertEqual([{'value': 2}, {'value': 4}, {'value': 8}], f({'value':2}))
         self.assertEqual([{'value': 2}, {'value': 4}, {'value': 8}], f({'value':-2}))
 
+    @attr('nimsp')
+    @attr('crp')
     def test_field_count_validator(self):
         validator = FieldCountValidator(2)
 
@@ -492,6 +505,8 @@ class TestProcessor(TestCase):
         self.assertTrue(mystderr.getvalue())
         self.assertEqual([double, double], output)
 
+    @attr('nimsp')
+    @attr('crp')
     def test_verified_csv_source(self):
         processor.TERMINATE_ON_ERROR = False
 
@@ -511,6 +526,8 @@ class TestProcessor(TestCase):
         self.assertTrue(mystderr.getvalue())
         self.assertEqual([{'a': '1', 'b': '2', 'c': '3'}], output)
 
+    @attr('nimsp')
+    @attr('crp')
     def test_string_length(self):
         original = {'contributor_zipcode': '123456',\
                     'contributor_employer': '1111111111222222222233333333334444444444555555555566666666667777777777',\
