@@ -18,7 +18,8 @@ from dcdata.models import Import
 from dcdata.processor import load_data, chain_filters, compose_one2many, \
     SkipRecordException
 from dcdata.scripts.usaspending.converter import USASpendingDenormalizer
-from dcdata.scripts.usaspending.loader import Loader
+from dcdata.scripts.usaspending.contracts_loader import Loader as ContractsLoader
+from dcdata.scripts.usaspending.grants_loader import Loader as GrantsLoader
 from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource, \
     CSVFieldVerifier
 from decimal import Decimal
@@ -816,12 +817,10 @@ class TestConverter(TestCase):
     @attr('usaspending')
     @attr('grants')
     def test_prepare_grants_file(self):
-        grants_file = 'test_data/usaspending/out/grants.out'
-        contracts_file = 'test_data/usaspending/out/contracts.out'
+        in_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_data/usaspending')
+        out_dir = os.path.join(in_dir, 'out')
 
-        out_dir = os.path.dirname(grants_file)
-
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
+        USASpendingDenormalizer().parse_directory(in_dir, out_dir)
 
         self.assert_file_contents_eq('''
 dce6cc6b47be826b03f5729738ed97a2|active|201006291|17.310||MULTIPLE RECIPIENTS|||YAVAPAI|025||USA|21||1635|||175000|0|175000|2010-03-31|2010-01-01|2010-03-31|10|1|||04**025|ARIZONA|YAVAPAI||03  |Energy Employees Occupational Illness Compensation|Employment Standards Administration  Department of Labor|ENERGY EMPLOYEES OCCUPATIONAL ILLNESS COMPENSATION.|||16|1523|000||||0|0|2010|AZ|i|d|ZZ|16|N|17.310-ARIZONA-YAVAPAI-20100331-10|AZ|20110111
@@ -834,22 +833,20 @@ f9e7a41d8585b0e0cb2b52a9f4bd26f4|active|201004053|10.450||ACE PROPERTY AND CASUA
 239422b6dd7b2a88d8ff5e0bab119532|active|201010051|64.114||MULTIPLE RECIPIENTS|||DOUGLAS|019|||21|(none)|3640|||0|0|0|2010-09-28|||08|1|||41019**|OREGON|DOUGLAS||    ||VA- VETERANS BENEFIT ADMINISTRATION|||  |  ||   ||||534491|-3310|2010|OR|i|l|ZZ|36|N|6411420100982|OR|20110111
 01db4707cf4c5d6d021697f3f31f6b9f|active|201010051|10.998|SAI EXEMPT|MISSOURI SYSTEM UNIVERSITY|15670|COLUMBIA|Boone|019|652111230|USA|06|A|12D3|9069910|1|38519|0|0|2010-02-01|2009-10-01|2010-09-30|11|2|||29019|MISSOURI|COLUMBIA|652113020|MO09||Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|153890272|11|12|2900|   |310 JESSE HALL|||0|0|2010|MO|h|o|MO09|12|N|12D3019069910         1     1282900|MO|20110111
 e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC.|65000|SCOTTSDALE|Maricopa|013|852602490|USA|22|A|12D3|9069806|1|754|0|0|2010-03-01|2009-10-01|2010-09-30|11|2|||04013|ARIZONA|SCOTTSDALE|852602441|AZ05||Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|116899969|11|12|2900|   |14605 NORTH AIRPORT DRIVE|||0|0|2010|AZ|f|o|AZ05|12|N|12D3019069806         1     1282900|AZ|20110111
-       ''', grants_file)
+       ''', os.path.join(out_dir, 'grants.out'))
 
     @attr('usaspending')
     @attr('contracts')
     def test_prepare_contracts_file(self):
-        grants_file = 'test_data/usaspending/out/grants.out'
-        contracts_file = 'test_data/usaspending/out/contracts.out'
+        in_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_data/usaspending')
+        out_dir = os.path.join(in_dir, 'out')
 
-        out_dir = os.path.dirname(grants_file)
-
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
+        USASpendingDenormalizer().parse_directory(in_dir, out_dir)
 
         self.assert_file_contents_eq('''
 37adc9010a603b98304be859dad2695e|active|GOVPLACE||7014|Automation Modernization, Customs and Border Protection|HSBP1010J00525|0||0|7001|HSHQDC07D00025|N|0|2010-08-12|2010-07-30|2010-08-29|2010-08-29|616022.12|f|616022.12|f|f|616022.12|7014|f|ITCD|f|7014|f|f|ITCD||f|X|f|f|C|J|f||f||N: No|||f|Brocade switches|f|f|f|f|X|f|X|X|f||f|1||||t|X|7050|D||541519|C|f||f||E|US|D|15707 ROCKFIELD BLVD STE 305|||IRVINE|CA|926182829|USA|9570508830000|48||VA|US|221503224||11|D||MAFO|SBA||NONE|30||20000000.0|FAIR||5|A||f|f|f|f|f|f|||S||957050883|2010|GOVPLACE|70|70|CA48|VA11|70|0531|||c|||
 0d42d94514b1a7031be23d1974c5e1bb|active|SUPREME FOODSERVICE AG||9700||610G|0||0|9700|SPM30008D3153|N|0|2010-07-03|2010-07-03|2010-07-12|2010-07-12|77431.0|f|77431.0|f|f|77431.0|97AS|f|SPM300|f|97AS|f|f|SPM300||f|X|f|f|C|J|f||f||N: No||X|f|4514806667OTHER GROCERY AND RE|f|f|t|f|X|f|X||f|Z|f|1||||f|X|8910|D|B2|424490|C|f|000|f|Z|E|SZ|E|ZIEGELBRUECKSTRASSE 66|||ZIEGELBRUECKE||8866|CHE|4813475520000||||SZ||||A||NP|NONE|INTERNATIONAL ORG|NONE|2073||700000000.0|||5|A||f|f|f|f|f|f|||O||400210806|2010|SUPREME GROUP HOLDING SARL|97|89|ZZ|ZZ|||||c|||
-        ''', contracts_file)
+        ''', os.path.join(out_dir, 'contracts.out'))
 
     def assert_file_contents_eq(self, expected_contents, actual_file_path):
         self.maxDiff = None
@@ -862,43 +859,39 @@ e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC
         return [ x for x in values if re.search(r'[^ ]', x) ]
 
 
-class TestLoader(TestCase):
-    
+class TestContractsLoader(TestCase):
+
     @attr('usaspending')
     @attr('contracts')
     @attr('usaspending_split_unicode')
     def test_split_unicode(self):
-        Contract.objects.all().delete()
-        
-        grants_file = 'test_data/usaspending/out/grants.out'
         contracts_file = 'test_data/usaspending/out/contracts.out'
 
-        out_dir = os.path.dirname(grants_file)
+        out_dir = os.path.dirname(contracts_file)
 
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/bad_unicode'), out_dir, grants_file, contracts_file)
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/bad_unicode'), out_dir)
 
-        Loader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
+        ContractsLoader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
 
         self.assertEqual(1, Contract.objects.all().count())
-        
+
         expected_program_code = 'FREQUENCY UP-CONVERSION DETECTION SYSTEM WITH SINGLE PHOTON SENSITIVITY WITHIN 1-1.8 \xc3\x82\xc2\xb5M AND 3-4 \xc3\x82\xc2\xb5M'
-        
+
         self.assertEqual(expected_program_code.decode('utf8'), Contract.objects.all()[0].majorprogramcode)
-        
+
 
     def setUp(self):
-        grants_file = 'test_data/usaspending/out/grants.out'
         contracts_file = 'test_data/usaspending/out/contracts.out'
 
-        out_dir = os.path.dirname(grants_file)
+        out_dir = os.path.dirname(os.path.abspath(contracts_file))
 
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
-        
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_data/usaspending'), out_dir)
+
 
     @attr('usaspending')
     @attr('grants')
     def test_loader_faads_sql(self):
-        
+
         sql = """
 COPY grants_grant
 (unique_transaction_id, transaction_status, fyq, cfda_program_num, sai_number, recipient_name, recipient_city_code, recipient_city_name, recipient_county_name, recipient_county_code, recipient_zip, recipient_country_code, recipient_type, action_type, agency_code, federal_award_id, federal_award_mod, fed_funding_amount, non_fed_funding_amount, total_funding_amount, obligation_action_date, starting_date, ending_date, assistance_type, record_type, correction_late_ind, fyq_correction, principal_place_code, principal_place_state, principal_place_cc, principal_place_zip, principal_place_cd, cfda_program_title, agency_name, project_description, duns_no, duns_conf_code, progsrc_agen_code, progsrc_acnt_code, progsrc_subacnt_code, receip_addr1, receip_addr2, receip_addr3, face_loan_guran, orig_sub_guran, fiscal_year, principal_place_state_code, recip_cat_type, asst_cat_type, recipient_cd, maj_agency_cat, rec_flag, uri, recipient_state_code, imported_on)
@@ -906,7 +899,7 @@ FROM 'test_data/usaspending/out/grants.out'
 CSV QUOTE '"'
         """
 
-        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_faads_sql(os.path.abspath('./test_data/usaspending/out/grants.out')))
+        self.assert_eq_ignoring_leading_trailing_space(sql, GrantsLoader().sql_str(os.path.abspath('./test_data/usaspending/out/grants.out')))
 
 
     @attr('usaspending')
@@ -914,18 +907,18 @@ CSV QUOTE '"'
     def test_loader_fpds_sql(self):
         sql = """
 COPY contracts_contract
-(unique_transaction_id, transaction_status, vendorname, lastdatetoorder, agencyid, account_title, piid, modnumber, vendordoingasbusinessname, transactionnumber, idvagencyid, idvpiid, aiobflag, idvmodificationnumber, signeddate, effectivedate, currentcompletiondate, ultimatecompletiondate, obligatedamount, shelteredworkshopflag, baseandexercisedoptionsvalue, veteranownedflag, srdvobflag, baseandalloptionsvalue, contractingofficeagencyid, womenownedflag, contractingofficeid, minorityownedbusinessflag, fundingrequestingagencyid, saaobflag, apaobflag, fundingrequestingofficeid, purchasereason, baobflag, fundedbyforeignentity, haobflag, naobflag, contractactiontype, typeofcontractpricing, verysmallbusinessflag, reasonformodification, federalgovernmentflag, majorprogramcode, costorpricingdata, solicitationid, costaccountingstandardsclause, stategovernmentflag, descriptionofcontractrequirement, localgovernmentflag, gfe_gfp, seatransportation, consolidatedcontract, lettercontract, multiyearcontract, performancebasedservicecontract, contingencyhumanitarianpeacekeepingoperation, tribalgovernmentflag, contractfinancing, purchasecardaspaymentmethod, numberofactions, walshhealyact, servicecontractact, davisbaconact, clingercohenact, interagencycontractingauthority, productorservicecode, contractbundling, claimantprogramcode, principalnaicscode, recoveredmaterialclauses, educationalinstitutionflag, systemequipmentcode, hospitalflag, informationtechnologycommercialitemcategory, useofepadesignatedproducts, countryoforigin, placeofmanufacture, streetaddress, streetaddress2, streetaddress3, city, state, zipcode, vendorcountrycode, dunsnumber, congressionaldistrict, locationcode, statecode, placeofperformancecountrycode, placeofperformancezipcode, nonprofitorganizationflag, placeofperformancecongressionaldistrict, extentcompeted, competitiveprocedures, solicitationprocedures, typeofsetaside, organizationaltype, evaluatedpreference, numberofemployees, research, annualrevenue, statutoryexceptiontofairopportunity, reasonnotcompeted, numberofoffersreceived, commercialitemacquisitionprocedures, hbcuflag, commercialitemtestprogram, smallbusinesscompetitivenessdemonstrationprogram, a76action, sdbflag, firm8aflag, hubzoneflag, phoneno, faxno, contractingofficerbusinesssizedetermination, otherstatutoryauthority, eeparentduns, fiscal_year, mod_parent, maj_agency_cat, psc_cat, vendor_cd, pop_cd, progsourceagency, progsourceaccount, progsourcesubacct, rec_flag, type_of_contract, agency_name, contracting_agency_name, requesting_agency_name) 
+(unique_transaction_id, transaction_status, vendorname, lastdatetoorder, agencyid, account_title, piid, modnumber, vendordoingasbusinessname, transactionnumber, idvagencyid, idvpiid, aiobflag, idvmodificationnumber, signeddate, effectivedate, currentcompletiondate, ultimatecompletiondate, obligatedamount, shelteredworkshopflag, baseandexercisedoptionsvalue, veteranownedflag, srdvobflag, baseandalloptionsvalue, contractingofficeagencyid, womenownedflag, contractingofficeid, minorityownedbusinessflag, fundingrequestingagencyid, saaobflag, apaobflag, fundingrequestingofficeid, purchasereason, baobflag, fundedbyforeignentity, haobflag, naobflag, contractactiontype, typeofcontractpricing, verysmallbusinessflag, reasonformodification, federalgovernmentflag, majorprogramcode, costorpricingdata, solicitationid, costaccountingstandardsclause, stategovernmentflag, descriptionofcontractrequirement, localgovernmentflag, gfe_gfp, seatransportation, consolidatedcontract, lettercontract, multiyearcontract, performancebasedservicecontract, contingencyhumanitarianpeacekeepingoperation, tribalgovernmentflag, contractfinancing, purchasecardaspaymentmethod, numberofactions, walshhealyact, servicecontractact, davisbaconact, clingercohenact, interagencycontractingauthority, productorservicecode, contractbundling, claimantprogramcode, principalnaicscode, recoveredmaterialclauses, educationalinstitutionflag, systemequipmentcode, hospitalflag, informationtechnologycommercialitemcategory, useofepadesignatedproducts, countryoforigin, placeofmanufacture, streetaddress, streetaddress2, streetaddress3, city, state, zipcode, vendorcountrycode, dunsnumber, congressionaldistrict, locationcode, statecode, placeofperformancecountrycode, placeofperformancezipcode, nonprofitorganizationflag, placeofperformancecongressionaldistrict, extentcompeted, competitiveprocedures, solicitationprocedures, typeofsetaside, organizationaltype, evaluatedpreference, numberofemployees, research, annualrevenue, statutoryexceptiontofairopportunity, reasonnotcompeted, numberofoffersreceived, commercialitemacquisitionprocedures, hbcuflag, commercialitemtestprogram, smallbusinesscompetitivenessdemonstrationprogram, a76action, sdbflag, firm8aflag, hubzoneflag, phoneno, faxno, contractingofficerbusinesssizedetermination, otherstatutoryauthority, eeparentduns, fiscal_year, mod_parent, maj_agency_cat, psc_cat, vendor_cd, pop_cd, progsourceagency, progsourceaccount, progsourcesubacct, rec_flag, type_of_contract, agency_name, contracting_agency_name, requesting_agency_name)
 FROM '/home/akr/work/datacommons/test_data/usaspending/out/contracts.out'
 CSV QUOTE \'"\'
         """
 
-        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_fpds_sql(os.path.abspath('./test_data/usaspending/out/contracts.out')))
+        self.assert_eq_ignoring_leading_trailing_space(sql, ContractsLoader().sql_str(os.path.abspath('./test_data/usaspending/out/contracts.out')))
 
 
     @attr('usaspending')
     @attr('grants')
     def test_insert_faads(self):
-        Loader().insert_faads(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/grants.out'))
+        GrantsLoader().insert_faads(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/grants.out'))
 
         cursor = connections['default'].cursor()
         cursor.execute('select count(*) from grants_grant')
@@ -936,7 +929,7 @@ CSV QUOTE \'"\'
     @attr('usaspending')
     @attr('contracts')
     def test_insert_fpds(self):
-        Loader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
+        ContractsLoader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
 
         cursor = connections['default'].cursor()
         cursor.execute('select count(*) from contracts_contract')
@@ -950,13 +943,13 @@ CSV QUOTE \'"\'
         # this test will fail with a DB error. I believe the code is correct--works when run from psql.
         # appears that psycopg's copy_from doesn't correctly interpret quoted fields.
         raise SkipTest
-        
+
         input = StringIO('1b649a7c08ba717c09abd378c660dba1|active|DELL MARKETING LIMITED PARTNERSHIP||4735||GST0904DF3801|AO02||0|4730|GS35F4076D|N|0|2004-11-09|2004-11-09|2004-11-09|2004-11-09|-0.02|f|-0.02|f|f|-0.02|4735|f|DF000|f|1700|f|f|N62271||f|X|f|f|C|J|f|K|f||||X|f|"Dell | EMC CX500 Disk Processor Enclosure Array (221-4205)"|f|f|N|f|X|f|X||f||f|1|NULL|NULL|NULL|f|X|7021|D||334111||f||f||E|||ONE DELL WAY|||ROUND ROCK|TX|786820001|USA|8779365180000|10|63500|TX|US||NULL||CDO|CDO|||||0||0.0|||4|D|NULL|f|f|f|f|f|f|||O||114315195|2005|DELL INC.|47|70|TX10|ZZ||||NULL|c||||20110114')
 
         self.assertEqual(0, Contract.objects.all().count())
 
         cursor = connections['default'].cursor()
-        cursor.copy_from(input, 'contracts_contract', sep='|', null='NULL', columns=Loader().fpds_fields())
+        cursor.copy_from(input, 'contracts_contract', sep='|', null='NULL', columns=ContractsLoader().fields())
 
         self.assertEqual(1, Contract.objects.all().count())
 

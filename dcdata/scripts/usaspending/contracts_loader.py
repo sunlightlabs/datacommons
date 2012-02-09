@@ -6,9 +6,12 @@ class Loader():
     def fields(self):
         return [ x[0] for x in FIELDS ] + [ x[0] for x in CALCULATED_FIELDS ]
 
-    def print_sql(self, infile):
+    def sql_str(self, infile):
         table = 'contracts_contract'
-        print self.sql_template_postgres(infile, table, self.fields())
+        return self.sql_template_postgres(infile, table, self.fields())
+
+    def print_sql(self, infile):
+        print self.sql_str(infile)
 
     def sql_template_postgres(self, file_, table, fields):
         return """
