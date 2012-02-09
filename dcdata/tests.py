@@ -4,7 +4,7 @@ from dcdata.contracts.models import Contract
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.earmarks.models import Earmark, Member
-from dcdata.loading import model_fields, LoaderEmitter, SkipRecordException
+from dcdata.loading import model_fields, LoaderEmitter
 from dcdata.management.commands.crp_denormalize import load_candidates, \
     load_committees
 from dcdata.management.commands.crp_denormalize_individuals import \
