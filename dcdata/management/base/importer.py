@@ -153,13 +153,26 @@ class BaseImporter(BaseCommand):
 
     def archive_file(self, path, timestamp=False):
         if not self.dry_run:
+
             name = os.path.basename(path)
             new_name = name
 
             if timestamp:
                 new_name = '_'.join([datetime.datetime.now().strftime('%Y%m%d_%H%M'), name])
 
-            os.rename(os.path.join(self.IN_DIR, name), os.path.join(self.DONE_DIR, new_name))
+            # make sure all paths exist
+
+            if not os.path.exists(self.DONE_DIR):
+                raise CommandError("Tried to archive file, but DONE directory doesn't exist: {0}".format(os.path.abspath(self.DONE_DIR)))
+
+            old_path = os.path.join(self.IN_DIR, name)
+            if not os.path.exists(old_path):
+                raise CommandError("The old file path doesn't exist: {0}".format(old_path))
+
+            # save this as a courtesy for tests, since they need to move the archived (timestampped) file back
+            self.archived_file_path = os.path.join(self.DONE_DIR, new_name)
+
+            os.rename(os.path.join(self.IN_DIR, name), self.archived_file_path)
 
 
     def die_if_already_running(self):
