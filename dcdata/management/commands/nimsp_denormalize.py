@@ -199,7 +199,7 @@ class ContributorTypeFilter(Filter):
         if record['contributor_type'] == 'committee':
             if not record['organization_name']:
                 record['organization_name'] = record['contributor_name']
-            if not record['organization_ext_id']:
+            if not record.get('organization_ext_id'):
                 record['organization_ext_id'] = record['contributor_ext_id']
 
         return record
