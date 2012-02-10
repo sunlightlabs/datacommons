@@ -2,6 +2,7 @@
 
 from dcdata.contracts.models import Contract
 from dcdata.grants.models import Grant
+from dcdata.management.base.importer import BaseImporter
 from django.db.models.fields import CharField
 import csv
 import faads
@@ -12,14 +13,12 @@ import re
 import sys
 import logging
 
-from dcdata.management.commands.base.importer import BaseImporter
-
 
 CONTRACT_STRINGS = dict([(f.name, f.max_length) for f in Contract._meta.fields if isinstance(f, CharField)])
 GRANT_STRINGS = dict([(f.name, f.max_length) for f in Grant._meta.fields if isinstance(f, CharField)])
 
 
-class USASpendingDenormalizer:
+class USASpendingDenormalizer(BaseImporter):
     re_contracts = re.compile('.*[cC]ontracts.*.')
 
     def __init__(self, logger=None):
@@ -112,17 +111,17 @@ class USASpendingDenormalizer:
             return value
 
 
-    def parse_directory(self, in_path, out_path, out_grants_path, out_contracts_path):
+    def parse_directory(self, in_path, out_path):
         if not out_path:
-            out_path = os.path.join(in_path, 'out')
+            out_path = os.path.join(os.path.abspath(in_path), 'out')
             self.log.info("Out path wasn't set. Setting it to {0}".format(out_path))
 
         if not os.path.exists(out_path):
             os.mkdir(out_path)
             self.log.info("Out path didn't exist. Creating {0}".format(out_path))
 
-        out_grants = open(out_grants_path, 'w')
-        out_contracts = open(out_contracts_path, 'w')
+        out_grants = open(os.path.join(out_path, 'grants.out'), 'w')
+        out_contracts = open(os.path.join(out_path, 'contracts.out'), 'w')
 
         self.log.info("Looking for input files...")
         for file in os.listdir(in_path):
@@ -135,9 +134,9 @@ class USASpendingDenormalizer:
                 self.log.info("    Converting {0}...".format(file_path))
 
                 if self.re_contracts.match(file):
-                    self.parse_file(input, out_contracts, fpds.FPDS_FIELDS, CONTRACT_STRINGS, fpds.CALCULATED_FPDS_FIELDS)
+                    self.parse_file(input, out_contracts, fpds.FIELDS, CONTRACT_STRINGS, fpds.CALCULATED_FIELDS)
                 else:
-                    self.parse_file(input, out_grants, faads.FAADS_FIELDS, GRANT_STRINGS, faads.CALCULATED_FAADS_FIELDS)
+                    self.parse_file(input, out_grants, faads.FIELDS, GRANT_STRINGS, faads.CALCULATED_FIELDS)
 
                 input.close()
 

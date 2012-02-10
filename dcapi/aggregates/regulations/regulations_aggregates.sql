@@ -11,6 +11,9 @@ drop view if exists agg_regulations_collapsed_matches;
 create view agg_regulations_collapsed_matches as
 select document_id, entity_id
 from regulations_text_matches
+inner join matchbox_entity e on e.id = entity_id
+where
+    e.type in ('individual', 'organization')
 group by document_id, entity_id;
 
 
@@ -74,6 +77,17 @@ GROUP BY entity_id, (case when year % 2 = 0 then year else year + 1 end)
 
 create index agg_regulations_text_totals_idx on agg_regulations_text_totals (entity_id, cycle);
 
+
+drop view if exists agg_regulations_submitter_matches;
+create view agg_regulations_submitter_matches as
+select document_id, entity_id
+from regulations_submitter_matches
+inner join matchbox_entity e on e.id = entity_id
+where
+    e.type in ('individual', 'organization')
+group by document_id, entity_id;
+
+
 DROP TABLE IF EXISTS agg_regulations_submitter;
 CREATE TABLE agg_regulations_submitter as
 WITH ranked_aggregates as (
@@ -81,7 +95,7 @@ WITH ranked_aggregates as (
         entity_id, d.agency, d.docket_id, d.year, count(*),
         rank() over (PARTITION BY entity_id ORDER BY count(*) desc) as rank
     FROM regulations_comments_full
-    INNER JOIN regulations_submitter_matches USING (document_id)
+    INNER JOIN agg_regulations_submitter_matches USING (document_id)
     INNER JOIN regulations_dockets d USING (docket_id)
     GROUP BY entity_id, d.agency, d.docket_id, d.year
 )
@@ -109,7 +123,7 @@ WITH totals as (
     SELECT
         entity_id, d.year, docket_id as docket, count(*)
     FROM regulations_comments_full
-    INNER JOIN regulations_submitter_matches USING (document_id)
+    INNER JOIN agg_regulations_submitter_matches USING (document_id)
     INNER JOIN regulations_dockets d USING (docket_id)
     GROUP BY entity_id, d.year, docket_id
 )

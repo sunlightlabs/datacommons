@@ -144,7 +144,7 @@ class MultiFieldConversionFilter(Filter):
                 try:
                     record[key] = self._name_to_func[key](record[key])
                 except:
-                    warn(record, "Could not convert value '%s': %s" % (record[key], sys.exc_info()[0]))
+                    warn(record, "Could not convert value for key: '%s'; value :'%s': %s" % (key, record[key], sys.exc_info()[0]))
                     record[key] = None
 
         return record
@@ -199,8 +199,8 @@ class ContributorTypeFilter(Filter):
         if record['contributor_type'] == 'committee':
             if not record['organization_name']:
                 record['organization_name'] = record['contributor_name']
-            if not record['organization_ext_id']:
-                record['organization_ext_id'] = record['contributor_ext_id']
+            if not record.get('organization_ext_id'):
+                record['organization_ext_id'] = record.get('contributor_ext_id', '')
 
         return record
 

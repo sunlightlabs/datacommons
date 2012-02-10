@@ -37,7 +37,48 @@ select fec_record, filer_id, transaction_type, contributor_lender_transfer as co
 from fec_pac2pac_import;   
 
 
+drop table if exists fec_candidate_summaries;
+create table fec_candidate_summaries as
+select candidate_id, total_receipts, ending_cash, total_disbursements,
+    candidate_loan_repayments, other_loan_repayments, refunds_to_individuals, refunds_to_committees,
+    contributions_from_other_committees, contributions_from_party_committees,
+    contributions_from_candidate, loans_from_candidate,
+    authorized_transfers_from, total_individual_contributions,
+    (substring(ending_date for 4 from 5) || substring(ending_date for 2 from 1) || substring(ending_date for 2 from 3))::date as ending_date
+from fec_candidate_summaries_import;
+
 create index fec_candidate_summaries_candidate_id on fec_candidate_summaries (candidate_id);
+
+
+
+drop view if exists agg_fec_candidate_rankings;
+create view agg_fec_candidate_rankings as
+select candidate_id, substring(race for 1) as race,
+    rank() over (partition by substring(race for 1) order by total_receipts desc) as total_receipts_rank,
+    rank() over (partition by substring(race for 1) order by ending_cash desc) as cash_on_hand_rank,
+    rank() over (partition by substring(race for 1) order by total_disbursements desc) as total_disbursements_rank
+from fec_candidates c
+inner join fec_candidate_summaries s using (candidate_id)
+where
+    candidate_status = 'C'
+    and election_year = '12';
+
+
+
+drop table if exists agg_fec_candidate_timeline;
+create table agg_fec_candidate_timeline as
+select candidate_id, race, (date - '2011-01-01') / 7 as week, count(*), sum(amount) as amount
+from fec_candidates c
+inner join fec_candidate_summaries s using (candidate_id)
+inner join (select filer_id, date, amount from fec_indiv union all select other_id, date, amount from fec_pac2cand) t on c.committee_id = t.filer_id
+where
+    t.date <= s.ending_date -- there was a problem with forward-dated contributions throwing off charts 
+group by candidate_id, race, week;
+
+drop table if exists agg_fec_candidate_cumulative_timeline;
+create table agg_fec_candidate_cumulative_timeline as
+select candidate_id, race, week, sum(amount) OVER (partition by candidate_id, race order by week) as cumulative_raised
+from agg_fec_candidate_timeline;
 
 
 -- these three are unfortunately not true in the data

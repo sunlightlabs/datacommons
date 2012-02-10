@@ -12,9 +12,11 @@ django-nose
 lxml
 django-indexer
 django-paging
-django-sentry
+django-sentry==1.13.5
+raven==1.1.5
 BeautifulSoup
 scrapelib
 httplib2
 csvkit
 -e git://github.com/sunlightlabs/name-cleaver.git#egg=name-cleaver
+-e git://github.com/sunlightlabs/ffs.git#egg=ffs
