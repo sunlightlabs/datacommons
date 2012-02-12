@@ -50,8 +50,6 @@ from fec_candidate_summaries_import;
 create index fec_candidate_summaries_candidate_id on fec_candidate_summaries (candidate_id);
 
 
-
-drop view if exists agg_fec_candidate_rankings;
 create view agg_fec_candidate_rankings as
 select candidate_id, substring(race for 1) as race,
     rank() over (partition by substring(race for 1) order by total_receipts desc) as total_receipts_rank,
