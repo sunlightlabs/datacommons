@@ -4,6 +4,7 @@ import subprocess
 import re
 from collections import namedtuple
 import tempfile
+import us.fec
 
 from django.db import connection
 
@@ -34,7 +35,7 @@ FEC_PAC_SUMMARY_CONFIG = [
     F('ftp://ftp.fec.gov/FEC/2004/pacsum04.zip', 'pacsum%s.txt', 'pacsum.csv', 'fec_early_pac_summaries_%s' % year[2:4]),
 ]
 
-SCHEMA_ROOT = os.path.abspath('../ffs/us/fec/')
+SCHEMA_ROOT = os.path.dirname(us.fec.__file__)
 
 SQL_PRELOAD_FILE = os.path.join(os.path.dirname(__file__), 'preload.sql')
 SQL_POSTLOAD_FILE = os.path.join(os.path.dirname(__file__), 'postload.sql')

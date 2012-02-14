@@ -19,3 +19,4 @@ scrapelib
 httplib2
 csvkit
 -e git://github.com/sunlightlabs/name-cleaver.git#egg=name-cleaver
+-e git://github.com/sunlightlabs/ffs.git#egg=ffs

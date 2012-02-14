@@ -7,7 +7,7 @@ CONTRACTS_SCHEMA = Schema(
     InclusionField('agency_id', 'agencyid'),
     InclusionField('contracting_agency_id', 'contractingofficeagencyid'),
     InclusionField('fiscal_year'),
-    InclusionField('place_distrct', 'congressionaldistrict'),
+    InclusionField('place_district', 'congressionaldistrict'),
     InclusionField('place_state', 'statecode'),
     InclusionField('requesting_agency_id', 'fundingrequestingagencyid'),
     InclusionField('vendor_state', 'state'),
