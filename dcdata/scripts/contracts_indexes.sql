@@ -1,6 +1,12 @@
 drop index if exists contracts_contract_unique_transaction_id; 
-
 create index contracts_contract_unique_transaction_id on contracts_contract (unique_transaction_id);
+
+drop index if exists contracts_contract_piid;
+create index contracts_contract_piid on contracts_contract (piid);
+    
+drop index if exists contracts_contract_district;
+create index contracts_contract_congressionaldistrict on contracts_contract (statecode, congressionaldistrict);
+
 
 -- full-text
 drop index if exists contracts_contract_agency_name_ft;
