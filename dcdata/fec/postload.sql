@@ -85,7 +85,7 @@ create view fec_candidate_itemized as
 select
     contributor_name, date, amount, contributor_type, transaction_type, 
     organization, occupation, i.city, i.state, i.zipcode, 
-    candidate_name, party_designation1 as party, race, incumbent_challenger_open as status, committee_id
+    candidate_name, party_designation1 as party, race, incumbent_challenger_open as status, committee_id, candidate_id
 from fec_candidates c
 inner join (
     select filer_id as committee_id, 'indiv' as contributor_type, contributor_name,
