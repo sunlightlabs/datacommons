@@ -9,6 +9,8 @@ select *,
     end as race
 from fec_candidates_import;
 
+create index fec_candidates_candidate_id on fec_candidates (candidate_id);
+
 -- alter table fec_candidate_summaries alter column ending_date type date using (substring(ending_date from 5 for 4) || substring(ending_date from 1 for 2) || substring(ending_date from 3 for 2))::date; 
 
 
@@ -28,6 +30,8 @@ select fec_record, filer_id, transaction_type,
     overpunch(amount) as amount,
     other_id, candidate_id
 from fec_pac2cand_import;
+create index fec_pac2cand_other_id on fec_pac2cand (other_id);
+
 
 drop table if exists fec_pac2pac;
 create table fec_pac2pac as
@@ -81,7 +85,8 @@ from agg_fec_candidate_timeline;
 
 
 -- not in a handler yet, but will power CSV downloads for candidates
-create view fec_candidate_itemized as
+drop table if exists fec_candidate_itemized;
+create table fec_candidate_itemized as
 select
     contributor_name, date, amount, contributor_type, transaction_type, 
     organization, occupation, i.city, i.state, i.zipcode, 
@@ -100,7 +105,7 @@ inner join (
         date, amount, transaction_type
     from fec_pac2cand t
     inner join fec_committees c on (c.committee_id = t.filer_id)) i using (committee_id);
-
+create index fec_candidate_itemized_candidate_id on fec_candidate_itemized (candidate_id);
 
 
 -- these three are unfortunately not true in the data
