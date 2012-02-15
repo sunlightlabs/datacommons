@@ -14,7 +14,8 @@ from fec_candidates_import;
 
 drop table if exists fec_indiv;
 create table fec_indiv as
-select fec_record, filer_id, amendment, transaction_type, contributor_lender_transfer as contributor_name, state, occupation, election_type,
+select fec_record, filer_id, amendment, transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
+    regexp_replace(occupation, '/[^/]*$', '') as organization, regexp_replace(occupation, '^.*/', '') as occupation,
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount
 from fec_indiv_import;
@@ -77,6 +78,29 @@ drop table if exists agg_fec_candidate_cumulative_timeline;
 create table agg_fec_candidate_cumulative_timeline as
 select candidate_id, race, week, sum(amount) OVER (partition by candidate_id, race order by week) as cumulative_raised
 from agg_fec_candidate_timeline;
+
+
+-- not in a handler yet, but will power CSV downloads for candidates
+create view fec_candidate_itemized as
+select
+    contributor_name, date, amount, contributor_type, transaction_type, 
+    organization, occupation, i.city, i.state, i.zipcode, 
+    candidate_name, party_designation1 as party, race, incumbent_challenger_open as status, committee_id
+from fec_candidates c
+inner join (
+    select filer_id as committee_id, 'indiv' as contributor_type, contributor_name,
+        city, state, zipcode, organization, occupation,
+        date, amount, transaction_type
+    from fec_indiv
+
+    union all
+
+    select other_id, 'pac', committee_name,
+        city, state, zipcode, connected_org, '',
+        date, amount, transaction_type
+    from fec_pac2cand t
+    inner join fec_committees c on (c.committee_id = t.filer_id)) i using (committee_id);
+
 
 
 -- these three are unfortunately not true in the data
