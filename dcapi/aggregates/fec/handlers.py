@@ -1,5 +1,5 @@
 from django.db import connection
-from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopListHandler, execute_top
+from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopListHandler, execute_top, EntityTopListHandler
 
 
 class CandidateSummaryHandler(EntitySingletonHandler):
@@ -92,3 +92,22 @@ class CandidateTimelineHandler(TopListHandler):
             candidate['timeline'] = [amount for (week, amount) in raw_timeline]
         
         return candidates
+
+
+class CandidateItemizedDownloadHandler(EntityTopListHandler):
+    
+    args = ['cycle', 'entity_id']
+    
+    fields = "contributor_name date amount contributor_type transaction_type organization occupation city state zipcode candidate_name party race status".split()
+    
+    stmt = """
+        select contributor_name, date, amount, contributor_type, transaction_type, 
+            organization, occupation, city, state, zipcode, 
+            candidate_name, party, race, status
+        from fec_candidate_itemized i
+        inner join matchbox_entityattribute a on i.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
+        where
+            a.entity_id = %s
+        order by amount desc
+    """
+    
