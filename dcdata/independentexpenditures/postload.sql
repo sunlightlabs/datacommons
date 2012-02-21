@@ -85,6 +85,5 @@ where
 
 -- just here to trigger errors if something is wrong with the data
 alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id, filing_number, transaction_id);
-alter table fec_indexp add constraint fec_indexp_ids check (length(candidate_id) = 9);
 -- is there some way to add a constraint that for each lower(candidate_name) there should be only a single candidate_id?
 
