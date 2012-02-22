@@ -87,3 +87,31 @@ where
 alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id, filing_number, transaction_id);
 -- is there some way to add a constraint that for each lower(candidate_name) there should be only a single candidate_id?
 
+
+
+
+create view agg_fec_indexp_candidates as
+select distinct entity_id, spender_id, filing_number, transaction_id
+from fec_indexp
+inner join matchbox_entityattribute on candidate_id = value and namespace like 'urn:fec_current_candidate:%';
+
+create view agg_fec_indexp_committees as
+select distinct entity_id, spender_id
+from fec_indexp
+inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:fec_committee';
+
+create table agg_fec_indexp as
+select cand.id as cand_entity, coalesce(cand.name, candidate_name) as cand_name,
+    committee.id as committee_entity, coalesce(committee.name, spender_name) as committee_name,
+    support_oppose, sum(amount) as amount
+from fec_indexp i
+left join agg_fec_indexp_candidates cand_assoc using (spender_id, filing_number, transaction_id)
+left join matchbox_entity cand on cand_assoc.entity_id = cand.id
+left join agg_fec_indexp_committees committee_assoc using (spender_id)
+left join matchbox_entity committee on committee_assoc.entity_id = committee.id
+group by cand_entity, cand_name, committee_entity, committee_name, support_oppose;
+
+
+
+
+
