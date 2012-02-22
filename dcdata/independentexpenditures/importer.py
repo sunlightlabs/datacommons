@@ -7,7 +7,7 @@ from django.db import connection
 from dcdata.fec.importer import execute_file
 
 
-DOWNLOAD_URL = 'http://www.fec.gov/data/IndependentExpenditure.do?format=csv'
+DOWNLOAD_URL = 'http://www.fec.gov/data/IndependentExpenditure.do?format=csv&election_yr=2012' 
 LOCAL_FILE = 'indexp.csv'
 TABLE_NAME = 'fec_indexp_import'
 SQL_POSTLOAD_FILE = os.path.join(os.path.dirname(__file__), 'postload.sql')
