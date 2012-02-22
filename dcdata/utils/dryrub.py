@@ -1,6 +1,5 @@
 import sys
-from saucebrush import utils
-from saucebrush.filters import Filter, ConditionalFilter
+from saucebrush.filters import Filter
 from saucebrush.emitters import Emitter
 from dcdata.processor import SkipRecordException
 from saucebrush.sources import CSVSource

@@ -98,6 +98,9 @@ class Command(BaseCommand):
                 self.create_organizations()
         except EntityManagementError as e:
             self.log.error(e)
+            transaction.rollback()
+        except:
+            transaction.rollback()
 
 
     @transaction.commit_manually()
