@@ -8,13 +8,6 @@ where
     and support_oppose = 'Support';
 
 
--- update fec_indexp_import
--- set candidate_id = c.candidate_id
--- from fec_candidates c
--- where
---     to_tsvector('datacommons', c.candidate_name) @@ plainto_tsquery('datacommons', fec_indexp_import.candidate_name);
-
-
 update fec_indexp_import
 set candidate_id = manual_fixes.id
 from (values
@@ -45,7 +38,8 @@ from (values
     ('santorum, richard', 'P20002721'),
     ('santorum, rick', 'P20002721'),
     ('thompson, tommy', 'S2WI00235'),
-    ('turner, bob', 'H0NY09072')
+    ('turner, bob', 'H0NY09072'),
+    ('kaine, timothy', 'S2VA00142')
 ) manual_fixes (name, id)
 where
     lower(candidate_name) = manual_fixes.name
