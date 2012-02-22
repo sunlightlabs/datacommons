@@ -102,7 +102,7 @@ inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:f
 
 drop table if exists agg_fec_indexp;
 create table agg_fec_indexp as
-select cand.id as cand_entity, coalesce(cand.name, candidate_name) as cand_name,
+select cand.id as candidate_entity, coalesce(cand.name, candidate_name) as candidate_name,
     committee.id as committee_entity, coalesce(committee.name, spender_name) as committee_name,
     support_oppose, sum(amount) as amount
 from fec_indexp i
@@ -110,7 +110,7 @@ left join agg_fec_indexp_candidates cand_assoc using (spender_id, filing_number,
 left join matchbox_entity cand on cand_assoc.entity_id = cand.id
 left join agg_fec_indexp_committees committee_assoc using (spender_id)
 left join matchbox_entity committee on committee_assoc.entity_id = committee.id
-group by cand_entity, cand_name, committee_entity, committee_name, support_oppose;
+group by candidate_entity, candidate_name, committee_entity, committee_name, support_oppose;
 
 
 
