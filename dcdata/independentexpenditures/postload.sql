@@ -8,11 +8,11 @@ where
     and support_oppose = 'Support';
 
 
-update fec_indexp_import
-set candidate_id = c.candidate_id
-from fec_candidates c
-where
-    to_tsvector('datacommons', c.candidate_name) @@ plainto_tsquery('datacommons', fec_indexp_import.candidate_name);
+-- update fec_indexp_import
+-- set candidate_id = c.candidate_id
+-- from fec_candidates c
+-- where
+--     to_tsvector('datacommons', c.candidate_name) @@ plainto_tsquery('datacommons', fec_indexp_import.candidate_name);
 
 
 update fec_indexp_import
@@ -70,6 +70,8 @@ where
             x.filing_number = a.filing_number
             and y.filing_number = b.filing_number);
 
+drop view if exists agg_fec_indexp_candidates;
+drop view if exists agg_fec_indexp_committees;
 
 drop table if exists fec_indexp;
 create table fec_indexp as
@@ -88,8 +90,6 @@ alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id
 -- is there some way to add a constraint that for each lower(candidate_name) there should be only a single candidate_id?
 
 
-
-
 create view agg_fec_indexp_candidates as
 select distinct entity_id, spender_id, filing_number, transaction_id
 from fec_indexp
@@ -100,6 +100,7 @@ select distinct entity_id, spender_id
 from fec_indexp
 inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:fec_committee';
 
+drop table if exists agg_fec_indexp;
 create table agg_fec_indexp as
 select cand.id as cand_entity, coalesce(cand.name, candidate_name) as cand_name,
     committee.id as committee_entity, coalesce(committee.name, spender_name) as committee_name,
