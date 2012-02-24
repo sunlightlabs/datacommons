@@ -177,9 +177,9 @@ class MatchingCommand(BaseCommand):
     def insert_match(self, cursor, table_name, match, subject, confidence):
         # matches can be null if we are putting in a no-confidence record for no potential matches found
         if match:
-            cursor.execute("insert into {0} (subject_id, match_id, confidence) values ('{1}', '{2}', {3})".format(table_name, subject.id, match.id, confidence))
+            cursor.execute("insert into {0} (subject_id, match_id, confidence) values ('{1}', '{2}', {3})".format(table_name, subject.pk, match.pk, confidence))
         else:
-            cursor.execute("insert into {0} (subject_id, confidence) values ('{1}', {2})".format(table_name, subject.id, confidence))
+            cursor.execute("insert into {0} (subject_id, confidence) values ('{1}', {2})".format(table_name, subject.pk, confidence))
 
 
     def generate_table_name(self):
