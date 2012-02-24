@@ -2,6 +2,10 @@
 *.pyc
 *.swp
 *.swk
+*.swl
+*.swn
+*.swm
+*.swo
 *.out
 pip-log.txt
 local_settings.py

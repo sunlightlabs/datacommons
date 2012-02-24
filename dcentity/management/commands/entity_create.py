@@ -98,6 +98,9 @@ class Command(BaseCommand):
                 self.create_organizations()
         except EntityManagementError as e:
             self.log.error(e)
+            transaction.rollback()
+        except:
+            transaction.rollback()
 
 
     @transaction.commit_manually()
@@ -113,7 +116,7 @@ class Command(BaseCommand):
                     inner join lobbying_report using (transaction_id)
                     where
                         lobbyist_name != ''
-                        and not exists (select * from matchbox_entityattribute where value = lobbyist_ext_id)
+                        and not exists (select * from matchbox_entityattribute where substring(value for 11) = substring(lobbyist_ext_id for 11))
                     group by lobbyist_ext_id
 
                     union

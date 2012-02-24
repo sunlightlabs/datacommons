@@ -58,3 +58,26 @@ class Fortune100Company(models.Model):
         db_table = 'fortune_100'
 
 
+class MemberOfCongressWithBioguide(models.Model):
+    bioguide_id = models.CharField(max_length=12)
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    state = models.CharField(max_length=2)
+    district = models.SmallIntegerField(null=True)
+    cycle = models.SmallIntegerField()
+
+    class Meta:
+        db_table = 'moc_bioguide'
+
+    def build_name(self):
+        return ' '.join([self.first_name, self.last_name])
+
+    def pad_district(self):
+        if self.district < 10:
+            return '0{0}'.format(self.district)
+        else:
+            return str(self.district)
+
+    name = property(build_name)
+    padded_district = property(pad_district)
+
