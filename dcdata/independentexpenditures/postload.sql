@@ -46,7 +46,7 @@ where
     and length(candidate_id) < 9;
     
 
-drop table fec_indexp_amendments;
+drop table if exists fec_indexp_amendments;
 create table fec_indexp_amendments as
 with filings as (
     select distinct spender_id, filing_number, case when amendment = 'N' then 0 else substring(amendment from 2 for 1)::integer end as amendment_number
