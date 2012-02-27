@@ -101,6 +101,7 @@ class Command(BaseCommand):
             transaction.rollback()
         except:
             transaction.rollback()
+            raise
 
 
     @transaction.commit_manually()
@@ -139,6 +140,7 @@ class Command(BaseCommand):
 
         self.cursor.execute("select name, id from tmp_individuals_%s" % self.today)
         results = self.cursor.fetchall()
+        transaction.rollback()
 
         if not self.force_indivs and len(results) > INDIVIDUAL_CREATE_MAX_WARN:
             raise EntityManagementError("The number of individuals set to be created is {0}. The max this script will create automatically is {1}.".format(len(results), INDIVIDUAL_CREATE_MAX_WARN))
