@@ -81,11 +81,16 @@ class MatchingCommand(BaseCommand):
                 print u"{0}/{1}: {2}".format(begin_at+i, count, getattr(subject, self.subject_name_attr))
                 #pre-process subject name
                 subject_raw_name = self.preprocess_subject_name(getattr(subject, self.subject_name_attr))
-                subject_name = self.name_cleaver(subject_raw_name).parse()
 
-                if self.name_processing_failed(subject_name):
-                    transaction.rollback()
+                try:
+                    subject_name = self.name_cleaver(subject_raw_name).parse()
+
+                    if self.name_processing_failed(subject_name):
+                        continue
+                except:
                     continue
+                finally:
+                    transaction.rollback()
 
                 # search match entities
                 potential_matches = self.get_potential_matches_for_subject(subject_name, subject)
