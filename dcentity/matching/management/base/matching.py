@@ -5,6 +5,7 @@ from name_cleaver                import PoliticianNameCleaver, RunningMatesNames
 from optparse                    import make_option
 
 import datetime
+import sys
 
 class MatchingCommand(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -122,6 +123,8 @@ class MatchingCommand(BaseCommand):
                     log_msg += 'Committed no-match.'
 
                 print log_msg
+                sys.stdout.flush()
+
 
         except KeyboardInterrupt:
             transaction.commit()
