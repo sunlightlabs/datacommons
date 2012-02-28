@@ -5,6 +5,8 @@ from name_cleaver                import PoliticianNameCleaver, RunningMatesNames
 from optparse                    import make_option
 
 import datetime
+import pylibmc
+import re
 import sys
 
 class MatchingCommand(BaseCommand):
@@ -46,6 +48,8 @@ class MatchingCommand(BaseCommand):
         self.match_id_type = 'uuid'
 
         self.match_operator = 'icontains'
+
+        self.mc = pylibmc.Client(['127.0.0.1:11211'])
 
     @transaction.commit_on_success
     def handle(self, *args, **options):
@@ -147,7 +151,16 @@ class MatchingCommand(BaseCommand):
             Takes a name cleaver object and ideally returns a loosely matched set of objects
             which we can then filter more stringently by scoring
         """
-        return self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.last})
+
+        key = subject_name.last.encode('utf-8')
+        key = re.sub(r'[^-a-zA-Z0-9,.\'"^&*()]', '', key)
+        key = key.lower()
+        obj = self.mc.get(key)
+        if not obj:
+            obj = self.match.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.last})
+            self.mc.set(key, obj)
+
+        return obj
 
 
     def do_after_insert(self, subject, match, confidence):
