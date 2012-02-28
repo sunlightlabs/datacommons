@@ -123,6 +123,13 @@ def update_db(dir):
     print "Done."
 
 
-def reload_fec(dir):
-    update_csv(dir)
-    update_db(dir)
+def reload_fec(processing_dir=None):
+
+    if not processing_dir:
+        processing_dir = tempfile.mkdtemp(prefix='tmp_fec_')
+
+    print "Processing files in {0}".format(processing_dir)
+
+    update_csv(processing_dir)
+    update_db(processing_dir)
+
