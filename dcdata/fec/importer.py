@@ -95,7 +95,7 @@ def execute_file(cursor, filename):
 
 
 def update_csv(dir):
-    
+
     print "Downloading files to %s..." % dir
     download(dir)
 
@@ -105,9 +105,10 @@ def update_csv(dir):
     print "Converting to unicode..."
     fix_unicode(dir)
 
-    print "Concerting to CSV..."
+    print "Converting to CSV..."
     fec_2_csv(dir)
-    
+
+
 def update_db(dir):
     
     c = connection.cursor()
