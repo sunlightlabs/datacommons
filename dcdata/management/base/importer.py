@@ -1,14 +1,13 @@
 import os
 import os.path
 import fnmatch
-import logging
-import logging.handlers
 import time
 import datetime
 
-from settings import LOGGING_EMAIL, LOGGING_DIRECTORY, TMP_DIRECTORY
+from dcdata.utils.logging        import set_up_logger
 from django.core.management.base import BaseCommand, CommandError
-from optparse import make_option
+from optparse                    import make_option
+from settings                    import LOGGING_DIRECTORY, TMP_DIRECTORY
 
 
 class BaseImporter(BaseCommand):
@@ -38,33 +37,8 @@ class BaseImporter(BaseCommand):
         super(BaseImporter, self).__init__()
         self.class_name = self.__class__.__name__
         self.log_path = os.path.join(LOGGING_DIRECTORY, self.__module__.split('.')[-1])
-        self.set_up_logger()
+        self.log = set_up_logger(self.class_name, self.log_path, self.email_subject)
         self.pid_file_path = os.path.join(TMP_DIRECTORY, self.__module__.split('.')[-1])
-
-    def set_up_logger(self):
-        # create logger
-        self.log = logging.getLogger(self.class_name)
-        self.log.setLevel(logging.DEBUG)
-        # create console handler and set level to debug
-        ch = logging.FileHandler(self.log_path)
-        ch.setLevel(logging.DEBUG)
-
-        # create email handler and set level to warn
-        eh = logging.handlers.SMTPHandler(
-            (LOGGING_EMAIL['host'], LOGGING_EMAIL['port']), # host
-            LOGGING_EMAIL['username'], # from address
-            ['arowland@sunlightfoundation.com'], # to addresses
-            self.email_subject,
-            (LOGGING_EMAIL['username'], LOGGING_EMAIL['password']) # credentials tuple
-        )
-        eh.setLevel(logging.WARN)
-
-        # create formatter
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        ch.setFormatter(formatter)
-        eh.setFormatter(formatter)
-        self.log.addHandler(ch)
-        self.log.addHandler(eh)
 
 
     def handle(self, *args, **options):
