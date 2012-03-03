@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from dcdata.fec.importer import reload_fec
+from dcdata.fec.importer import FECImporter
 
 
 class Command(BaseCommand):
@@ -14,5 +14,5 @@ class Command(BaseCommand):
         else:
             data_dir = None
 
-        reload_fec(data_dir)
+        FECImporter(data_dir)
 
