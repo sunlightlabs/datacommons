@@ -42,10 +42,7 @@ SQL_POSTLOAD_FILE = os.path.join(os.path.dirname(__file__), 'postload.sql')
 
 
 class FECImporter():
-    def __init__(self, processing_dir=None):
-        if not processing_dir:
-            processing_dir = tempfile.mkdtemp(prefix='tmp_fec_')
-
+    def __init__(self, processing_dir):
         self.processing_dir = processing_dir
 
         self.log = set_up_logger('fec_importer', self.processing_dir, 'Unhappy FEC Importer')
