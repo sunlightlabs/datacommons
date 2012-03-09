@@ -239,7 +239,12 @@ class EntitySimpleHandler(BaseHandler):
                 error_response.write("Only 10,000 entities can be retrieved at a time.")
                 return error_response
 
-            result = qs[start:end]
-            return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
+            result = qs.select_related('entityalias')[start:end]
+            return [{
+                    'id': row.id,
+                    'name': row.name,
+                    'type': row.type,
+                    'aliases': [a.alias for a in row.aliases.all() if a.alias != row.name]}
+                    for row in result]
 
 
