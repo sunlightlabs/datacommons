@@ -4,13 +4,19 @@ import os
 
 from django.db import connection
 
-from dcdata.fec.importer import execute_file
-
 
 DOWNLOAD_URL = 'http://www.fec.gov/data/IndependentExpenditure.do?format=csv&election_yr=2012' 
 LOCAL_FILE = 'indexp.csv'
 TABLE_NAME = 'fec_indexp_import'
 SQL_POSTLOAD_FILE = os.path.join(os.path.dirname(__file__), 'postload.sql')
+
+def execute_file(cursor, filename):
+    contents = " ".join([line for line in open(filename, 'r') if line[0:2] != '--'])
+    statements = contents.split(';')[:-1] # split on semi-colon. Last element will be trailing whitespace
+
+    for statement in statements:
+        print "Executing %s" % statement
+        cursor.execute(statement)
 
 
 def reload_indexp(working_dir):
