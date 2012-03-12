@@ -35,7 +35,7 @@ create index fec_pac2cand_other_id on fec_pac2cand (other_id);
 
 drop table if exists fec_pac2pac;
 create table fec_pac2pac as
-select fec_record, filer_id, transaction_type, contributor_lender_transfer as contributor_name, state, occupation, 
+select fec_record, filer_id, transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount,
     other_id
@@ -84,7 +84,6 @@ select candidate_id, race, week, sum(amount) OVER (partition by candidate_id, ra
 from agg_fec_candidate_timeline;
 
 
--- not in a handler yet, but will power CSV downloads for candidates
 drop table if exists fec_candidate_itemized;
 create table fec_candidate_itemized as
 select
@@ -106,6 +105,29 @@ inner join (
     from fec_pac2cand t
     inner join fec_committees c on (c.committee_id = t.filer_id)) i using (committee_id);
 create index fec_candidate_itemized_candidate_id on fec_candidate_itemized (candidate_id);
+
+
+drop table if exists fec_committee_itemized;
+create table fec_committee_itemized as
+select
+    contributor_name, date, amount, contributor_type, contributor_committee_id, transaction_type, 
+    organization, occupation, i.city, i.state, i.zipcode, 
+    committee_name, committee_id, committee_designation, committee_type, committee_party, interest_group, connected_org, candidate_id
+from fec_committees c
+inner join (
+    select filer_id as committee_id, 'indiv' as contributor_type, contributor_name, '' as contributor_committee_id,
+        city, state, zipcode, organization, occupation,
+        date, amount, transaction_type
+    from fec_indiv
+
+    union all
+
+    select filer_id, 'pac', contributor_name, other_id,
+        city, state, zipcode, '', occupation,
+        date, amount, transaction_type
+    from fec_pac2pac) i using (committee_id);
+create index fec_committee_itemized_candidate_id on fec_candidate_itemized (candidate_id);
+
 
 
 -- these three are unfortunately not true in the data

@@ -110,4 +110,20 @@ class CandidateItemizedDownloadHandler(EntityTopListHandler):
             a.entity_id = %s
         order by amount desc
     """
+
+class CommitteeItemizedDownloadHandler(EntityTopListHandler):
+
+    args = ['entity_id']
+    fields = "contributor_name date amount contributor_type contributor_committee_id transaction_type \
+                organization occupation city state zipcode \
+                committee_name committee_designation committee_type committee_party interest_group connected_org candidate_id".split()
+
+    stmt = """
+        select *
+        from fec_committee_itemized i
+        inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec_committee'
+        where
+            a.entity_id = %s
+        order by amount desc
+    """
     

@@ -24,8 +24,9 @@ from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
     RegulationsSubmitterHandler, RegulationsDocketTextHandler, \
     RegulationsDocketSubmitterHandler
 from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CandidateStateHandler, \
-    CandidateTimelineHandler, CandidateItemizedDownloadHandler
-from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler
+    CandidateTimelineHandler, CandidateItemizedDownloadHandler, CommitteeItemizedDownloadHandler
+from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler, \
+    CommitteeTopContribsHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -230,6 +231,12 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_indexp\.(?P<emitter_format>.+)$',
         Resource(CommitteeIndExpHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_top_contribs\.(?P<emitter_format>.+)$',
+        Resource(CommitteeTopContribsHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_itemized\.(?P<emitter_format>.+)$',
+        Resource(CommitteeItemizedDownloadHandler, **ad)),
 )
 
 

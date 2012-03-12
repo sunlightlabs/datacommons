@@ -27,3 +27,18 @@ class CommitteeIndExpHandler(EntityTopListHandler):
             committee_entity = %s
         order by amount desc
     """
+
+class CommitteeTopContribsHandler(EntityTopListHandler):
+    
+    args = ['entity_id', 'limit']
+    fields = "contributor_name date amount".split()
+    
+    stmt = """
+        select contributor_name, date, amount
+        from fec_committee_itemized i
+        inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec_committee'
+        where
+            a.entity_id = %s
+        order by amount desc
+        limit %s
+    """
