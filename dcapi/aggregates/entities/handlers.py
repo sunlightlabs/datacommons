@@ -202,49 +202,58 @@ class EntitySearchHandler(BaseHandler):
 class EntitySimpleHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    fields = [
-        'id', 'name', 'type',
-    ]
+    fields = ['id', 'name', 'type', 'aliases']
+
+    stmt = """
+        select e.id, name, type, case when count(alias) = 0 then ARRAY[]::varchar[] else array_agg(alias) end as aliases
+        from matchbox_entity e
+        left join matchbox_entityalias a on
+            e.id = a.entity_id and e.name != a.alias
+        %s -- possible where clause for entity type
+        group by e.id, name, type
+        order by e.id
+        offset %%s
+        limit %%s
+    """
+
+    count_stmt = """
+        select count(*)
+        from matchbox_entity
+        %s -- possible where clause for entity type
+    """
 
     def read(self, request):
-        entity_type = request.GET.get('type', None)
         count = request.GET.get('count', None)
-
         start = request.GET.get('start', None)
         end = request.GET.get('end', None)
-
-        qs = Entity.objects.all().order_by('id')
-
+        entity_type = request.GET.get('type', None)
+        
         if entity_type:
-            qs = qs.filter(type=entity_type)
+            where_clause = "where type = %s"
+        else:
+            where_clause = ''
 
         if count:
-            return {'count': qs.count()}
+            return dict(count=execute_top(self.count_stmt % where_clause, *([entity_type] if entity_type else []))[0][0])
+        
+        if start is not None and end is not None:
+            try:
+                start = int(start)
+                end = int(end)
+            except:
+                error_response = rc.BAD_REQUEST
+                error_response.write("Must provide integers for start and end.")
+                return error_response
         else:
-            if start is not None and end is not None:
-                try:
-                    start = int(start)
-                    end = int(end)
-                except:
-                    error_response = rc.BAD_REQUEST
-                    error_response.write("Must provide integers for start and end.")
-                    return error_response
-            else:
-                error_response = rc.BAD_REQUEST
-                error_response.write("Must specify valid start and end parameters.")
-                return error_response
+            error_response = rc.BAD_REQUEST
+            error_response.write("Must specify valid start and end parameters.")
+            return error_response
 
-            if (end < start or end - start > 10000):
-                error_response = rc.BAD_REQUEST
-                error_response.write("Only 10,000 entities can be retrieved at a time.")
-                return error_response
-
-            result = qs.select_related('entityalias')[start:end]
-            return [{
-                    'id': row.id,
-                    'name': row.name,
-                    'type': row.type,
-                    'aliases': [a.alias for a in row.aliases.all() if a.alias != row.name]}
-                    for row in result]
-
+        if (end < start or end - start > 10000):
+            error_response = rc.BAD_REQUEST
+            error_response.write("Only 10,000 entities can be retrieved at a time.")
+            return error_response
+        
+        raw_result = execute_top(self.stmt % where_clause, *([entity_type] if entity_type else []) + [start, end - start + 1])
+        return [dict(zip(self.fields, row)) for row in raw_result]
 
