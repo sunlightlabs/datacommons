@@ -127,6 +127,7 @@ class TestNIMSPDenormalize(TestCase):
 
 
     @attr('nimsp')
+    @attr('salting')
     def test_salting(self):
         input_string = '"3327568","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
@@ -140,6 +141,8 @@ class TestNIMSPDenormalize(TestCase):
 
         self.assertEqual(2, len(output))
         self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
+        assert_record_contains(self, {'cycle': '2006'}, output[0])
+        assert_record_contains(self, {'cycle': '2006'}, output[1])
 
 
     @attr('nimsp')
@@ -161,6 +164,7 @@ class TestNIMSPDenormalize(TestCase):
 
 
     @attr('nimsp')
+    @attr('salting')
     def test_salt_filter(self):
         connection = sqlite3.connect(self.salts_db_path)
         connection.cursor().execute('delete from salts where nimsp_id = 9999')

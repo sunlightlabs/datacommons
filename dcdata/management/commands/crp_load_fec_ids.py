@@ -24,8 +24,27 @@ create_tmp_crp_candidates_stmt = """
     )
 """
 
+create_tmp_crp_committees_stmt = """
+    CREATE TABLE tmp_crp_committees (
+        Cycle char(4) NOT NULL,
+    	CmteID char(9) NOT NULL,
+    	PACShort varchar(40) NULL,
+    	Affiliate varchar(40) NULL,
+    	UltOrg varchar(40) NULL,
+    	RecipID char(9) NULL,
+    	RecipCode char(2) NULL,
+    	FECCandID char(9) NULL,
+    	Party char(1) NULL,
+    	PrimCode char(5) NULL,
+    	Source char(10) NULL,
+        Sensitive char(1) NULL,
+    	IsForeign char(1) NOT NULL,
+    	Active int NULL
+    )
+"""
 
-insert_fec_ids_stmt = """
+
+insert_cand_ids_stmt = """
 insert into matchbox_entityattribute (entity_id, namespace, value)
     select a.entity_id, params.namespace, c.FECCandID
     from tmp_crp_candidates c
@@ -43,6 +62,22 @@ insert into matchbox_entityattribute (entity_id, namespace, value)
 """
 
 
+insert_cmte_ids_stmt = """
+    insert into matchbox_entityattribute (entity_id, namespace, value)
+    select distinct entity_id, 'urn:fec_committee', c.CmteID
+    from tmp_crp_committees c
+    inner join matchbox_entityalias a on a.namespace in ('', 'urn:crp:organization') and lower(a.alias) = lower(c.ultorg)
+    where
+        not exists
+            (select *
+            from matchbox_entityattribute x
+            where
+                x.entity_id = a.entity_id
+                and x.namespace = 'urn:fec_committee'
+                and x.value = c.CmteID)
+"""
+
+
 def upload_crp_candidates(filename):
     c = connection.cursor()
     infile = open(filename, 'r')
@@ -50,15 +85,37 @@ def upload_crp_candidates(filename):
     c.execute(create_tmp_crp_candidates_stmt)
     c.copy_expert("COPY tmp_crp_candidates FROM STDIN CSV QUOTE '|'", infile)
 
-
-def insert_new_ids(cycle):
+def upload_crp_committees(filename):
     c = connection.cursor()
-    c.execute(insert_fec_ids_stmt, [cycle])
-    print "inserted %d IDs" % c.rowcount
+    infile = open(filename, 'r')    
+    c.execute("DROP TABLE IF EXISTS tmp_crp_committees")
+    c.execute(create_tmp_crp_committees_stmt)
+    c.copy_expert("COPY tmp_crp_committees FROM STDIN CSV QUOTE '|'", infile)
     
-def cleanup_tmp_table():
+
+def insert_cand_ids(cycle):
+    c = connection.cursor()
+    c.execute(insert_cand_ids_stmt, [cycle])
+    print "inserted %d candidate IDs" % c.rowcount
+
+def insert_cmte_ids():
+    c = connection.cursor()
+    c.execute(insert_cmte_ids_stmt)
+    print "inserted %d committee IDs" % c.rowcount
+    
+def cleanup_tmp_tables():
     c = connection.cursor()
     c.execute("DROP TABLE tmp_crp_candidates")
+    c.execute("DROP TABLE tmp_crp_committees")
+
+
+def clean_unicode(source, dest):
+    infile = open(source, 'r')
+    outfile = open(dest, 'w')
+    
+    for line in infile:
+        fixed_line = line.decode('utf8', 'replace').encode('utf8', 'replace')
+        outfile.write(fixed_line)
 
 
 class CRPLoadFECIDs(BaseCommand):
@@ -84,8 +141,11 @@ class CRPLoadFECIDs(BaseCommand):
         
         with transaction.commit_on_success():
             for cycle in cycles:
+                clean_unicode(os.path.join(dataroot, 'cmtes%s.txt' % cycle), os.path.join(dataroot, 'cmtes%s.utf8' % cycle))
+                upload_crp_committees(os.path.join(dataroot, 'cmtes%s.utf8' % cycle ))
                 upload_crp_candidates(os.path.join(dataroot, 'cands%s.txt' % cycle ))
-                insert_new_ids('19%s' % cycle if cycle > '80' else '20%s' % cycle)
-                cleanup_tmp_table()
+                insert_cand_ids('19%s' % cycle if cycle > '80' else '20%s' % cycle)
+                insert_cmte_ids()
+                cleanup_tmp_tables()
         
 Command = CRPLoadFECIDs

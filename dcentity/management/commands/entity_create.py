@@ -98,6 +98,10 @@ class Command(BaseCommand):
                 self.create_organizations()
         except EntityManagementError as e:
             self.log.error(e)
+            transaction.rollback()
+        except:
+            transaction.rollback()
+            raise
 
 
     @transaction.commit_manually()
@@ -113,7 +117,7 @@ class Command(BaseCommand):
                     inner join lobbying_report using (transaction_id)
                     where
                         lobbyist_name != ''
-                        and not exists (select * from matchbox_entityattribute where value = lobbyist_ext_id)
+                        and not exists (select * from matchbox_entityattribute where substring(value for 11) = substring(lobbyist_ext_id for 11))
                     group by lobbyist_ext_id
 
                     union
@@ -136,6 +140,7 @@ class Command(BaseCommand):
 
         self.cursor.execute("select name, id from tmp_individuals_%s" % self.today)
         results = self.cursor.fetchall()
+        transaction.rollback()
 
         if not self.force_indivs and len(results) > INDIVIDUAL_CREATE_MAX_WARN:
             raise EntityManagementError("The number of individuals set to be created is {0}. The max this script will create automatically is {1}.".format(len(results), INDIVIDUAL_CREATE_MAX_WARN))
