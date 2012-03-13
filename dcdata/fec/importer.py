@@ -136,4 +136,3 @@ class FECImporter():
             c.execute("DELETE FROM %s" % conf.sql_table)
             c.copy_expert("COPY %s FROM STDIN CSV HEADER" % conf.sql_table, infile)
 
-
