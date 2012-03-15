@@ -33,7 +33,8 @@ get_totals_stmt = """
             coalesce(rs.docket_count,    0)::integer,
             coalesce(rs.document_count,  0)::integer,
             coalesce(f.member_count,     0)::integer,
-            coalesce(f.committee_count,  0)::integer
+            coalesce(f.committee_count,  0)::integer,
+            coalesce(indexp.spending_amount, 0)::float
     from
          (select *
          from agg_entities
@@ -78,11 +79,16 @@ get_totals_stmt = """
         from agg_faca_totals
         where org_id = %s) f
     using (cycle)
+    full outer join (
+        select cycle, spending_amount
+        from agg_fec_indexp_totals
+        where entity_id = %s) indexp
+    using (cycle)
 """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id):
+    for row in execute_top(get_totals_stmt, *[entity_id] * 10):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -97,7 +103,8 @@ class EntityHandler(BaseHandler):
                      'contractor_misconduct_count',
                      'epa_actions_count',
                      'regs_docket_count', 'regs_document_count', 'regs_submitted_docket_count', 'regs_submitted_document_count',
-                     'faca_member_count', 'faca_committee_count']
+                     'faca_member_count', 'faca_committee_count',
+                     'independent_expenditure_amount']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
@@ -177,13 +184,9 @@ class EntitySearchHandler(BaseHandler):
         left join organization_metadata_latest_cycle_view om
             on e.id = om.entity_id
         left join agg_lobbying_totals l
-            on e.id = l.entity_id
+            on e.id = l.entity_id and l.cycle = -1
         left join agg_entities a
-            on e.id = a.entity_id
-        where
-            (a.cycle = -1 and l.cycle = -1)
-            or (a.cycle = -1 and l.cycle is null)
-            or (a.cycle is null and l.cycle = -1)
+            on e.id = a.entity_id and a.cycle = -1
     """
 
     def read(self, request):

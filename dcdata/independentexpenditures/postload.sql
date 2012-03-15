@@ -104,8 +104,16 @@ left join agg_fec_indexp_candidates cand_assoc using (spender_id, filing_number,
 left join matchbox_entity cand on cand_assoc.entity_id = cand.id
 left join agg_fec_indexp_committees committee_assoc using (spender_id)
 left join matchbox_entity committee on committee_assoc.entity_id = committee.id
-group by candidate_entity, candidate_name, committee_entity, committee_name, support_oppose;
+group by candidate_entity, coalesce(cand.name, candidate_name), committee_entity, coalesce(committee.name, spender_name), support_oppose;
 
+
+drop table if exists agg_fec_indexp_totals;
+create table agg_fec_indexp_totals as
+select cycle, committee_entity as entity_id, sum(amount) as spending_amount
+from agg_fec_indexp
+cross join (values (-1), (2012)) as cycles (cycle)
+where committee_entity is not null
+group by entity_id, cycle;
 
 
 
