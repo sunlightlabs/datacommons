@@ -28,17 +28,46 @@ class CommitteeIndExpHandler(EntityTopListHandler):
         order by amount desc
     """
 
-class CommitteeTopContribsHandler(EntityTopListHandler):
     
-    args = ['entity_id', 'limit']
-    fields = "contributor_name date amount".split()
+class CandidateIndExpDownloadHandler(EntityTopListHandler):
     
+    args = ['entity_id']
+    fields = "candidate_id candidate_name spender_id spender_name election_type candidate_state \
+        candidate_district candidate_office candidate_party \
+        amount aggregate_amount support_oppose purpose \
+        payee filing_number amendment transaction_id image_number received_date".split()
+        
+
     stmt = """
-        select contributor_name, date, amount
-        from fec_committee_itemized i
-        inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec_committee'
+        select candidate_id, candidate_name, spender_id, spender_name, election_type, candidate_state,
+            candidate_district, candidate_office, candidate_party, 
+            amount, aggregate_amount, support_oppose, purpose, 
+            payee, filing_number, amendment, transaction_id, image_number, received_date
+        from fec_indexp i
+        inner join agg_fec_indexp_candidates a using (spender_id, filing_number, transaction_id)
         where
             a.entity_id = %s
-        order by amount desc
-        limit %s
+        order by spender_name, date, amount desc
     """
+    
+class CommitteeIndExpDownloadHandler(EntityTopListHandler):
+    
+    args = ['entity_id']
+    fields = "candidate_id candidate_name spender_id spender_name election_type candidate_state \
+        candidate_district candidate_office candidate_party \
+        amount aggregate_amount date support_oppose purpose \
+        payee filing_number amendment transaction_id image_number received_date".split()
+        
+
+    stmt = """
+        select candidate_id, candidate_name, spender_id, spender_name, election_type, candidate_state,
+            candidate_district, candidate_office, candidate_party, 
+            amount, aggregate_amount, date, support_oppose, purpose, 
+            payee, filing_number, amendment, transaction_id, image_number, received_date
+        from fec_indexp i
+        inner join agg_fec_indexp_committees a using (spender_id)
+        where
+            a.entity_id = %s
+        order by candidate_name, date, amount desc
+    """
+    

@@ -74,7 +74,7 @@ select candidate_id, candidate_name, spender_id, spender_name, election_type, ca
     candidate_office, candidate_party, 
     regexp_replace(amount, ',|\$', '', 'g')::numeric as amount,
     regexp_replace(aggregate_amount, ',|\$', '', 'g')::numeric as aggregate_amount,
-    support_oppose, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date
+    support_oppose, date, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date
 from fec_indexp_import i
 where
     not exists (select * from fec_indexp_amendments a where i.spender_id = a.spender_id and i.filing_number = a.original_filing);
