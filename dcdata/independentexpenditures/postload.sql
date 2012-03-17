@@ -87,12 +87,12 @@ alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id
 create view agg_fec_indexp_candidates as
 select distinct entity_id, spender_id, filing_number, transaction_id
 from fec_indexp
-inner join matchbox_entityattribute on candidate_id = value and substring(namespace for 26) = 'urn:fec_current_candidate:';
+inner join matchbox_entityattribute on candidate_id = value and namespace = 'urn:fec:candidate';
 
 create view agg_fec_indexp_committees as
 select distinct entity_id, spender_id
 from fec_indexp
-inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:fec_committee';
+inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:fec:committee';
 
 drop table if exists agg_fec_indexp;
 create table agg_fec_indexp as
