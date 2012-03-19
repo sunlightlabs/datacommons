@@ -39,7 +39,11 @@ from (values
     ('santorum, rick', 'P20002721'),
     ('thompson, tommy', 'S2WI00235'),
     ('turner, bob', 'H0NY09072'),
-    ('kaine, timothy', 'S2VA00142')
+    ('kaine, timothy', 'S2VA00142'),
+    ('krishnamoorthi, raja', 'H2IL08096'),
+    ('tester, jon', 'S6MT00162'),
+    ('allen, george', 'S8VA00214'),
+    ('bachus, spencer', 'H2AL06035')
 ) manual_fixes (name, id)
 where
     lower(candidate_name) = manual_fixes.name
