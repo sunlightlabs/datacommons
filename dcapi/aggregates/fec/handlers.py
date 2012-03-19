@@ -132,15 +132,16 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 class CommitteeTopContribsHandler(EntityTopListHandler):
 
     args = ['entity_id', 'limit']
-    fields = "contributor_name date amount".split()
+    fields = "contributor_name count amount".split()
 
     stmt = """
-        select contributor_name, date, amount
+        select contributor_name, count(*), sum(amount)
         from fec_committee_itemized i
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
             a.entity_id = %s
-        order by amount desc
+        group by contributor_name
+        order by sum(amount) desc
         limit %s
     """
 
