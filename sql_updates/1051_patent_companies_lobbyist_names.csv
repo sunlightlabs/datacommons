@@ -1,0 +1,64 @@
+create table tmp_akr_patent_holder_lobbyist_names_in_faca as
+    select fm.membersid as member_id, fm.firstname as first_name, fm.lastname as last_name, startdate, enddate, occupationoraffiliation, committeename 
+    from faca_members fm inner join faca_committees using (cid) inner join faca_agencies using (aid) 
+    where 
+        agencyabbr = 'DOC'
+        and 
+           ( (fm.firstname ilike '%Adam%' and fm.lastname ilike '%Conner%') or
+            (fm.firstname ilike '%Adrienne%' and fm.lastname ilike '%Rhone%') or
+            (fm.firstname ilike '%Alex%' and fm.lastname ilike '%Jarvix%') or
+            (fm.firstname ilike '%Alex%' and fm.lastname ilike '%Vogel%') or
+            (fm.firstname ilike '%Arthur%' and fm.lastname ilike '%Mason%') or
+            (fm.firstname ilike '%Barry%' and fm.lastname ilike '%Lasala%') or
+            (fm.firstname ilike '%Betsy%' and fm.lastname ilike '%Brady%') or
+            (fm.firstname ilike '%Brian%' and fm.lastname ilike '%Raymond%') or
+            (fm.firstname ilike '%Cheryl%' and fm.lastname ilike '%Bruner%') or
+            (fm.firstname ilike '%Christopher%' and fm.lastname ilike '%Caine%') or
+            (fm.firstname ilike '%Craig%' and fm.lastname ilike '%Bury%') or
+            (fm.firstname ilike '%Dana%' and fm.lastname ilike '%Gray%') or
+            (fm.firstname ilike '%David%' and fm.lastname ilike '%Castagnetti%') or
+            (fm.firstname ilike '%David%' and fm.lastname ilike '%Isaacs%') or
+            (fm.firstname ilike '%David%' and fm.lastname ilike '%Rose%') or
+            (fm.firstname ilike '%David%' and fm.lastname ilike '%Thomas%') or
+            (fm.firstname ilike '%Dean%' and fm.lastname ilike '%Rosen%') or
+            (fm.firstname ilike '%Donna' and (fm.lastname ilike '%Steele%' or fm.lastname ilike '%Flynn%')) or
+            (fm.firstname ilike '%Doug%' and fm.lastname ilike '%Corner%') or
+            (fm.firstname ilike '%Doyle%' and fm.lastname ilike '%Bartlett%') or
+            (fm.firstname ilike '%Edmund%' and fm.lastname ilike '%Perry%') or
+            (fm.firstname ilike '%Elise' and (fm.lastname ilike '%Finley%' or fm.lastname ilike '%Pickering%')) or
+            (fm.firstname ilike '%Francis%' and fm.lastname ilike '%Grab%') or
+            (fm.firstname ilike '%Frank%' and fm.lastname ilike '%Torres%') or
+            (fm.firstname ilike '%Gary%' and fm.lastname ilike '%Gasper%') or
+            (fm.firstname ilike '%James%' and fm.lastname ilike '%Burger%') or
+            (fm.firstname ilike '%Jenifer%' and fm.lastname ilike '%Verdery%') or
+            (fm.firstname ilike '%Jennifer%' and fm.lastname ilike '%Bendall%') or
+            (fm.firstname ilike '%John%' and fm.lastname ilike '%Sampson%') or
+            (fm.firstname ilike '%Jon%' and fm.lastname ilike '%Bernstein%') or
+            (fm.firstname ilike '%Jonathan%' and fm.lastname ilike '%Band%') or
+            (fm.firstname ilike '%Joseph%' and fm.lastname ilike '%Mikrut%') or
+            (fm.firstname ilike '%Julie' and (fm.lastname ilike '%Hershey%' or fm.lastname ilike '%Carr%')) or
+            (fm.firstname ilike '%Kai%' and fm.lastname ilike '%Anderson%') or
+            (fm.firstname ilike '%Karl%' and fm.lastname ilike '%Gallant%') or
+            (fm.firstname ilike '%Kate%' and fm.lastname ilike '%Hull%') or
+            (fm.firstname ilike '%Kirsten%' and fm.lastname ilike '%Chadwick%') or
+            (fm.firstname ilike '%Kirstina%' and fm.lastname ilike '%Kennedy%') or
+            (fm.firstname ilike '%Kristy%' and fm.lastname ilike '%Sternhell%') or
+            (fm.firstname ilike '%Labrenda' and (fm.lastname ilike '%Garrett%' or fm.lastname ilike '%Nelson%')) or
+            (fm.firstname ilike '%Leslie%' and fm.lastname ilike '%Dunlap%') or
+            (fm.firstname ilike '%Mark%' and fm.lastname ilike '%Tomb%') or
+            (fm.firstname ilike '%Matt%' and fm.lastname ilike '%Gelman%') or
+            (fm.firstname ilike '%Meredith%' and fm.lastname ilike '%Singer%') or
+            (fm.firstname ilike '%Nick%' and fm.lastname ilike '%Giordano%') or
+            (fm.firstname ilike '%Paula%' and fm.lastname ilike '%Boyd%') or
+            (fm.firstname ilike '%Peter%' and fm.lastname ilike '%Pitsch%') or
+            (fm.firstname ilike '%Robert%' and fm.lastname ilike '%Cogomo%') or
+            (fm.firstname ilike '%Stacey%' and fm.lastname ilike '%Alexander%') or
+            (fm.firstname ilike '%Stacey%' and fm.lastname ilike '%Rampy%') or
+            (fm.firstname ilike '%Stephen%' and fm.lastname ilike '%Harper%') or
+            (fm.firstname ilike '%Steven%' and fm.lastname ilike '%Elmendorf%') or
+            (fm.firstname ilike '%Steven%' and fm.lastname ilike '%Stewart%') or
+            (fm.firstname ilike '%Susan%' and fm.lastname ilike '%Mann%') or
+            (fm.firstname ilike '%Terry%' and fm.lastname ilike '%Allen%') or
+            (fm.firstname ilike '%Timothy%' and fm.lastname ilike '%Sheehy%') or
+            (fm.firstname ilike '%Timothy%' and fm.lastname ilike '%Sparapani%') or
+            (fm.firstname ilike '%Tom%' and fm.lastname ilike '%Roesser%'));
