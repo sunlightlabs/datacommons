@@ -39,7 +39,11 @@ from (values
     ('santorum, rick', 'P20002721'),
     ('thompson, tommy', 'S2WI00235'),
     ('turner, bob', 'H0NY09072'),
-    ('kaine, timothy', 'S2VA00142')
+    ('kaine, timothy', 'S2VA00142'),
+    ('krishnamoorthi, raja', 'H2IL08096'),
+    ('tester, jon', 'S6MT00162'),
+    ('allen, george', 'S8VA00214'),
+    ('bachus, spencer', 'H2AL06035')
 ) manual_fixes (name, id)
 where
     lower(candidate_name) = manual_fixes.name
@@ -74,7 +78,7 @@ select candidate_id, candidate_name, spender_id, spender_name, election_type, ca
     candidate_office, candidate_party, 
     regexp_replace(amount, ',|\$', '', 'g')::numeric as amount,
     regexp_replace(aggregate_amount, ',|\$', '', 'g')::numeric as aggregate_amount,
-    support_oppose, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date
+    support_oppose, date, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date
 from fec_indexp_import i
 where
     not exists (select * from fec_indexp_amendments a where i.spender_id = a.spender_id and i.filing_number = a.original_filing);
@@ -87,12 +91,12 @@ alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id
 create view agg_fec_indexp_candidates as
 select distinct entity_id, spender_id, filing_number, transaction_id
 from fec_indexp
-inner join matchbox_entityattribute on candidate_id = value and substring(namespace for 26) = 'urn:fec_current_candidate:';
+inner join matchbox_entityattribute on candidate_id = value and namespace = 'urn:fec:candidate';
 
 create view agg_fec_indexp_committees as
 select distinct entity_id, spender_id
 from fec_indexp
-inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:fec_committee';
+inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:fec:committee';
 
 drop table if exists agg_fec_indexp;
 create table agg_fec_indexp as
@@ -104,8 +108,16 @@ left join agg_fec_indexp_candidates cand_assoc using (spender_id, filing_number,
 left join matchbox_entity cand on cand_assoc.entity_id = cand.id
 left join agg_fec_indexp_committees committee_assoc using (spender_id)
 left join matchbox_entity committee on committee_assoc.entity_id = committee.id
-group by candidate_entity, candidate_name, committee_entity, committee_name, support_oppose;
+group by candidate_entity, coalesce(cand.name, candidate_name), committee_entity, coalesce(committee.name, spender_name), support_oppose;
 
+
+drop table if exists agg_fec_indexp_totals;
+create table agg_fec_indexp_totals as
+select cycle, committee_entity as entity_id, sum(amount) as spending_amount
+from agg_fec_indexp
+cross join (values (-1), (2012)) as cycles (cycle)
+where committee_entity is not null
+group by entity_id, cycle;
 
 
 

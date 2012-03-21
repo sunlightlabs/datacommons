@@ -46,10 +46,9 @@ create_tmp_crp_committees_stmt = """
 
 insert_cand_ids_stmt = """
 insert into matchbox_entityattribute (entity_id, namespace, value)
-    select a.entity_id, params.namespace, c.FECCandID
+    select a.entity_id, 'urn:fec:candidate', c.FECCandID
     from tmp_crp_candidates c
     inner join matchbox_entityattribute a on CID = value and namespace = 'urn:crp:recipient'
-    cross join (values ('urn:fec_current_candidate:' || %s)) as params (namespace)
     where
         currcand = 'Y'
         and not exists 
@@ -57,14 +56,14 @@ insert into matchbox_entityattribute (entity_id, namespace, value)
             from matchbox_entityattribute x 
             where 
                 x.entity_id = a.entity_id
-                and x.namespace = params.namespace
+                and x.namespace = 'urn:fec:candidate'
                 and x.value = c.FECCandID);
 """
 
 
 insert_cmte_ids_stmt = """
     insert into matchbox_entityattribute (entity_id, namespace, value)
-    select distinct entity_id, 'urn:fec_committee', c.CmteID
+    select distinct entity_id, 'urn:fec:committee', c.CmteID
     from tmp_crp_committees c
     inner join matchbox_entityalias a on a.namespace in ('', 'urn:crp:organization') and lower(a.alias) = lower(c.ultorg)
     where
@@ -73,7 +72,7 @@ insert_cmte_ids_stmt = """
             from matchbox_entityattribute x
             where
                 x.entity_id = a.entity_id
-                and x.namespace = 'urn:fec_committee'
+                and x.namespace = 'urn:fec:committee'
                 and x.value = c.CmteID)
 """
 
@@ -93,9 +92,9 @@ def upload_crp_committees(filename):
     c.copy_expert("COPY tmp_crp_committees FROM STDIN CSV QUOTE '|'", infile)
     
 
-def insert_cand_ids(cycle):
+def insert_cand_ids():
     c = connection.cursor()
-    c.execute(insert_cand_ids_stmt, [cycle])
+    c.execute(insert_cand_ids_stmt)
     print "inserted %d candidate IDs" % c.rowcount
 
 def insert_cmte_ids():
@@ -144,7 +143,7 @@ class CRPLoadFECIDs(BaseCommand):
                 clean_unicode(os.path.join(dataroot, 'cmtes%s.txt' % cycle), os.path.join(dataroot, 'cmtes%s.utf8' % cycle))
                 upload_crp_committees(os.path.join(dataroot, 'cmtes%s.utf8' % cycle ))
                 upload_crp_candidates(os.path.join(dataroot, 'cands%s.txt' % cycle ))
-                insert_cand_ids('19%s' % cycle if cycle > '80' else '20%s' % cycle)
+                insert_cand_ids()
                 insert_cmte_ids()
                 cleanup_tmp_tables()
         

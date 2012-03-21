@@ -29,6 +29,17 @@ class NIMSPDump2CSV(BaseNimspImporter):
 
         select_fields = ",".join([sql_field for (name, sql_field, conversion_func) in CSV_SQL_MAPPING])
 
+        create_indexes_stmt = """
+            create index rrbid on RecipientReportsBundle (RecipientReportsBundleID);
+            create index syrid on StateYearReports(StateYearReportsID);
+            create index candid on Candidates(CandidateID);
+            create index osid on OfficeSeats(OfficeSeatID);
+            create index ocid on OfficeCodes(OfficeCode);
+            create index commid on Committees(CommitteeID);
+            create index ccid on CatCodes(CatCode);
+            create index p_candid on PartyLookup(PartyLookupID );
+        """
+
         stmt = """
             select %s
                from Contributions c
@@ -54,6 +65,9 @@ class NIMSPDump2CSV(BaseNimspImporter):
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
         )
         cursor = connection.cursor()
+
+        self.log.info('Creating indexes...'.format(outfile_path))
+        cursor.execute(create_indexes_stmt)
 
         self.log.info('Dumping data to {0}...'.format(outfile_path))
         cursor.execute(stmt)

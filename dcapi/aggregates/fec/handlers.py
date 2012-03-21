@@ -4,7 +4,7 @@ from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopLis
 
 class CandidateSummaryHandler(EntitySingletonHandler):
         
-    args = ['cycle', 'entity_id']    
+    args = ['entity_id']    
     fields = "total_raised total_receipts_rank total_disbursements_rank cash_on_hand_rank max_rank contributions_indiv contributions_pac contributions_party contributions_candidate transfers_in disbursements cash_on_hand date".split()
     
     stmt = """
@@ -24,7 +24,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
             ending_date
         from fec_candidates c
         inner join fec_candidate_summaries s using (candidate_id)
-        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
+        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         inner join agg_fec_candidate_rankings r using (candidate_id)
         where
             a.entity_id = %s
@@ -33,7 +33,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
 
 class CandidateStateHandler(PieHandler):
     
-    args = ['cycle', 'entity_id']
+    args = ['entity_id']
     
     stmt = """
         select
@@ -42,7 +42,7 @@ class CandidateStateHandler(PieHandler):
             count(*)
         from fec_candidates c
         inner join fec_indiv i on c.committee_id = i.filer_id
-        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
+        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         where
             a.entity_id = %s
         group by local
@@ -54,7 +54,7 @@ class CandidateTimelineHandler(TopListHandler):
     candidates_stmt = """
         select entity_id, candidate_id, e.name, race, party_designation1, incumbent_challenger_open
         from fec_candidates c
-        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:2012'
+        inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         inner join matchbox_entity e on a.entity_id = e.id
         where
             election_year = '12'
@@ -62,7 +62,7 @@ class CandidateTimelineHandler(TopListHandler):
             and race in 
                 (select race
                 from fec_candidates c
-                inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
+                inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
                 where
                     candidate_status = 'C'
                     and a.entity_id = %s)
@@ -82,7 +82,7 @@ class CandidateTimelineHandler(TopListHandler):
     def read(self, request, **kwargs):
         c = connection.cursor()
         
-        raw_candidates_result = execute_top(self.candidates_stmt, request.GET['cycle'], kwargs['entity_id'])
+        raw_candidates_result = execute_top(self.candidates_stmt, kwargs['entity_id'])
         candidates = [dict(zip(self.candidates_fields, row)) for row in raw_candidates_result]
         
         # this makes a separate query for each candidate
@@ -96,7 +96,7 @@ class CandidateTimelineHandler(TopListHandler):
 
 class CandidateItemizedDownloadHandler(EntityTopListHandler):
     
-    args = ['cycle', 'entity_id']
+    args = ['entity_id']
     
     fields = "contributor_name date amount contributor_type transaction_type organization occupation city state zipcode candidate_name party race status".split()
     
@@ -105,7 +105,7 @@ class CandidateItemizedDownloadHandler(EntityTopListHandler):
             organization, occupation, city, state, zipcode, 
             candidate_name, party, race, status
         from fec_candidate_itemized i
-        inner join matchbox_entityattribute a on i.candidate_id = a.value and a.namespace = 'urn:fec_current_candidate:' || %s
+        inner join matchbox_entityattribute a on i.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         where
             a.entity_id = %s
         order by amount desc
@@ -116,14 +116,32 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
     args = ['entity_id']
     fields = "contributor_name date amount contributor_type contributor_committee_id transaction_type \
                 organization occupation city state zipcode \
-                committee_name committee_designation committee_type committee_party interest_group connected_org candidate_id".split()
+                committee_name committee_designation committee_type committee_party interest_group connected_org".split()
 
     stmt = """
-        select *
+        select contributor_name, date, amount, contributor_type, contributor_committee_id, transaction_type,
+                    organization, occupation, city, state, zipcode,
+                    committee_name, committee_designation, committee_type, committee_party, interest_group, connected_org
         from fec_committee_itemized i
-        inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec_committee'
+        inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
             a.entity_id = %s
         order by amount desc
     """
-    
+
+class CommitteeTopContribsHandler(EntityTopListHandler):
+
+    args = ['entity_id', 'limit']
+    fields = "contributor_name count amount".split()
+
+    stmt = """
+        select contributor_name, count(*), sum(amount)
+        from fec_committee_itemized i
+        inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
+        where
+            a.entity_id = %s
+        group by contributor_name
+        order by sum(amount) desc
+        limit %s
+    """
+
