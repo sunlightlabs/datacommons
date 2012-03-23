@@ -60,12 +60,15 @@ select committee_id, committee_name, committee_type, committee_designation, fili
     (through_year || through_month || through_day)::date as through_date,
     total_receipts, transfers_from_affiliates, individual_contributions, 
     contributions_from_other_committees, 
-    total_loans_received, total_disbursements, transfers_to_affiliates
+    total_loans_received, total_disbursements, transfers_to_affiliates,
     refunds_to_individuals, refunds_to_committees, 
-    loan_repayments, cash_beginning_of_year, cash_close_of_period
-    debts_owed, nonfederal_transfers_received, contributions_to_committees
+    loan_repayments, cash_beginning_of_year, cash_close_of_period,
+    debts_owed, nonfederal_transfers_received, contributions_to_committees,
     independent_expenditures_made, party_coordinated_expenditures_made, nonfederal_expenditure_share
-from fec_committee_summaries_import;
+from fec_committee_summaries_import
+where
+    -- there are a number of data-less rows. Discard them by looking for valid date.
+    through_year != 0;
 create index fec_committee_summaries_committee_id on fec_committee_summaries (committee_id);
 
 
