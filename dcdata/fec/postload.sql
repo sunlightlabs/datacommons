@@ -65,11 +65,12 @@ select committee_id, committee_name, committee_type, committee_designation, fili
     loan_repayments, cash_beginning_of_year, cash_close_of_period
     debts_owed, nonfederal_transfers_received, contributions_to_committees
     independent_expenditures_made, party_coordinated_expenditures_made, nonfederal_expenditure_share
-from fec_committee_summaries;
+from fec_committee_summaries_import;
 create index fec_committee_summaries_committee_id on fec_committee_summaries (committee_id);
 
 
-create view agg_fec_candidate_rankings as
+drop table if exists agg_fec_candidate_rankings;
+create table agg_fec_candidate_rankings as
 select candidate_id, substring(race for 1) as race,
     rank() over (partition by substring(race for 1) order by total_receipts desc) as total_receipts_rank,
     rank() over (partition by substring(race for 1) order by ending_cash desc) as cash_on_hand_rank,

@@ -58,7 +58,7 @@ class FECImporter():
     def update_csv(self):
 
         self.log.info("Downloading files to %s..." % self.processing_dir)
-        #self.download()
+        self.download()
 
         self.log.info("Extracting files...")
         self.extract()
