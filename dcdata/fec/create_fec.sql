@@ -134,6 +134,38 @@ CREATE TABLE fec_candidate_summaries_import (
     refunds_to_committees integer                       -- 28b & 28c?
 );
 
+CREATE TABLE fec_committee_summaries_import (
+    committee_id VARCHAR(9) NOT NULL, 
+    committee_name VARCHAR(90) NOT NULL, 
+    committee_type VARCHAR(1) NOT NULL, 
+    committee_designation VARCHAR(4), 
+    filing_frequency VARCHAR(1) NOT NULL, 
+    total_receipts INTEGER NOT NULL, 
+    transfers_from_affiliates INTEGER NOT NULL, 
+    individual_contributions INTEGER NOT NULL, 
+    contributions_from_other_committees INTEGER NOT NULL, 
+    contributions_from_candidate INTEGER NOT NULL, 
+    candidate_loans INTEGER NOT NULL, 
+    total_loans_received INTEGER NOT NULL, 
+    total_disbursements INTEGER NOT NULL, 
+    transfers_to_affiliates INTEGER NOT NULL, 
+    refunds_to_individuals INTEGER NOT NULL, 
+    refunds_to_committees INTEGER NOT NULL, 
+    candidate_loan_repayments INTEGER NOT NULL, 
+    loan_repayments INTEGER NOT NULL, 
+    cash_beginning_of_year INTEGER NOT NULL, 
+    cash_close_of_period INTEGER NOT NULL, 
+    debts_owed INTEGER NOT NULL, 
+    nonfederal_transfers_received INTEGER NOT NULL, 
+    contributions_to_committees INTEGER NOT NULL, 
+    independent_expenditures_made INTEGER NOT NULL, 
+    party_coordinated_expenditures_made INTEGER NOT NULL, 
+    nonfederal_expenditure_share INTEGER NOT NULL, 
+    through_month VARCHAR(2) NOT NULL, 
+    through_day VARCHAR(2) NOT NULL, 
+    through_year INTEGER NOT NULL
+);
+
 
 -- these tables were used in the "One Percent of One Percent" project, but not by any code.
 -- create table fec_candidate_summaries_12 as select * from fec_candidate_summaries;
@@ -145,40 +177,7 @@ CREATE TABLE fec_candidate_summaries_import (
 -- create table fec_candidate_summaries_00 as select * from fec_candidate_summaries;
 -- create table fec_candidate_summaries_98 as select * from fec_candidate_summaries;
 -- create table fec_candidate_summaries_96 as select * from fec_candidate_summaries;
--- 
--- 
--- CREATE TABLE fec_pac_summaries (
---  committee_id VARCHAR(9) NOT NULL, 
---  committee_name VARCHAR(90) NOT NULL, 
---  committee_type VARCHAR(1) NOT NULL, 
---  committee_designation VARCHAR(4), 
---  filing_frequency VARCHAR(1) NOT NULL, 
---  total_receipts INTEGER NOT NULL, 
---  transfers_from_affiliates INTEGER NOT NULL, 
---  individual_contributions INTEGER NOT NULL, 
---  contributions_from_other_committees INTEGER NOT NULL, 
---  contributions_from_candidate INTEGER NOT NULL, 
---  candidate_loans INTEGER NOT NULL, 
---  total_loans_received INTEGER NOT NULL, 
---  total_disbursements INTEGER NOT NULL, 
---  transfers_to_affiliates INTEGER NOT NULL, 
---  refunds_to_individuals INTEGER NOT NULL, 
---  refunds_to_committees INTEGER NOT NULL, 
---  candidate_loan_repayments INTEGER NOT NULL, 
---  loan_repayments INTEGER NOT NULL, 
---  cash_beginning_of_year INTEGER NOT NULL, 
---  cash_close_of_period INTEGER NOT NULL, 
---  debts_owed INTEGER NOT NULL, 
---  nonfederal_transfers_received INTEGER NOT NULL, 
---  contributions_to_committees INTEGER NOT NULL, 
---  independent_expenditures_made INTEGER NOT NULL, 
---  party_coordinated_expenditures_made INTEGER NOT NULL, 
---  nonfederal_expenditure_share INTEGER NOT NULL, 
---  through_month VARCHAR(2) NOT NULL, 
---  through_day VARCHAR(2) NOT NULL, 
---  through_year INTEGER NOT NULL
--- );
--- 
+
 -- create table fec_pac_summaries_10 as select * from fec_pac_summaries;
 -- create table fec_pac_summaries_08 as select * from fec_pac_summaries;
 -- create table fec_pac_summaries_04 as select * from fec_pac_summaries;

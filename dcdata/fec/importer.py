@@ -19,6 +19,7 @@ FEC_CONFIG = [
     F('ftp://ftp.fec.gov/FEC/cm12.zip', 'foiacm.dta', 'fec_committee_master_schema.csv', 'fec_committees'),
     F('ftp://ftp.fec.gov/FEC/cn12.zip', 'foiacn.dta', 'fec_candidate_master_schema.csv', 'fec_candidates_import'),
     F('ftp://ftp.fec.gov/FEC/webl12.zip', 'FECWEB/webl12.dat', 'fec_candidate_summary.csv', 'fec_candidate_summaries_import'),
+    F('ftp://ftp.fec.gov/FEC/webk12.zip', 'FECWEB/webk12.dat', 'fec_pac_summary.csv', 'fec_committee_summaries_import')
 ]
 
 # for loading PAC summaries. Used for SuperDonors project, but not currently used in Brisket.
@@ -57,7 +58,7 @@ class FECImporter():
     def update_csv(self):
 
         self.log.info("Downloading files to %s..." % self.processing_dir)
-        self.download()
+        #self.download()
 
         self.log.info("Extracting files...")
         self.extract()
