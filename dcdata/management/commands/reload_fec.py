@@ -14,5 +14,6 @@ class Command(BaseCommand):
         else:
             data_dir = None
 
-        FECImporter(data_dir)
-
+        i = FECImporter(data_dir)
+        i.update_csv()
+        i.update_db()
