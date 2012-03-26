@@ -64,25 +64,34 @@ class FECImporter():
 
         self.log.info("Done.")
 
+    def _localfile(self, conf):
+        filename = conf.url.split("/")[-1]
+        dirname = filename.split(".")[0]
+        return os.path.join(self.processing_dir, dirname, filename)
+        
+    def _localdir(self, conf):
+        filename = conf.url.split("/")[-1]
+        dirname = filename.split(".")[0]
+        return os.path.join(self.processing_dir, dirname)
 
     def download(self):
-        if not os.path.isdir(self.processing_dir):
-            os.makedirs(self.processing_dir)
-
         for conf in self.FEC_CONFIG:
-            local_file = os.path.join(self.processing_dir, conf.url.split("/")[-1])
-            self.log.info("downloading %s to %s..." % (conf.url, local_file))
-            urllib.urlretrieve(conf.url, local_file)
+            if not os.path.isdir(self._localdir(conf)):
+                os.makedirs(self._localdir(conf))
+
+            self.log.info("downloading %s to %s..." % (conf.url, self._localfile(conf)))
+            urllib.urlretrieve(conf.url, self._localfile(conf))
 
 
     def extract(self):
-        subprocess.check_call(['unzip', '-oqu', os.path.join(self.processing_dir, "*.zip"), "-d" + self.processing_dir])
+        for conf in self.FEC_CONFIG:
+            subprocess.check_call(['unzip', '-oqu', self._localfile(conf), "-d" + os.path.dirname(self._localfile(conf))])
 
 
     def fix_unicode(self):
         for conf in self.FEC_CONFIG:
-            infile = open(os.path.join(self.processing_dir, conf.dta_file), 'r')
-            outfile = open(os.path.join(self.processing_dir, conf.dta_file + ".utf8"), 'w')
+            infile = open(os.path.join(self._localdir(conf), conf.dta_file), 'r')
+            outfile = open(os.path.join(self._localdir(conf), conf.dta_file + ".utf8"), 'w')
 
             for line in infile:
                 fixed_line = line.decode('utf8', 'replace').encode('utf8', 'replace')
@@ -91,9 +100,9 @@ class FECImporter():
 
     def fec_2_csv(self):
         for conf in self.FEC_CONFIG:
-            outfile = open(os.path.join(self.processing_dir, conf.dta_file.split(".")[0] + ".csv"), 'w')
+            outfile = open(os.path.join(self._localdir(conf), conf.dta_file.split(".")[0] + ".csv"), 'w')
             subprocess.check_call(
-                ['sort -u %s | in2csv -f fixed --schema=%s' % (os.path.join(self.processing_dir, conf.dta_file + ".utf8"), os.path.join(SCHEMA_ROOT, conf.schema_file))],
+                ['sort -u %s | in2csv -f fixed --schema=%s' % (os.path.join(self._localdir(conf), conf.dta_file + ".utf8"), os.path.join(SCHEMA_ROOT, conf.schema_file))],
                 shell=True, stdout=outfile)
 
 
@@ -109,7 +118,7 @@ class FECImporter():
     def upload(self, c):
 
         for conf in self.FEC_CONFIG:
-            infile = open(os.path.join(self.processing_dir, conf.dta_file.split(".")[0] + ".csv"), 'r')
+            infile = open(os.path.join(self._localdir(conf), conf.dta_file.split(".")[0] + ".csv"), 'r')
             c.execute("DELETE FROM %s" % conf.sql_table)
             c.copy_expert("COPY %s FROM STDIN CSV HEADER" % conf.sql_table, infile)
 
