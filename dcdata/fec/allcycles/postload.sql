@@ -27,7 +27,7 @@ from fec_candidates_allcycles_import;
 create index fec_candidates_allcycles_candidate_id on fec_candidates_allcycles (candidate_id);
 
 
-create table fec_committees_allcycles as
+create view fec_committees_allcycles as
     select 2012 as cycle, * from fec_committees_12
 union all
     select 2010, * from fec_committees_10
@@ -123,7 +123,7 @@ create index fec_pac2pac_allcycles_filer_id on fec_pac2pac_allcycles (filer_id);
 create index fec_pac2pac_allcycles_other_id on fec_pac2pac_allcycles (other_id);
 
 
-create table fec_committee_summaries_allcycles_import as
+create view fec_committee_summaries_allcycles_import as
     select 2012 as cycle, * from fec_pac_summaries_12
     union all
     select 2010, * from fec_pac_summaries_10
