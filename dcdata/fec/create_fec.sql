@@ -166,26 +166,3 @@ CREATE TABLE fec_committee_summaries_import (
     through_year INTEGER NOT NULL
 );
 
-
--- these tables were used in the "One Percent of One Percent" project, but not by any code.
--- create table fec_candidate_summaries_12 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_10 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_08 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_06 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_04 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_02 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_00 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_98 as select * from fec_candidate_summaries;
--- create table fec_candidate_summaries_96 as select * from fec_candidate_summaries;
-
--- create table fec_pac_summaries_10 as select * from fec_pac_summaries;
--- create table fec_pac_summaries_08 as select * from fec_pac_summaries;
--- create table fec_pac_summaries_04 as select * from fec_pac_summaries;
--- create table fec_pac_summaries_02 as select * from fec_pac_summaries;
--- create table fec_pac_summaries_00 as select * from fec_pac_summaries;
--- create table fec_pac_summaries_98 as select * from fec_pac_summaries;
--- create table fec_pac_summaries_96 as select * from fec_pac_summaries;
-    
-
-
-
