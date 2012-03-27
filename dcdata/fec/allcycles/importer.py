@@ -9,6 +9,7 @@ ALL_CYCLE_CONFIG = reduce(lambda x, y: x+y,
             F('ftp://ftp.fec.gov/FEC/oth%s.zip' % cycle, 'itoth.dta', 'fec_committee_transactions.csv', 'fec_pac2pac_%s' % cycle),
             F('ftp://ftp.fec.gov/FEC/cm%s.zip' % cycle, 'foiacm.dta', 'fec_committee_master_schema.csv', 'fec_committees_%s' % cycle),
             F('ftp://ftp.fec.gov/FEC/cn%s.zip' % cycle, 'foiacn.dta', 'fec_candidate_master_schema.csv', 'fec_candidates_%s' % cycle),
+            F('ftp://ftp.fec.gov/FEC/weball%s.zip' % cycle, 'FECWEB/webl%s.all' % cycle, 'fec_candidate_summary.csv', 'fec_candidate_summaries_%s' % cycle),
             F('ftp://ftp.fec.gov/FEC/webk%s.zip' % cycle, 'FECWEB/webk%s.dat' % cycle, 'fec_pac_summary.csv', 'fec_pac_summaries_%s' % cycle),    
         ) for cycle in cycles], ())
 

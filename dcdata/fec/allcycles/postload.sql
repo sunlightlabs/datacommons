@@ -1,3 +1,10 @@
+create function attempt_date(text) returns date language plpgsql immutable as $$
+begin
+  return $1::date;
+exception when others then
+  return null;
+end;$$;
+
 
 create view fec_candidates_allcycles_import as
     select 2012 as cycle, * from fec_candidates_12
@@ -62,7 +69,7 @@ drop table if exists fec_indiv_allcycles;
 create table fec_indiv_allcycles as
 select cycle, fec_record, filer_id, amendment, transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
     regexp_replace(occupation, '/[^/]*$', '') as organization, regexp_replace(occupation, '^.*/', '') as occupation,
-    (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
+    attempt_date(transaction_century || transaction_year || transaction_month || transaction_day) as date,
     overpunch(amount) as amount
 from fec_indiv_allcycles_import;
 create index fec_indiv_allcycles_filer_id on fec_indiv_allcycles (filer_id);
@@ -138,6 +145,7 @@ create view fec_committee_summaries_allcycles_import as
     union all 
     select 2000, * from fec_pac_summaries_00;
     
+drop table if exists fec_committee_summaries_allcycles;
 create table fec_committee_summaries_allcycles as
 select cycle, committee_id, committee_name, committee_type, committee_designation, filing_frequency, 
     (through_year || through_month || through_day)::date as through_date,
@@ -154,24 +162,28 @@ where
     through_year != 0;
 
 
+create view fec_candidate_summaries_allcycles_import as
+    select 2012 as cycle, * from fec_candidate_summaries_12
+    union all
+    select 2010, * from fec_candidate_summaries_10
+    union all 
+    select 2008, * from fec_candidate_summaries_08
+    union all 
+    select 2006, * from fec_candidate_summaries_06
+    union all 
+    select 2004, * from fec_candidate_summaries_04
+    union all 
+    select 2002, * from fec_candidate_summaries_02
+    union all 
+    select 2000, * from fec_candidate_summaries_00;
 
+drop table if exists fec_candidate_summaries_allcycles;
+create table fec_candidate_summaries_allcycles as
+select cycle, candidate_id, total_receipts, ending_cash, total_disbursements,
+    candidate_loan_repayments, other_loan_repayments, refunds_to_individuals, refunds_to_committees,
+    contributions_from_other_committees, contributions_from_party_committees,
+    contributions_from_candidate, loans_from_candidate,
+    authorized_transfers_from, total_individual_contributions,
+    (substring(ending_date for 4 from 5) || substring(ending_date for 2 from 1) || substring(ending_date for 2 from 3))::date as ending_date
+from fec_candidate_summaries_allcycles_import;
 
-    
---     
--- alter table fec_candidate_summaries add column cycle integer;
--- insert into fec_candidate_summaries
---     select *, 2010 from fec_candidate_summaries_10
---     union all
---     select *, 2008 from fec_candidate_summaries_08
---     union all
---     select *, 2006 from fec_candidate_summaries_06
---     union all
---     select *, 2004 from fec_candidate_summaries_04
---     union all
---     select *, 2002 from fec_candidate_summaries_02
---     union all
---     select *, 2000 from fec_candidate_summaries_00
---     union all
---     select *, 1998 from fec_candidate_summaries_98
---     union all
---     select *, 1996 from fec_candidate_summaries_96;
