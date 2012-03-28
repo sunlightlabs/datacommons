@@ -85,7 +85,7 @@ class FECImporter():
 
     def extract(self):
         for conf in self.FEC_CONFIG:
-            subprocess.check_call(['unzip', '-oqu', self._working_dir(conf), "-d" + os.path.dirname(self._working_dir(conf))])
+            subprocess.check_call(['unzip', '-oqu', self._download_file(conf), "-d" + self._working_dir(conf)])
 
 
     def fix_unicode(self):
