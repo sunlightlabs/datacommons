@@ -67,7 +67,7 @@ union all
 
 drop table if exists fec_indiv_allcycles;
 create table fec_indiv_allcycles as
-select fec_record, filer_id, amendment, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
+select cycle, fec_record, filer_id, amendment, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
     regexp_replace(occupation, '/[^/]*$', '') as organization, regexp_replace(occupation, '^.*/', '') as occupation,
     attempt_date((transaction_century || transaction_year || transaction_month || transaction_day)) as date,
     case when transaction_type = '22Y' then -abs(overpunch(amount)) else overpunch(amount) end as amount
