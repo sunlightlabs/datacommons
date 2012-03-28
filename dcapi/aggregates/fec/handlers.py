@@ -31,6 +31,34 @@ class CandidateSummaryHandler(EntitySingletonHandler):
     """
 
 
+class CommitteeSummaryHandler(EntitySingletonHandler):
+
+    args = ['entity_id']    
+    fields = "total_raised contributions_from_indiv contributions_from_pacs transfers_from_affiliates nonfederal_transfers_received loans_received disbursements cash_on_hand debts contributions_to_committees independent_expenditures_made party_coordinated_expenditures_made nonfederal_expenditure_share date".split()
+
+    stmt = """
+        select
+            total_receipts - (loan_repayments + refunds_to_individuals + refunds_to_committees),
+            individual_contributions - refunds_to_individuals,
+            contributions_from_other_committees,
+            transfers_from_affiliates,
+            nonfederal_transfers_received,
+            total_loans_received,
+            total_disbursements,
+            cash_close_of_period,
+            debts_owed,
+            contributions_to_committees,
+            independent_expenditures_made, 
+            party_coordinated_expenditures_made, 
+            nonfederal_expenditure_share,
+            through_date
+        from fec_committee_summaries c
+        inner join matchbox_entityattribute a on c.committee_id = a.value and a.namespace = 'urn:fec:committee'
+        where
+            a.entity_id = %s
+    """
+
+
 class CandidateStateHandler(PieHandler):
     
     args = ['entity_id']

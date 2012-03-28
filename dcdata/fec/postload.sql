@@ -16,16 +16,16 @@ create index fec_candidates_candidate_id on fec_candidates (candidate_id);
 
 drop table if exists fec_indiv;
 create table fec_indiv as
-select fec_record, filer_id, amendment, transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
+select fec_record, filer_id, amendment, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
     regexp_replace(occupation, '/[^/]*$', '') as organization, regexp_replace(occupation, '^.*/', '') as occupation,
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
-    overpunch(amount) as amount
+    case when transaction_type = '22Y' then -abs(overpunch(amount)) else overpunch(amount) end as amount
 from fec_indiv_import;
 create index fec_indiv_filer_id on fec_indiv (filer_id);
 
 drop table if exists fec_pac2cand;
 create table fec_pac2cand as
-select fec_record, filer_id, transaction_type, 
+select fec_record, filer_id, lower(transaction_type) as transaction_type, 
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount,
     other_id, candidate_id
@@ -35,7 +35,7 @@ create index fec_pac2cand_other_id on fec_pac2cand (other_id);
 
 drop table if exists fec_pac2pac;
 create table fec_pac2pac as
-select fec_record, filer_id, transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
+select fec_record, filer_id, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount,
     other_id
@@ -54,8 +54,26 @@ from fec_candidate_summaries_import;
 
 create index fec_candidate_summaries_candidate_id on fec_candidate_summaries (candidate_id);
 
+drop table if exists fec_committee_summaries;
+create table fec_committee_summaries as
+select committee_id, committee_name, committee_type, committee_designation, filing_frequency, 
+    (through_year || through_month || through_day)::date as through_date,
+    total_receipts, transfers_from_affiliates, individual_contributions, 
+    contributions_from_other_committees, 
+    total_loans_received, total_disbursements, transfers_to_affiliates,
+    refunds_to_individuals, refunds_to_committees, 
+    loan_repayments, cash_beginning_of_year, cash_close_of_period,
+    debts_owed, nonfederal_transfers_received, contributions_to_committees,
+    independent_expenditures_made, party_coordinated_expenditures_made, nonfederal_expenditure_share
+from fec_committee_summaries_import
+where
+    -- there are a number of data-less rows. Discard them by looking for valid date.
+    through_year != 0;
+create index fec_committee_summaries_committee_id on fec_committee_summaries (committee_id);
 
-create view agg_fec_candidate_rankings as
+
+drop table if exists agg_fec_candidate_rankings;
+create table agg_fec_candidate_rankings as
 select candidate_id, substring(race for 1) as race,
     rank() over (partition by substring(race for 1) order by total_receipts desc) as total_receipts_rank,
     rank() over (partition by substring(race for 1) order by ending_cash desc) as cash_on_hand_rank,
@@ -141,40 +159,3 @@ create index fec_committee_itemized_candidate_id on fec_candidate_itemized (cand
 -- alter table fec_pac2cand add constraint fec_pac2cand_filer_id foreign key (filer_id) references fec_committees (committee_id);
 -- alter table fec_pac2pac add constraint fec_pac2pac_filer_id foreign key (filer_id) references fec_committees (committee_id);
 
-
--- used only in the "One Percent of One Percent" project
--- alter table fec_pac_summaries add column cycle integer;
--- insert into fec_pac_summaries
---     select *, 2010 from fec_pac_summaries_10
---     union all    
---     select *, 2008 from fec_pac_summaries_08
---     union all
---     select *, 2006 from fec_pac_summaries_06
---     union all
---     select *, 2004 from fec_pac_summaries_04
---     union all
---     select *, 2002 from fec_pac_summaries_02
---     union all
---     select *, 2000 from fec_pac_summaries_00
---     union all
---     select *, 1998 from fec_pac_summaries_98
---     union all
---     select *, 1996 from fec_pac_summaries_96;
---     
--- alter table fec_candidate_summaries add column cycle integer;
--- insert into fec_candidate_summaries
---     select *, 2010 from fec_candidate_summaries_10
---     union all
---     select *, 2008 from fec_candidate_summaries_08
---     union all
---     select *, 2006 from fec_candidate_summaries_06
---     union all
---     select *, 2004 from fec_candidate_summaries_04
---     union all
---     select *, 2002 from fec_candidate_summaries_02
---     union all
---     select *, 2000 from fec_candidate_summaries_00
---     union all
---     select *, 1998 from fec_candidate_summaries_98
---     union all
---     select *, 1996 from fec_candidate_summaries_96;

@@ -23,7 +23,7 @@ from dcapi.aggregates.epa.handlers import TopViolationActionsHandler
 from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
     RegulationsSubmitterHandler, RegulationsDocketTextHandler, \
     RegulationsDocketSubmitterHandler
-from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CandidateStateHandler, \
+from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSummaryHandler, CandidateStateHandler, \
     CandidateTimelineHandler, CandidateItemizedDownloadHandler, CommitteeItemizedDownloadHandler, \
     CommitteeTopContribsHandler
 from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler, \
@@ -217,6 +217,9 @@ urlpatterns = patterns('',
     
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
         Resource(CandidateSummaryHandler, **ad)),
+        
+    url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
+        Resource(CommitteeSummaryHandler, **ad)),
         
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_local_breakdown\.(?P<emitter_format>.+)$',
         Resource(CandidateStateHandler, **ad)),
