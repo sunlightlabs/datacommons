@@ -67,10 +67,10 @@ union all
 
 drop table if exists fec_indiv_allcycles;
 create table fec_indiv_allcycles as
-select cycle, fec_record, filer_id, amendment, transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
+select cycle, fec_record, filer_id, amendment, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
     regexp_replace(occupation, '/[^/]*$', '') as organization, regexp_replace(occupation, '^.*/', '') as occupation,
-    attempt_date(transaction_century || transaction_year || transaction_month || transaction_day) as date,
-    overpunch(amount) as amount
+    attempt_date((transaction_century || transaction_year || transaction_month || transaction_day)) as date,
+    case when transaction_type = '22Y' then -abs(overpunch(amount)) else overpunch(amount) end as amount
 from fec_indiv_allcycles_import;
 create index fec_indiv_allcycles_filer_id on fec_indiv_allcycles (filer_id);
 
@@ -92,7 +92,7 @@ union all
 
 drop table if exists fec_pac2cand_allcycles;
 create table fec_pac2cand_allcycles as
-select cycle, fec_record, filer_id, transaction_type, 
+select fec_record, filer_id, lower(transaction_type) as transaction_type, 
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount,
     other_id, candidate_id
@@ -120,7 +120,7 @@ union all
 
 drop table if exists fec_pac2pac_allcycles;
 create table fec_pac2pac_allcycles as
-select cycle, fec_record, filer_id, transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
+select fec_record, filer_id, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount,
     other_id

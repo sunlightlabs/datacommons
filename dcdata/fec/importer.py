@@ -85,7 +85,7 @@ class FECImporter():
 
     def extract(self):
         for conf in self.FEC_CONFIG:
-            subprocess.check_call(['unzip', '-oqu', self._working_dir(conf), "-d" + os.path.dirname(self._working_dir(conf))])
+            subprocess.check_call(['unzip', '-oqu', self._download_file(conf), "-d" + self._working_dir(conf)])
 
 
     def fix_unicode(self):
@@ -121,5 +121,4 @@ class FECImporter():
             infile = open(os.path.join(self._working_dir(conf), conf.dta_file.split(".")[0] + ".csv"), 'r')
             c.execute("DELETE FROM %s" % conf.sql_table)
             c.copy_expert("COPY %s FROM STDIN CSV HEADER" % conf.sql_table, infile)
-
 
