@@ -92,7 +92,7 @@ union all
 
 drop table if exists fec_pac2cand_allcycles;
 create table fec_pac2cand_allcycles as
-select fec_record, filer_id, lower(transaction_type) as transaction_type, 
+select cycle, fec_record, filer_id, lower(transaction_type) as transaction_type, 
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount,
     other_id, candidate_id
@@ -120,7 +120,7 @@ union all
 
 drop table if exists fec_pac2pac_allcycles;
 create table fec_pac2pac_allcycles as
-select fec_record, filer_id, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
+select cycle, fec_record, filer_id, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
     (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
     overpunch(amount) as amount,
     other_id
