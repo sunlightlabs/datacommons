@@ -138,7 +138,7 @@ class MatchingCommand(BaseCommand):
         except KeyboardInterrupt:
             transaction.commit()
             print '\nTo resume, run:'
-            print './manage.py {0} -b {1} -t {2}'.format(self.__module__.split('.')[-1], begin_at+i, table)
+            print './manage.py {0} -b {1} -t {2}{3}'.format(self.__module__.split('.')[-1], begin_at+i, table, ' -n' if options['insert_non_matches'] else '')
 
         print 'Done. Find your results in {0}.'.format(table)
 

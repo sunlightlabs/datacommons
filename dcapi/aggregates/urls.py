@@ -3,8 +3,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
     SectorsHandler, IndustriesHandler, UnknownIndustriesHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
-    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, SparklineHandler, \
-    SparklineByPartyHandler, TopPoliticiansByReceiptsHandler,  \
+    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, TopPoliticiansByReceiptsHandler,  \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler, OrgPACRecipientsHandler
@@ -46,12 +45,6 @@ ad = { 'authentication': PistonKeyAuthentication() }
 
 
 urlpatterns = patterns('',
-
-    url(r'^(pol|org|indiv)/(?P<entity_id>[a-f0-9]{32})/sparkline_by_party.(?P<emitter_format>.+)$',
-        Resource(SparklineByPartyHandler, **ad)),
-
-    url(r'^(pol|org|indiv)/(?P<entity_id>[a-f0-9]{32})/sparkline.(?P<emitter_format>.+)$',
-        Resource(SparklineHandler, **ad)),
 
     # amount contributed by one entity to another
     url(r'^recipient/(?P<recipient_entity>[a-f0-9]{32})/contributor/(?P<contributor_entity>[a-f0-9]{32})/amount.(?P<emitter_format>.+)$',

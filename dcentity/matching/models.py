@@ -58,6 +58,18 @@ class Fortune100Company(models.Model):
         db_table = 'fortune_100'
 
 
+class PublicCompany(models.Model):
+    name = models.CharField(max_length=100)
+    gvkey = models.IntegerField()
+    ticker = models.CharField(max_length=10, null=True)
+    naics = models.IntegerField(null=True)
+    sic = models.IntegerField(null=True)
+    state = models.CharField(max_length=2, null=True)
+
+    class Meta:
+        db_table = 'public_company'
+
+
 class MemberOfCongressWithBioguide(models.Model):
     bioguide_id = models.CharField(max_length=12)
     first_name = models.CharField(max_length=50)

@@ -213,7 +213,7 @@ def build_pie_table(table, source, primary, features, measures):
 'agg_contributor_type_to_politician'
 
 
-### also: associations, views, totals, sparklines... ###
+### also: associations, views, totals... ###
 
 COUNT = dict(count='count(*)')
 AMOUNT = dict(amount='sum(amount)')
