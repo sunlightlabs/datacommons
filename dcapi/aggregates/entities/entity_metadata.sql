@@ -3,8 +3,9 @@
 
 -- Organization Metadata
 
+
 begin;
-create temp table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
+create table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
 insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
     select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id) where cycle != -1
@@ -88,35 +89,41 @@ where
 
 
 update
-    tmp_matchbox_organizationmetadata as tmp
+    tmp_matchbox_organizationmetadata as om
 set
-    industry_entity_id = x.industry_entity_id
+    (industry_entity_id, subindustry_entity_id) = (x.industry_entity_id, x.subindustry_entity_id)
 from (
     select distinct on (o.entity_id, c.cycle)
         o.entity_id,
         c.cycle,
-        i.entity_id as industry_entity_id
+        industry.entity_id as subindustry_entity_id,
+        sub_industry.entity_id as industry_entity_id
     from
         organization_associations o
         inner join industry_associations i using (transaction_id)
         inner join contributions_all_relevant c using (transaction_id)
-        inner join matchbox_entityattribute ea on ea.entity_id = i.entity_id
+        inner join matchbox_entityattribute sub_industry on sub_industry.entity_id = i.entity_id
+        inner join agg_cat_map acm on acm.catcode = sub_industry.value
+        inner join matchbox_entityattribute industry on industry.value = acm.catorder
     where
-        ea.namespace in ('urn:crp:industry', 'urn:nimsp:industry')
+        sub_industry.namespace = 'urn:crp:subindustry'
+        and industry.namespace = 'urn:crp:industry'
     group by
-        o.entity_id, c.cycle, i.entity_id
+        o.entity_id, c.cycle, industry.entity_id, sub_industry.entity_id
     order by
         o.entity_id, c.cycle, count(distinct i.transaction_id) desc
 ) x
 where
-    tmp.entity_id = x.entity_id
-    and tmp.cycle = x.cycle
+    om.entity_id = x.entity_id
+    and om.cycle = x.cycle
 ;
+commit;
+
 
 delete from matchbox_organizationmetadata;
 
-insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id)
-    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id from tmp_matchbox_organizationmetadata;
+insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id)
+    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id from tmp_matchbox_organizationmetadata;
 
 commit;
 
@@ -125,6 +132,7 @@ vacuum matchbox_organizationmetadata;
 begin;
 analyze matchbox_organizationmetadata;
 commit;
+
 
 
 -- Politician Metadata
