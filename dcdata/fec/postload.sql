@@ -143,8 +143,11 @@ inner join (
     select filer_id, 'pac', contributor_name, other_id,
         city, state, zipcode, '', occupation,
         date, amount, transaction_type
-    from fec_pac2pac) i using (committee_id);
-create index fec_committee_itemized_candidate_id on fec_candidate_itemized (candidate_id);
+    from fec_pac2pac) i using (committee_id)
+where
+    -- only transaction types 10-19 are money coming in. 20-29 are money going out, which we're not interested in here.
+    substring(transaction_type for 2)::integer between 10 and 19;
+create index fec_committee_itemized_committee_id on fec_committee_itemized (committee_id);
 
 
 
