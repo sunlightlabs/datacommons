@@ -96,8 +96,8 @@ from (
     select distinct on (o.entity_id, c.cycle)
         o.entity_id,
         c.cycle,
-        industry.entity_id as subindustry_entity_id,
-        sub_industry.entity_id as industry_entity_id
+        industry.entity_id as industry_entity_id,
+        sub_industry.entity_id as subindustry_entity_id
     from
         organization_associations o
         inner join industry_associations i using (transaction_id)
