@@ -42,7 +42,7 @@ class ContractsFilterHandler(FilterHandler):
     fields.remove('imported_on')
 
 
-    ordering = ['-fiscal_year','-baseandexercisedoptionsvalue']
+    ordering = ['-fiscal_year','-obligatedamount']
     filename = 'contracts'
         
     def queryset(self, params):
