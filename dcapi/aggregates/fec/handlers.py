@@ -34,24 +34,26 @@ class CandidateSummaryHandler(EntitySingletonHandler):
 class CommitteeSummaryHandler(EntitySingletonHandler):
 
     args = ['entity_id']    
-    fields = "total_raised contributions_from_indiv contributions_from_pacs transfers_from_affiliates nonfederal_transfers_received loans_received disbursements cash_on_hand debts contributions_to_committees independent_expenditures_made party_coordinated_expenditures_made nonfederal_expenditure_share date".split()
+    fields = "total_raised contributions_from_indiv contributions_from_pacs transfers_from_affiliates nonfederal_transfers_received loans_received disbursements cash_on_hand debts contributions_to_committees independent_expenditures_made party_coordinated_expenditures_made nonfederal_expenditure_share first_filing_date last_filing_date num_committee_filings".split()
 
     stmt = """
         select
-            total_receipts - (loan_repayments + refunds_to_individuals + refunds_to_committees),
-            individual_contributions - refunds_to_individuals,
-            contributions_from_other_committees,
-            transfers_from_affiliates,
-            nonfederal_transfers_received,
-            total_loans_received,
-            total_disbursements,
-            cash_close_of_period,
-            debts_owed,
-            contributions_to_committees,
-            independent_expenditures_made, 
-            party_coordinated_expenditures_made, 
-            nonfederal_expenditure_share,
-            through_date
+            sum(total_receipts - (loan_repayments + refunds_to_individuals + refunds_to_committees)),
+            sum(individual_contributions - refunds_to_individuals),
+            sum(contributions_from_other_committees),
+            sum(transfers_from_affiliates),
+            sum(nonfederal_transfers_received),
+            sum(total_loans_received),
+            sum(total_disbursements),
+            sum(cash_close_of_period),
+            sum(debts_owed),
+            sum(contributions_to_committees),
+            sum(independent_expenditures_made), 
+            sum(party_coordinated_expenditures_made), 
+            sum(nonfederal_expenditure_share),
+            min(through_date),
+            max(through_date),
+            count(*)
         from fec_committee_summaries c
         inner join matchbox_entityattribute a on c.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
@@ -144,12 +146,12 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
     args = ['entity_id']
     fields = "contributor_name date amount contributor_type contributor_committee_id transaction_type \
                 organization occupation city state zipcode \
-                committee_name committee_designation committee_type committee_party interest_group connected_org".split()
+                committee_name committee_id committee_designation committee_type committee_party interest_group connected_org".split()
 
     stmt = """
         select contributor_name, date, amount, contributor_type, contributor_committee_id, transaction_type,
                     organization, occupation, city, state, zipcode,
-                    committee_name, committee_designation, committee_type, committee_party, interest_group, connected_org
+                    committee_name, committee_id, committee_designation, committee_type, committee_party, interest_group, connected_org
         from fec_committee_itemized i
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
@@ -160,15 +162,16 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 class CommitteeTopContribsHandler(EntityTopListHandler):
 
     args = ['entity_id', 'limit']
-    fields = "contributor_name count amount".split()
+    fields = "contributor_name transaction_type count amount".split()
 
     stmt = """
-        select contributor_name, count(*), sum(amount)
+        select contributor_name, transaction_type, count(*), sum(amount)
         from fec_committee_itemized i
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
             a.entity_id = %s
-        group by contributor_name
+            and transaction_type in ('10', '11', '15', '15e', '15j', '22y')
+        group by contributor_name, transaction_type
         order by sum(amount) desc
         limit %s
     """
