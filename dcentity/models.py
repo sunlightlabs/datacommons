@@ -213,13 +213,14 @@ class OrganizationMetadata(ExtensibleModel):
     extended_properties = ['parent_entity', 'child_entities']
     # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
 
-    entity = models.ForeignKey(Entity, related_name='organization_metadata_by_cycle', null=False)
+    entity = models.ForeignKey(Entity, related_name='organization_metadata_by_cycle', null=False, db_index=True)
 
-    cycle = models.PositiveSmallIntegerField()
+    cycle = models.PositiveSmallIntegerField(db_index=True)
 
     lobbying_firm   = models.BooleanField(default=False)
-    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True)
-    industry_entity = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True)
+    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True, db_index=True)
+    industry_entity = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True, db_index=True)
+    subindustry_entity = models.ForeignKey(Entity, related_name='subindustry_entity_for_cycle', null=True, db_index=True)
 
     @property
     def child_entities(self):

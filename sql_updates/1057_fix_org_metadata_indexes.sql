@@ -1,0 +1,6 @@
+create index matchbox_organizationmetadata__entity_id on matchbox_organizationmetadata (entity_id);
+create index matchbox_organizationmetadata__cycle on matchbox_organizationmetadata (cycle);
+create unique index matchbox_organizationmetadata__entity_id__cycle_unq on matchbox_organizationmetadata (entity_id, cycle);
+drop index matchbox_organizationmetadata_entity_id_key ;
+create index matchbox_organizationmetadata__subindustry_entity_id on matchbox_organizationmetadata (subindustry_entity_id);
+
