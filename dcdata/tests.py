@@ -30,7 +30,7 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
 from saucebrush.sources import CSVSource
-from settings import LOADING_DIRECTORY
+from settings import PROJECT_ROOT
 from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
 from updates import edits, update
@@ -43,7 +43,7 @@ import sys
 
 
 
-dataroot = os.path.join(LOADING_DIRECTORY, 'test_data')
+dataroot = os.path.join(PROJECT_ROOT, 'dcdata', 'test_data')
 
 def assert_record_contains(tester, expected, actual):
     for (name, value) in expected.iteritems():
@@ -52,12 +52,13 @@ def assert_record_contains(tester, expected, actual):
 
 
 class TestRecipientFilter(TestCase):
+    
+    candidates = load_candidates(dataroot)
+    committees = load_committees(dataroot)
 
     @attr('crp')
     def test(self):
-        processor = CRPDenormalizeIndividual.get_record_processor((),
-                                                                  load_candidates(dataroot),
-                                                                  load_committees(dataroot))
+        processor = CRPDenormalizeIndividual.get_record_processor((), self.candidates, self.committees)
 
         input_row = ["2008","0000011","i3003166469 ","ADAMS, KENT","N00005985","Adams & Boswell","","K1000",
                         "12/11/2006","1000","PO  12523","BEAUMONT","TX","77726","RN","15 ","C00257402","","M",
@@ -72,7 +73,7 @@ class TestRecipientFilter(TestCase):
                                       'recipient_type': 'politician',
                                       'recipient_ext_id': 'N00005985',
                                       'seat_status': ' ',
-                                      'seat_result': None,
+                                      'seat_result': '',
                                       'recipient_state': 'TX',
                                       'seat': 'federal:house',
                                       'district': 'TX-23'},
@@ -91,7 +92,7 @@ class TestRecipientFilter(TestCase):
                                       'recipient_party': '',
                                       'recipient_type': 'committee',
                                       'recipient_ext_id': 'C00030718',
-                                      'seat_result': None},
+                                      'seat_result': ''},
                                        output_record)
 
         input_row = ["2010","1087969","U00000034611","ROTHSCHILD, STANFORD  Z","C00420174",
@@ -105,6 +106,147 @@ class TestRecipientFilter(TestCase):
 
         assert_record_contains(self, {'recipient_category': 'Z4100' }, output_record)
 
+
+    def test_single_denormalization(self, filetype, input, expected_output):
+        if filetype == 'indivs':
+            processor = CRPDenormalizeIndividual.get_record_processor((), self.candidates, self.committees)
+        elif filetype == 'pacs':
+            processor = CRPDenormalizePac2Candidate.get_record_processor((), self.candidates, self.committees)
+        elif filetype == 'pacs_other':
+            processor = CRPDenormalizePac2Pac.get_record_processor((), self.candidates, self.committees)
+        else:
+            self.assertFail()
+            
+        self.assertEqual(len(FILE_TYPES[filetype]), len(input))
+        (output_record,) = processor(dict(zip(FILE_TYPES[filetype], input)))
+        
+        assert_record_contains(self, expected_output, output_record)
+
+    @attr('crp')
+    @attr('crp_recip_test')
+    def test_multiple_committees(self):
+        obama_presidential_output = {
+            'recipient_name': 'Barack Obama (D)',
+            'recipient_party': 'D',
+            'recipient_type': 'P',
+            'recipient_ext_id': 'N00009638',
+            'recipient_category': 'Z1200',
+            'seat_status': 'O',
+            'seat_result': 'W',
+            'recipient_state': '',
+            'recipient_state_held': 'IL',
+            'district': '',
+            'district_held': '',
+            'seat': 'federal:president',
+            'seat_held': 'federal:senate',
+        }
+    
+        obama_senate_output = {
+            'recipient_name': 'Barack Obama (D)',
+            'recipient_party': 'D',
+            'recipient_type': 'P',
+            'recipient_ext_id': 'N00009638',
+            'recipient_category': 'Z1200',
+            'seat_status': 'O',
+            'seat_result': '',
+            'recipient_state': 'IL',
+            'recipient_state_held': 'IL',
+            'district': '',
+            'district_held': '',
+            'seat': 'federal:senate',
+            'seat_held': 'federal:senate',
+        }
+        
+        obama_joint_committee_output = {
+            'recipient_name': 'Obama Victory Fund',
+            'recipient_party': 'D',
+            'recipient_type': 'C',
+            'recipient_ext_id': 'C00451393',
+            'recipient_category': 'Z4200',
+            'seat_status': '',
+            'seat_result': '',
+            'recipient_state': '',
+            'recipient_state_held': '',
+            'district': '',
+            'district_held': '',
+            'seat': '',
+            'seat_held': '',
+        }
+        
+        # Indiv to Obama's Presidential Campaign
+        self.test_single_denormalization(
+            'indivs',
+            ["2008","0122915","j1001132124 ","ABRAHAM, ZENNIE","N00009638","Sports Business Simulations","","Y4000","03/31/2007","1000","375 Van Buren Ave 19","OAKLAND","CA","94610","DW","15 ","C00431445","","U","","27930593447","","","     "],
+            obama_presidential_output
+        )
+
+        # Indiv to Obama's Senate Campaign
+        self.test_single_denormalization(
+            'indivs',
+            ["2008","0187565","i3003206205 ","CARY, LAURA H","N00009638","Retired","","J1200","01/16/2007","1400","","SHELBURNE","VT","05482","DW","15 ","C00411934","","F","N/A/RETIRED","27020123473","","","I/PAC"],
+            obama_senate_output
+        )
+ 
+        # Indiv to Obama Victory Fund. NOT candidate Obama
+        self.test_single_denormalization(
+            'indivs',
+            ["2008","2532238","i30038406641","BAROKAS, LARRY L MR","C00451393","Attorney","","K1000","06/30/2008","2000","6220 78th Ave SE","MERCER ISLAND","WA","98040","DP","15 ","C00451393","","M","SELF-EMPLOYED/ATTORNEY","28932320278","Attorney","Self-employed","Gen  "],
+            obama_joint_committee_output
+        )
+
+        # PAC to Obama's Presidential run
+        self.test_single_denormalization(
+            'pacs',
+            ["2008","3477813","C00419986","N00009638","270","09/05/2008","Z5200","24K","D","P80003338"],
+            obama_presidential_output
+        )
+        
+        # PAC to Obama's Senate run
+        self.test_single_denormalization(
+            'pacs',
+            ["2008","2915130","C00287904","N00009638","2300","07/30/2008","Z1200","24K","D","S4IL00180"],
+            obama_senate_output
+        )
+        
+        # pac2pac with Obama Presidential candidate ID recipient
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","3495910","C30000673","Focus on the Family","KVOR-AM","Colorado Springs","CO","80919","","J1110","10/23/2008","6345.0","N00009638","D","P80003338","DW","Z1200","N","   ","P","28934172534","29 ","J1110","PAC  "],
+            obama_presidential_output
+        )
+
+        # pac2pac with Obama Presidential committee ID recipient (filer)
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","0843761","C00431445","M-PAC","M Pac","Birmingham","IL","35203","","J2100","07/09/2007","500.0","N00009638","D","C00365270","DW","Z1200","A","Q3 ","P","27931430697","18K","J2100","PAC  "],
+            obama_presidential_output
+        )
+        
+        # pac2pac with Obama joint committee recipient (filer)
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","3327614","C00451393","Obama for America","America, Obama For","Las Vegas","NV","89169","","Z1200","10/09/2008","337.0","C00451393","D","C00431445","DP","Z4200","N","12G","P","28992933066","18G","Z1200","PAC  "],
+            obama_joint_committee_output
+        )
+
+        # pac2pac with Obama Presidential committee ID recipient (donor filed)
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","4149277","C00239947","Harrah's Entertainment","Obama Victory Fund","Washington","DC","20003","","G6500","10/27/2008","5000.0","C00451393","D","C00451393","DP","Z4200","N","30G","P","28934752363","24K","G6500","PAC  "],
+            obama_presidential_output
+        )
+
+        # pac2pac with Obama joint committe recipient (donor filed)
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","4155934","C00439984","Ojai Valley Democratic Club","Obama Victory Fund","Los Angeles","CA","90067","","J1200",10/29/2008,4000.0,"C00451393","D","C00451393","DP","Z4200","N","30G","P","28934796639","24K","J1200","PAC  "],
+            obama_joint_committee_output
+        )
+
+        
+        # todo: need test to distinguish that Obama Victory Fund shouldn't be considered Obama's presidential campaign,
+        # while Obama For America is.
+        # this is based on RecipID=CmteID for Obama Victory Fund, rather than RecipID=CandID, as is case for Obama For America
 
 
 class TestNIMSPDenormalize(TestCase):
@@ -194,7 +336,7 @@ class TestNIMSPDenormalize(TestCase):
 
         load_data(source, processor, output.append)
 
-        assert_record_contains(self, {'contributor_type': 'individual', 'organization_name': "Adams & Boswell"}, output[0])
+        assert_record_contains(self, {'contributor_type': 'I', 'organization_name': "Adams & Boswell"}, output[0])
 
         input_string = '"3327568","341.66","2006-11-07","Kent Adams","Kent Adams","MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","A1000","0","0","0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
 
@@ -205,7 +347,7 @@ class TestNIMSPDenormalize(TestCase):
 
         load_data(source, processor, output.append)
 
-        assert_record_contains(self, {'contributor_type': 'committee', 'organization_name': "Kent Adams"}, output[0])
+        assert_record_contains(self, {'contributor_type': 'C', 'organization_name': "Kent Adams"}, output[0])
 
 
 class TestCRPDenormalizeAll(TestCase):
@@ -277,7 +419,7 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(set(model_fields('contribution.Contribution')), set(output_records[0].keys()))
 
 class TestCRPDenormalizePac2Candidate(TestCase):
-    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2cand.txt')
+    output_path = os.path.join(dataroot , 'denormalized/denorm_pac2cand.txt')
 
     @attr('crp')
     def test_command(self):
