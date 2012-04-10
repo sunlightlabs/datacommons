@@ -63,7 +63,7 @@ class RecipientFilter(Filter):
         if candidate:
             record['recipient_name'] = candidate['first_last_p']
             record['recipient_party'] = candidate['party']
-            record['recipient_type'] = 'politician'
+            record['recipient_type'] = 'P'
             record['recipient_ext_id'] = candidate['cid']
             record['seat_status'] = candidate['crp_ico']
             record['seat_result'] = RecipientFilter.get_recip_code_result(candidate['recip_code'])
@@ -118,7 +118,7 @@ class RecipientFilter(Filter):
         if committee:
             record['recipient_name'] = committee['pac_short']
             record['recipient_party'] = committee['party']
-            record['recipient_type'] = 'committee'
+            record['recipient_type'] = 'C'
             record['seat_result'] = RecipientFilter.get_recip_code_result(committee['recip_code'])
             record['recipient_ext_id'] = committee['cmte_id']
             record['recipient_category'] = committee['prim_code']
