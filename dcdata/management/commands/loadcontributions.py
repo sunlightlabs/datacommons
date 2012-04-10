@@ -17,35 +17,7 @@ import os
 import saucebrush
 import sys
 import traceback
-
-
-
-# todo: we should just change the denormalize scripts to put the proper value in these fields
-class ContributorFilter(Filter):
-    type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
-    def process_record(self, record):
-        record['contributor_type'] = self.type_mapping.get(record['contributor_type'], '')
-        return record
-
-class OrganizationFilter(Filter):
-    def process_record(self, record):
-        return record
-
-class ParentOrganizationFilter(Filter):
-    def process_record(self, record):
-        return record
-
-# todo: we should just change the denormalize scripts to put the proper value in these fields
-class RecipientFilter(Filter):
-    type_mapping = {'politician': 'P', 'committee': 'C'}
-    def process_record(self, record):
-        record['recipient_type'] = self.type_mapping.get(record['recipient_type'], '')
-        return record
-
-class CommitteeFilter(Filter):    
-    def process_record(self, record):
-        return record
-    
+ 
     
 class UnicodeFilter(Filter):
     def __init__(self, method='replace'):
@@ -130,12 +102,6 @@ class LoadContributions(BaseCommand):
                 FieldModifier(['date'], parse_date),
                 BooleanFilter('is_amendment'),
                 UnicodeFilter(),
-                
-                ContributorFilter(),
-                OrganizationFilter(),
-                ParentOrganizationFilter(),
-                RecipientFilter(),
-                CommitteeFilter(),
                 
                 StringLengthFilter(Contribution))
     

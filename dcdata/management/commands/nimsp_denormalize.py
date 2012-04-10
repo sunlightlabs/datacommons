@@ -161,10 +161,10 @@ class IdsFilter(Filter):
             error(record, 'record has both candidate and committee ids. unhandled.')
             return record
         elif record['candidate_id']:
-            record['recipient_type'] = 'politician'
+            record['recipient_type'] = 'P'
             record['recipient_ext_id'] = record['unique_candidate_id'] if record['unique_candidate_id'] and record['unique_candidate_id'] not in ('', '0') else None
         elif record['committee_id']:
-            record['recipient_type'] = 'committee'
+            record['recipient_type'] = 'C'
             record['recipient_ext_id'] = record['committee_ext_id'] = record['committee_id']
 
         # Contributor
@@ -192,11 +192,11 @@ class ContributorTypeFilter(Filter):
             record['contributor_type'] = None
         elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) \
                 or (record['contributor_name'] and ',' not in record['contributor_name']):
-            record['contributor_type'] = 'committee'
+            record['contributor_type'] = 'C'
         else:
-            record['contributor_type'] = 'individual'
+            record['contributor_type'] = 'I'
 
-        if record['contributor_type'] == 'committee':
+        if record['contributor_type'] == 'C':
             if not record['organization_name']:
                 record['organization_name'] = record['contributor_name']
             if not record.get('organization_ext_id'):

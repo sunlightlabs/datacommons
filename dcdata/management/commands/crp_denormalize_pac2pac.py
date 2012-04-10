@@ -92,7 +92,7 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
                           'recipient_party': 'party',}),
             FieldModifier('contributor_state', lambda s: s.strip().upper() if s else ""),
 
-            FieldAdder('contributor_type', 'committee'),
+            FieldAdder('contributor_type', 'C'),
 
 
             # add static fields

@@ -54,7 +54,7 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             # contributor and recipient fields
             ContributorFilter(committees),
             FieldRenamer({'contributor_ext_id': 'pac_id'}),
-            FieldAdder('contributor_type', 'committee'),
+            FieldAdder('contributor_type', 'C'),
 
             Pac2CandRecipientFilter(candidates),
             FieldAdder('recipient_type', 'politician'),

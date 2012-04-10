@@ -113,7 +113,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
                 CatCodeFilter('contributor', catcodes),
         
                 # add static fields
-                FieldAdder('contributor_type', 'individual'),
+                FieldAdder('contributor_type', 'I'),
                 FieldAdder('is_amendment', False),
         
                 FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: "" if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),
