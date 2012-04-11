@@ -17,7 +17,8 @@ class Pac2CandRecipientFilter(RecipientFilter):
 
     def process_record(self, record):
         candidate = self._candidates.get('%s:%s' % (record['cycle'], record['fec_cand_id'].upper()), "")
-        self.add_candidate_recipient(record, candidate, None)
+        if candidate:
+            self.add_candidate_recipient(record, candidate, None)
         return record
 
 class ContributorFilter(Filter):

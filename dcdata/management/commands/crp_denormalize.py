@@ -25,10 +25,11 @@ class RecipientFilter(Filter):
         # cmte_id != recip_id indicates a candidate committee
         if committee['cmte_id'] != committee['recip_id']:
             candidate = self._candidates.get('%s:%s' % (record['cycle'], committee['fec_cand_id'].strip().upper()), None)
-            self.add_candidate_recipient(record, candidate, committee)
-        else:
-            self.add_committee_recipient(record, committee)
-        
+            if candidate:
+                self.add_candidate_recipient(record, candidate, committee)
+                return record
+                
+        self.add_committee_recipient(record, committee)    
         return record
 
 
