@@ -66,7 +66,17 @@ class CommitteeFilter(Filter):
             record['committee_name'] = ''
             record['committee_party'] = ''
         return record
- 
+
+class IndivRecipientFilter(RecipientFilter):
+    def __init__(self, candidates, committees):
+        super(IndivRecipientFilter, self).__init__(candidates, committees)
+
+    def process_record(self, record):
+        committee = self._committees.get('%s:%s' % (record['cycle'], record['cmte_id'].strip().upper()), None)
+        if committee:
+            self.add_recipient(record, committee)
+        return record
+
 
 class CRPDenormalizeIndividual(CRPDenormalizeBase):
 
@@ -90,7 +100,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
                 FieldRenamer({'contributor_name': 'contrib',
                           'parent_organization_name': 'ult_org',}),
          
-                RecipientFilter(candidates, committees),
+                IndivRecipientFilter(candidates, committees),
                 CommitteeFilter(committees),
                 OrganizationFilter(),
         

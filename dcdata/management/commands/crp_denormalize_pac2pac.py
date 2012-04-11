@@ -56,8 +56,25 @@ class ContribRecipFilter(Filter):
         return record
 
 
+class Pac2PacRecipientFilter(RecipientFilter):
+    def __init__(self, candidates, committees):
+        super(Pac2PacRecipientFilter, self).__init__(candidates, committees)
 
-
+    def process_record(self, record):
+        if record['type'].startswith('1'): # filer is recipient
+            committee = self._committees.get('%s:%s' % (record['cycle'], record['filer_id'].strip().upper()), None)
+            self.add_recipient(record, committee)    
+        else: # transaction type starts with 2: filer is donor, use other_id for recipient
+            id = record['other_id'].strip().upper()
+            if id.startswith('C'):
+                committee = self._committees.get('%s:%s' % (record['cycle'], id), None)
+                self.add_recipient(record, committee)
+            else:
+                candidate = self._candidates.get('%s:%s' % (record['cycle'], id), None)
+                self.add_candidate_recipient(record, candidate, None)
+        
+        return record
+        
 
 class CRPDenormalizePac2Pac(CRPDenormalizeBase):
 
@@ -68,7 +85,7 @@ class CRPDenormalizePac2Pac(CRPDenormalizeBase):
 
             ContribRecipFilter(),
             CommitteeFilter(committees),
-            RecipientFilter(candidates, committees),
+            Pac2PacRecipientFilter(candidates, committees),
 
             # transaction filters
             FieldAdder('transaction_namespace', CRP_TRANSACTION_NAMESPACE),

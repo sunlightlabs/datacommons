@@ -9,6 +9,8 @@ from dcdata.management.commands.crp_denormalize import load_candidates, \
     load_committees
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
+from dcdata.management.commands.crp_denormalize_pac2candidate import CRPDenormalizePac2Candidate
+from dcdata.management.commands.crp_denormalize_pac2pac import CRPDenormalizePac2Pac
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
 from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, \
@@ -70,7 +72,7 @@ class TestRecipientFilter(TestCase):
 
         assert_record_contains(self, {'recipient_name': 'Henry Bonilla (R)',
                                       'recipient_party': 'R',
-                                      'recipient_type': 'politician',
+                                      'recipient_type': 'P',
                                       'recipient_ext_id': 'N00005985',
                                       'seat_status': ' ',
                                       'seat_result': '',
@@ -90,7 +92,7 @@ class TestRecipientFilter(TestCase):
 
         assert_record_contains(self, {'recipient_name': 'National Assn of Realtors',
                                       'recipient_party': '',
-                                      'recipient_type': 'committee',
+                                      'recipient_type': 'C',
                                       'recipient_ext_id': 'C00030718',
                                       'seat_result': ''},
                                        output_record)
@@ -112,7 +114,7 @@ class TestRecipientFilter(TestCase):
             processor = CRPDenormalizeIndividual.get_record_processor((), self.candidates, self.committees)
         elif filetype == 'pacs':
             processor = CRPDenormalizePac2Candidate.get_record_processor((), self.candidates, self.committees)
-        elif filetype == 'pacs_other':
+        elif filetype == 'pac_other':
             processor = CRPDenormalizePac2Pac.get_record_processor((), self.candidates, self.committees)
         else:
             self.assertFail()
@@ -130,7 +132,6 @@ class TestRecipientFilter(TestCase):
             'recipient_party': 'D',
             'recipient_type': 'P',
             'recipient_ext_id': 'N00009638',
-            'recipient_category': 'Z1200',
             'seat_status': 'O',
             'seat_result': 'W',
             'recipient_state': '',
@@ -146,9 +147,8 @@ class TestRecipientFilter(TestCase):
             'recipient_party': 'D',
             'recipient_type': 'P',
             'recipient_ext_id': 'N00009638',
-            'recipient_category': 'Z1200',
             'seat_status': 'O',
-            'seat_result': '',
+            'seat_result': 'W',
             'recipient_state': 'IL',
             'recipient_state_held': 'IL',
             'district': '',
@@ -162,7 +162,6 @@ class TestRecipientFilter(TestCase):
             'recipient_party': 'D',
             'recipient_type': 'C',
             'recipient_ext_id': 'C00451393',
-            'recipient_category': 'Z4200',
             'seat_status': '',
             'seat_result': '',
             'recipient_state': '',
@@ -229,24 +228,12 @@ class TestRecipientFilter(TestCase):
             obama_joint_committee_output
         )
 
-        # pac2pac with Obama Presidential committee ID recipient (donor filed)
-        self.test_single_denormalization(
-            'pac_other',
-            ["2008","4149277","C00239947","Harrah's Entertainment","Obama Victory Fund","Washington","DC","20003","","G6500","10/27/2008","5000.0","C00451393","D","C00451393","DP","Z4200","N","30G","P","28934752363","24K","G6500","PAC  "],
-            obama_presidential_output
-        )
-
         # pac2pac with Obama joint committe recipient (donor filed)
         self.test_single_denormalization(
             'pac_other',
             ["2008","4155934","C00439984","Ojai Valley Democratic Club","Obama Victory Fund","Los Angeles","CA","90067","","J1200",10/29/2008,4000.0,"C00451393","D","C00451393","DP","Z4200","N","30G","P","28934796639","24K","J1200","PAC  "],
             obama_joint_committee_output
         )
-
-        
-        # todo: need test to distinguish that Obama Victory Fund shouldn't be considered Obama's presidential campaign,
-        # while Obama For America is.
-        # this is based on RecipID=CmteID for Obama Victory Fund, rather than RecipID=CandID, as is case for Obama For America
 
 
 class TestNIMSPDenormalize(TestCase):
