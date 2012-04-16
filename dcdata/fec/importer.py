@@ -13,9 +13,9 @@ F = namedtuple('F', ['url', 'dta_file', 'schema_file', 'sql_table'])
 
 # note: tables will be created/destroyed in this order. So must do dependant tables first to avoid constraint errors.
 FEC_CONFIG = [
-    F('ftp://ftp.fec.gov/FEC/indiv12.zip', 'itcont.dta', 'fec_individual_contributions.csv', 'fec_indiv_import'),
-    F('ftp://ftp.fec.gov/FEC/pas212.zip', 'itpas2.dta', 'fec_contributions_to_candidates.csv', 'fec_pac2cand_import'),
-    F('ftp://ftp.fec.gov/FEC/oth12.zip', 'itoth.dta', 'fec_committee_transactions.csv', 'fec_pac2pac_import'),
+    F('ftp://ftp.fec.gov/FEC/2012/indiv12.zip', 'itcont.dta', None, 'fec_indiv_import'),
+    F('ftp://ftp.fec.gov/FEC/2012/pas212.zip', 'itpas2.dta', None, 'fec_pac2cand_import'),
+    F('ftp://ftp.fec.gov/FEC/2012/oth12.zip', 'itoth.dta', None, 'fec_pac2pac_import'),
     F('ftp://ftp.fec.gov/FEC/cm12.zip', 'foiacm.dta', 'fec_committee_master_schema.csv', 'fec_committees'),
     F('ftp://ftp.fec.gov/FEC/cn12.zip', 'foiacn.dta', 'fec_candidate_master_schema.csv', 'fec_candidates_import'),
     F('ftp://ftp.fec.gov/FEC/webl12.zip', 'FECWEB/webl12.dat', 'fec_candidate_summary.csv', 'fec_candidate_summaries_import'),
@@ -100,11 +100,15 @@ class FECImporter():
 
     def fec_2_csv(self):
         for conf in self.FEC_CONFIG:
+            infile = os.path.join(self._working_dir(conf), conf.dta_file + ".utf8")
             outfile = open(os.path.join(self._working_dir(conf), conf.dta_file.split(".")[0] + ".csv"), 'w')
-            subprocess.check_call(
-                ['sort -u %s | in2csv -f fixed --schema=%s' % (os.path.join(self._working_dir(conf), conf.dta_file + ".utf8"), os.path.join(SCHEMA_ROOT, conf.schema_file))],
-                shell=True, stdout=outfile)
-
+            if conf.schema_file:
+                subprocess.check_call(
+                    ['sort -u %s | in2csv -f fixed --schema=%s -d "|"' % (infile, os.path.join(SCHEMA_ROOT, conf.schema_file))],
+                    shell=True, stdout=outfile)
+            else:
+                subprocess.check_call( ['sort -u %s ' % infile],
+                    shell=True, stdout=outfile)
 
     def execute_file(self, cursor, filename):
         contents = " ".join([line for line in open(filename, 'r') if line[0:2] != '--'])
