@@ -37,32 +37,39 @@ class FECImporter():
 
 
     def update_csv(self):
-        self.log.info("Downloading files to %s..." % self.processing_dir)
-        self.download()
+        try:
+            self.log.info("Downloading files to %s..." % self.processing_dir)
+            self.download()
 
-        self.log.info("Extracting files...")
-        self.extract()
+            self.log.info("Extracting files...")
+            self.extract()
 
-        self.log.info("Converting to unicode...")
-        self.fix_unicode()
+            self.log.info("Converting to unicode...")
+            self.fix_unicode()
 
-        self.log.info("Converting to CSV...")
-        self.fec_2_csv()
+            self.log.info("Converting to CSV...")
+            self.fec_2_csv()
+        except Exception as e:
+            self.log.error(e)
+            raise
 
 
     def update_db(self):
+        try:
+            c = connection.cursor()
 
-        c = connection.cursor()
+            self.execute_file(c, SQL_PRELOAD_FILE)
 
-        self.execute_file(c, SQL_PRELOAD_FILE)
+            self.log.info("Uploading data...")
+            self.upload(c)
 
-        self.log.info("Uploading data...")
-        self.upload(c)
+            self.log.info("Processing uploaded data...")
+            self.execute_file(c, SQL_POSTLOAD_FILE)
 
-        self.log.info("Processing uploaded data...")
-        self.execute_file(c, SQL_POSTLOAD_FILE)
-
-        self.log.info("Done.")
+            self.log.info("Done.")
+        except Exception as e:
+            self.log.error(e)
+            raise
 
     def _download_file(self, conf):
         filename = conf.url.split("/")[-1]
@@ -124,5 +131,5 @@ class FECImporter():
         for conf in self.FEC_CONFIG:
             infile = open(os.path.join(self._working_dir(conf), conf.dta_file.split(".")[0] + ".csv"), 'r')
             c.execute("DELETE FROM %s" % conf.sql_table)
-            c.copy_expert("COPY %s FROM STDIN CSV HEADER" % conf.sql_table, infile)
+            c.copy_expert("COPY %s FROM STDIN CSV HEADER DELIMITER '%s'" % (conf.sql_table, ',' if conf.schema_file else '|'), infile)
 
