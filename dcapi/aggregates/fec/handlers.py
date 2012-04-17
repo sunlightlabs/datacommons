@@ -132,7 +132,7 @@ class CandidateItemizedDownloadHandler(EntityTopListHandler):
     
     stmt = """
         select contributor_name, date, amount, contributor_type, transaction_type, 
-            organization, occupation, city, state, zipcode, 
+            employer, occupation, city, state, zipcode,
             candidate_name, party, race, status
         from fec_candidate_itemized i
         inner join matchbox_entityattribute a on i.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
@@ -150,7 +150,7 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 
     stmt = """
         select contributor_name, date, amount, contributor_type, contributor_committee_id, transaction_type,
-                    organization, occupation, city, state, zipcode,
+                    employer, occupation, city, state, zipcode,
                     committee_name, committee_id, committee_designation, committee_type, committee_party, interest_group, connected_org
         from fec_committee_itemized i
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
