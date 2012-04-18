@@ -16,31 +16,87 @@ create index fec_candidates_candidate_id on fec_candidates (candidate_id);
 
 drop table if exists fec_indiv;
 create table fec_indiv as
-select fec_record, filer_id, amendment, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, election_type,
-    regexp_replace(occupation, '/[^/]*$', '') as organization, regexp_replace(occupation, '^.*/', '') as occupation,
-    (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
-    case when transaction_type = '22Y' then -abs(overpunch(amount)) else overpunch(amount) end as amount
+select 
+    filer_id,
+    amendment,
+    report_type,
+    election_type,
+    microfilm_location,
+    lower(transaction_type) as transaction_type,
+    entity_type,
+    contributor_name,
+    city,
+    state,
+    zipcode,
+    employer,
+    occupation,
+    (substring(date for 4 from 5) || substring(date for 2) || substring(date for 2 from 3))::date as date,
+    case when transaction_type = '22Y' then -abs(amount) else amount end as amount,
+    other_id,
+    transaction_id,
+    file_num,
+    memo_code,
+    memo_text,
+    fec_record
 from fec_indiv_import;
 create index fec_indiv_filer_id on fec_indiv (filer_id);
 
 drop table if exists fec_pac2cand;
 create table fec_pac2cand as
-select fec_record, filer_id, lower(transaction_type) as transaction_type, 
-    (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
-    overpunch(amount) as amount,
-    other_id, candidate_id
+select 
+    filer_id,
+    amendment,
+    report_type,
+    election_type,
+    microfilm_location,
+    lower(transaction_type) as transaction_type,
+    entity_type,
+    contributor_name,
+    city,
+    state,
+    zipcode,
+    employer,
+    occupation,
+    (substring(date for 4 from 5) || substring(date for 2) || substring(date for 2 from 3))::date as date,
+    case when transaction_type = '22Y' then -abs(amount) else amount end as amount,
+    other_id,
+    candidate_id,
+    transaction_id,
+    file_num,
+    memo_code,
+    memo_text,
+    fec_record
 from fec_pac2cand_import;
 create index fec_pac2cand_other_id on fec_pac2cand (other_id);
-
+create index fec_pac2cand_cand_id on fec_pac2cand (candidate_id);
 
 drop table if exists fec_pac2pac;
 create table fec_pac2pac as
-select fec_record, filer_id, lower(transaction_type) as transaction_type, contributor_lender_transfer as contributor_name, city, state, zipcode, occupation, 
-    (transaction_century || transaction_year || transaction_month || transaction_day)::date as date,
-    overpunch(amount) as amount,
-    other_id
+select 
+    filer_id,
+    amendment,
+    report_type,
+    election_type,
+    microfilm_location,
+    lower(transaction_type) as transaction_type,
+    entity_type,
+    contributor_name,
+    city,
+    state,
+    zipcode,
+    employer,
+    occupation,
+    (substring(date for 4 from 5) || substring(date for 2) || substring(date for 2 from 3))::date as date,
+    case when transaction_type = '22Y' then -abs(amount) else amount end as amount,
+    other_id,
+    transaction_id,
+    file_num,
+    memo_code,
+    memo_text,
+    fec_record
 from fec_pac2pac_import;   
-
+create index fec_pac2pac_filer_id on fec_pac2pac (filer_id);
+create index fec_pac2pac_other_id on fec_pac2pac (other_id);
 
 drop table if exists fec_candidate_summaries;
 create table fec_candidate_summaries as
@@ -106,19 +162,19 @@ drop table if exists fec_candidate_itemized;
 create table fec_candidate_itemized as
 select
     contributor_name, date, amount, contributor_type, transaction_type, 
-    organization, occupation, i.city, i.state, i.zipcode, 
+    employer, occupation, i.city, i.state, i.zipcode, 
     candidate_name, party_designation1 as party, race, incumbent_challenger_open as status, committee_id, candidate_id
 from fec_candidates c
 inner join (
     select filer_id as committee_id, 'indiv' as contributor_type, contributor_name,
-        city, state, zipcode, organization, occupation,
+        i.city, i.state, i.zipcode, employer, occupation,
         date, amount, transaction_type
-    from fec_indiv
+    from fec_indiv i
 
     union all
 
     select other_id, 'pac', committee_name,
-        city, state, zipcode, connected_org, '',
+        t.city, t.state, t.zipcode, connected_org, '',
         date, amount, transaction_type
     from fec_pac2cand t
     inner join fec_committees c on (c.committee_id = t.filer_id)) i using (committee_id);
@@ -129,12 +185,12 @@ drop table if exists fec_committee_itemized;
 create table fec_committee_itemized as
 select
     contributor_name, date, amount, contributor_type, contributor_committee_id, transaction_type, 
-    organization, occupation, i.city, i.state, i.zipcode, 
+    employer, occupation, i.city, i.state, i.zipcode, 
     committee_name, committee_id, committee_designation, committee_type, committee_party, interest_group, connected_org, candidate_id
 from fec_committees c
 inner join (
     select filer_id as committee_id, 'indiv' as contributor_type, contributor_name, '' as contributor_committee_id,
-        city, state, zipcode, organization, occupation,
+        city, state, zipcode, employer, occupation,
         date, amount, transaction_type
     from fec_indiv
 
