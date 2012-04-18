@@ -3,8 +3,9 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
     SectorsHandler, IndustriesHandler, UnknownIndustriesHandler, PolLocalBreakdownHandler, \
     PolContributorTypeBreakdownHandler, OrgLevelBreakdownHandler, \
-    OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, TopPoliticiansByReceiptsHandler,  \
-    TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
+    OrgOfficeTypeBreakdownHandler, OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, \
+    TopPoliticiansByReceiptsHandler,  TopIndividualsByContributionsHandler, \
+    TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler, OrgPACRecipientsHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
@@ -124,6 +125,9 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients/level_breakdown\.(?P<emitter_format>.+)$',
         Resource(OrgLevelBreakdownHandler, **ad)),
+
+    url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients/office_type_breakdown\.(?P<emitter_format>.+)$',
+        Resource(OrgOfficeTypeBreakdownHandler, **ad)),
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/registrants\.(?P<emitter_format>.+)$',
         Resource(OrgRegistrantsHandler, **ad)),

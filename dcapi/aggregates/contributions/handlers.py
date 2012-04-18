@@ -1,5 +1,4 @@
-
-from dcapi.aggregates.handlers import EntityTopListHandler, EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
+from dcapi.aggregates.handlers import EntityTopListHandler, EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, check_empty
 from django.core.cache import cache
 from piston.handler import BaseHandler
 
@@ -24,6 +23,19 @@ class OrgLevelBreakdownHandler(PieHandler):
     stmt = """
         select transaction_namespace, count, amount
         from agg_namespace_from_org
+        where
+            organization_entity = %s
+            and cycle = %s
+    """
+
+class OrgOfficeTypeBreakdownHandler(PieHandler):
+
+    categories = [ 'state:judicial', 'state:upper', 'state:lower', 'federal:president', 'federal:house', 'state:governor', 'federal:senate', 'state:office' ]
+    category_map = dict(zip(categories, categories))
+
+    stmt = """
+        select seat, count, amount
+        from agg_office_type_from_org
         where
             organization_entity = %s
             and cycle = %s
