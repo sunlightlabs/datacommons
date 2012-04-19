@@ -212,7 +212,7 @@ insert into tmp_matchbox_revolvingdoor (politician_entity_id, lobbyist_entity_id
         inner join matchbox_entityattribute eap
             on eap.value = l.candidate_ext_id
         inner join matchbox_entityattribute eal
-            on eal.value = l.lobbyist_ext_id
+            on substring(eal.value for 11) = substring(l.lobbyist_ext_id for 11)
     where
         eap.namespace = 'urn:crp:recipient' and eal.namespace = 'urn:crp:individual'
 ;
