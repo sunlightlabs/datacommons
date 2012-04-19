@@ -5,6 +5,7 @@
 
 
 begin;
+drop table if exists tmp_matchbox_organizationmetadata;
 create table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
 insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
