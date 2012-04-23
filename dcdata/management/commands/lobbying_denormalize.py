@@ -122,7 +122,7 @@ FILE_TYPES = {
                      'Client_raw','Client','Ultorg','Amount','Catcode',
                      'Source','Self','IncludeNSFS','Use','Ind','Year',
                      'Type','TypeLong','OrgID','Affiliate'),
-    "lob_lobbyist": ('Uniqid','Lobbyist','Lobbyist_raw','LobbyistID',
+    "lob_lobbyist": ('Uniqid','Lobbyist_raw','Lobbyist','LobbyistID',
                      'Year','OfficalPos','CID','FormerCongMem'),
     "lob_agency": ('UniqID','AgencyID','Agency'),
     # "lob_indus": ('Ultorg','Client','Total','Year','Catcode'),

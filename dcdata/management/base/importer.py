@@ -4,7 +4,7 @@ import fnmatch
 import time
 import datetime
 
-from dcdata.utils.logging        import set_up_logger
+from dcdata.utils.log            import set_up_logger
 from django.core.management.base import BaseCommand, CommandError
 from optparse                    import make_option
 from settings                    import LOGGING_DIRECTORY, TMP_DIRECTORY
