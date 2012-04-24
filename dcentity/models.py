@@ -241,6 +241,7 @@ class OrganizationMetadataLatest(ExtensibleModel):
     lobbying_firm   = models.BooleanField(default=False)
     parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
     industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
+    is_superpac     = models.BooleanField(default=False)
 
     @property
     def child_entities(self):
@@ -329,6 +330,13 @@ class StateFederal(models.Model):
     class Meta:
         db_table = 'matchbox_statefederal'
 
+class SuperPACLinks(models.Model):
+    superpac_entity = models.ForeignKey(Entity, related_name='controlling_org')
+    controlling_org_entity = models.ForeignKey(Entity, related_name='affiliated_superpac')
+    
+    class Meta:
+        db_table = 'matchbox_superpaclinks'
+        
 
 class VotesmartInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='votesmart_info', null=False)
