@@ -160,7 +160,7 @@ class EntitySearchHandler(BaseHandler):
         'id', 'name', 'type',
         'count_given', 'count_received', 'count_lobbied',
         'total_given','total_received', 'firm_income', 'non_firm_spending',
-        'state', 'party', 'seat', 'lobbying_firm'
+        'state', 'party', 'seat', 'lobbying_firm', 'is_superpac'
     ]
 
     stmt = """
@@ -173,7 +173,7 @@ class EntitySearchHandler(BaseHandler):
             coalesce(a.recipient_amount,    0)::float,
             coalesce(l.firm_income,         0)::float,
             coalesce(l.non_firm_spending,   0)::float,
-            pm.state, pm.party, pm.seat, om.lobbying_firm
+            pm.state, pm.party, pm.seat, om.lobbying_firm, om.is_superpac
         from matchbox_entity e
         inner join (select distinct entity_id
                     from matchbox_entityalias ea
