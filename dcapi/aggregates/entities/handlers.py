@@ -34,7 +34,9 @@ get_totals_stmt = """
             coalesce(rs.document_count,  0)::integer,
             coalesce(f.member_count,     0)::integer,
             coalesce(f.committee_count,  0)::integer,
-            coalesce(indexp.spending_amount, 0)::float
+            coalesce(indexp.spending_amount, 0)::float,
+            coalesce(fec_committee.total_raised, 0)::float,
+            coalesce(fec_committee.count, 0)::integer
     from
          (select *
          from agg_entities
@@ -84,11 +86,16 @@ get_totals_stmt = """
         from agg_fec_indexp_totals
         where entity_id = %s) indexp
     using (cycle)
+    full outer join (
+        select cycle, total_raised, count
+        from agg_fec_committee_summaries
+        where entity_id = %s) fec_committee
+    using (cycle)
 """
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, *[entity_id] * 10):
+    for row in execute_top(get_totals_stmt, *[entity_id] * 11):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -104,7 +111,7 @@ class EntityHandler(BaseHandler):
                      'epa_actions_count',
                      'regs_docket_count', 'regs_document_count', 'regs_submitted_docket_count', 'regs_submitted_document_count',
                      'faca_member_count', 'faca_committee_count',
-                     'independent_expenditure_amount']
+                     'independent_expenditure_amount', 'fec_total_raised', 'fec_summary_count']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
