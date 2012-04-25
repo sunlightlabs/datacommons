@@ -206,6 +206,32 @@ where
 create index fec_committee_itemized_committee_id on fec_committee_itemized (committee_id);
 
 
+drop table if exists agg_fec_committee_summaries;
+create table agg_fec_committee_summaries as
+select
+    cycle, entity_id,
+    sum(total_receipts - (loan_repayments + refunds_to_individuals + refunds_to_committees)) as total_raised,
+    sum(individual_contributions - refunds_to_individuals) as individual_contributions,
+    sum(contributions_from_other_committees) as contributions_from_other_committees,
+    sum(transfers_from_affiliates) as transfers_from_affiliates,
+    sum(nonfederal_transfers_received) as nonfederal_transfers_received,
+    sum(total_loans_received) as total_loans_received,
+    sum(total_disbursements) as total_disbursements,
+    sum(cash_close_of_period) as cash_close_of_period,
+    sum(debts_owed) as debts_owed,
+    sum(contributions_to_committees) as contributions_to_committees,
+    sum(independent_expenditures_made) as independent_expenditures_made,
+    sum(party_coordinated_expenditures_made) as party_coordinated_expenditures_made,
+    sum(nonfederal_expenditure_share) as nonfederal_expenditure_share,
+    min(through_date) as min_through_date,
+    max(through_date) as max_through_date,
+    count(*)
+from fec_committee_summaries c
+inner join matchbox_entityattribute a on c.committee_id = a.value and a.namespace = 'urn:fec:committee'
+cross join (values (-1), (2012)) as cycles (cycle)
+group by cycle, entity_id;
+
+
 
 -- these three are unfortunately not true in the data
 -- alter table fec_candidates add constraint fec_candidates_committee_id foreign key (committee_id) references fec_committees (committee_id);

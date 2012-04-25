@@ -227,6 +227,8 @@ class OrganizationMetadata(ExtensibleModel):
     parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True, db_index=True)
     industry_entity = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True, db_index=True)
     subindustry_entity = models.ForeignKey(Entity, related_name='subindustry_entity_for_cycle', null=True, db_index=True)
+    is_superpac     = models.BooleanField(default=False)
+
 
     @property
     def child_entities(self):
