@@ -57,6 +57,15 @@ class Fortune100Company(models.Model):
     class Meta:
         db_table = 'fortune_100'
 
+class HillStaffer(models.Model):
+    name = models.CharField(max_length=100)
+    office = models.CharField(max_length=100)
+    member_bioguide_id = models.CharField(max_length=7, null=True)
+    position = models.CharField(max_length=100)
+    salary = models.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        db_table = 'hill_staffer'
 
 class PublicCompany(models.Model):
     name = models.CharField(max_length=100)
