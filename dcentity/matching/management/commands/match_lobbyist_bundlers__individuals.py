@@ -5,6 +5,7 @@ from django.db.models import F
 
 class Command(MatchingCommand):
 
+
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
         self.subject = LobbyistBundle.objects.exclude(name=F('employer'))
