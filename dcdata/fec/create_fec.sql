@@ -148,6 +148,7 @@ CREATE TABLE fec_candidate_summaries_import (
     refunds_to_committees integer                       -- 28b & 28c?
 );
 
+drop table if exists fec_committee_summaries_import;
 CREATE TABLE fec_committee_summaries_import (
     committee_id VARCHAR(9) NOT NULL, 
     committee_name VARCHAR(90) NOT NULL, 
