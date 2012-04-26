@@ -67,7 +67,7 @@ class BundleHandler(TableHandler):
                     lambda x: int(round(float(x))) if x else None),
             # Convert date formats
             FieldModifier('start_date end_date filing_date'.split(), \
-                    lambda x: datetime.strptime(x, '%m/%d/%y') if x else None),
+                    lambda x: datetime.strptime(x, '%m/%d/%Y') if x else None),
             # TODO: These following two lines (and the field value) need to be thoroughly tested on the next bundling load
             FieldCopier({'pdf_url': 'first_image_num'}),
             FieldModifier('pdf_url', \
