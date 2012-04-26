@@ -1,3 +1,9 @@
+-- Clean the data a little bit. Might want to add more here later, but this fixes a particular case we were having
+update faca_members set lastname = regexp_replace(lastname, ', *$', '') where lastname ~ ', *$';
+update faca_members set firstname = regexp_replace(firstname, ', *$', '') where firstname ~ ', *$';
+
+delete from faca_matches where entity_id in (select id from matchbox_entity where type in ('politician', 'individual'));
+
 drop index if exists faca_records_org_id;
 drop index if exists faca_records_agency_abbr_ft;
 drop index if exists faca_records_agency_name_ft;
@@ -64,7 +70,7 @@ create index faca_records_member_name_ft on faca_records using gin(to_tsvector('
 create index faca_records_affiliation_ft on faca_records using gin(to_tsvector('datacommons', affiliation));
 
 
-drop table if exists agg_faca_records;
+drop table if exists agg_faca_records cascade;
 
 create table agg_faca_records as
     with faca_most_recent as

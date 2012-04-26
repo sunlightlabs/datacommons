@@ -6,7 +6,7 @@ create function semi_annual(date) returns text as $$
 $$ language SQL;
 
 create view contribution_bundle_latest as
-select distinct on (committee_fec_id, semi_annual(end_date)) * 
+select distinct on (committee_fec_id, semi_annual(end_date)) *
 from contribution_bundle
 order by committee_fec_id, semi_annual(end_date),  end_date desc, filing_date desc;
 
@@ -22,8 +22,7 @@ create table assoc_bundle_recipients as
         inner join contribution_committee on committee_fec_id = committee_id
         inner join matchbox_entityattribute on recipient_id = value
     where
-        namespace = 'urn:crp:recipient';
-
+        namespace in ('urn:crp:recipient', 'urn:fec:committee');
 
 -- uncomment these lines to re-import the manual validations
 
@@ -41,7 +40,7 @@ create table assoc_bundle_recipients as
 -- these aggregates from loading properly
 
 
-drop table if exists assoc_bundler_firms;
+drop table if exists assoc_bundler_firms cascade;
 create table assoc_bundler_firms as
 select lb.id as bundle_id, entity_id
 from contribution_bundle_latest cb -- this table here only to restrict which lobbyistbundles are used.
@@ -54,7 +53,7 @@ where
 group by lb.id, entity_id;
 
 
-drop table if exists assoc_bundler_lobbyists;
+drop table if exists assoc_bundler_lobbyists cascade;
 create table assoc_bundler_lobbyists as
 select lb.id as bundle_id, entity_id
 from contribution_bundle_latest cb -- this table here only to restrict which lobbyistbundles are used.
