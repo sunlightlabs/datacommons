@@ -139,6 +139,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        if not (options['bundle_file'] and options['lobbyists_file']):
+            raise CommandError, "The bundles (-b) and lobbyists (-l) file arguments must both be specified."
+
         bundle_file = os.path.abspath(options['bundle_file'])
         lobbyists_file = os.path.abspath(options['lobbyists_file'])
 
