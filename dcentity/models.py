@@ -111,25 +111,31 @@ class Entity(models.Model):
                 metadata['federal_politician_entities'] = [ x.federal_politician_entity for x in self.federal_offices_held.all() ]
 
 
-        elif self.type == 'organization' and hasattr(self, 'organization_metadata_by_cycle'):
-            for data_by_cycle in self.organization_metadata_by_cycle.all():
-                metadata[data_by_cycle.cycle] = data_by_cycle.to_dict()
-                del(metadata[data_by_cycle.cycle]['cycle'])
-                del(metadata[data_by_cycle.cycle]['id'])
-                del(metadata[data_by_cycle.cycle]['entity'])
+        elif self.type == 'organization':
+            if hasattr(self, 'organization_metadata_by_cycle'):
+                for data_by_cycle in self.organization_metadata_by_cycle.all():
+                    metadata[data_by_cycle.cycle] = data_by_cycle.to_dict()
+                    del(metadata[data_by_cycle.cycle]['cycle'])
+                    del(metadata[data_by_cycle.cycle]['id'])
+                    del(metadata[data_by_cycle.cycle]['entity'])
 
-            # assign latest cycle to old fields for backwards compatibility
-            # (might not need this going forward)
-            if hasattr(self, 'organization_metadata_for_latest_cycle'):
-                latest = self.organization_metadata_for_latest_cycle.to_dict()
-                del(latest['cycle'])
-                del(latest['entity'])
-                metadata.update(latest)
-            else:
-                metadata['parent_entity'] = ''
-                metadata['industry_entity'] = ''
-                metadata['lobbying_firm'] = False
-                metadata['child_entities'] = []
+                # assign latest cycle to old fields for backwards compatibility
+                # (might not need this going forward)
+                if hasattr(self, 'organization_metadata_for_latest_cycle'):
+                    latest = self.organization_metadata_for_latest_cycle.to_dict()
+                    del(latest['cycle'])
+                    del(latest['entity'])
+                    metadata.update(latest)
+                else:
+                    metadata['parent_entity'] = ''
+                    metadata['industry_entity'] = ''
+                    metadata['lobbying_firm'] = False
+                    metadata['child_entities'] = []
+
+            if hasattr(self, 'controlling_org'):
+                metadata['controlling_org'] = self.controlling_org.controlling_org_entity.public_representation()
+            if self.affiliated_superpacs.count() > 0:
+                metadata['affiliated_superpacs'] = [ x.superpac_entity.public_representation() for x in self.affiliated_superpacs.all() ]
 
         elif self.type == 'individual':
             # in the future, individuals should probably have their own metadata table,
@@ -332,13 +338,14 @@ class StateFederal(models.Model):
     class Meta:
         db_table = 'matchbox_statefederal'
 
+
 class SuperPACLinks(models.Model):
-    superpac_entity = models.ForeignKey(Entity, related_name='controlling_org')
-    controlling_org_entity = models.ForeignKey(Entity, related_name='affiliated_superpac')
-    
+    superpac_entity = models.OneToOneField(Entity, related_name='controlling_org')
+    controlling_org_entity = models.ForeignKey(Entity, related_name='affiliated_superpacs')
+
     class Meta:
         db_table = 'matchbox_superpaclinks'
-        
+
 
 class VotesmartInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='votesmart_info', null=False)
