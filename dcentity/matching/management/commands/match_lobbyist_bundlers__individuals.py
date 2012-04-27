@@ -1,12 +1,14 @@
 from dcentity.matching.management.base.matching import MatchingCommand
 from dcdata.contribution.models import LobbyistBundle
 from dcentity.models import Entity
+from django.db.models import F
 
 class Command(MatchingCommand):
 
+
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
-        self.subject = LobbyistBundle.objects
+        self.subject = LobbyistBundle.objects.exclude(name=F('employer'))
         self.subject_name_attr = 'name'
         self.subject_id_type = 'integer'
 
