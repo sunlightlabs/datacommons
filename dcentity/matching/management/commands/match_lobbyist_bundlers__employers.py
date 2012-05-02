@@ -6,7 +6,7 @@ class Command(OrganizationalMatchingCommand):
 
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
-        self.subject = LobbyistBundle.objects.filter(employer__isnull=False)
+        self.subject = LobbyistBundle.objects.filter(employer__isnull=False).extra(where=['employer not in (select name from assoc_bundler_matches_manual)'])
         self.subject_name_attr = 'employer'
         self.subject_id_type = 'integer'
 
