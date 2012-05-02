@@ -1,13 +1,14 @@
 from django.core.management.base import CommandError, BaseCommand
 from django.db.utils             import DatabaseError
 from django.db                   import connections, transaction
-from name_cleaver                import PoliticianNameCleaver, RunningMatesNames
+from name_cleaver                import IndividualNameCleaver, RunningMatesNames
 from optparse                    import make_option
 
 import datetime
 import pylibmc
 import re
 import sys
+
 
 class MatchingCommand(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -33,8 +34,8 @@ class MatchingCommand(BaseCommand):
         )
     )
 
-    name_cleaver = PoliticianNameCleaver
-    confidence_threshold = 2
+    name_cleaver = IndividualNameCleaver
+    confidence_threshold = 1.2
 
     def __init__(self, *args, **kwargs):
         super(MatchingCommand, self).__init__(*args, **kwargs)
@@ -96,21 +97,7 @@ class MatchingCommand(BaseCommand):
                 potential_matches = self.get_potential_matches_for_subject(subject_name, subject)
                 log_msg += 'Potential matches: {0}; '.format(potential_matches.count())
 
-                matches_we_like = {}
-                for match in potential_matches:
-                    match_name = self.name_cleaver(getattr(match, self.match_name_attr)).parse()
-
-                    if isinstance(match_name, RunningMatesNames):
-                        for running_mate_name in match_name.mates():
-                            confidence = self.get_confidence(running_mate_name, subject_name)
-                    else:
-                        confidence = self.get_confidence(match_name, subject_name)
-
-                    if confidence >= self.confidence_threshold:
-                        if not matches_we_like.has_key(confidence):
-                            matches_we_like[confidence] = []
-
-                        matches_we_like[confidence].append(match)
+                matches_we_like = self.cull_match_pool(subject_name, potential_matches)
 
                 confidence_levels = matches_we_like.keys()
                 if len(confidence_levels):
@@ -143,6 +130,21 @@ class MatchingCommand(BaseCommand):
         print 'Done. Find your results in {0}.'.format(table)
 
 
+    def cull_match_pool(self, subject_name, full_match_pool):
+        matches_we_like = {}
+        for match in full_match_pool:
+            match_name = self.name_cleaver(getattr(match, self.match_name_attr)).parse()
+            confidence = self.get_confidence(match_name, subject_name)
+
+            if confidence >= self.confidence_threshold:
+                if not matches_we_like.has_key(confidence):
+                    matches_we_like[confidence] = []
+
+                matches_we_like[confidence].append(match)
+
+        return matches_we_like
+
+
     def name_processing_failed(self, subject_name):
         return isinstance(subject_name, RunningMatesNames) or not subject_name.last
 
@@ -172,25 +174,115 @@ class MatchingCommand(BaseCommand):
         pass
 
 
+    # List of names which can be equated with each other
+    # Do not put names that cannot be considered equivalent
+    # in the same tuple, even if they have the same nickname.
+    # For instance, John and Jacob could both be shortened to
+    # Jack, but unless you want John and Jacob to be stand-ins
+    # for each other, they should not be together.
+    NICKNAMES = (
+        ('Allan', 'Allen', 'Alan', 'Al'),
+        ('Andre', u'Andr\00e9'),
+        ('Andrew', 'Andy', 'Drew'),
+        ('Antonio', 'Anthony', 'Tony', 'Anton'),
+        ('Barbara', 'Barb'),
+        ('Benjamin', 'Ben'),
+        ('Bernard', 'Bernie'),
+        ('Calvin', 'Cal'),
+        ('Charles', 'Chas', 'Chuck', 'Chucky', 'Charlie'),
+        ('Christine', 'Christina', 'Chris'),
+        ('Christopher', 'Chris'),
+        ('Daniel', 'Dan', 'Danny'),
+        ('David', 'Dave'),
+        ('Donald', 'Don', 'Donny'),
+        ('Douglas', 'Doug'),
+        ('Edward', 'Ed', 'Eddie'),
+        ('Francis', 'Frank', 'Frankie'),
+        ('Fredrick', 'Frederick', 'Fred', 'Freddy'),
+        ('Gerard', 'Gerry', 'Jerry'),
+        ('Gerald', 'Gerry', 'Jerry'),
+        ('Gregory', 'Greg'),
+        ('Harris', 'Harry', 'Harrison'),
+        ('Henry', 'Hank'),
+        ('Herbert', 'Herb'),
+        ('Howard', 'Howie'),
+        ('James', 'Jim', 'Jimmy'),
+        ('Jerome', 'Jerry'),
+        ('John', 'Jon', 'Johnny', 'Jack'),
+        ('Joseph', 'Joe'),
+        ('Judith', 'Judy'),
+        ('Katherine', 'Kathy'),
+        ('Catherine', 'Kathy'),
+        ('Kathleen', 'Kathy'),
+        ('Kenneth', 'Ken', 'Kenny'),
+        ('Lawrence', 'Laurence', 'Larry'),
+        ('Lewis', 'Louis', 'Lou'),
+        ('Matthew', 'Matt'),
+        ('Martin', 'Marty'),
+        ('Melvin', 'Melvyn' ,'Mel'),
+        ('Mervyn', 'Merv'),
+        ('Michael', 'Mike'),
+        ('Mitchell', 'Mitch'),
+        ('Nicholas', 'Nick'),
+        ('Patricia', 'Pat', 'Patty', 'Pati'),
+        ('Patrick', 'Pat'),
+        ('Peter', 'Pete'),
+        ('Philip', 'Phillip', 'Phil'),
+        ('Randall', 'Randy'),
+        ('Richard', 'Rick', 'Dick', 'Rich'),
+        ('Robert', 'Rob', 'Robby', 'Bobby', 'Bob'),
+        ('Steven', 'Stephen', 'Steve'),
+        ('Stewart', 'Stuart', 'Stu'),
+        ('Terrance', 'Terry'),
+        ('Thomas', 'Tom', 'Thom', 'Tommy'),
+        ('William', 'Bill', 'Billy', 'Will', 'Willy'),
+        ('Willis', 'Will'),
+    )
+
+
     def get_confidence(self, name1, name2):
         score = 0
+
+        # score last name
         if name1.last == name2.last:
             score += 1
         else:
             return 0
 
+        # score first name
         if name1.first == name2.first:
             score += 1
         else:
-            return 0
+            for name_set in self.NICKNAMES:
+                if set(name_set).issuperset([name1.first, name2.first]):
+                    score += 0.6
+                    break
 
-        if name1.middle and name2.middle:
-            if name1.middle == name2.middle:
-                score += 1
-            elif name1.middle[0] == name2.middle[0]:
-                score += .5
+            if name1.first == name2.middle and name2.first == name1.middle:
+                score += 0.8
             else:
-                score -= 1.5
+                try:
+                    # this was failing in cases where an odd organization name was in the mix
+                    if name1.first[0] == name2.first[0]:
+                        score += 0.1
+                except:
+                    return 0
+
+        # score middle name
+        if name1.middle and name2.middle:
+            # we only want to count the middle name for much if we've already
+            # got a match on first and last, to avoid getting high scores for
+            # names which only match on last and middle
+            if score > 1.1:
+                if name1.middle == name2.middle:
+                    score += 1
+                elif name1.middle[0] == name2.middle[0]:
+                    score += .5
+                else:
+                    score -= 1.5
+
+            else:
+                score += .2
 
         return score
 
