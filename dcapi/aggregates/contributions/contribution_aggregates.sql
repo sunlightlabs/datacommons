@@ -1107,6 +1107,14 @@ create table agg_top_orgs_by_industry as
 select date_trunc('second', now()) || ' -- create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (recipient_entity, cycle)';
 create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (industry_entity, cycle);
 
+create table agg_top_contributors_by_party
+    select entity_id as contributor_id, max(contributor_name) as contributor_name, cycle, count(*), sum(amount)
+    from contributions_individual inner join contributor_associations using (transaction_id)
+    where recipient_party = 'D'
+    group by entity_id, cycle
+    order by sum(amount) desc, count(*) desc
+    limit :agg_top_n;
+
 
 select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
 

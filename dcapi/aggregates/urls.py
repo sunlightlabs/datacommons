@@ -6,7 +6,9 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, TopPoliticiansByReceiptsHandler,  \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
-    ContributionAmountHandler, OrgPACRecipientsHandler
+    ContributionAmountHandler, OrgPACRecipientsHandler, \
+    TopIndividualContributorsToPartyHandler, TopLobbyistsHandler, \
+    TopLobbyistBundlersHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -106,10 +108,6 @@ urlpatterns = patterns('',
     url(r'indiv/(?P<entity_id>[a-f0-9]{32})/clients\.(?P<emitter_format>.+)$',
         Resource(IndivClientsHandler, **ad)),
 
-    # top N individuals by contributions for a cycle
-    url(r'^indivs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
-        Resource(TopIndividualsByContributionsHandler, **ad)),
-
     # recipients from a single org//pac
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients\.(?P<emitter_format>.+)$',
         Resource(OrgRecipientsHandler, **ad)),
@@ -207,7 +205,8 @@ urlpatterns = patterns('',
     
     url(r'^lobbyist_bundling/transactions\.(?P<emitter_format>.+)$',
         Resource(DetailExplorerHandler, **ad)),
-    
+
+    # fec
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
         Resource(CandidateSummaryHandler, **ad)),
         
@@ -223,6 +222,7 @@ urlpatterns = patterns('',
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_itemized\.(?P<emitter_format>.+)$',
         Resource(CandidateItemizedDownloadHandler, **ad)),
 
+    # independent expenditures
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_indexp\.(?P<emitter_format>.+)$',
         Resource(CandidateIndExpHandler, **ad)),
 
@@ -237,9 +237,27 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_itemized\.(?P<emitter_format>.+)$',
         Resource(CommitteeItemizedDownloadHandler, **ad)),
-        
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_indexp_itemized\.(?P<emitter_format>.+)$',
-        Resource(CommitteeIndExpDownloadHandler, **ad)),      
+        Resource(CommitteeIndExpDownloadHandler, **ad)),
+
+    # -- entity type top lists --
+    # ---------------------------
+    # top N individuals by contributions for a cycle
+    url(r'^indivs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndividualsByContributionsHandler, **ad)),
+
+    # top N individuals by contributions to party for a cycle
+    url(r'^indivs/to_party/(?P<party>[RD])/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndividualContributorsToPartyHandler, **ad)),
+
+    # top lobbyists
+    url(r'^indivs/lobbyists/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopLobbyistsHandler, **ad)),
+
+    # top lobbyist bundlers
+    url(r'^indivs/lobbyist_bundlers/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopLobbyistBundlersHandler, **ad)),
 )
 
 

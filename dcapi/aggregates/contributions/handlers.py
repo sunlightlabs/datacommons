@@ -326,3 +326,81 @@ class ContributionAmountHandler(BaseHandler):
     def get_cache_key(self, query_name, recipient_entity, contributor_entity, cycle):
         return "_".join([query_name, recipient_entity, contributor_entity, str(cycle)])
 
+
+class TopIndividualContributorsToPartyHandler(TopListHandler):
+    args = ['party', 'limit', 'cycle']
+    fields = ['entity_id', 'name', 'party', 'cycle', 'count', 'amount', 'rank']
+
+    stmt = """
+        select * from (
+            select
+                contributor_entity,
+                name,
+                recipient_party,
+                cycle,
+                count,
+                amount,
+                rank() over (partition by cycle, recipient_party order by amount desc, count desc) as rank
+            from agg_party_from_indiv
+            inner join matchbox_entity me on me.id = contributor_entity
+            where type = 'individual'
+        ) x
+        where
+            upper(recipient_party) = %s
+            and rank <= %s
+            and cycle = %s
+        ;
+    """
+
+# TODO: broken, doesn't work
+# part of the reason this is broken is because the associations table for lobbyists is broken, and the agg_lobbying_lobbyists_for_registrant table is thus broken
+class TopLobbyistsHandler(TopListHandler):
+    args = ['cycle', 'limit']
+    fields = ['entity_id', 'name', 'cycle', 'num_contracts', 'contracts_amount', 'rank']
+
+    stmt = """
+        select
+            entity_id,
+            me.name,
+            cycle,
+            count(*),
+            sum(non_firm_spending) as non_firm_spending_total,
+            sum(firm_income) as firm_income_total
+        from agg_lobbying_totals -- doesn't work, this table doesn't keep any totals for lobbyist entities
+            inner join matchbox_entity me on me.id = entity_id
+        where type = 'individual'
+            and cycle = %s
+        group by entity_id, me.name, cycle
+        order by sum(non_firm_spending) desc, sum(firm_income) desc, count(*) desc
+        limit %s
+        ;
+    """
+
+
+class TopLobbyistBundlersHandler(TopListHandler):
+    args = ['cycle', 'limit']
+    fields = 'entity_id name count amount'.split()
+
+    stmt = """
+        select
+            lobbyist_id,
+            me.name,
+            count(*),
+            sum(amount)
+        from
+            agg_bundling ab
+            inner join matchbox_entity me on me.id = ab.lobbyist_id
+        where
+            cycle = %s
+        group by
+            lobbyist_id,
+            me.name
+        order by
+            sum(amount) desc,
+            count(*) desc
+        limit %s;
+    """
+
+
+
+
