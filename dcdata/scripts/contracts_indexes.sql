@@ -7,6 +7,9 @@ create index contracts_contract_piid on contracts_contract (piid);
 drop index if exists contracts_contract_district;
 create index contracts_contract_congressionaldistrict on contracts_contract (statecode, congressionaldistrict);
 
+create index contracts_contract_dunsnumber on contracts_contract (dunsnumber);
+create index contracts_contract_signeddate on contracts_contract (signeddate);
+
 
 -- full-text
 drop index if exists contracts_contract_agency_name_ft;
