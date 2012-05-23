@@ -1,5 +1,6 @@
-
-from dcapi.aggregates.handlers import EntityTopListHandler, EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
+from dcapi.aggregates.handlers import EntityTopListHandler, \
+    EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, \
+    execute_top, check_empty
 from django.core.cache import cache
 from piston.handler import BaseHandler
 

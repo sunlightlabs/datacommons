@@ -1,5 +1,4 @@
-
-from dcapi.aggregates.handlers import EntityTopListHandler
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
 
 
 class OrgRegistrantsHandler(EntityTopListHandler):
@@ -156,6 +155,21 @@ class RegistrantLobbyistsHandler(EntityTopListHandler):
             registrant_entity = %s
             and cycle = %s
         order by count desc
+        limit %s
+    """
+
+
+class TopFirmsByIncomeHandler(TopListHandler):
+    args = ['cycle', 'limit']
+
+    fields = 'name entity_id amount cycle'.split()
+
+    stmt = """
+        select name, entity_id, firm_income, cycle
+        from agg_lobbying_totals
+        inner join matchbox_entity on matchbox_entity.id = entity_id
+        where cycle = %s and firm_income > 0
+        order by firm_income desc
         limit %s
     """
 

@@ -15,7 +15,7 @@ from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
     RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
-    RegistrantLobbyistsHandler
+    RegistrantLobbyistsHandler, TopFirmsByIncomeHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
@@ -265,6 +265,10 @@ urlpatterns = patterns('',
     # top PACs by independent expenditures
     url(r'^orgs/indexp/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopPACsByIndExpsHandler, **ad)),
+
+    # top lobbying firms by income
+    url(r'^orgs/lobbying_firms/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopFirmsByIncomeHandler, **ad)),
 
 )
 
