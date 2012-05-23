@@ -8,7 +8,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler, OrgPACRecipientsHandler, \
     TopIndividualContributorsToPartyHandler, TopLobbyistsHandler, \
-    TopLobbyistBundlersHandler
+    TopLobbyistBundlersHandler, TopIndustryContributorsToPartyHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -272,6 +272,10 @@ urlpatterns = patterns('',
         Resource(TopFirmsByIncomeHandler, **ad)),
 
     # --------- industries ------- 
+    # top N industry donors to party
+    url(r'^industries/party/(?P<party>[RD])/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndustryContributorsToPartyHandler, **ad)),
+
     # top lobbying clients by spending
     url(r'^industries/lobbying_clients/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopIndustriesLobbyingHandler, **ad)),

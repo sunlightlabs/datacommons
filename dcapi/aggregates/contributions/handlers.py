@@ -403,5 +403,32 @@ class TopLobbyistBundlersHandler(TopListHandler):
     """
 
 
+class TopIndustryContributorsToPartyHandler(TopListHandler):
+    args = ['party', 'limit', 'cycle']
+    fields = ['entity_id', 'name', 'party', 'cycle', 'count', 'amount', 'rank']
 
+    stmt = """
+        select * from (
+            select
+                organization_entity,
+                name,
+                recipient_party,
+                cycle,
+                count,
+                amount,
+                rank() over (partition by cycle, recipient_party order by amount desc, count desc) as rank
+            from agg_party_from_org
+            inner join matchbox_entity me on me.id = organization_entity
+            where type = 'industry'
+                and name not ilike '%%unknown%%' 
+                and name not ilike '%%retired%%' 
+                and name not ilike '%%self%%' 
+                and name not ilike '%%own campaign%%'
+        ) x
+        where
+            upper(recipient_party) = %s
+            and rank <= %s
+            and cycle = %s
+        ;
+    """
 
