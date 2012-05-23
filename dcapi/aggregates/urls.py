@@ -280,6 +280,11 @@ urlpatterns = patterns('',
     url(r'^industries/lobbying_clients/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopIndustriesLobbyingHandler, **ad)),
 
+
+    # -------- politicians -------
+    # recipients of largest donations in last month
+    url(r'^pols/donations/largest_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(LargestDonationsInLastMonthHandler, **ad)),
 )
 
 
