@@ -26,9 +26,11 @@ from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
     RegulationsDocketSubmitterHandler
 from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSummaryHandler, CandidateStateHandler, \
     CandidateTimelineHandler, CandidateItemizedDownloadHandler, CommitteeItemizedDownloadHandler, \
-    CommitteeTopContribsHandler
-from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler, \
-    CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler
+    CommitteeTopContribsHandler, LargestDonationsInLastMonthHandler
+from dcapi.aggregates.independentexpenditures.handlers import \
+    CandidateIndExpHandler, CommitteeIndExpHandler, \
+    CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
+    TopPACsByIndExpsHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -258,6 +260,12 @@ urlpatterns = patterns('',
     # top lobbyist bundlers
     url(r'^indivs/lobbyist_bundlers/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopLobbyistBundlersHandler, **ad)),
+
+    # ------ organizations ------
+    # top PACs by independent expenditures
+    url(r'^orgs/indexp/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopPACsByIndExpsHandler, **ad)),
+
 )
 
 

@@ -1,4 +1,4 @@
-from dcapi.aggregates.handlers import EntityTopListHandler
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
 
 
 class CandidateIndExpHandler(EntityTopListHandler):
@@ -49,7 +49,21 @@ class CandidateIndExpDownloadHandler(EntityTopListHandler):
             a.entity_id = %s
         order by spender_name, date, amount desc
     """
-    
+
+class TopPACsByIndExpsHandler(TopListHandler):
+    args = ['cycle', 'limit']
+
+    fields = 'name entity_id amount cycle'.split()
+
+    stmt = """
+        select name, entity_id, spending_amount as amount, cycle
+        from agg_fec_indexp_totals
+        inner join matchbox_entity on matchbox_entity.id = agg_fec_indexp_totals.entity_id
+        where cycle = %s
+        order by spending_amount desc
+        limit %s
+    """
+
 class CommitteeIndExpDownloadHandler(EntityTopListHandler):
     
     args = ['entity_id']
