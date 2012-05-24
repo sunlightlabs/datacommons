@@ -251,7 +251,7 @@ urlpatterns = patterns('',
         Resource(TopIndividualsByContributionsHandler, **ad)),
 
     # top N individuals by contributions to party for a cycle
-    url(r'^indivs/to_party/(?P<party>[RD])/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+    url(r'^indivs/party/(?P<party>[RD])/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopIndividualContributorsToPartyHandler, **ad)),
 
     # top lobbyists
