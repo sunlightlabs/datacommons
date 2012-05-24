@@ -127,7 +127,34 @@ class MatchingCommand(BaseCommand):
             print '\nTo resume, run:'
             print './manage.py {0} -b {1} -t {2}{3}'.format(self.__module__.split('.')[-1], begin_at+i, table, ' -n' if options['insert_non_matches'] else '')
 
-        print 'Done. Find your results in {0}.'.format(table)
+        print 'Done matching. Find your results in {0}.'.format(table)
+        print ''
+        print ''
+
+        print 'Statistics:'
+        print 'Total subjects: {}'.format(self.subject.count())
+        print ''
+
+        cursor.execute('select count(*) from (select subject_id from {} group by subject_id having count(*) > 1)x'.format(table))
+        number_of_multiples = cursor.fetchone()[0]
+        print 'Subject rows with more than one match: {}'.format(number_of_multiples)
+        print ''
+
+        cursor.execute('select avg(count)::integer from (select count(*) from {} group by subject_id having count(*) > 1)x'.format(table))
+        avg_multi_match = cursor.fetchone()[0]
+        print 'Average number of over-matches per subject: {}'.format(avg_multi_match)
+        print ''
+
+        cursor.execute('select confidence, count(*) from {} group by confidence order by confidence desc'.format(table))
+        confidence_distrib = cursor.fetchall()
+
+        print 'Confidence distribution:'
+        for confidence in confidence_distrib:
+            if confidence[0] > 0:
+                print '  {}: {}'.format(*confidence)
+            else:
+                print ' {}: {}'.format(*confidence)
+
 
 
     def cull_match_pool(self, subject_name, full_match_pool):
