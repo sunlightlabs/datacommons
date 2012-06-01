@@ -1,6 +1,5 @@
 import os
 import subprocess
-import tempfile
 import urllib
 import us.fec
 
@@ -26,6 +25,7 @@ SCHEMA_ROOT = os.path.dirname(us.fec.__file__)
 
 SQL_PRELOAD_FILE = os.path.join(os.path.dirname(__file__), 'preload.sql')
 SQL_POSTLOAD_FILE = os.path.join(os.path.dirname(__file__), 'postload.sql')
+VIRTUALENV_ACTIVATE = os.path.expanduser('~datacommons/.virtualenvs/datacommons/bin/activate')
 
 
 class FECImporter():
@@ -111,7 +111,7 @@ class FECImporter():
             outfile = open(os.path.join(self._working_dir(conf), conf.dta_file.split(".")[0] + ".csv"), 'w')
             if conf.schema_file:
                 subprocess.check_call(
-                    ['sort -u %s | in2csv -f fixed --schema=%s -d "|"' % (infile, os.path.join(SCHEMA_ROOT, conf.schema_file))],
+                    ['. %s && sort -u %s | in2csv -f fixed --schema=%s -d "|"' % (VIRTUALENV_ACTIVATE, infile, os.path.join(SCHEMA_ROOT, conf.schema_file))],
                     shell=True, stdout=outfile)
             else:
                 subprocess.check_call( ['sort -u %s ' % infile],

@@ -4,7 +4,7 @@ import os.path
 
 from settings import LOGGING_EMAIL
 
-def set_up_logger(importer_name, log_path, email_subject):
+def set_up_logger(importer_name, log_path, email_subject, email_recipients=LOGGING_EMAIL['recipients']):
     # create logger
     log = logging.getLogger(importer_name)
     log.setLevel(logging.DEBUG)
@@ -22,7 +22,7 @@ def set_up_logger(importer_name, log_path, email_subject):
         eh = logging.handlers.SMTPHandler(
             (LOGGING_EMAIL['host'], LOGGING_EMAIL['port']), # host
             LOGGING_EMAIL['username'], # from address
-            ['arowland@sunlightfoundation.com'], # to addresses
+            email_recipients,
             email_subject,
             (LOGGING_EMAIL['username'], LOGGING_EMAIL['password']) # credentials tuple
         )
