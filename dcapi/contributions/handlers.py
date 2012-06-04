@@ -77,7 +77,37 @@ def filter_contributions(request):
     return CONTRIBUTION_SCHEMA.build_filter(Contribution.objects, request).order_by()
 
 
-CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment',
+_standard_contributions = "10 11 15 15e 15j 22y 24k 24r 24z".split()
+
+def transaction_type_description(t):
+    if len(t) < 2:
+        return ''
+    
+    if t in _standard_contributions:
+        return 'standard contribution'
+    if t == '15c':
+        return 'candidate contribution'
+    if t[0:2] == '16':
+        return 'loan'
+    if t == '29':
+        return 'electioneering cost'
+    if t == '24a':
+        return 'independent expenditure against'
+    if t == '24e':
+        return 'independent expenditure for'
+    if t[0] == '1':
+        return 'non-standard contribution'
+    if t[0] == '2':
+        return 'disbursement'
+
+
+def add_transaction_type_description(result_iter):
+    for row in result_iter:
+        row.transaction_type_description = transaction_type_description(row.transaction_type)
+        yield row
+
+
+CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'transaction_type_description', 'filing_id', 'is_amendment',
               'amount', 'date', 'contributor_name', 'contributor_ext_id', 'contributor_type', 'contributor_occupation',
               'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'organization_name',
@@ -109,6 +139,9 @@ class ContributionFilterHandler(FilterHandler):
     
     def queryset(self, params):
         return filter_contributions(self._unquote(params))
+
+    def read(self, request):
+        return add_transaction_type_description(super(ContributionFilterHandler, self).read(request))
 
 
 class ContributorGeoHandler(FilterHandler):
