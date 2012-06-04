@@ -7,13 +7,13 @@ create table fec_candidate_summaries_02 as select * from fec_candidate_summaries
 create table fec_candidate_summaries_00 as select * from fec_candidate_summaries_import limit 0;
 
 
-create table fec_pac_summaries_12 as select * from fec_committee_summaries_import limit 0;
-create table fec_pac_summaries_10 as select * from fec_committee_summaries_import limit 0;
-create table fec_pac_summaries_08 as select * from fec_committee_summaries_import limit 0;
-create table fec_pac_summaries_06 as select * from fec_committee_summaries_import limit 0;
-create table fec_pac_summaries_04 as select * from fec_committee_summaries_import limit 0;
-create table fec_pac_summaries_02 as select * from fec_committee_summaries_import limit 0;
-create table fec_pac_summaries_00 as select * from fec_committee_summaries_import limit 0;
+create table fec_committee_summaries_12 as select * from fec_committee_summaries_import limit 0;
+create table fec_committee_summaries_10 as select * from fec_committee_summaries_import limit 0;
+create table fec_committee_summaries_08 as select * from fec_committee_summaries_import limit 0;
+create table fec_committee_summaries_06 as select * from fec_committee_summaries_import limit 0;
+create table fec_committee_summaries_04 as select * from fec_committee_summaries_import limit 0;
+create table fec_committee_summaries_02 as select * from fec_committee_summaries_import limit 0;
+create table fec_committee_summaries_00 as select * from fec_committee_summaries_import limit 0;
 
 
 create table fec_candidates_00 as select * from fec_candidates_import limit 0;
