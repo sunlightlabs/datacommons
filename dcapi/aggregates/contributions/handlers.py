@@ -205,6 +205,52 @@ class TopPoliticiansByReceiptsHandler(TopListHandler):
     """
 
 
+class TopPoliticiansByReceiptsByOfficeHandler(TopListHandler):
+    args = 'office office office limit office limit'.split()
+    fields = 'name entity_id office amount'.split()
+
+    stmt = """
+        select
+            candidate_name,
+            entity_id,
+            office,
+            total_receipts
+        from(
+            select
+                entity_id,
+                candidate_name,
+                substring(race from 1 for 1) as office,
+                total_receipts,
+                rank() over (partition by substring(race from 1 for 1) order by total_receipts desc)
+            from
+                fec_candidate_summaries s
+                inner join fec_candidates c using (candidate_id)
+                inner join matchbox_entityattribute a on s.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
+                inner join politician_metadata_latest_cycle_view pm using (entity_id)
+        ) x
+        where
+            case when %s = 'house' then office = 'H' when %s = 'senate' then office = 'S' when %s = 'president' then office = 'P' else 'f' end
+            and rank <= %s
+
+        union all
+
+        select
+            name as candidate_name,
+            entity_id,
+            seat as office,
+            recipient_amount as total_receipts
+        from
+            agg_entities ae
+            inner join matchbox_entity me on ae.entity_id = me.id
+            inner join politician_metadata_latest_cycle_view pm using (entity_id)
+        where
+            (%s = 'governor' and seat = 'state:governor')
+            and ae.cycle = 2012
+        order by total_receipts desc
+        limit %s
+    """
+
+
 class TopOrganizationsByContributionsHandler(TopListHandler):
 
     args = ['cycle', 'limit']
