@@ -6,6 +6,7 @@ from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, 
 from dcapi.schema import Schema, FunctionField, Field
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
+from dcapi.contributions.transaction_types import add_transaction_type_description
 
 
 class MSAField(Field):
@@ -75,36 +76,6 @@ CONTRIBUTION_SCHEMA = Schema(
 
 def filter_contributions(request):    
     return CONTRIBUTION_SCHEMA.build_filter(Contribution.objects, request).order_by()
-
-
-_standard_contributions = "10 11 15 15e 15j 22y 24k 24r 24z".split()
-
-def transaction_type_description(t):
-    if len(t) < 2:
-        return ''
-    
-    if t in _standard_contributions:
-        return 'standard contribution'
-    if t == '15c':
-        return 'candidate contribution'
-    if t[0:2] == '16':
-        return 'loan'
-    if t == '29':
-        return 'electioneering cost'
-    if t == '24a':
-        return 'independent expenditure against'
-    if t == '24e':
-        return 'independent expenditure for'
-    if t[0] == '1':
-        return 'non-standard contribution'
-    if t[0] == '2':
-        return 'disbursement'
-
-
-def add_transaction_type_description(result_iter):
-    for row in result_iter:
-        row.transaction_type_description = transaction_type_description(row.transaction_type)
-        yield row
 
 
 CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'transaction_type_description', 'filing_id', 'is_amendment',
