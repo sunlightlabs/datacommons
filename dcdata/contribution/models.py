@@ -235,11 +235,11 @@ class LobbyistBundle(models.Model):
     image_num = models.BigIntegerField() # IMAGE_NUM: the FEC's actual document ID
     contributor_fec_id = models.CharField(max_length=9, null=True) # CONTBR_ID
     name = models.CharField(max_length=255) # CONTBR_NM
-    street_addr1 = models.CharField(max_length=255) # CONTBR_ST1
+    street_addr1 = models.CharField(max_length=255, null=True) # CONTBR_ST1
     street_addr2 = models.CharField(max_length=255, null=True) # CONTBR_ST2
-    city = models.CharField(max_length=255) # CONTBR_CITY
-    state = models.CharField(max_length=2) # CONTBR_ST
-    zip_code = models.CharField(max_length=10) # CONTBR_ZIP
+    city = models.CharField(max_length=255, null=True) # CONTBR_CITY
+    state = models.CharField(max_length=2, null=True) # CONTBR_ST
+    zip_code = models.CharField(max_length=10, null=True) # CONTBR_ZIP
     employer = models.CharField(max_length=255, null=True) # CONTBR_EMPLOYER
     occupation = models.CharField(max_length=255, null=True) # CONTBR_OCCUPATION
     amount = models.IntegerField(null=True) # CONTB_RECEIPT_AMT
