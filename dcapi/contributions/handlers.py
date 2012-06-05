@@ -1,3 +1,4 @@
+from django.db.models import Q
 
 from dcapi.aggregates.handlers import execute_top
 from dcapi.common.handlers import FilterHandler
@@ -48,11 +49,29 @@ def _recipient_state_in_generator(query, *states):
     return query.filter(recipient_state__in=[state.upper() for state in states])
 
 
+def _general_transaction_type_generator(query, *general_types):
+    if 'all' in general_types:
+        return query
+
+    def _generator(general_type):        
+        if general_type == 'standard':
+            return Q(transaction_type__in=('', '10', '11', '15', '15e', '15j', '22y', '24k', '24r', '24z'))
+        if general_type == 'ie_supporting':
+            return Q(transaction_type='24e')
+        if general_type == 'ie_opposing':
+            return Q(transaction_type='24a')
+        if general_type == 'electioneering':
+            return Q(transaction_type='29')
+    
+    return query.filter(reduce(lambda x, y: x | y, [_generator(general_type) for general_type in general_types]))
+
+
 CONTRIBUTION_SCHEMA = Schema(
     FunctionField('contributor_state', _contributor_state_in_generator),
     FunctionField('recipient_state', _recipient_state_in_generator),
     FunctionField('cycle', _cycle_in_generator),
     FunctionField('for_against', _for_against_generator),
+    FunctionField('general_transaction_type', _general_transaction_type_generator),
     IndustryField('contributor_industry', 'contributor_category'),
     InclusionField('seat'),
     InclusionField('transaction_namespace'),
