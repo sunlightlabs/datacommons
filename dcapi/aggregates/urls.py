@@ -17,7 +17,7 @@ from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
     RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
     RegistrantLobbyistsHandler, TopFirmsByIncomeHandler, \
-    TopIndustriesLobbyingHandler
+    TopOrgsLobbyingHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
@@ -278,8 +278,8 @@ urlpatterns = patterns('',
         Resource(TopIndustryContributorsToPartyHandler, **ad)),
 
     # top lobbying clients by spending
-    url(r'^industries/lobbying_clients/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
-        Resource(TopIndustriesLobbyingHandler, **ad)),
+    url(r'^(?P<entity_type>industries|orgs)/lobbying/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopOrgsLobbyingHandler, **ad)),
 
 
     # -------- politicians -------

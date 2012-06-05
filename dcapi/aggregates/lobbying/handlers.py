@@ -159,6 +159,29 @@ class RegistrantLobbyistsHandler(EntityTopListHandler):
     """
 
 
+class TopOrgsLobbyingHandler(TopListHandler):
+    args = ['entity_type', 'cycle', 'limit']
+
+    fields = 'name entity_id amount cycle'.split()
+
+    stmt = """
+        select name, entity_id, non_firm_spending, cycle
+        from agg_lobbying_totals
+        inner join matchbox_entity on matchbox_entity.id = entity_id
+        where
+            non_firm_spending > 0
+            and case
+                when %s = 'industries'
+                then type = 'industry' and entity_id in (
+                    select entity_id from matchbox_entityattribute where namespace = 'urn:crp:industry'
+                )
+                else type = 'organization' end
+            and cycle = %s
+        order by non_firm_spending desc
+        limit %s
+    """
+
+
 class TopFirmsByIncomeHandler(TopListHandler):
     args = ['cycle', 'limit']
 
