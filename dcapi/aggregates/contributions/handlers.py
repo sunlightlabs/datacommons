@@ -465,6 +465,7 @@ class TopIndustryContributorsToPartyHandler(TopListHandler):
                 rank() over (partition by cycle, recipient_party order by amount desc, count desc) as rank
             from agg_party_from_org
             inner join matchbox_entity me on me.id = organization_entity
+            inner join matchbox_entityattribute mea on me.id = mea.entity_id and mea.namespace = 'urn:crp:industry'
             where type = 'industry'
                 and name not ilike '%%unknown%%' 
                 and name not ilike '%%retired%%' 
