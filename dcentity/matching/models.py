@@ -66,6 +66,12 @@ class USNewsTop200University(models.Model):
         db_table = 'us_news_200_unis'
 
 
+class ConsumerGroup(models.Model):
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'consumer_group'
+
 class HillStaffer(models.Model):
     name = models.CharField(max_length=100)
     office = models.CharField(max_length=100)
