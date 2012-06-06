@@ -25,7 +25,7 @@ from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
 from dcapi.aggregates.epa.handlers import TopViolationActionsHandler
 from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
     RegulationsSubmitterHandler, RegulationsDocketTextHandler, \
-    RegulationsDocketSubmitterHandler
+    RegulationsDocketSubmitterHandler, TopRegsSubmittersHandler
 from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSummaryHandler, CandidateStateHandler, \
     CandidateTimelineHandler, CandidateItemizedDownloadHandler, CommitteeItemizedDownloadHandler, \
     CommitteeTopContribsHandler, LargestDonationsInLastMonthHandler
@@ -271,6 +271,10 @@ urlpatterns = patterns('',
     # top lobbying firms by income
     url(r'^orgs/lobbying_firms/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopFirmsByIncomeHandler, **ad)),
+
+    # top orgs by regulation submissions
+    url(r'^orgs/regulations/submitters/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopRegsSubmittersHandler, **ad)),
 
     # --------- industries ------- 
     # top N industry donors to party
