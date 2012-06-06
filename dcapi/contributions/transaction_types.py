@@ -1,4 +1,4 @@
-_transaction_type_descriptions = {
+transaction_type_descriptions = {
     '10': "Non-Federal Receipt from Persons - Levin Account (L-1A)",
     '11': "Tribal Contribution",
     '12': "Non-Federal Other Receipt - Levin Account (L-2)",
@@ -70,8 +70,3 @@ _transaction_type_descriptions = {
     '28l': "Refund of Bundled Contribution",
     '29': "Electioneering Communication Disbursement or Obligation",
 }
-
-def add_transaction_type_description(result_iter):
-    for row in result_iter:
-        row.transaction_type_description = _transaction_type_descriptions.get(row.transaction_type, '')
-        yield row

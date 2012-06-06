@@ -7,7 +7,7 @@ from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, 
 from dcapi.schema import Schema, FunctionField, Field
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
-from dcapi.contributions.transaction_types import add_transaction_type_description
+from dcapi.contributions.transaction_types import transaction_type_descriptions
 
 
 class MSAField(Field):
@@ -120,6 +120,7 @@ class ContributionStatsLogger(object):
         self.stats['total'] += 1
 
 
+
 class ContributionFilterHandler(FilterHandler):
     fields = CONTRIBUTION_FIELDS
     model = Contribution
@@ -127,11 +128,19 @@ class ContributionFilterHandler(FilterHandler):
     ordering = ['-cycle','-amount']
     filename = 'contributions'
     
+    def add_transaction_type_description(self, result_iter):
+        for row in result_iter:
+            row.transaction_type_description = transaction_type_descriptions.get(row.transaction_type, '')
+            # ExcelEmitter will only emit Model fields, not dynamically added fields.
+            # So need to convert to dict to get new field to emit.
+            result = dict([(f, getattr(row, f)) for f in self.fields])
+            yield result
+    
     def queryset(self, params):
         return filter_contributions(self._unquote(params))
 
     def read(self, request):
-        return add_transaction_type_description(super(ContributionFilterHandler, self).read(request))
+        return self.add_transaction_type_description(super(ContributionFilterHandler, self).read(request))
 
 
 class ContributorGeoHandler(FilterHandler):
