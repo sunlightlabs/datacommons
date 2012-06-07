@@ -10,6 +10,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndividualContributorsToPartyHandler, TopLobbyistsHandler, \
     TopLobbyistBundlersHandler, TopIndustryContributorsToPartyHandler, \
     TopPoliticiansByReceiptsByOfficeHandler, \
+    TopIndividualContributorsByAreaHandler, \
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -247,6 +248,7 @@ urlpatterns = patterns('',
 
     # -- entity type top lists --
     # ---------------------------
+    # ------- individuals -------
     # top N individuals by contributions for a cycle
     url(r'^indivs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopIndividualsByContributionsHandler, **ad)),
@@ -262,6 +264,10 @@ urlpatterns = patterns('',
     # top lobbyist bundlers
     url(r'^indivs/lobbyist_bundlers/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopLobbyistBundlersHandler, **ad)),
+
+    # top indiv contributors at state or federal level
+    url(r'^indivs/(?P<area>state|federal)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndividualContributorsByAreaHandler, **ad)),
 
     # ------ organizations ------
     # top PACs by independent expenditures

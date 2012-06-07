@@ -399,30 +399,30 @@ class TopIndividualContributorsToPartyHandler(TopListHandler):
         ;
     """
 
-# TODO: broken, doesn't work
-# part of the reason this is broken is because the associations table for lobbyists is broken, and the agg_lobbying_lobbyists_for_registrant table is thus broken
-class TopLobbyistsHandler(TopListHandler):
-    args = ['cycle', 'limit']
-    fields = ['entity_id', 'name', 'cycle', 'num_contracts', 'contracts_amount', 'rank']
+class TopIndividualContributorsByAreaHandler(TopListHandler):
+    args = ['area', 'limit', 'cycle']
+    fields = ['entity_id', 'name', 'area', 'cycle', 'count', 'amount', 'rank']
 
     stmt = """
-        select
-            entity_id,
-            me.name,
-            cycle,
-            count(*),
-            sum(non_firm_spending) as non_firm_spending_total,
-            sum(firm_income) as firm_income_total
-        from agg_lobbying_totals -- doesn't work, this table doesn't keep any totals for lobbyist entities
-            inner join matchbox_entity me on me.id = entity_id
-        where type = 'individual'
+        select * from (
+            select
+                contributor_entity,
+                name,
+                namespace,
+                cycle,
+                count,
+                amount,
+                rank() over (partition by cycle, namespace order by amount desc, count desc) as rank
+            from agg_indivs_by_namespace
+            inner join matchbox_entity me on me.id = contributor_entity
+            where type = 'individual'
+        ) x
+        where
+            namespace = case when %s = 'state' then 'urn:nimsp:transaction' else 'urn:fec:transaction' end
+            and rank <= %s
             and cycle = %s
-        group by entity_id, me.name, cycle
-        order by sum(non_firm_spending) desc, sum(firm_income) desc, count(*) desc
-        limit %s
         ;
     """
-
 
 class TopLobbyistBundlersHandler(TopListHandler):
     args = ['cycle', 'limit']
