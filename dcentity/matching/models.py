@@ -57,6 +57,21 @@ class Fortune100Company(models.Model):
     class Meta:
         db_table = 'fortune_100'
 
+
+class USNewsTop200University(models.Model):
+    rank = models.SmallIntegerField(null=False)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'us_news_200_unis'
+
+
+class ConsumerGroup(models.Model):
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'consumer_group'
+
 class HillStaffer(models.Model):
     name = models.CharField(max_length=100)
     office = models.CharField(max_length=100)
