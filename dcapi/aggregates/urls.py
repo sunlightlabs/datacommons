@@ -301,8 +301,11 @@ urlpatterns = patterns('',
     url(r'^pols/indexp/(?P<office>president|senate|house)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopCandidatesAffectedByIndExpHandler, **ad)),
 
-    # recipients of largest donations in last month
-    url(r'^pols/donations/largest_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+
+    # --------- multi-entity ----------
+
+    # largest donations in last month (offers PAC, candidate, and individual)
+    url(r'^fec/last_month/largest_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(LargestDonationsInLastMonthHandler, **ad)),
 )
 

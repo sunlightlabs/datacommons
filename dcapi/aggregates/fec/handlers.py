@@ -178,22 +178,29 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
 
 class LargestDonationsInLastMonthHandler(TopListHandler):
     args = ['limit']
-    fields = 'contributor_name transaction_type amount name entity_id'.split()
+    fields = 'contributor_name committee_name committee_entity candidate_name candidate_entity amount'.split()
 
     stmt = """
-        select 
+        select
             contributor_name,
-            transaction_type,
-            amount,
+            committee_name,
+            committee.entity_id as committee_entity,
             candidate_name,
-            entity_id as candidate_entity
-        from fec_candidate_itemized i
-        inner join matchbox_entityattribute a 
-            on i.candidate_id = a.value 
-            and a.namespace = 'urn:fec:candidate' 
-        where date between (now() - '1 month'::interval) and now() 
-        order by amount desc 
-        limit 10
+            candidate.entity_id,
+            amount
+        from fec_committee_itemized i
+        inner join matchbox_entityattribute committee
+            on i.committee_id = committee.value
+            and committee.namespace = 'urn:fec:committee'
+        left join fec_candidates using (candidate_id)
+        left join matchbox_entityattribute candidate
+            on i.candidate_id = candidate.value
+            and candidate.namespace = 'urn:fec:candidate'
+        where
+            date between (now() - '1 month'::interval) and now()
+            --and candidate_id is not null
+        order by amount desc
+        limit %s
     """
 
 
