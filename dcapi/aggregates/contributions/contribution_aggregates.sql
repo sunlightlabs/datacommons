@@ -701,6 +701,40 @@ select date_trunc('second', now()) || ' -- create index agg_cands_from_indiv_idx
 create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle);
 
 
+-- Individuals: Top Donors by Namespace (state/federal)
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_indivs_by_namespace';
+drop table if exists agg_indivs_by_namespace cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_indivs_by_namespace';
+create table agg_indivs_by_namespace as
+    with individual_contributions_by_cycle as (
+        select transaction_namespace as namespace, contributor_entity,
+            cycle, sum(count) as count, sum(amount) as amount,
+            rank() over (partition by transaction_namespace, contributor_entity, cycle order by sum(amount) desc) as rank
+        from agg_entity_to_entity c
+        group by transaction_namespace, contributor_entity, cycle
+    )
+
+    select contributor_entity, namespace, cycle, count, amount
+    from individual_contributions_by_cycle
+    where rank <= :agg_top_n
+
+    union all
+
+    select contributor_entity, namespace, -1, count, amount
+    from (
+        select contributor_entity, namespace, sum(count) as count, sum(amount) as amount,
+            rank() over (partition by contributor_entity order by sum(amount) desc) as rank
+        from individual_contributions_by_cycle
+        group by contributor_entity, namespace
+    ) x
+    where rank <= :agg_top_n;
+
+select date_trunc('second', now()) || ' -- create index agg_indivs_by_namespace_idx on agg_indivs_by_namespace (contributor_entity, cycle)';
+create index agg_indivs_by_namespace_idx on agg_indivs_by_namespace (contributor_entity, cycle);
+
+
 -- Individuals: Top Organization Recipients
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_orgs_from_indiv';
