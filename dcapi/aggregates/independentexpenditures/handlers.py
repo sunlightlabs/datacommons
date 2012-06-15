@@ -84,4 +84,23 @@ class CommitteeIndExpDownloadHandler(EntityTopListHandler):
             a.entity_id = %s
         order by candidate_name, date, amount desc
     """
-    
+
+class TopCandidatesAffectedByIndExpHandler(TopListHandler):
+
+    args = 'office office limit'.split()
+    fields = 'entity_id name support_amount oppose_amount total_amount'.split()
+
+    stmt = """
+        select candidate_entity, candidate_name, sum(support_amount) as support_amount, sum(oppose_amount) as oppose_amount, sum(support_amount) + sum(oppose_amount) as total_amount
+        from (
+            select candidate_entity, me.name as candidate_name, case when lower(support_oppose) = 'support' then amount else 0 end as support_amount, case when lower(support_oppose) = 'oppose' then amount else 0 end as oppose_amount
+            from agg_fec_indexp
+            inner join matchbox_entity me on me.id = candidate_entity
+            inner join politician_metadata_latest_cycle_view meta on meta.entity_id = me.id
+            and seat = case when %s = 'house' then 'federal:house' when %s = 'senate' then 'federal:senate' else 'federal:president' end
+        ) x
+        group by candidate_entity, candidate_name
+        order by total_amount desc
+        limit %s
+    """
+

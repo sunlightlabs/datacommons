@@ -33,7 +33,7 @@ from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSumm
 from dcapi.aggregates.independentexpenditures.handlers import \
     CandidateIndExpHandler, CommitteeIndExpHandler, \
     CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
-    TopPACsByIndExpsHandler
+    TopPACsByIndExpsHandler, TopCandidatesAffectedByIndExpHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -296,6 +296,10 @@ urlpatterns = patterns('',
     # top political fundraisers by office
     url(r'^pols/(?P<office>president|senate|house|governor)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopPoliticiansByReceiptsByOfficeHandler, **ad)),
+
+    # top candidates targeted by independent expenditures
+    url(r'^pols/indexp/(?P<office>president|senate|house)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopCandidatesAffectedByIndExpHandler, **ad)),
 
     # recipients of largest donations in last month
     url(r'^pols/donations/largest_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
