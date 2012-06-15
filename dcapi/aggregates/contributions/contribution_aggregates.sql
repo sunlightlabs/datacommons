@@ -431,6 +431,45 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 
 
 
+-- Entity to Entity Aggregates by Cycle
+select date_trunc('second', now()) || ' -- create table agg_entity_to_entity';
+select
+    transaction_namespace,
+    sum(amount) as amount,
+    count(*),
+    cycle,
+    contributor_name,
+    ce.id as contributor_entity,
+    ce.type as contributor_type,
+    organization_name,
+    oe.id as organization_entity,
+    parent_organization_name,
+    poe.id as parent_organization_name,
+    recipient_name,
+    re.id as recipient_entity,
+    re.type as recipient_type,
+    recipient_party as party,
+    seat,
+    ie.id as industry_id,
+    ie.name as industry_name
+from contributions_all_relevant
+left join contributor_associations ca using (transaction_id)
+left join matchbox_entity ce on ce.id = ca.entity_id
+left join organization_associations oa using (transaction_id)
+left join matchbox_entity oe on oe.id = oa.entity_id
+left join parent_organization_associations poa using (transaction_id)
+left join matchbox_entity poe on poe.id = poa.entity_id
+left join recipient_associations ra using (transaction_id)
+left join matchbox_entity re on re.id = ra.entity_id
+left join industry_associations ia using (transaction_id)
+left join matchbox_entity ie on ie.id = ia.entity_id
+;
+create index agg_entity_to_entity__contributor_type_idx on agg_entity_to_entity (contributor_type);
+create index agg_entity_to_entity__cycle_idx on agg_entity_to_entity (cycle);
+
+
+
+
 -- Entity Aggregates (Contribution Totals)
 
 
