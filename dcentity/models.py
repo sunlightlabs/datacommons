@@ -362,7 +362,7 @@ class BioguideInfo(models.Model):
     bioguide_id      = models.CharField(max_length=7, blank=True, null=True)
     bio              = models.TextField(null=True)
     bio_url          = models.URLField(null=True)
-    years_of_service = models.CharField(max_length=12, null=True)
+    years_of_service = models.CharField(max_length=32, null=True)
     photo_url        = models.URLField(null=True)
 
     created_on       = models.DateField(auto_now_add=True)
