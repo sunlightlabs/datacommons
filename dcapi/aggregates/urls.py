@@ -7,10 +7,11 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
     ContributionAmountHandler, OrgPACRecipientsHandler, \
-    TopIndividualContributorsToPartyHandler, TopLobbyistsHandler, \
-    TopLobbyistBundlersHandler, TopIndustryContributorsToPartyHandler, \
-    TopPoliticiansByReceiptsByOfficeHandler, \
+    TopIndividualContributorsToPartyHandler, \
     TopIndividualContributorsByAreaHandler, \
+    TopLobbyistBundlersHandler, TopPoliticiansByReceiptsByOfficeHandler, \
+    TopIndustryContributorsToPartyHandler, \
+    TopOrganizationContributorsByAreaHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -258,8 +259,8 @@ urlpatterns = patterns('',
         Resource(TopIndividualContributorsToPartyHandler, **ad)),
 
     # top lobbyists
-    url(r'^indivs/lobbyists/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
-        Resource(TopLobbyistsHandler, **ad)),
+    #url(r'^indivs/lobbyists/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+    #    Resource(TopLobbyistsHandler, **ad)),
 
     # top lobbyist bundlers
     url(r'^indivs/lobbyist_bundlers/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
@@ -282,7 +283,11 @@ urlpatterns = patterns('',
     url(r'^orgs/regulations/submitters/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopRegsSubmittersHandler, **ad)),
 
-    # --------- industries ------- 
+    # top org contributors at state or federal level
+    url(r'^orgs/(?P<area>state|federal)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopOrganizationContributorsByAreaHandler, **ad)),
+
+    # --------- industries -------
     # top N industry donors to party
     url(r'^industries/party/(?P<party>[RD])/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopIndustryContributorsToPartyHandler, **ad)),
