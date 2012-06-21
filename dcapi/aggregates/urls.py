@@ -11,7 +11,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndividualContributorsByAreaHandler, \
     TopLobbyistBundlersHandler, TopPoliticiansByReceiptsByOfficeHandler, \
     TopIndustryContributorsToPartyHandler, \
-    TopOrganizationContributorsByAreaHandler
+    TopOrgContributorsByAreaContributorTypeHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -283,9 +283,9 @@ urlpatterns = patterns('',
     url(r'^orgs/regulations/submitters/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopRegsSubmittersHandler, **ad)),
 
-    # top org contributors at state or federal level
-    url(r'^orgs/(?P<area>state|federal)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
-        Resource(TopOrganizationContributorsByAreaHandler, **ad)),
+    # top org contributors by pac/employee at state or federal level
+    url(r'^orgs/(?P<area>state|federal)/(?P<pac_or_employee>pac|employee)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopOrgContributorsByAreaContributorTypeHandler, **ad)),
 
     # --------- industries -------
     # top N industry donors to party

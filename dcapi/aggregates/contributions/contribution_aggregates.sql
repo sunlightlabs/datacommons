@@ -1013,6 +1013,40 @@ select date_trunc('second', now()) || ' -- create index agg_party_from_org_idx o
 create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle);
 
 
+-- State/Fed from Organization-Affiliated Indiv/PAC
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_from_org_by_namespace_contributor_type';
+drop table if exists agg_from_org_by_namespace_contributor_type cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_from_org_by_namespace_contributor_type';
+create table agg_from_org_by_namespace_contributor_type as
+    with contribs_by_cycle as (
+        select
+            organization_entity,
+            contributor_type,
+            transaction_namespace,
+            cycle,
+            count(*),
+            sum(amount) as amount
+        from contributions_flat c
+        group by organization_entity, contributor_type, transaction_namespace, cycle
+    )
+
+    select organization_entity, contributor_type, transaction_namespace, cycle, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select organization_entity, contributor_type, transaction_namespace, -1, sum(count) as count, sum(amount) as amount
+    from contribs_by_cycle
+    group by organization_entity, contributor_type, transaction_namespace
+;
+
+select date_trunc('second', now()) || ' -- create index agg_from_org_by_namespace_contributor_type__entity_cycle on agg_from_org_by_namespace_contributor_type (organization_entity, cycle)';
+create index agg_from_org_by_namespace_contributor_type__entity_cycle on agg_from_org_by_namespace_contributor_type (organization_entity, cycle);
+
+
+
 
 -- State/Fed from Organization
 

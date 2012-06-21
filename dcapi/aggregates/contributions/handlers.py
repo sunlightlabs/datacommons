@@ -479,3 +479,26 @@ class TopIndustryContributorsToPartyHandler(TopListHandler):
         ;
     """
 
+
+class TopOrgContributorsByAreaContributorTypeHandler(TopListHandler):
+    args = 'area pac_or_employee cycle limit'.split()
+    fields = 'entity_id name count amount'.split()
+
+    stmt = """
+        select
+            organization_entity,
+            e.name,
+            count,
+            amount
+        from
+            agg_from_org_by_namespace_contributor_type a
+            inner join matchbox_entity e on e.id = a.organization_entity
+        where
+            transaction_namespace = case when %s = 'state' then 'urn:nimsp:transaction' else 'urn:fec:transaction' end
+            and contributor_type = case when %s = 'employee' then 'I' else 'C' end
+            and cycle = %s
+        order by
+            amount desc, count desc
+        limit %s
+    """
+
