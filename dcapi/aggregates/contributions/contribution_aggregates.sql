@@ -430,63 +430,46 @@ select date_trunc('second', now()) || ' -- create index recipient_associations_t
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
 
-
--- Entity to Entity Aggregates by Cycle
-select date_trunc('second', now()) || ' -- create table agg_entity_to_entity';
--- TODO: we need to check this carefully to make sure the joins are not duplicating transactions
-create table agg_entity_to_entity as
+-- Flattened contributions with all associations included. Not aggregated. (save for industries)
+select date_trunc('second', now()) || ' -- drop table if exists contributions_flat';
+drop table if exists contributions_flat;
+select date_trunc('second', now()) || ' -- create table contributions_flat';
+create table contributions_flat as
     select
+        transaction_id,
         transaction_namespace,
-        sum(amount) as amount,
-        count(*),
-        cycle,
+
         contributor_name,
-        ce.id as contributor_entity,
-        ce.type as contributor_type,
+        ca.entity_id as contributor_entity,
+        contributor_type,
+
         organization_name,
-        oe.id as organization_entity,
+        oa.entity_id as organization_entity,
+
         parent_organization_name,
-        poe.id as parent_organization_name,
+        poa.entity_id as parent_organization_entity,
+
         recipient_name,
-        re.id as recipient_entity,
-        re.type as recipient_type,
+        ra.entity_id as recipient_entity,
+        recipient_type,
         recipient_party as party,
         seat,
-        ie.id as industry_id,
-        ie.name as industry_name
+
+        cycle,
+        amount
     from contributions_all_relevant
     left join contributor_associations ca using (transaction_id)
-    left join matchbox_entity ce on ce.id = ca.entity_id
     left join organization_associations oa using (transaction_id)
-    left join matchbox_entity oe on oe.id = oa.entity_id
     left join parent_organization_associations poa using (transaction_id)
-    left join matchbox_entity poe on poe.id = poa.entity_id
     left join recipient_associations ra using (transaction_id)
-    left join matchbox_entity re on re.id = ra.entity_id
-    left join industry_associations ia using (transaction_id)
-    left join matchbox_entity ie on ie.id = ia.entity_id
-    group by
-        transaction_namespace,
-        cycle,
-        contributor_name,
-        ce.id,
-        ce.type,
-        organization_name,
-        oe.id,
-        parent_organization_name,
-        poe.id,
-        recipient_name,
-        re.id,
-        re.type,
-        recipient_party,
-        seat,
-        ie.id,
-        ie.name
-    ;
-create index agg_entity_to_entity__contributor_type_idx on agg_entity_to_entity (contributor_type);
-create index agg_entity_to_entity__cycle_idx on agg_entity_to_entity (cycle);
+;
 
-
+select date_trunc('second', now()) || ' -- create index contributions_flat__contributor_type_idx';
+create index contributions_flat__contributor_type_idx on contributions_flat (contributor_type);
+select date_trunc('second', now()) || ' -- create index contributions_flat__recipient_type_idx';
+create index contributions_flat__recipient_type_idx on contributions_flat (recipient_type);
+select date_trunc('second', now()) || ' -- create index contributions_flat__cycle_idx';
+create index contributions_flat__cycle_idx on contributions_flat (cycle);
 
 
 -- Entity Aggregates (Contribution Totals)
@@ -710,9 +693,9 @@ select date_trunc('second', now()) || ' -- create table agg_indivs_by_namespace'
 create table agg_indivs_by_namespace as
     with individual_contributions_by_cycle as (
         select transaction_namespace as namespace, contributor_entity,
-            cycle, sum(count) as count, sum(amount) as amount,
+            cycle, count(*) as count, sum(amount) as amount,
             rank() over (partition by transaction_namespace, contributor_entity, cycle order by sum(amount) desc) as rank
-        from agg_entity_to_entity c
+        from contributions_flat c
         group by transaction_namespace, contributor_entity, cycle
     )
 
