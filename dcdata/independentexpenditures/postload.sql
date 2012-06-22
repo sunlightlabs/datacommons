@@ -43,12 +43,64 @@ from (values
     ('krishnamoorthi, raja', 'H2IL08096'),
     ('tester, jon', 'S6MT00162'),
     ('allen, george', 'S8VA00214'),
-    ('bachus, spencer', 'H2AL06035')
+    ('bachus, spencer', 'H2AL06035'),
+    ('Aguilar, Pete', 'H2CA31125'),
+    ('Aubuchon, Gary', 'H2FL14145'),
+    ('Berman, Howard', 'H2CA26026'),
+    ('Bilbray, Brian', 'H4CA49032'),
+    ('Bono Mack, Mary', 'H8CA44034'),
+    ('Brownley, Julia', 'H2CA00120'),
+    ('Cartwright, Matt', 'H2PA17079'),
+    ('Cook, Paul', 'H2CA08164'),
+    ('CRIMMINS, MICHAEL', 'H8CA53019'),
+    ('Critz, Mark', 'H0PA12132'),
+    ('Denham, Jeff', 'H0CA19173'),
+    ('Griffin, John', 'H0AR02107'),
+    ('Hoogendyk, Jack', 'H0MI06103'),
+    ('Kang, Sukhee', 'H2CA48087'),
+    ('Keadle, Scott', 'H0NC10151'),
+    ('kelly, jesse', 'H0AZ08015'),
+    ('Liljenquist, Dan', 'S2UT00195'),
+    ('Lugar, Richard', 'S4IN00014'),
+    ('Lungren, Dan', 'H6CA34112'),
+    ('Miller, Gary', 'H8CA41063'),
+    ('Mourdock, Richard', 'S2IN00083'),
+    ('Mourdock, Richard E.', 'S2IN00083'),
+    ('Rangel, Charles', 'H6NY19029'),
+    ('VANN, KIM', 'H2CA03090'),
+    ('Warren, Elizabeth', 'S2MA00170'),
+    ('Wilson, Heather', 'S8NM00168'),
+    ('CRAMER, KEVIN J', 'H0ND01026'),
+    ('D''Amboise, Scott', 'S2ME00042'),
+    ('Dutton, Bob', 'H2CA31133'),
+    ('Obama, Barak', 'P80003338'),
+    ('Simpson, Mike', 'H8ID02064'),
+    ('Taj, Clayton', 'H2TX30087')
 ) manual_fixes (name, id)
 where
-    lower(candidate_name) = manual_fixes.name
-    and length(candidate_id) < 9;
-    
+    lower(candidate_name) = lower(manual_fixes.name);
+
+
+-- some names are shared by multiple people. For these we need to restrict by state as well.
+update fec_indexp_import
+set candidate_id = manual_fixes.id
+from (values
+    ('John, Sullivan', 'OK', 'H2OK01093')
+) manual_fixes (name, state, id)
+where
+    lower(candidate_name) = lower(manual_fixes.name)
+    and candidate_state = state;
+
+-- some candidates aren't running for federal office and shouldn't be reported here to begin with
+-- removing here just so I don't see them when I run the test for unidentified politicians
+delete from fec_indexp_import
+where 
+    candidate_name in (
+        'Ballasteros, Adan',
+        'Cargill, Mike',
+        'WALKER, SCOTT'
+    );
+
 
 drop table if exists fec_indexp_amendments;
 create table fec_indexp_amendments as
