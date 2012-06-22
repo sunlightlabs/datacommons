@@ -150,7 +150,7 @@ class Command(BaseCommand):
         return None. '''
 
         arguments = urllib.urlencode({
-            'apikey': settings.API_KEY,
+            'apikey': settings.SYSTEM_API_KEY,
             'crp_id': crp_id,
             'all_legislators': 1,
         })
