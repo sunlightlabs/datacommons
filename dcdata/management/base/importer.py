@@ -7,7 +7,7 @@ import datetime
 from dcdata.utils.log            import set_up_logger
 from django.core.management.base import BaseCommand, CommandError
 from optparse                    import make_option
-from settings                    import LOGGING_DIRECTORY, TMP_DIRECTORY
+from settings                    import LOGGING_DIRECTORY, TMP_DIRECTORY, LOGGING_EMAIL
 
 
 class BaseImporter(BaseCommand):
@@ -19,6 +19,7 @@ class BaseImporter(BaseCommand):
     FILE_PATTERN = None # bash-style, ala '*.sql'
 
     email_subject = 'Unhappy Loading App'
+    email_recipients = LOGGING_EMAIL['recipients']
 
     # initializing this here so that tests which don't call handle() don't fail
     dry_run = None
@@ -36,9 +37,10 @@ class BaseImporter(BaseCommand):
     def __init__(self):
         super(BaseImporter, self).__init__()
         self.class_name = self.__class__.__name__
-        self.log_path = os.path.join(LOGGING_DIRECTORY, self.__module__.split('.')[-1])
-        self.log = set_up_logger(self.class_name, self.log_path, self.email_subject)
-        self.pid_file_path = os.path.join(TMP_DIRECTORY, self.__module__.split('.')[-1])
+        self.module_name = self.__module__.split('.')[-1]
+        self.log_path = LOGGING_DIRECTORY
+        self.log = set_up_logger(self.module_name, self.log_path, self.email_subject, email_recipients=self.email_recipients)
+        self.pid_file_path = os.path.join(TMP_DIRECTORY, self.module_name)
 
 
     def handle(self, *args, **options):
