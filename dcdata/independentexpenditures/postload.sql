@@ -102,24 +102,6 @@ where
     );
 
 
-drop table if exists fec_indexp_amendments;
-create table fec_indexp_amendments as
-with filings as (
-    select distinct spender_id, filing_number, case when amendment = 'N' then 0 else substring(amendment from 2 for 1)::integer end as amendment_number
-    from fec_indexp_import)
-select a.spender_id, a.filing_number as original_filing, a.amendment_number, b.filing_number as amendment_filing, b.amendment_number as amendment_number2
-from filings a
-inner join filings b using (spender_id)
-where
-    a.amendment_number < b.amendment_number
-    and exists (
-        select *
-        from fec_indexp_import x
-        inner join fec_indexp_import y using (spender_id, transaction_id)
-        where
-            x.filing_number = a.filing_number
-            and y.filing_number = b.filing_number);
-
 drop view if exists agg_fec_indexp_candidates;
 drop view if exists agg_fec_indexp_committees;
 
@@ -133,7 +115,7 @@ select candidate_id, candidate_name, spender_id, spender_name, election_type, ca
     support_oppose, date, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date
 from fec_indexp_import i
 where
-    not exists (select * from fec_indexp_amendments a where i.spender_id = a.spender_id and i.filing_number = a.original_filing);
+    not exists (select * from fec_indexp_import a where i.spender_id = a.spender_id and i.filing_number = a.prev_file_num);
 
 -- just here to trigger errors if something is wrong with the data
 alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id, filing_number, transaction_id);
