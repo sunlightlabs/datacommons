@@ -20,7 +20,8 @@ create table fec_indexp_import (
     amendment varchar(2),
     transaction_id varchar(32),
     image_number varchar(11),
-    received_date date
+    received_date date,
+    prev_file_num varchar(6)
 );
 
 
