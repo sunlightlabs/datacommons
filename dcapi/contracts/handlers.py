@@ -2,6 +2,8 @@ from dcapi.common.handlers import FilterHandler
 from dcapi.common.schema import InclusionField, FulltextField, ComparisonField
 from dcapi.schema import Schema
 from dcdata.contracts.models import Contract
+from dcdata.utils.sql import parse_date
+
 
 CONTRACTS_SCHEMA = Schema(
     InclusionField('agency_id', 'agencyid'),
@@ -23,7 +25,8 @@ CONTRACTS_SCHEMA = Schema(
 
     ComparisonField('obligated_amount', 'obligatedamount', cast=int),
     ComparisonField('current_amount', 'baseandexercisedoptionsvalue', cast=int),
-    ComparisonField('maximum_amount', 'baseandalloptionsvalue', cast=int)
+    ComparisonField('maximum_amount', 'baseandalloptionsvalue', cast=int),
+    ComparisonField('signed_date', 'signeddate', cast=parse_date),
 )
 
 

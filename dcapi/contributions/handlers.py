@@ -1,3 +1,4 @@
+from django.db.models import Q
 
 from dcapi.aggregates.handlers import execute_top
 from dcapi.common.handlers import FilterHandler
@@ -6,6 +7,7 @@ from dcapi.common.schema import InclusionField, ComparisonField, FulltextField, 
 from dcapi.schema import Schema, FunctionField, Field
 from dcdata.contribution.models import Contribution
 from dcdata.utils.sql import parse_date
+from dcapi.contributions.transaction_types import transaction_type_descriptions
 
 
 class MSAField(Field):
@@ -47,11 +49,29 @@ def _recipient_state_in_generator(query, *states):
     return query.filter(recipient_state__in=[state.upper() for state in states])
 
 
+def _general_transaction_type_generator(query, *general_types):
+    if 'all' in general_types:
+        return query
+
+    def _generator(general_type):        
+        if general_type == 'standard':
+            return Q(transaction_type__in=('', '10', '11', '15', '15e', '15j', '22y', '24k', '24r', '24z'))
+        if general_type == 'ie_supporting':
+            return Q(transaction_type='24e')
+        if general_type == 'ie_opposing':
+            return Q(transaction_type='24a')
+        if general_type == 'electioneering':
+            return Q(transaction_type='29')
+    
+    return query.filter(reduce(lambda x, y: x | y, [_generator(general_type) for general_type in general_types]))
+
+
 CONTRIBUTION_SCHEMA = Schema(
     FunctionField('contributor_state', _contributor_state_in_generator),
     FunctionField('recipient_state', _recipient_state_in_generator),
     FunctionField('cycle', _cycle_in_generator),
     FunctionField('for_against', _for_against_generator),
+    FunctionField('general_transaction_type', _general_transaction_type_generator),
     IndustryField('contributor_industry', 'contributor_category'),
     InclusionField('seat'),
     InclusionField('transaction_namespace'),
@@ -77,7 +97,7 @@ def filter_contributions(request):
     return CONTRIBUTION_SCHEMA.build_filter(Contribution.objects, request).order_by()
 
 
-CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'filing_id', 'is_amendment',
+CONTRIBUTION_FIELDS = ['cycle', 'transaction_namespace', 'transaction_id', 'transaction_type', 'transaction_type_description', 'filing_id', 'is_amendment',
               'amount', 'date', 'contributor_name', 'contributor_ext_id', 'contributor_type', 'contributor_occupation',
               'contributor_employer', 'contributor_gender', 'contributor_address', 'contributor_city', 'contributor_state',
               'contributor_zipcode', 'contributor_category', 'organization_name',
@@ -100,6 +120,7 @@ class ContributionStatsLogger(object):
         self.stats['total'] += 1
 
 
+
 class ContributionFilterHandler(FilterHandler):
     fields = CONTRIBUTION_FIELDS
     model = Contribution
@@ -107,8 +128,19 @@ class ContributionFilterHandler(FilterHandler):
     ordering = ['-cycle','-amount']
     filename = 'contributions'
     
+    def add_transaction_type_description(self, result_iter):
+        for row in result_iter:
+            row.transaction_type_description = transaction_type_descriptions.get(row.transaction_type, '')
+            # ExcelEmitter will only emit Model fields, not dynamically added fields.
+            # So need to convert to dict to get new field to emit.
+            result = dict([(f, getattr(row, f)) for f in self.fields])
+            yield result
+    
     def queryset(self, params):
         return filter_contributions(self._unquote(params))
+
+    def read(self, request):
+        return self.add_transaction_type_description(super(ContributionFilterHandler, self).read(request))
 
 
 class ContributorGeoHandler(FilterHandler):
