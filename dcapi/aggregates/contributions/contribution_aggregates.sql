@@ -969,36 +969,6 @@ create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_
 
 
 
--- Office Type from Organization
-
-
-select date_trunc('second', now()) || ' -- drop table if exists agg_office_type_from_org';
-drop table if exists agg_office_type_from_org cascade;
-
-select date_trunc('second', now()) || ' -- create table agg_office_type_from_org';
-create table agg_office_type_from_org as
-    with contribs_by_cycle as (
-        select oa.entity_id as organization_entity, c.cycle, c.seat, count(*), sum(amount) as amount
-        from contributions_all_relevant c
-        inner join (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
-        group by oa.entity_id, c.cycle, c.seat
-    )
-
-    select organization_entity, cycle, seat, count, amount
-    from contribs_by_cycle
-
-    union all
-
-    select organization_entity, -1, seat, sum(count) as count, sum(amount) as amount
-    from contribs_by_cycle
-    group by organization_entity, seat
-;
-
-select date_trunc('second', now()) || ' -- create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)';
-create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle);
-
-
-
 -- In-state/Out-of-state to Politician
 
 
@@ -1136,6 +1106,35 @@ create table agg_top_orgs_by_industry as
 
 select date_trunc('second', now()) || ' -- create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (recipient_entity, cycle)';
 create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (industry_entity, cycle);
+
+
+
+-- Office Type from Organization
+
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_office_type_from_org';
+drop table if exists agg_office_type_from_org cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_office_type_from_org';
+create table agg_office_type_from_org as
+    with contribs_by_cycle as (
+        select organization_entity, cycle, seat, count(*), sum(amount) as amount
+        from contributions_flat
+        group by organization_entity, cycle, seat
+    )
+
+    select organization_entity, cycle, seat, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select organization_entity, -1, seat, sum(count) as count, sum(amount) as amount
+    from contribs_by_cycle
+    group by organization_entity, seat
+;
+
+select date_trunc('second', now()) || ' -- create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)';
+create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle);
 
 
 select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
