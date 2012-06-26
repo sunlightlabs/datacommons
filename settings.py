@@ -192,5 +192,9 @@ MEDIASYNC = {
 # timeout set to a week
 CACHE_BACKEND = 'memcached://127.0.0.1:11211/?timeout=10080'
 
+import re
+IGNORABLE_404_URLS = (
+    re.compile(r'\.php$'),
+)
 
 from local_settings import *
