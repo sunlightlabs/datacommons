@@ -22,7 +22,7 @@ SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
-USE_I18N = True
+USE_I18N = False
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -192,5 +192,9 @@ MEDIASYNC = {
 # timeout set to a week
 CACHE_BACKEND = 'memcached://127.0.0.1:11211/?timeout=10080'
 
+import re
+IGNORABLE_404_URLS = (
+    re.compile(r'\.php$'),
+)
 
 from local_settings import *
