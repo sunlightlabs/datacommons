@@ -50,8 +50,7 @@ insert into matchbox_entityattribute (entity_id, namespace, value)
     from tmp_crp_candidates c
     inner join matchbox_entityattribute a on CID = value and namespace = 'urn:crp:recipient'
     where
-        currcand = 'Y'
-        and not exists 
+        not exists 
             (select * 
             from matchbox_entityattribute x 
             where 

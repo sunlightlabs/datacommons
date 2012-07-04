@@ -25,7 +25,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
         from fec_candidates c
         inner join fec_candidate_summaries s using (candidate_id)
         inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
-        inner join agg_fec_candidate_rankings r using (candidate_id)
+        left join agg_fec_candidate_rankings r using (candidate_id)
         where
             a.entity_id = %s
     """
