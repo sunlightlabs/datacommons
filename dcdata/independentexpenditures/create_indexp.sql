@@ -2,9 +2,9 @@
 drop table if exists fec_indexp_import;
 create table fec_indexp_import (
     candidate_id varchar(9),
-    candidate_name varchar(90),
+    candidate_name varchar,
     spender_id varchar(9),
-    spender_name varchar(90),
+    spender_name varchar,
     election_type varchar(5),
     candidate_state varchar(2),
     candidate_district varchar(2),
