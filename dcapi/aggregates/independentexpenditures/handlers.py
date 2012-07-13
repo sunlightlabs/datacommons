@@ -101,5 +101,6 @@ class SenateIndExpLatLongHandler(TopListHandler):
         left join state_lat_long on state = candidate_state
         group by candidate_state, latitude, longitude, party
         having sum(amount) > 50000
+        order by sum(amount) desc
     """
     
