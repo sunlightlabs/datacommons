@@ -9,6 +9,7 @@ from dcapi.validate_jsonp import is_valid_jsonp_callback_value
 import csv
 import cStringIO
 import datetime
+import geojson
 import uuid
 from xlwt import XFStyle
 import xlwt
@@ -104,6 +105,38 @@ class StreamingCSVEmitter(StreamingEmitter):
             stats.log(record)
             writer.writerow(self.construct_record(record))
             yield f.read()
+
+
+class GeoJSONEmitter(Emitter):
+    """
+    GeoJSON emitter. Currently supports points only. There must be a
+    'latitude' and a 'longitude' column.
+    """
+    def render(self, request):
+        cb = request.GET.get('callback', None)
+        data = self.construct()
+        print data
+
+        if len(data) and not (data[0].has_key('latitude') and data[0].has_key('longitude')):
+            raise 'GeoJSONEmitter only supports Points at this time.'
+
+        feature_coll = geojson.FeatureCollection([])
+        
+        for row in data:
+            if row['latitude'] and row['longitude']:
+                p = geojson.Point([row.pop('longitude'), row.pop('latitude')])
+                row['style'] = {}
+                row['style']['color'] = 'red' if row['party'] == 'R' else 'blue'
+                f = geojson.Feature(12, geometry=p, properties=row)
+                feature_coll.features.append(f)
+
+        gj = geojson.dumps(feature_coll)
+
+        # Callback
+        if cb and is_valid_jsonp_callback_value(cb):
+            return '%s(%s)' % (cb, gj)
+
+        return gj
 
 
 class ExcelEmitter(StreamingEmitter):

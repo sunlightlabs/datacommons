@@ -26,11 +26,13 @@ from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSumm
     CandidateTimelineHandler, CandidateItemizedDownloadHandler, CommitteeItemizedDownloadHandler, \
     CommitteeTopContribsHandler
 from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler, \
-    CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler
+    CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
+    SenateIndExpLatLongHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
 from piston.emitters import Emitter
+from dcapi.common.emitters import GeoJSONEmitter
 from piston.resource import Resource
 from dcapi.aggregates.faca.handlers import FACAAgenciesHandler,\
     FACACommitteeMembersHandler
@@ -40,6 +42,7 @@ Emitter.unregister('django')
 Emitter.unregister('pickle')
 Emitter.unregister('xml')
 Emitter.unregister('yaml')
+Emitter.register('geo.json', GeoJSONEmitter, 'application/json; charset=utf-8')
 
 ad = { 'authentication': PistonKeyAuthentication() }
 
@@ -240,6 +243,9 @@ urlpatterns = patterns('',
         
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_indexp_itemized\.(?P<emitter_format>.+)$',
         Resource(CommitteeIndExpDownloadHandler, **ad)),      
+
+    url('^map/indexp/senate/lat_lng\.(?P<emitter_format>.+)$',
+        Resource(SenateIndExpLatLongHandler, **ad)),
 )
 
 
