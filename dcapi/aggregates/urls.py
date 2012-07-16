@@ -27,7 +27,7 @@ from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSumm
     CommitteeTopContribsHandler
 from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler, \
     CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
-    SenateIndExpLatLongHandler
+    SenateIndExpLatLongHandler, HouseIndExpLatLongHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -246,6 +246,9 @@ urlpatterns = patterns('',
 
     url('^map/indexp/senate/lat_lng\.(?P<emitter_format>.+)$',
         Resource(SenateIndExpLatLongHandler, **ad)),
+
+    url('^map/indexp/house/lat_lng\.(?P<emitter_format>.+)$',
+        Resource(HouseIndExpLatLongHandler, **ad)),
 )
 
 

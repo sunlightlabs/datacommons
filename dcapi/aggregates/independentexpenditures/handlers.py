@@ -82,8 +82,6 @@ class SenateIndExpLatLongHandler(TopListHandler):
             sum(amount) as amount,
             latitude,
             longitude,
-            --case when party = 'D' then latitude + 1.1 else latitude - 1.1 end as latitude,
-            --case when party = 'R' then longitude + 0.8 else longitude - 0.8 end as longitude,
             party
         from (
         select
@@ -104,3 +102,36 @@ class SenateIndExpLatLongHandler(TopListHandler):
         order by sum(amount) desc
     """
     
+
+class HouseIndExpLatLongHandler(TopListHandler):
+    
+    args = ['cycle']
+    fields = 'state amount latitude longitude party'.split()
+
+    stmt = """
+        select
+            candidate_state,
+            sum(amount) as amount,
+            latitude,
+            longitude,
+            party
+        from (
+        select
+            candidate_state,
+            sum(amount) as amount,
+            case when ((candidate_party = 'Dem' and support_oppose = 'Support') or (candidate_party = 'Rep' and support_oppose = 'Oppose')) then 'D' else 'R' end as party
+        from fec_indexp
+        where
+            candidate_office = 'H'
+            --and ((candidate_party = 'Rep' and support_oppose = 'Support') or (candidate_party = 'Dem' and support_oppose = 'Oppose'))
+            and extract(year from date) >= %s
+        group by
+            candidate_state, candidate_party, support_oppose
+        )x
+        left join state_lat_long on state = candidate_state
+        group by candidate_state, latitude, longitude, party
+        having sum(amount) > 50000
+        order by sum(amount) desc
+    """
+    
+

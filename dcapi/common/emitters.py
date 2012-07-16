@@ -115,13 +115,12 @@ class GeoJSONEmitter(Emitter):
     def render(self, request):
         cb = request.GET.get('callback', None)
         data = self.construct()
-        print data
 
         if len(data) and not (data[0].has_key('latitude') and data[0].has_key('longitude')):
             raise 'GeoJSONEmitter only supports Points at this time.'
 
         feature_coll = geojson.FeatureCollection([])
-        
+
         for row in data:
             if row['latitude'] and row['longitude']:
                 p = geojson.Point([row.pop('longitude'), row.pop('latitude')])
