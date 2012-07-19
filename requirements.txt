@@ -4,6 +4,7 @@ django-piston==0.2.2.1
 -e git://github.com/sunlightlabs/django-locksmith.git#egg=locksmith
 xlwt
 geojson
+shapely
 psycopg2
 python-memcached
 gunicorn

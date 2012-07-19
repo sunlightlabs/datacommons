@@ -24,7 +24,7 @@ from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
     RegulationsDocketSubmitterHandler
 from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSummaryHandler, CandidateStateHandler, \
     CandidateTimelineHandler, CandidateItemizedDownloadHandler, CommitteeItemizedDownloadHandler, \
-    CommitteeTopContribsHandler
+    CommitteeTopContribsHandler, PresidentialContribsLatLongHandler
 from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler, \
     CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
     SenateIndExpLatLongHandler, HouseIndExpLatLongHandler
@@ -244,11 +244,15 @@ urlpatterns = patterns('',
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_indexp_itemized\.(?P<emitter_format>.+)$',
         Resource(CommitteeIndExpDownloadHandler, **ad)),      
 
+    # maps
     url('^map/indexp/senate/lat_lng\.(?P<emitter_format>.+)$',
         Resource(SenateIndExpLatLongHandler, **ad)),
 
     url('^map/indexp/house/lat_lng\.(?P<emitter_format>.+)$',
         Resource(HouseIndExpLatLongHandler, **ad)),
+
+    url('^map/contributions/presidential/(?P<state>[A-Z]{2})/lat_lng\.(?P<emitter_format>.+)$',
+        Resource(PresidentialContribsLatLongHandler, **ad)),
 )
 
 

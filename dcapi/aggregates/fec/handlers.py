@@ -176,3 +176,60 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
         limit %s
     """
 
+
+class PresidentialContribsLatLongHandler(TopListHandler):
+    args = ['cycle', 'state']
+    fields = 'state zipcode amount latitude longitude party the_geom_wkt'.split()
+
+    stmt = """
+        select
+            state,
+            zipcode,
+            amount,
+            latitude,
+            longitude,
+            party,
+            st_astext(the_geom_simplified) as the_geom_wkt
+        from (
+            select
+                state,
+                sum(amount) as amount,
+                latitude,
+                longitude,
+                initcap(party) as party,
+                zipcode
+            from
+                fec_candidate_itemized
+                left join state_lat_long using (state)
+            where
+                race = 'P'
+                and extract(year from date) >= %s
+                and lower(party) != 'lib'
+                and state = %s
+            group by
+                state, latitude, longitude, party, zipcode
+        ) x
+        left join us_zipcode_shapes on zcta5ce10 = zipcode
+        where amount >= 10000
+        order by amount desc
+    """
+    
+class PresidentialContribsBoundariesCentroidHandler(TopListHandler):
+    # TODO: This is a work in progress. Intended to get the boundary (SW/NE corners for Leaflet) and centroid for a particular state 
+    args = ['state']
+    fields = 'state ctr_lat ctr_lon sw_lat sw_lon ne_lat ne_lon'.split()
+
+    stmt = """
+        select
+            state,
+            st_astext(st_extent(the_geom_simplified)) as boundary_wkt, -- then run st_boundary?? this seems to return a number of coordinates instead of just NE/SW
+            st_astext(st_centroid(st_collect(the_geom_simplified))) as centroid_wkt
+        from
+            fec_candidate_itemized
+        left join us_zipcode_shapes on zcta5ce10 = zipcode
+        where
+            state = 'MD'
+        group by
+            state
+
+    """

@@ -10,6 +10,7 @@ import csv
 import cStringIO
 import datetime
 import geojson
+import shapely.wkt
 import uuid
 from xlwt import XFStyle
 import xlwt
@@ -109,24 +110,39 @@ class StreamingCSVEmitter(StreamingEmitter):
 
 class GeoJSONEmitter(Emitter):
     """
-    GeoJSON emitter. Currently supports points only. There must be a
-    'latitude' and a 'longitude' column.
+    GeoJSON emitter. Supports points and geometry columns. For points, must have a
+    'latitude' and a 'longitude' column. For geometry, must have a Well-Known Text
+    formatted column named 'the_geom_wkt'.
     """
     def render(self, request):
         cb = request.GET.get('callback', None)
         data = self.construct()
 
-        if len(data) and not (data[0].has_key('latitude') and data[0].has_key('longitude')):
-            raise 'GeoJSONEmitter only supports Points at this time.'
+        if len(data) and not ((data[0].has_key('latitude') and data[0].has_key('longitude')) or data[0].has_key('the_geom_wkt')):
+            raise 'GeoJSONEmitter only supports Points or Geometry as Well-Known Text (WKT) at this time.'
 
         feature_coll = geojson.FeatureCollection([])
 
         for row in data:
-            if row['latitude'] and row['longitude']:
+            if row.get('the_geom_wkt'):
+                geom = shapely.wkt.loads(row.pop('the_geom_wkt'))
+
+                f = geojson.Feature(12, geometry=geom, properties=row)
+
+            if row.get('latitude') and row.get('longitude'):
                 p = geojson.Point([row.pop('longitude'), row.pop('latitude')])
-                row['style'] = {}
-                row['style']['color'] = 'red' if row['party'] == 'R' else 'blue'
-                f = geojson.Feature(12, geometry=p, properties=row)
+
+                if f:
+                    # usually this will be the center of the state we're focused on, not an actual average of the shape in the_geom_wkt
+                    # note: not sure if we want to keep this part at all 
+                    f.properties['avg_latlng'] = p
+                else:
+                    f = geojson.Feature(12, geometry=p, properties=row)
+
+            if f:
+                f.properties['style'] = {}
+                # TODO: This color stuff is a hack at present. This should probably be moved either down into the handler or up into the Javascript.
+                f.properties['style']['color'] = 'red' if row['party'][0] == 'R' else 'blue'
                 feature_coll.features.append(f)
 
         gj = geojson.dumps(feature_coll)
