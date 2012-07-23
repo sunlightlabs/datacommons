@@ -124,6 +124,8 @@ class GeoJSONEmitter(Emitter):
         feature_coll = geojson.FeatureCollection([])
 
         for row in data:
+            f = None
+            
             if row.get('the_geom_wkt'):
                 geom = shapely.wkt.loads(row.pop('the_geom_wkt'))
 
