@@ -233,6 +233,49 @@ group by cycle, entity_id;
 
 
 
+
+drop table if exists agg_fec_candidate_by_zip;
+create table agg_fec_candidate_by_zip as
+select candidate_id, i.zipcode, sum(amount), count(*)
+from fec_indiv i
+inner join fec_candidates c on c.committee_id = i.filer_id
+where
+    memo_code is null
+    and transaction_type in ('10', '11', '15', '15e', '15j', '22y')
+group by candidate_id, i.zipcode;
+
+
+drop table if exists agg_fec_presidential_by_zip_geo;
+create table agg_fec_presidential_by_zip_geo as
+select zcta5ce10::integer as zipcode,
+    coalesce(obama.sum, 0) as obama_sum,
+    coalesce(obama.count, 0) as obama_count,
+    coalesce(romney.sum, 0) as romney_sum,
+    coalesce(romney.count, 0) as romney_count,
+    coalesce(obama.count, 0) + coalesce(romney.count, 0) as total_count,
+    case when obama is null and romney is null then null
+         when obama is null then 0.0
+         when romney is null then 1.0
+         else (obama.sum::float / (romney.sum + obama.sum))::numeric(3,2)
+    end as percent_obama,
+    geom
+from geo_zipcodes g
+left join (
+    select *
+    from agg_fec_candidate_by_zip
+    where
+        candidate_id = 'P80003338'
+) obama on obama.zipcode = zcta5ce10
+left join (
+    select *
+    from agg_fec_candidate_by_zip
+    where
+        candidate_id = 'P80003353'
+) romney on romney.zipcode = zcta5ce10;
+
+create index agg_fec_presidential_by_zip_geo_index on agg_fec_presidential_by_zip_geo using gist (geom);
+create index agg_fec_presidential_by_zip_geo_zipcode_index on agg_fec_presidential_by_zip_geo (zipcode);
+
 -- these three are unfortunately not true in the data
 -- alter table fec_candidates add constraint fec_candidates_committee_id foreign key (committee_id) references fec_committees (committee_id);
 -- alter table fec_committees add constraint fec_committees_candidate_id foreign key (candidate_id) references fec_candidates (candidate_id);
