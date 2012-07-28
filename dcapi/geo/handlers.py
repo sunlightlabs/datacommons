@@ -1,7 +1,6 @@
 from piston.handler import BaseHandler
-from piston.utils import rc
 from django.db import connection
-
+from django.http import HttpResponseNotFound
 
 class ZipcodeBoundingBoxHandler(BaseHandler):
 
@@ -15,4 +14,8 @@ class ZipcodeBoundingBoxHandler(BaseHandler):
 	def read(self, request, zipcode):
 		c = connection.cursor()
 		c.execute(self.stmt, [zipcode])
+
+		if c.rowcount == 0:
+			return HttpResponseNotFound("Zipcode %s not found." % zipcode)
+
 		return c.fetchone()
