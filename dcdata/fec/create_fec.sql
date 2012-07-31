@@ -1,7 +1,7 @@
 
 drop table if exists fec_candidates_import;
 create table fec_candidates_import (
-    candidate_id varchar(9) PRIMAY KEY,
+    candidate_id varchar(9) PRIMARY KEY,
     candidate_name varchar(200),
     party varchar(3),
     election_year integer,
