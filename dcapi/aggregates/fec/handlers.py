@@ -13,7 +13,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
             r.total_receipts_rank,
             r.cash_on_hand_rank,
             r.total_disbursements_rank,
-            (select count(*) from fec_candidates r where r.candidate_status = 'C' and substring(r.race for 1) = substring(c.race for 1)) as max_rank,
+            (select count(*) from fec_candidates r where r.candidate_status = 'C' and r.office = c.office) as max_rank,
             total_individual_contributions - refunds_to_individuals as indiv,
             contributions_from_other_committees,
             contributions_from_party_committees,
@@ -67,7 +67,7 @@ class CandidateStateHandler(PieHandler):
     
     stmt = """
         select
-            case when c.state = i.state then 'in-state' else 'out-of-state' end as local,
+            case when c.office_state = i.state then 'in-state' else 'out-of-state' end as local,
             sum(amount),
             count(*)
         from fec_candidates c
@@ -82,12 +82,12 @@ class CandidateTimelineHandler(TopListHandler):
 
     candidates_fields = "entity_id candidate_id candidate_name race party incumbent".split()
     candidates_stmt = """
-        select entity_id, candidate_id, e.name, race, party_designation1, incumbent_challenger_open
+        select entity_id, candidate_id, e.name, race, party, incumbent_challenger_open
         from fec_candidates c
         inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         inner join matchbox_entity e on a.entity_id = e.id
         where
-            election_year = '12'
+            election_year = '2012'
             and candidate_status = 'C'
             and race in 
                 (select race

@@ -1,17 +1,14 @@
-
 drop table if exists fec_candidates;
 create table fec_candidates as
 select *,
     case
-        when substring(candidate_id for 1) = 'P' then 'P'
-        when substring(candidate_id for 1) = 'S' then 'S' || '-' || substring(candidate_id from 3 for 2)
-        when substring(candidate_id for 1) = 'H' then 'H' || '-' || substring(candidate_id from 3 for 2) || '-' || current_district
+        when office = 'P' then 'P'
+        when office = 'S' then 'S' || '-' || office_state
+        when office = 'H' then 'H' || '-' || office_state || '-' || office_district
     end as race
 from fec_candidates_import;
 
 create index fec_candidates_candidate_id on fec_candidates (candidate_id);
-
--- alter table fec_candidate_summaries alter column ending_date type date using (substring(ending_date from 5 for 4) || substring(ending_date from 1 for 2) || substring(ending_date from 3 for 2))::date; 
 
 
 drop table if exists fec_indiv;
@@ -98,47 +95,19 @@ from fec_pac2pac_import;
 create index fec_pac2pac_filer_id on fec_pac2pac (filer_id);
 create index fec_pac2pac_other_id on fec_pac2pac (other_id);
 
-drop table if exists fec_candidate_summaries;
-create table fec_candidate_summaries as
-select candidate_id, total_receipts, ending_cash, total_disbursements,
-    candidate_loan_repayments, other_loan_repayments, refunds_to_individuals, refunds_to_committees,
-    contributions_from_other_committees, contributions_from_party_committees,
-    contributions_from_candidate, loans_from_candidate,
-    authorized_transfers_from, total_individual_contributions,
-    (substring(ending_date for 4 from 5) || substring(ending_date for 2 from 1) || substring(ending_date for 2 from 3))::date as ending_date
-from fec_candidate_summaries_import;
-
-create index fec_candidate_summaries_candidate_id on fec_candidate_summaries (candidate_id);
-
-drop table if exists fec_committee_summaries;
-create table fec_committee_summaries as
-select committee_id, committee_name, committee_type, committee_designation, filing_frequency, 
-    (through_year || through_month || through_day)::date as through_date,
-    total_receipts, transfers_from_affiliates, individual_contributions, 
-    contributions_from_other_committees, 
-    total_loans_received, total_disbursements, transfers_to_affiliates,
-    refunds_to_individuals, refunds_to_committees, 
-    loan_repayments, cash_beginning_of_year, cash_close_of_period,
-    debts_owed, nonfederal_transfers_received, contributions_to_committees,
-    independent_expenditures_made, party_coordinated_expenditures_made, nonfederal_expenditure_share
-from fec_committee_summaries_import
-where
-    -- there are a number of data-less rows. Discard them by looking for valid date.
-    through_year != 0;
-create index fec_committee_summaries_committee_id on fec_committee_summaries (committee_id);
 
 
 drop table if exists agg_fec_candidate_rankings;
 create table agg_fec_candidate_rankings as
-select candidate_id, substring(race for 1) as race,
-    rank() over (partition by substring(race for 1) order by total_receipts desc) as total_receipts_rank,
-    rank() over (partition by substring(race for 1) order by ending_cash desc) as cash_on_hand_rank,
-    rank() over (partition by substring(race for 1) order by total_disbursements desc) as total_disbursements_rank
+select candidate_id, office,
+    rank() over (partition by office order by total_receipts desc) as total_receipts_rank,
+    rank() over (partition by office order by ending_cash desc) as cash_on_hand_rank,
+    rank() over (partition by office order by total_disbursements desc) as total_disbursements_rank
 from fec_candidates c
 inner join fec_candidate_summaries s using (candidate_id)
 where
     candidate_status = 'C'
-    and election_year = '12';
+    and election_year = '2012';
 
 
 
@@ -163,7 +132,7 @@ create table fec_candidate_itemized as
 select
     contributor_name, date, amount, contributor_type, transaction_type, 
     employer, occupation, i.city, i.state, i.zipcode, 
-    candidate_name, party_designation1 as party, race, incumbent_challenger_open as status, committee_id, candidate_id
+    candidate_name, party, race, incumbent_challenger_open as status, committee_id, candidate_id
 from fec_candidates c
 inner join (
     select filer_id as committee_id, 'indiv' as contributor_type, contributor_name,
