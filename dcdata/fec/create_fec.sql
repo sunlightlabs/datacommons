@@ -142,7 +142,7 @@ CREATE TABLE fec_candidate_summaries (
     general_election_ct numeric(7,4),
     contributions_from_other_committees numeric(14,2),       -- 17c
     contributions_from_party_committees numeric(14,2),       -- 17b
-    ending_date varchar(8),
+    ending_date date,
     refunds_to_individuals numeric(14,2),                    -- 28a
     refunds_to_committees numeric(14,2)                      -- 28b & 28c?
 );
@@ -175,6 +175,6 @@ CREATE TABLE fec_committee_summaries (
     independent_expenditures_made numeric(14,2),
     party_coordinated_expenditures_made numeric(14,2),
     nonfederal_expenditure_share numeric(14,2),
-    through_date varchar(8)
+    through_date date
 );
 
