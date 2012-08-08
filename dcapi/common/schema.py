@@ -1,3 +1,10 @@
+
+import itertools
+import re
+
+from django.db.models import Q
+from django.db import connection
+
 from dcapi.schema import OperatorField, Operator, Field
 from dcdata.utils.strings.transformers import build_map_substrings
 
@@ -80,25 +87,62 @@ class IndustryField(Field):
         return self._add_industry_clauses(query, cats, orders)
 
 
-_punctuation_to_spaces = dict([(c, ' ') for c in "'&|!():*\\"])
+_punctuation_to_spaces = dict([(c, ' ') for c in "\"'&|!():*\\"])
 _strip_postgres_ft_operators = build_map_substrings(_punctuation_to_spaces)
-
-def query_to_ft_sql(*searches):
-    cleaned_searches = map(_strip_postgres_ft_operators, searches)
-    return ' | '.join("(%s)" % ' & '.join(search.split()) for search in cleaned_searches)    
 
 
 class FulltextField(Field):
     def __init__(self, name, model_fields=None):
         super(FulltextField, self).__init__(name)
         self.model_fields = model_fields if model_fields else [name]
-        self.clause = "(%s)" % " or ".join([_fulltext_clause(column) for column in self.model_fields])
                 
     def apply(self, query, *searches):
-        terms = query_to_ft_sql(*searches)
-        return query.extra(where=[self.clause], params=[terms] * len(self.model_fields))
-     
+        ft_searches = [_format_ft_search(s) for s in searches]
+        exact_searches = [_format_exact_search(s) for s in searches]
 
+        where_clause = _search_clause(self.model_fields, [s is not None for s in exact_searches])
+
+        params = dict([('ft_term_%s' % i, ft_searches[i]) for i in range(len(searches))])
+        params.update(dict([('exact_term_%s' % i, exact_searches[i]) for i in range(len(searches))]))
+
+        # note: have to explicitly call mogrify() to safely inject parameters
+        # b/c Django's extra() method doesn't support dictionary interpolation.
+
+        return query.extra(where=[connection.cursor().mogrify(where_clause, params)])
+
+
+def _format_ft_search(search_string):
+    return ' & '.join(_strip_postgres_ft_operators(search_string).split())
+
+def _format_exact_search(search_string):
+    m = re.search('^"(.*)"$', search_string)
+    if m:
+        return '%%' + m.group(1) + '%%'
+    else:
+        return None
+
+def _search_clause(columns, has_exact_term):
+        clauses = [
+            _column_search_clause(column, i, exact)
+            for (column, (i, exact)) in itertools.product(columns, [(i, has_exact_term[i]) for i in range(len(has_exact_term))])
+        ]
+        return "(%s)" % " or ".join(clauses)
+
+def _column_search_clause(column, search_index, has_exact_term):
+    ft_clause = "to_tsvector('datacommons', %s) @@ to_tsquery('datacommons', %%(ft_term_%s)s)" % (column, search_index)
+    if has_exact_term:
+        exact_clause = "%s ilike %%(exact_term_%s)s" % (column, search_index)
+        return "(%s and %s)" % (ft_clause, exact_clause)
+    else:
+        return ft_clause
+
+
+# these two methods are outdated as far as this package is concerned,
+# but they're still used in MSAHandler.
+
+def query_to_ft_sql(*searches):
+    cleaned_searches = map(_strip_postgres_ft_operators, searches)
+    return ' | '.join("(%s)" % ' & '.join(search.split()) for search in cleaned_searches)
 
 def _fulltext_clause(column):
     return """to_tsvector('datacommons', %s) @@ to_tsquery('datacommons', %%s)""" % column

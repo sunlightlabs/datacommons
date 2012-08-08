@@ -93,7 +93,7 @@ CONTRIBUTION_SCHEMA = Schema(
     MSAField('msa_ft')
 )
 
-def filter_contributions(request):    
+def filter_contributions(request):
     return CONTRIBUTION_SCHEMA.build_filter(Contribution.objects, request).order_by()
 
 
