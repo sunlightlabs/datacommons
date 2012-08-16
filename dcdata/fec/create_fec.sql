@@ -1,40 +1,39 @@
 
 drop table if exists fec_candidates_import;
 create table fec_candidates_import (
-    candidate_id varchar(9),
-    candidate_name varchar(38),
-    party_designation1 varchar(3),
-    filler1 varchar(3),
-    party_designation3 varchar(3),
+    candidate_id varchar(9) PRIMARY KEY,
+    candidate_name varchar(200),
+    party varchar(3),
+    election_year integer,
+    office_state varchar(2),
+    office varchar(1),
+    office_district varchar(2),
     incumbent_challenger_open varchar(1),
-    filler2 varchar(1),
     candidate_status varchar(1),
+    committee_id varchar(9),
     street1 varchar(34),
     street2 varchar(34),
-    city varchar(18),
+    city varchar(30),
     state varchar(2),
-    zipcode varchar(5),
-    committee_id varchar(9),
-    election_year varchar(2),
-    current_district varchar(2)
+    zipcode varchar(9)
 );
 
 drop table if exists fec_committees;
 create table fec_committees (
     committee_id varchar(9) PRIMARY KEY,
-    committee_name varchar(90),
-    treasurers_name varchar(38),
+    committee_name varchar(200),
+    treasurers_name varchar(90),
     street1 varchar(34),
     street2 varchar(34),
-    city varchar(18),
+    city varchar(30),
     state varchar(2),
-    zipcode varchar(5),
+    zipcode varchar(9),
     committee_designation varchar(1),
     committee_type varchar(1),
     committee_party varchar(3),
     filing_frequency varchar(1),
     interest_group varchar(1),
-    connected_org varchar(38),
+    connected_org varchar(200),
     candidate_id varchar(9)
 );
 
@@ -114,70 +113,68 @@ CREATE TABLE fec_pac2pac_import (
     fec_record varchar(19)
 );
 
-drop table if exists fec_candidate_summaries_import;
-CREATE TABLE fec_candidate_summaries_import (
+drop table if exists fec_candidate_summaries;
+CREATE TABLE fec_candidate_summaries (
     candidate_id varchar(9) PRIMARY KEY,
-    candidate_name varchar(38),
+    candidate_name varchar(200),
     incumbent_challenger_open varchar(1),
     party varchar(1),
-    party_designation varchar(3),
-    total_receipts integer,                             -- 22
-    authorized_transfers_from integer,                  -- 18
-    total_disbursements integer,                        -- 30
-    transfers_to_authorized integer,                    -- 24
-    beginning_cash integer,                             -- 6
-    ending_cash integer,                                -- 10
-    contributions_from_candidate integer,               -- 17d
-    loans_from_candidate integer,                       -- 19a
-    other_loans integer,                                -- 19b
-    candidate_loan_repayments integer,                  -- 27a
-    other_loan_repayments integer,                      -- 27b
-    debts_owed_by integer,                              -- 12
-    total_individual_contributions integer,             -- 17a
-    state_code varchar(2),
+    party_affiliation varchar(3),
+    total_receipts numeric(14,2),                            -- 22
+    authorized_transfers_from numeric(14,2),                 -- 18
+    total_disbursements numeric(14,2),                       -- 30
+    transfers_to_authorized numeric(14,2),                   -- 24
+    beginning_cash numeric(14,2),                            -- 6
+    ending_cash numeric(14,2),                               -- 10
+    contributions_from_candidate numeric(14,2),              -- 17d
+    loans_from_candidate numeric(14,2),                      -- 19a
+    other_loans numeric(14,2),                               -- 19b
+    candidate_loan_repayments numeric(14,2),                 -- 27a
+    other_loan_repayments numeric(14,2),                     -- 27b
+    debts_owed_by numeric(14,2),                             -- 12
+    total_individual_contributions numeric(14,2),            -- 17a
+    state varchar(2),
     district varchar(2),
     special_election_status varchar(1),
     primary_election_status varchar(1),
     runoff_election_status varchar(1),
     general_election_status varchar(1),
-    general_election_ct varchar(3),
-    contributions_from_other_committees integer,        -- 17c
-    contributions_from_party_committees integer,        -- 17b
-    ending_date varchar(8),
-    refunds_to_individuals integer,                     -- 28a
-    refunds_to_committees integer                       -- 28b & 28c?
+    general_election_ct numeric(7,4),
+    contributions_from_other_committees numeric(14,2),       -- 17c
+    contributions_from_party_committees numeric(14,2),       -- 17b
+    ending_date date,
+    refunds_to_individuals numeric(14,2),                    -- 28a
+    refunds_to_committees numeric(14,2)                      -- 28b & 28c?
 );
 
-drop table if exists fec_committee_summaries_import;
-CREATE TABLE fec_committee_summaries_import (
-    committee_id VARCHAR(9) NOT NULL, 
-    committee_name VARCHAR(90) NOT NULL, 
-    committee_type VARCHAR(1) NOT NULL, 
-    committee_designation VARCHAR(4), 
-    filing_frequency VARCHAR(1) NOT NULL, 
-    total_receipts INTEGER NOT NULL, 
-    transfers_from_affiliates INTEGER NOT NULL, 
-    individual_contributions INTEGER NOT NULL, 
-    contributions_from_other_committees INTEGER NOT NULL, 
-    contributions_from_candidate INTEGER NOT NULL, 
-    candidate_loans INTEGER NOT NULL, 
-    total_loans_received INTEGER NOT NULL, 
-    total_disbursements INTEGER NOT NULL, 
-    transfers_to_affiliates INTEGER NOT NULL, 
-    refunds_to_individuals INTEGER NOT NULL, 
-    refunds_to_committees INTEGER NOT NULL, 
-    candidate_loan_repayments INTEGER NOT NULL, 
-    loan_repayments INTEGER NOT NULL, 
-    cash_beginning_of_year INTEGER NOT NULL, 
-    cash_close_of_period INTEGER NOT NULL, 
-    debts_owed INTEGER NOT NULL, 
-    nonfederal_transfers_received INTEGER NOT NULL, 
-    contributions_to_committees INTEGER NOT NULL, 
-    independent_expenditures_made INTEGER NOT NULL, 
-    party_coordinated_expenditures_made INTEGER NOT NULL, 
-    nonfederal_expenditure_share INTEGER NOT NULL, 
-    through_month VARCHAR(2) NOT NULL, 
-    through_day VARCHAR(2) NOT NULL, 
-    through_year INTEGER NOT NULL
+drop table if exists fec_committee_summaries;
+CREATE TABLE fec_committee_summaries (
+    committee_id varchar(9) PRIMARY KEY,
+    committee_name varchar(200),
+    committee_type varchar(1),
+    committee_designation varchar(1),
+    filing_frequency varchar(1),
+    total_receipts numeric(14,2),
+    transfers_from_affiliates numeric(14,2),
+    individual_contributions numeric(14,2),
+    contributions_from_other_committees numeric(14,2),
+    contributions_from_candidate numeric(14,2),
+    candidate_loans numeric(14,2),
+    total_loans_received numeric(14,2),
+    total_disbursements numeric(14,2),
+    transfers_to_affiliates numeric(14,2),
+    refunds_to_individuals numeric(14,2),
+    refunds_to_committees numeric(14,2),
+    candidate_loan_repayments numeric(14,2),
+    loan_repayments numeric(14,2),
+    cash_beginning_of_year numeric(14,2),
+    cash_close_of_period numeric(14,2),
+    debts_owed numeric(14,2),
+    nonfederal_transfers_received numeric(14,2),
+    contributions_to_committees numeric(14,2),
+    independent_expenditures_made numeric(14,2),
+    party_coordinated_expenditures_made numeric(14,2),
+    nonfederal_expenditure_share numeric(14,2),
+    through_date date
 );
 

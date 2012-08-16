@@ -2,9 +2,9 @@
 drop table if exists fec_indexp_import;
 create table fec_indexp_import (
     candidate_id varchar(9),
-    candidate_name varchar(90),
+    candidate_name varchar,
     spender_id varchar(9),
-    spender_name varchar(90),
+    spender_name varchar,
     election_type varchar(5),
     candidate_state varchar(2),
     candidate_district varchar(2),
@@ -20,7 +20,8 @@ create table fec_indexp_import (
     amendment varchar(2),
     transaction_id varchar(32),
     image_number varchar(11),
-    received_date date
+    received_date date,
+    prev_file_num varchar(6)
 );
 
 

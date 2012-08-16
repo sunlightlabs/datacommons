@@ -43,30 +43,64 @@ from (values
     ('krishnamoorthi, raja', 'H2IL08096'),
     ('tester, jon', 'S6MT00162'),
     ('allen, george', 'S8VA00214'),
-    ('bachus, spencer', 'H2AL06035')
+    ('bachus, spencer', 'H2AL06035'),
+    ('Aguilar, Pete', 'H2CA31125'),
+    ('Aubuchon, Gary', 'H2FL14145'),
+    ('Berman, Howard', 'H2CA26026'),
+    ('Bilbray, Brian', 'H4CA49032'),
+    ('Bono Mack, Mary', 'H8CA44034'),
+    ('Brownley, Julia', 'H2CA00120'),
+    ('Cartwright, Matt', 'H2PA17079'),
+    ('Cook, Paul', 'H2CA08164'),
+    ('CRIMMINS, MICHAEL', 'H8CA53019'),
+    ('Critz, Mark', 'H0PA12132'),
+    ('Denham, Jeff', 'H0CA19173'),
+    ('Griffin, John', 'H0AR02107'),
+    ('Hoogendyk, Jack', 'H0MI06103'),
+    ('Kang, Sukhee', 'H2CA48087'),
+    ('Keadle, Scott', 'H0NC10151'),
+    ('kelly, jesse', 'H0AZ08015'),
+    ('Liljenquist, Dan', 'S2UT00195'),
+    ('Lugar, Richard', 'S4IN00014'),
+    ('Lungren, Dan', 'H6CA34112'),
+    ('Miller, Gary', 'H8CA41063'),
+    ('Mourdock, Richard', 'S2IN00083'),
+    ('Mourdock, Richard E.', 'S2IN00083'),
+    ('Rangel, Charles', 'H6NY19029'),
+    ('VANN, KIM', 'H2CA03090'),
+    ('Warren, Elizabeth', 'S2MA00170'),
+    ('Wilson, Heather', 'S8NM00168'),
+    ('CRAMER, KEVIN J', 'H0ND01026'),
+    ('D''Amboise, Scott', 'S2ME00042'),
+    ('Dutton, Bob', 'H2CA31133'),
+    ('Obama, Barak', 'P80003338'),
+    ('Simpson, Mike', 'H8ID02064'),
+    ('Taj, Clayton', 'H2TX30087')
 ) manual_fixes (name, id)
 where
-    lower(candidate_name) = manual_fixes.name
-    and length(candidate_id) < 9;
-    
+    lower(candidate_name) = lower(manual_fixes.name);
 
-drop table if exists fec_indexp_amendments;
-create table fec_indexp_amendments as
-with filings as (
-    select distinct spender_id, filing_number, case when amendment = 'N' then 0 else substring(amendment from 2 for 1)::integer end as amendment_number
-    from fec_indexp_import)
-select a.spender_id, a.filing_number as original_filing, a.amendment_number, b.filing_number as amendment_filing, b.amendment_number as amendment_number2
-from filings a
-inner join filings b using (spender_id)
+
+-- some names are shared by multiple people. For these we need to restrict by state as well.
+update fec_indexp_import
+set candidate_id = manual_fixes.id
+from (values
+    ('John, Sullivan', 'OK', 'H2OK01093')
+) manual_fixes (name, state, id)
 where
-    a.amendment_number < b.amendment_number
-    and exists (
-        select *
-        from fec_indexp_import x
-        inner join fec_indexp_import y using (spender_id, transaction_id)
-        where
-            x.filing_number = a.filing_number
-            and y.filing_number = b.filing_number);
+    lower(candidate_name) = lower(manual_fixes.name)
+    and candidate_state = state;
+
+-- some candidates aren't running for federal office and shouldn't be reported here to begin with
+-- removing here just so I don't see them when I run the test for unidentified politicians
+delete from fec_indexp_import
+where 
+    candidate_name in (
+        'Ballasteros, Adan',
+        'Cargill, Mike',
+        'WALKER, SCOTT'
+    );
+
 
 drop view if exists agg_fec_indexp_candidates;
 drop view if exists agg_fec_indexp_committees;
@@ -81,7 +115,7 @@ select candidate_id, candidate_name, spender_id, spender_name, election_type, ca
     support_oppose, date, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date
 from fec_indexp_import i
 where
-    not exists (select * from fec_indexp_amendments a where i.spender_id = a.spender_id and i.filing_number = a.original_filing);
+    not exists (select * from fec_indexp_import a where i.spender_id = a.spender_id and i.filing_number = a.prev_file_num);
 
 -- just here to trigger errors if something is wrong with the data
 alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id, filing_number, transaction_id);
