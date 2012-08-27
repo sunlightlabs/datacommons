@@ -95,7 +95,7 @@ class FECImporter():
             outfile = open(os.path.join(self._working_dir(conf), conf.filename + ".utf8"), 'w')
 
             for line in infile:
-                fixed_line = line.decode('utf8', 'replace').encode('utf8', 'replace')
+                fixed_line = line.decode('utf8', 'replace').encode('utf8', 'replace').replace('\x01', '')
                 outfile.write(fixed_line)
 
 
@@ -116,5 +116,5 @@ class FECImporter():
             # note: quote character is an arbitrary ASCII code that is unlikely to appear in data.
             # FEC uses single and double quotes and most other printable characters in the data,
             # so we have to be sure not to misinterpret any of them as semantically meaningful.
-            c.copy_expert("COPY %s FROM STDIN CSV HEADER DELIMITER '|' QUOTE E'\\x1F'" % conf.sql_table, infile)
+            c.copy_expert("COPY %s FROM STDIN CSV HEADER DELIMITER '|' QUOTE E'\\x01'" % conf.sql_table, infile)
 
