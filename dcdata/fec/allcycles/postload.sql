@@ -1,5 +1,4 @@
 
-
 create view fec_candidates_allcycles_import as
     select 2012 as cycle, * from fec_candidates_12
 union all
@@ -23,9 +22,9 @@ drop table if exists fec_candidates_allcycles;
 create table fec_candidates_allcycles as
 select *,
     case
-        when substring(candidate_id for 1) = 'P' then 'P'
-        when substring(candidate_id for 1) = 'S' then 'S' || '-' || substring(candidate_id from 3 for 2)
-        when substring(candidate_id for 1) = 'H' then 'H' || '-' || substring(candidate_id from 3 for 2) || '-' || current_district
+        when office = 'P' then 'P'
+        when office = 'S' then 'S' || '-' || office_state
+        when office = 'H' then 'H' || '-' || office_state || '-' || office_district
     end as race
 from fec_candidates_allcycles_import;
 
@@ -90,7 +89,7 @@ create table fec_indiv_allcycles as
         zipcode,
         employer,
         occupation,
-        (substring(date for 4 from 5) || substring(date for 2) || substring(date for 2 from 3))::date as date,
+        to_date(date, 'MMDDYYYY') as date,
         case when transaction_type = '22Y' then -abs(amount) else amount end as amount,
         other_id,
         transaction_id,
@@ -138,7 +137,7 @@ create table fec_pac2cand_allcycles as
         zipcode,
         employer,
         occupation,
-        (substring(date for 4 from 5) || substring(date for 2) || substring(date for 2 from 3))::date as date,
+        to_date(date, 'MMDDYYYY') as date,
         case when transaction_type = '22Y' then -abs(amount) else amount end as amount,
         other_id,
         candidate_id,
@@ -190,7 +189,7 @@ select
     zipcode,
     employer,
     occupation,
-    (substring(date for 4 from 5) || substring(date for 2) || substring(date for 2 from 3))::date as date,
+    to_date(date, 'MMDDYYYY') as date,
     case when transaction_type = '22Y' then -abs(amount) else amount end as amount,
     other_id,
     transaction_id,
