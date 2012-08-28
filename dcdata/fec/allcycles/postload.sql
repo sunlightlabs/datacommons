@@ -1,4 +1,5 @@
 
+drop view if exists fec_candidates_allcycles_import;
 create view fec_candidates_allcycles_import as
     select 2012 as cycle, * from fec_candidates_12
 union all
@@ -30,7 +31,7 @@ from fec_candidates_allcycles_import;
 
 create index fec_candidates_allcycles_candidate_id on fec_candidates_allcycles (candidate_id);
 
-
+drop table if exists fec_committees_allcycles;
 create table fec_committees_allcycles as
     select 2012 as cycle, * from fec_committees_12
 union all
@@ -52,7 +53,7 @@ union all
 
 create index fec_committees_allcycles_committee_id on fec_committees_allcycles (committee_id);
 
-
+drop view if exists fec_indiv_allcycles_import;
 create view fec_indiv_allcycles_import as
     select 2012 as cycle, * from fec_indiv_12
 union all
@@ -100,7 +101,7 @@ create table fec_indiv_allcycles as
 from fec_indiv_allcycles_import;
 create index fec_indiv_allcycles_filer_id on fec_indiv_allcycles (filer_id);
 
-
+drop view if exists fec_pac2cand_allcycles_import;
 create view fec_pac2cand_allcycles_import as
     select 2012 as cycle, * from fec_pac2cand_12
 union all
@@ -152,7 +153,7 @@ create index fec_pac2cand_allcycles_filer_id on fec_pac2cand_allcycles (filer_id
 create index fec_pac2cand_allcycles_other_id on fec_pac2cand_allcycles (other_id);
 create index fec_pac2cand_allcycles_candidate_id on fec_pac2cand_allcycles (candidate_id);
     
-
+drop view if exists fec_pac2pac_allcycles_import;
 create view fec_pac2pac_allcycles_import as
     select 2012 as cycle, * from fec_pac2pac_12
 union all
@@ -202,7 +203,7 @@ from fec_pac2pac_allcycles_import;
 create index fec_pac2pac_allcycles_filer_id on fec_pac2pac_allcycles (filer_id);
 create index fec_pac2pac_allcycles_other_id on fec_pac2pac_allcycles (other_id);
 
-
+drop table if exists fec_committee_summaries_allcycles;
 create table fec_committee_summaries_allcycles as
     select 2012 as cycle, * from fec_committee_summaries_12
     union all
@@ -225,6 +226,7 @@ create table fec_committee_summaries_allcycles as
 create index fec_committee_summaries_allcycles_committee_id on fec_committee_summaries_allcycles (committee_id);
 
 
+drop table if exists fec_candidate_summaries_allcycles;
 create table fec_candidate_summaries_allcycles as
     select 2012 as cycle, * from fec_candidate_summaries_12
     union all
