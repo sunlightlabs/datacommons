@@ -16,3 +16,6 @@ drop index if exists contribution_contribution_organization_name_ft;
 drop index if exists contribution_contribution_parent_organization_name_ft;
 drop index if exists contribution_contribution_recipient_name_ft;
 drop index if exists contribution_contribution_transaction_id;
+drop index if exists contribution_contribution_committee_ext_id;
+drop index if exists contribution_contribution_date;
+

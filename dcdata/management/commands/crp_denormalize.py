@@ -113,13 +113,13 @@ def load_catcodes(dataroot):
 
 
 
-def load_candidates(dataroot):
+def load_candidates(dataroot, cycles=CYCLES):
     """return map of cycle:fecID -> record"""
 
     candidates = { }
     fields = FILE_TYPES['cands']
 
-    for cycle in CYCLES:
+    for cycle in cycles:
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cands%s.txt' % cycle)
         reader = csv.DictReader(open(path), fieldnames=fields, quotechar="|")
 
@@ -135,10 +135,10 @@ def load_candidates(dataroot):
     return candidates
 
 
-def load_committees(dataroot):
+def load_committees(dataroot, cycles=CYCLES):
     committees = { }
     fields = FILE_TYPES['cmtes']
-    for cycle in CYCLES:
+    for cycle in cycles:
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cmtes%s.txt' % cycle)
         reader = csv.DictReader(open(path), fieldnames=fields, quotechar="|")
         for record in reader:
@@ -186,12 +186,16 @@ class FECOccupationFilter(Filter):
         if record['occ_ef'] and record['emp_ef']:
             record['contributor_occupation'] = record['occ_ef']
             record['contributor_employer'] = record['emp_ef']
-        elif record['fec_occ_emp'].count('/') == 1:
-            (emp, occ) = record['fec_occ_emp'].split('/')
-            record['contributor_occupation'] = occ
-            record['contributor_employer'] = emp
+        elif 'fec_occ_emp' in record:
+            if record['fec_occ_emp'].count('/') == 1:
+                (emp, occ) = record['fec_occ_emp'].split('/')
+                record['contributor_occupation'] = occ
+                record['contributor_employer'] = emp
+            else:
+                record['contributor_occupation'] = record['fec_occ_emp']
+                record['contributor_employer'] = ''
         else:
-            record['contributor_occupation'] = record['fec_occ_emp']
+            record['contributor_occupation'] = ''
             record['contributor_employer'] = ''
 
         return record
@@ -238,10 +242,10 @@ class CRPDenormalizeBase(BaseCommand):
         catcodes = load_catcodes(dataroot)
 
         print "Loading candidates..."
-        candidates = load_candidates(dataroot)
+        candidates = load_candidates(dataroot, cycles)
 
         print "Loading committees..."
-        committees = load_committees(dataroot)
+        committees = load_committees(dataroot, cycles)
 
         self.denormalize(dataroot, cycles, catcodes, candidates, committees)
 
