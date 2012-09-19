@@ -1,5 +1,6 @@
-from django.db import connection
-from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopListHandler, execute_top, EntityTopListHandler
+from piston.handler import BaseHandler
+
+from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopListHandler, execute_top, execute_one, EntityTopListHandler
 
 
 class CandidateSummaryHandler(EntitySingletonHandler):
@@ -110,8 +111,6 @@ class CandidateTimelineHandler(TopListHandler):
     """
 
     def read(self, request, **kwargs):
-        c = connection.cursor()
-        
         raw_candidates_result = execute_top(self.candidates_stmt, kwargs['entity_id'])
         candidates = [dict(zip(self.candidates_fields, row)) for row in raw_candidates_result]
         
@@ -175,4 +174,38 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
         order by sum(amount) desc
         limit %s
     """
+
+
+class ElectionSummaryHandler(BaseHandler):
+    """Used on SunlightFoundation site, not in brisket."""
+
+    fields = "house_receipts house_expenditures senate_receipts senate_expenditures romney_receipts romney_disbursements obama_receipts obama_disbursements house_indexp senate_indexp presidential_indexp".split()
+
+    stmt = """
+        with office_totals as (
+            select substring(candidate_id for 1) as office, sum(total_receipts) as receipts, sum(total_disbursements) as expenditures
+            from fec_candidate_summaries
+            group by substring(candidate_id for 1)
+        ), office_indexp as (
+            select candidate_office as office, sum(amount) as total_spending
+            from fec_indexp
+            group by candidate_office
+        )
+        select
+            (select receipts from office_totals where office = 'H') as house_receipts,
+            (select expenditures from office_totals where office = 'H') as house_expenditures,
+            (select receipts from office_totals where office = 'S') as senate_receipts,
+            (select expenditures from office_totals where office = 'S') as senate_expenditures,
+            (select total_receipts from fec_candidate_summaries where candidate_id = 'P80003353') as romney_receipts,
+            (select total_disbursements from fec_candidate_summaries where candidate_id = 'P80003353') as romney_disbursements,
+            (select total_receipts from fec_candidate_summaries where candidate_id = 'P80003338') as obama_receipts,
+            (select total_disbursements from fec_candidate_summaries where candidate_id = 'P80003338') as obama_disbursements,
+            (select total_spending from office_indexp where office = 'H') as house_indexp,
+            (select total_spending from office_indexp where office = 'S') as senate_indexp,
+            (select total_spending from office_indexp where office = 'P') as presidential_indexp
+    """
+
+    def read(self, request):
+        result = execute_one(self.stmt)
+        return dict(zip(self.fields, result))
 
