@@ -32,15 +32,6 @@ create table assoc_lobbying_client as
         on lower(a.alias) = lower(l.client_name)
     where
         e.type = 'organization'
-
-    union
-
-    select a.entity_id, l.transaction_id
-    from matchbox_entityattribute a
-    inner join lobbying_lobbying l
-        on a.value = l.client_ext_id
-    where
-        a.namespace = 'urn:crp:organization'
 ;
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id)';

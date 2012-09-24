@@ -36,7 +36,6 @@ def lobbying_handler(inpath, outpath, infields, outfields):
             'transaction_type': 'Type',
             'transaction_type_desc': 'TypeLong',
             'year': 'Year',
-            'client_ext_id': 'OrgID',
             'client_category': 'Catcode',
             'client_parent_name': 'Ultorg',
             'filing_type': 'Self',
