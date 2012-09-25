@@ -14,7 +14,10 @@ def name_proc(standardized, raw):
         return (standardized or raw).strip()
 
 def yn_proc(yn):
-    return yn.lower() == 'y'
+    if yn:
+        return yn.lower() == 'y'
+    else:
+        return ''
 
 # denormalization handlers
 
