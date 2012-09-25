@@ -124,7 +124,7 @@ FILE_TYPES = {
     "lob_lobbying": ('Uniqid','RegistrantRaw','Registrant','IsFirm',
                      'Client_raw','Client','Ultorg','Amount','Catcode',
                      'Source','Self','IncludeNSFS','Use','Ind','Year',
-                     'Type','TypeLong','OrgID','Affiliate'),
+                     'Type','TypeLong','Affiliate'),
     "lob_lobbyist": ('Uniqid','Lobbyist_raw','Lobbyist','LobbyistID',
                      'Year','OfficalPos','CID','FormerCongMem'),
     "lob_agency": ('UniqID','AgencyID','Agency'),
