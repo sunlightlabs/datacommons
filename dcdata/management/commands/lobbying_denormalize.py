@@ -2,7 +2,7 @@ from dcdata.lobbying.models import Lobbying, Lobbyist, Issue, Bill, Agency
 from dcdata.management.base.importer import BaseImporter
 from saucebrush.sources import CSVSource
 from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, \
-        FieldAdder, FieldModifier
+        FieldAdder, FieldModifier, UnicodeFilter
 from saucebrush.emitters import CSVEmitter
 from saucebrush import run_recipe
 import os, os.path
@@ -22,6 +22,7 @@ def lobbying_handler(inpath, outpath, infields, outfields):
 
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        UnicodeFilter(),
         FieldRemover('Source'),
         FieldMerger({'registrant_name': ('Registrant','RegistrantRaw')}, name_proc),
         FieldMerger({'registrant_is_firm': ('IsFirm',)}, yn_proc),
@@ -88,7 +89,7 @@ def issue_handler(inpath, outpath, infields, outfields):
             'specific_issue': 'SpecIssue',
             'year': 'Year',
         }),
-        FieldModifier(('general_issue', 'specific_issue'), lambda x: x.replace('\n', ' ')),
+        FieldModifier(('general_issue', 'specific_issue'), lambda x: x.replace('\n', ' ') if x else ''),
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
