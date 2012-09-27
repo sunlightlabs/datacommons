@@ -44,7 +44,6 @@ class Agency(models.Model):
 
 class Lobbyist(models.Model):
     year = models.IntegerField(blank=True, null=True)
-    #transaction_id = models.CharField(max_length=64, db_index=True)
     transaction = models.ForeignKey(Lobbying, related_name='lobbyists')
     lobbyist_name = models.CharField(max_length=255, blank=True, null=True)
     lobbyist_ext_id = models.CharField(max_length=128, blank=True, null=True, db_index=True)
