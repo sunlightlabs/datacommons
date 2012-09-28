@@ -285,10 +285,13 @@ class Command(BaseImporter):
     help = 'Loads lobbying records. First drops existing tables and runs syncdb.'
 
 
+    @transaction.commit_on_success
     def do_first(self):
         for handler in HANDLERS.values():
             handler_obj = handler(None, self.log)
+            self.log.info("Dropping table {}...".format(handler_obj.db_table))
             handler_obj.drop()
+            self.log.info("Done.")
 
         self.log.info("Syncing database to recreate dropped tables:")
         management.call_command('syncdb', interactive=False)
