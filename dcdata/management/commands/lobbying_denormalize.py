@@ -1,5 +1,6 @@
 from dcdata.lobbying.models import Lobbying, Lobbyist, Issue, Bill, Agency
 from dcdata.management.base.importer import BaseImporter
+from dcdata.utils.dryrub import CSVFieldVerifier, FieldCountValidator, VerifiedCSVSource
 from saucebrush.sources import CSVSource
 from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, \
         FieldAdder, FieldModifier, UnicodeFilter
@@ -83,7 +84,9 @@ def agency_handler(inpath, outpath, infields, outfields):
 def issue_handler(inpath, outpath, infields, outfields):
 
     run_recipe(
-        CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        VerifiedCSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        FieldCountValidator(len(FILE_TYPES['lob_issue'])),
+        CSVFieldVerifier(),
         FieldRenamer({
             'id': 'SI_ID',
             'transaction': 'UniqID',

@@ -2,6 +2,7 @@ from dcdata.loading              import Loader, LoaderEmitter
 from dcdata.lobbying.models      import Lobbying, Lobbyist, Agency, Issue, Bill
 from decimal                     import Decimal
 from dcdata.management.base.importer import BaseImporter
+from dcdata.utils.dryrub         import CSVFieldVerifier, FieldCountValidator, VerifiedCSVSource
 from django.core                 import management
 from django.db                   import connections, transaction
 from saucebrush                  import run_recipe
@@ -199,7 +200,8 @@ class IssueHandler(TableHandler):
 
     def run(self):
         run_recipe(
-            CSVSource(open(self.inpath)),
+            VerifiedCSVSource(open(self.inpath)),
+            CSVFieldVerifier(),
             FieldModifier('year', lambda x: int(x) if x else None),
             FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
