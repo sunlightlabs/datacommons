@@ -117,3 +117,33 @@ class MemberOfCongressWithBioguide(models.Model):
     name = property(build_name)
     padded_district = property(pad_district)
 
+
+class LocalElectionOfficial(models.Model):
+    state = models.CharField(max_length=64)
+    board = models.CharField(max_length=255, null=True)
+    office = models.CharField(max_length=64, null=True)
+    name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'local_election_officials'
+
+
+class ContributorsByStateForLEO(models.Model):
+    """
+    create table tmp_akr_leo_names_by_state as (
+        select distinct contributor_name as name, contributor_state as state, contributor_employer as employer, contributor_occupation as occupation, contributor_city as city
+        from contribution_contribution
+        where contributor_type = 'I' and cycle in (2010, 2012)
+    );
+    """
+    name = models.CharField(max_length=255, db_index=True)
+    state = models.CharField(max_length=2, db_index=True)
+    employer = models.CharField(max_length=255, blank=True, null=True)
+    occupation = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'leo_matching_contrib_names_by_state'
+
+
+

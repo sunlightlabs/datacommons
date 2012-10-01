@@ -131,6 +131,7 @@ where
 commit;
 
 
+begin;
 delete from matchbox_organizationmetadata;
 
 insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id)

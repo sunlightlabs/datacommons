@@ -2,8 +2,9 @@ from dcdata.loading              import Loader, LoaderEmitter
 from dcdata.lobbying.models      import Lobbying, Lobbyist, Agency, Issue, Bill
 from decimal                     import Decimal
 from dcdata.management.base.importer import BaseImporter
+from dcdata.utils.dryrub         import CSVFieldVerifier, FieldCountValidator, VerifiedCSVSource
 from django.core                 import management
-from django.db                   import connections
+from django.db                   import connections, transaction
 from saucebrush                  import run_recipe
 from saucebrush.filters          import FieldModifier, UnicodeFilter, \
     Filter, FieldMerger, FieldRenamer
@@ -199,7 +200,8 @@ class IssueHandler(TableHandler):
 
     def run(self):
         run_recipe(
-            CSVSource(open(self.inpath)),
+            VerifiedCSVSource(open(self.inpath)),
+            CSVFieldVerifier(),
             FieldModifier('year', lambda x: int(x) if x else None),
             FieldRenamer({'transaction_id': 'transaction'}),
             NoneFilter(),
@@ -280,11 +282,16 @@ class Command(BaseImporter):
     REJECTED_DIR = '/home/datacommons/data/auto/lobbying/denormalized/REJECTED'
     FILE_PATTERN = 'denorm_lob_*.csv'
 
+    help = 'Loads lobbying records. First drops existing tables and runs syncdb.'
 
+
+    @transaction.commit_on_success
     def do_first(self):
         for handler in HANDLERS.values():
             handler_obj = handler(None, self.log)
+            self.log.info("Dropping table {}...".format(handler_obj.db_table))
             handler_obj.drop()
+            self.log.info("Done.")
 
         self.log.info("Syncing database to recreate dropped tables:")
         management.call_command('syncdb', interactive=False)
@@ -312,6 +319,7 @@ class Command(BaseImporter):
             self.log.info('No files found.')
 
 
+    @transaction.commit_manually
     def do_for_file(self, file_path):
         handler_class = HANDLERS.get(os.path.basename(file_path).split('.')[0], None)
 
@@ -322,5 +330,6 @@ class Command(BaseImporter):
             handler = handler_class(file_path, self.log)
             self.log.info("Loading records for {0}".format(handler.db_table))
             handler.run()
+            transaction.commit()
             self.archive_file(file_path, True)
 

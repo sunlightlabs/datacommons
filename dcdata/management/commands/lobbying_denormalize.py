@@ -1,8 +1,9 @@
 from dcdata.lobbying.models import Lobbying, Lobbyist, Issue, Bill, Agency
 from dcdata.management.base.importer import BaseImporter
+from dcdata.utils.dryrub import CSVFieldVerifier, FieldCountValidator, VerifiedCSVSource
 from saucebrush.sources import CSVSource
 from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, \
-        FieldAdder, FieldModifier
+        FieldAdder, FieldModifier, UnicodeFilter
 from saucebrush.emitters import CSVEmitter
 from saucebrush import run_recipe
 import os, os.path
@@ -14,7 +15,10 @@ def name_proc(standardized, raw):
         return (standardized or raw).strip()
 
 def yn_proc(yn):
-    return yn.lower() == 'y'
+    if yn:
+        return yn.lower() == 'y'
+    else:
+        return ''
 
 # denormalization handlers
 
@@ -22,6 +26,7 @@ def lobbying_handler(inpath, outpath, infields, outfields):
 
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        UnicodeFilter(),
         FieldRemover('Source'),
         FieldMerger({'registrant_name': ('Registrant','RegistrantRaw')}, name_proc),
         FieldMerger({'registrant_is_firm': ('IsFirm',)}, yn_proc),
@@ -36,7 +41,6 @@ def lobbying_handler(inpath, outpath, infields, outfields):
             'transaction_type': 'Type',
             'transaction_type_desc': 'TypeLong',
             'year': 'Year',
-            'client_ext_id': 'OrgID',
             'client_category': 'Catcode',
             'client_parent_name': 'Ultorg',
             'filing_type': 'Self',
@@ -80,7 +84,9 @@ def agency_handler(inpath, outpath, infields, outfields):
 def issue_handler(inpath, outpath, infields, outfields):
 
     run_recipe(
-        CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        VerifiedCSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        FieldCountValidator(len(FILE_TYPES['lob_issue'])),
+        CSVFieldVerifier(),
         FieldRenamer({
             'id': 'SI_ID',
             'transaction': 'UniqID',
@@ -89,7 +95,7 @@ def issue_handler(inpath, outpath, infields, outfields):
             'specific_issue': 'SpecIssue',
             'year': 'Year',
         }),
-        FieldModifier(('general_issue', 'specific_issue'), lambda x: x.replace('\n', ' ')),
+        FieldModifier(('general_issue', 'specific_issue'), lambda x: x.replace('\n', ' ') if x else ''),
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
@@ -121,7 +127,7 @@ FILE_TYPES = {
     "lob_lobbying": ('Uniqid','RegistrantRaw','Registrant','IsFirm',
                      'Client_raw','Client','Ultorg','Amount','Catcode',
                      'Source','Self','IncludeNSFS','Use','Ind','Year',
-                     'Type','TypeLong','OrgID','Affiliate'),
+                     'Type','TypeLong','Affiliate'),
     "lob_lobbyist": ('Uniqid','Lobbyist_raw','Lobbyist','LobbyistID',
                      'Year','OfficalPos','CID','FormerCongMem'),
     "lob_agency": ('UniqID','AgencyID','Agency'),
