@@ -1,6 +1,6 @@
 from dcdata.management.base.importer import BaseImporter
 from django.db.models.fields import CharField
-import csv
+from dcdata.utils.ucsv import UnicodeDictReader, UnicodeWriter
 import os.path
 import re
 
@@ -18,7 +18,7 @@ class BaseUSASpendingConverter(BaseImporter):
     DONE_DIR =     '/home/usaspending/usaspending/latest/DONE'
     REJECTED_DIR = '/home/usaspending/usaspending/latest/REJECTED'
     OUT_DIR =      '/home/usaspending/usaspending/latest/OUT'
-    FILE_PATTERN = '*_All_*.csv' # bash-style, ala '*.sql'
+    FILE_PATTERN = '*_All_*.csv'  # bash-style, ala '*.sql'
 
     email_subject = 'Unhappy USASpending App'
 
@@ -26,7 +26,6 @@ class BaseUSASpendingConverter(BaseImporter):
         super(BaseUSASpendingConverter, self).__init__()
         if not self.FILE_PATTERN:
             raise NotImplementedError("Child classes must specify a FILE_PATTERN")
-
 
     def do_for_file(self, file_path):
         # Since all the files for both contracts and grants importers start out
@@ -48,19 +47,16 @@ class BaseUSASpendingConverter(BaseImporter):
 
         self.log.info("Done.")
 
-
     def outfile_path(self, infile):
         outfile = '{0}_{1}.csv'.format(self.outfile_basename, self.get_year_from_file_path(infile))
         return os.path.join(self.OUT_DIR, outfile)
 
-
     def file_is_right_type(self, file_):
         raise NotImplementedError("file_is_right_type() must be defined in the child class")
 
-
     def parse_file(self, input_, output, fields, string_lengths, calculated_fields=None):
-        reader = csv.DictReader(open(input_, 'r'))
-        writer = csv.writer(open(output, 'a'), delimiter='|')
+        reader = UnicodeDictReader(open(input_, 'r'))
+        writer = UnicodeWriter(open(output, 'a'), delimiter='|')
 
         def null_transform(value):
             return value
@@ -76,7 +72,7 @@ class BaseUSASpendingConverter(BaseImporter):
                     value = transform(line[fieldname])
                 except Exception, e:
                     value = None
-                    self.log.error(u'|'.join([fieldname, line[fieldname],e.message]))
+                    self.log.error(u'|'.join([fieldname, line[fieldname], e.message]))
 
                 insert_fields.append(self.filter_non_values(fieldname, value, string_lengths))
 
@@ -97,7 +93,6 @@ class BaseUSASpendingConverter(BaseImporter):
 
             writer.writerow(insert_fields)
 
-
     def filter_non_values(self, field, value, string_lengths):
         # indicates that field should be treated as a CharField
         if field in string_lengths:
@@ -108,9 +103,6 @@ class BaseUSASpendingConverter(BaseImporter):
                 self.log.warn("value '%s' for field '%s' is not a string.", value, field)
                 value = str(value)
 
-            # need value decoded in order to compute length properly
-            value = value.decode('utf8', 'ignore')
-
             value = value.strip()
 
             if len(value) > string_lengths[field]:
@@ -118,22 +110,17 @@ class BaseUSASpendingConverter(BaseImporter):
 
             value = value[:string_lengths[field]]
 
-            # but need value back as string in order to write to file
-            value = value.encode('utf8')
-
             return value
 
         else:
 
-            if value == None:
+            if value is None:
                 return "NULL"
 
             return value
 
-
     def get_string_fields(self):
         return dict([(f.name, f.max_length) for f in self.modelclass._meta.fields if isinstance(f, CharField)])
-
 
     def get_year_from_file_path(self, file_path):
         return re.search(r'(?P<year>\d{4})_.*\.csv', file_path).group('year')
