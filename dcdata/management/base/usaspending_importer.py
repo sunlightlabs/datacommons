@@ -108,8 +108,8 @@ class BaseUSASpendingConverter(BaseImporter):
                 self.log.warn("value '%s' for field '%s' is not a string.", value, field)
                 value = str(value)
 
-            # need value as unicode in order to compute proper length
-            value = value.decode('utf8')
+            # need value decoded in order to compute length properly
+            value = value.decode('utf8', 'ignore')
 
             value = value.strip()
 
