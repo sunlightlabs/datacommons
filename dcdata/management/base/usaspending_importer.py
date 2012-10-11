@@ -76,7 +76,7 @@ class BaseUSASpendingConverter(BaseImporter):
                     value = transform(line[fieldname])
                 except Exception, e:
                     value = None
-                    self.log.error('|'.join([fieldname, line[fieldname],e.message]))
+                    self.log.error(u'|'.join([fieldname, line[fieldname],e.message]))
 
                 insert_fields.append(self.filter_non_values(fieldname, value, string_lengths))
 
@@ -91,7 +91,7 @@ class BaseUSASpendingConverter(BaseImporter):
                             value = transform()
                     except Exception, e:
                         value = None
-                        self.log.error('|'.join([fieldname, line.get(built_on_field, ''), e.message]))
+                        self.log.error(u'|'.join([fieldname, line.get(built_on_field, ''), e.message]))
 
                     insert_fields.append(self.filter_non_values(fieldname, value, string_lengths))
 
