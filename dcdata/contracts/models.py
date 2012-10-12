@@ -1,3 +1,4 @@
+from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 
 class Contract(models.Model):
