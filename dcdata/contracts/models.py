@@ -1,7 +1,7 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 
-class Contract(models.Model):    
+class Contract(models.Model):
     unique_transaction_id = models.CharField(max_length=32, blank=True)
     transaction_status = models.CharField(max_length=32, blank=True)
     obligatedamount = models.DecimalField(default=0, max_digits=20, decimal_places=2, blank=True, null=True)
@@ -25,7 +25,6 @@ class Contract(models.Model):
     typeofcontractpricing = models.CharField(max_length=1, blank=True)
     priceevaluationpercentdifference = models.CharField(max_length=100, blank=True)
     subcontractplan = models.CharField(max_length=1, blank=True)
-    type_of_contract = models.CharField(max_length=1, blank=True)    
     lettercontract = models.CharField(max_length=1, blank=True)
     multiyearcontract = models.NullBooleanField()
     performancebasedservicecontract = models.CharField(max_length=1, blank=True)

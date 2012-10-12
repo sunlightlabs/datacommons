@@ -26,7 +26,6 @@ FIELDS = [
 ('typeofcontractpricing', splitCode),
 ('priceevaluationpercentdifference', None),
 ('subcontractplan', splitCode),
-('type_of_contract', splitCode),
 ('lettercontract', splitCode),
 ('multiyearcontract', transformFlag),
 ('performancebasedservicecontract', splitCode),
