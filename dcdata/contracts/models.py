@@ -1,4 +1,3 @@
-from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 
 class Contract(models.Model):
@@ -14,7 +13,7 @@ class Contract(models.Model):
     contractingofficeid = models.CharField(max_length=6, blank=True)
     fundingrequestingagencyid = models.CharField(max_length=4, blank=True)
     fundingrequestingofficeid = models.CharField(max_length=6, blank=True)
-    fundedbyforeignentity = models.CharField(max_length=1, blank=True)
+    fundedbyforeignentity = models.CharField(max_length=21, blank=True)
     signeddate = models.DateField(blank=True, null=True)
     effectivedate = models.DateField(blank=True, null=True)
     currentcompletiondate = models.DateField(blank=True, null=True)
@@ -22,7 +21,7 @@ class Contract(models.Model):
     lastdatetoorder = models.CharField(max_length=32, blank=True)
     contractactiontype = models.CharField(max_length=3, blank=True)
     reasonformodification = models.CharField(max_length=1, blank=True)
-    typeofcontractpricing = models.CharField(max_length=1, blank=True)
+    typeofcontractpricing = models.CharField(max_length=2, blank=True)
     priceevaluationpercentdifference = models.CharField(max_length=100, blank=True)
     subcontractplan = models.CharField(max_length=1, blank=True)
     lettercontract = models.CharField(max_length=1, blank=True)
@@ -58,11 +57,11 @@ class Contract(models.Model):
     streetaddress2 = models.CharField(max_length=400, blank=True)
     streetaddress3 = models.CharField(max_length=400, blank=True)
     city = models.CharField(max_length=35, blank=True)
-    state = USStateField(blank=True)
+    state = models.CharField(max_length=3, blank=True)
     zipcode = models.CharField(max_length=10, blank=True)
     vendorcountrycode = models.CharField(max_length=30, blank=True)
     vendor_state_code = models.CharField(max_length=32, blank=True)
-    vendor_cd = models.CharField(max_length=4, blank=True)
+    vendor_cd = models.CharField(max_length=5, blank=True)
     congressionaldistrict = models.CharField(max_length=6, blank=True)
     vendorsitecode = models.CharField(max_length=16, blank=True)
     vendoralternatesitecode = models.CharField(max_length=10, blank=True)
