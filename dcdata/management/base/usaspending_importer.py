@@ -103,13 +103,13 @@ class BaseUSASpendingConverter(BaseImporter):
                 return ''
 
             if not (isinstance(value, unicode) or isinstance(value, str)):
-                self.log.warn("value '%s' for field '%s' is not unicode or a string.", value, field)
+                self.log.warn(u"value '{}' for field '{}' is not a unicode object or string.".format(value, field))
                 value = str(value)
 
             value = value.strip()
 
             if len(value) > string_lengths[field]:
-                self.log.warn("value '%s' for field '%s' is too long.", value, field)
+                self.log.warn(u"value '{}' for field '{}' is too long.".format(value, field))
 
             value = value[:string_lengths[field]]
 
