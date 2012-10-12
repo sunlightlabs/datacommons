@@ -58,7 +58,7 @@ def splitIntCode(value):
 def splitCode(value):
 
     if not value is None:
-        return value.split(':')[0]
+        return value.split(u':')[0]
     else:
         return ''
 
