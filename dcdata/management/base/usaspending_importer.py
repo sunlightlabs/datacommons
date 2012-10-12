@@ -70,6 +70,9 @@ class BaseUSASpendingConverter(BaseImporter):
 
                 try:
                     value = transform(line[fieldname])
+                except KeyError, e:
+                    self.log.fatal("Key {} was found in our model but not in the file".format(fieldname))
+                    raise e
                 except Exception, e:
                     value = None
                     self.log.error(u'|'.join([fieldname, line[fieldname], e.message]))
