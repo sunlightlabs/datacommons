@@ -99,8 +99,8 @@ class BaseUSASpendingConverter(BaseImporter):
             if not value or value in ('(none)', 'NULL'):
                 return ''
 
-            if not isinstance(value, str):
-                self.log.warn("value '%s' for field '%s' is not a string.", value, field)
+            if not (isinstance(value, unicode) or isinstance(value, str)):
+                self.log.warn("value '%s' for field '%s' is not unicode or a string.", value, field)
                 value = str(value)
 
             value = value.strip()
