@@ -145,7 +145,7 @@ FIELDS = [
 ('saaobflag', transformFlag),
 ('nonprofitorganizationflag', transformFlag),
 ('haobflag', transformFlag),
-('verysmallbusinessflag', transformFlag),
+('emergingsmallbusinessflag', transformFlag),
 ('hospitalflag', transformFlag),
 ('contractingofficerbusinesssizedetermination', splitCode),
 ('receivescontracts', splitCode),
