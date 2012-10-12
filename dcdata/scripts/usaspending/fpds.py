@@ -46,7 +46,7 @@ FIELDS = [
 ('account_title', None),
 ('rec_flag', recovery_act),
 ('typeofidc', None),
-('multipleorsingleawardidc', None),
+('multipleorsingleawardidc', splitCode),
 ('programacronym', None),
 ('vendorname', None),
 ('vendoralternatename', None),
