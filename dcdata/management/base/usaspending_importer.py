@@ -109,7 +109,7 @@ class BaseUSASpendingConverter(BaseImporter):
             value = value.strip()
 
             if len(value) > string_lengths[field]:
-                self.log.warn(u"value '{}' for field '{}' is too long.".format(value, field))
+                self.log.debug(u"value '{}' for field '{}' is too long.".format(value, field))
 
             value = value[:string_lengths[field]]
 
