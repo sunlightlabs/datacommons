@@ -122,7 +122,7 @@ class Grant(models.Model):
     record_type = models.CharField(max_length=1, blank=True, choices=RECORD_TYPES)
     rec_flag = models.NullBooleanField(blank=True)
     cfda_program_num = models.CharField(max_length=8, blank=True)
-    cfda_program_title = models.CharField(max_length=75, blank=True)
+    cfda_program_title = models.CharField(max_length=255, blank=True)
     sai_number = models.CharField(max_length=20, blank=True)
     account_title = models.CharField(max_length=100, blank=True)
     recipient_name = models.CharField(max_length=45, blank=True)

@@ -35,6 +35,23 @@ class UnicodeReader:
     def __iter__(self):
         return self
 
+class UnicodeDictReader:
+    """
+    A CSV reader which will iterate over lines in the CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, fieldnames=None, dialect=csv.excel, encoding="utf-8", **kwds):
+        f = UTF8Recoder(f, encoding)
+        self.reader = csv.DictReader(f, fieldnames=fieldnames, dialect=dialect, **kwds)
+
+    def next(self):
+        row = self.reader.next()
+        return {k: unicode(v, "utf-8") for k, v in row.iteritems()}
+
+    def __iter__(self):
+        return self
+
 class UnicodeWriter:
     """
     A CSV writer which will write rows to CSV file "f",
