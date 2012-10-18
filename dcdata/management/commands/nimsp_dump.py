@@ -64,10 +64,14 @@ class NIMSPDump2CSV(BaseNimspImporter):
             host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
         )
-        cursor = connection.cursor()
-        self.log.info('Creating indexes...'.format(outfile_path))
-        cursor.execute(create_indexes_stmt)
-        cursor.close()
+
+        try:
+            cursor = connection.cursor()
+            self.log.info('Creating indexes...'.format(outfile_path))
+            cursor.execute(create_indexes_stmt)
+            cursor.close()
+        except cursor.OperationalError:
+            self.log.info('Tried to create database indexes but they already existed. Moving on.')
 
         cursor = connection.cursor()
         self.log.info('Dumping data to {0}...'.format(outfile_path))
