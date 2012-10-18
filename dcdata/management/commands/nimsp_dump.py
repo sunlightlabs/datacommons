@@ -19,7 +19,6 @@ class NIMSPDump2CSV(BaseNimspImporter):
     def __init__(self):
         super(NIMSPDump2CSV, self).__init__()
 
-
     def do_for_file(self, file_path):
         # The file and file_path arguments are irrelevant for this particular
         # script, since it's pulling all the data out of MySQL.
@@ -64,17 +63,17 @@ class NIMSPDump2CSV(BaseNimspImporter):
             host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
         )
-        cursor = connection.cursor()
 
-        self.log.info('Creating indexes...'.format(outfile_path))
-        cursor.execute(create_indexes_stmt)
+        with connection.cursor() as cursor:
+            self.log.info('Creating indexes...'.format(outfile_path))
+            cursor.execute(create_indexes_stmt)
 
-        self.log.info('Dumping data to {0}...'.format(outfile_path))
-        cursor.execute(stmt)
-        self.log.info('Data dump complete.')
+        with connection.cursor() as cursor:
+            self.log.info('Dumping data to {0}...'.format(outfile_path))
+            cursor.execute(stmt)
+            self.log.info('Data dump complete.')
 
         self.archive_file(file_path, timestamp=True)
 
 
 Command = NIMSPDump2CSV
-
