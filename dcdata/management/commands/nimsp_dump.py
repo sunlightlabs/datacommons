@@ -65,12 +65,14 @@ class NIMSPDump2CSV(BaseNimspImporter):
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
         )
         cursor = connection.cursor()
-
         self.log.info('Creating indexes...'.format(outfile_path))
         cursor.execute(create_indexes_stmt)
+        cursor.close()
 
+        cursor = connection.cursor()
         self.log.info('Dumping data to {0}...'.format(outfile_path))
         cursor.execute(stmt)
+        cursor.close()
         self.log.info('Data dump complete.')
 
         self.archive_file(file_path, timestamp=True)
