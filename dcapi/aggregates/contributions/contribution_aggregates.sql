@@ -431,6 +431,33 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 
 
 
+drop table if exists agg_entity_to_entity;
+CREATE TABLE agg_entity_to_entity (
+    transaction_namespace character varying(64),
+    amount numeric,
+    count bigint,
+    cycle integer,
+    contributor_name character varying(255),
+    contributor_entity uuid,
+    contributor_type character varying(255),
+    organization_name character varying(255),
+    organization_entity uuid,
+    parent_organization_name character varying(255),
+    parent_organization_entity uuid,
+    recipient_name character varying(255),
+    recipient_entity uuid,
+    recipient_type character varying(255),
+    industry_entity uuid,
+    industry_name varchar(255),
+    party character varying(64),
+    seat character varying(64)
+);
+
+CREATE INDEX agg_entity_to_entity__contributor_type_idx ON agg_entity_to_entity USING btree (contributor_type);
+CREATE INDEX agg_entity_to_entity__contributor_entity_idx ON agg_entity_to_entity USING btree (contributor_entity);
+CREATE INDEX agg_entity_to_entity__cycle_idx ON agg_entity_to_entity USING btree (cycle);
+
+
 -- Entity Aggregates (Contribution Totals)
 
 
@@ -614,14 +641,10 @@ drop table if exists agg_cands_from_indiv cascade;
 select date_trunc('second', now()) || ' -- create table agg_cands_from_indiv';
 create table agg_cands_from_indiv as
     with individual_contributions_by_cycle as (
-        select ca.entity_id as contributor_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
-            cycle, count(*), sum(c.amount) as amount,
-            rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
-        from contributions_individual c
-        inner join contributor_associations ca using (transaction_id)
-        left join recipient_associations ra using (transaction_id)
-        left join matchbox_entity re on re.id = ra.entity_id
-        group by ca.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
+        select contributor_entity, recipient_name, recipient_entity, cycle, count, amount,
+            rank() over (partition by contributor_entity, cycle order by amount desc) as rank
+        from agg_entity_to_entity
+        where contributor_type = 'individual'
     )
 
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount
@@ -651,14 +674,11 @@ drop table if exists agg_orgs_from_indiv cascade;
 select date_trunc('second', now()) || ' -- create table agg_orgs_from_indiv';
 create table agg_orgs_from_indiv as
     with individual_to_org_contributions_by_cycle as (
-    select ca.entity_id as contributor_entity, coalesce(re.name, c.recipient_name) as recipient_name, ra.entity_id as recipient_entity,
-            cycle, count(*), sum(c.amount) as amount,
-            rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank
-        from contributions_individual_to_organization c
-        inner join contributor_associations ca using(transaction_id)
-        left join recipient_associations ra using (transaction_id)
-        left join matchbox_entity re on re.id = ra.entity_id
-        group by ca.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
+    select contributor_entity, recipient_name, recipient_entity, cycle, count, amount,
+            rank() over (partition by contributor_entity, cycle order by amount desc) as rank
+        from agg_entity_to_entity
+        where contributor_type = 'individual' and recipient_type = 'organization'
+        group by contributor_entity, recipient_name, recipient_entity, cycle, count, amount
     )
 
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount
