@@ -28,8 +28,8 @@ create_tmp_crp_committees_stmt = """
     CREATE TABLE tmp_crp_committees (
         Cycle char(4) NOT NULL,
     	CmteID char(9) NOT NULL,
-    	PACShort varchar(40) NULL,
-    	Affiliate varchar(40) NULL,
+    	PACShort varchar(50) NULL,
+    	Affiliate varchar(50) NULL,
     	UltOrg varchar(40) NULL,
     	RecipID char(9) NULL,
     	RecipCode char(2) NULL,
