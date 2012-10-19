@@ -10,6 +10,16 @@ from fec_candidates_import;
 
 create index fec_candidates_candidate_id on fec_candidates (candidate_id);
 
+drop table if exists agg_fec_race_status;
+create table agg_fec_race_status as
+select
+    election_year,
+    race,
+    max(special_election_status) as special_election_status,
+    max(primary_election_status) as primary_election_status,
+    max(runoff_election_status) as runoff_election_status,
+    max(general_election_status) as general_election_status
+from fec_candidate_summaries s inner join fec_candidates c using (candidate_id) where candidate_status = 'C' group by election_year, race;
 
 drop table if exists fec_indiv;
 create table fec_indiv as
@@ -99,17 +109,34 @@ create index fec_pac2pac_other_id on fec_pac2pac (other_id);
 
 drop table if exists agg_fec_candidate_rankings;
 create table agg_fec_candidate_rankings as
-select candidate_id, office,
-    rank() over (partition by office order by total_receipts desc) as total_receipts_rank,
-    rank() over (partition by office order by ending_cash desc) as cash_on_hand_rank,
-    rank() over (partition by office order by total_disbursements desc) as total_disbursements_rank
+
+-- primary winners only (vs. primary winners)
+select candidate_id, office, election_year, primary_election_status,
+    rank() over (partition by office, election_year order by total_receipts desc) as total_receipts_rank,
+    rank() over (partition by office, election_year order by ending_cash desc) as cash_on_hand_rank,
+    rank() over (partition by office, election_year order by total_disbursements desc) as total_disbursements_rank
 from fec_candidates c
 inner join fec_candidate_summaries s using (candidate_id)
 where
     candidate_status = 'C'
-    and election_year = '2012';
+    and s.primary_election_status = 'W'
 
+union all
 
+-- non-primary winners (vs. everybody)
+select candidate_id, office, election_year, primary_election_status, total_receipts_rank, cash_on_hand_rank, total_disbursements_rank from (
+    select candidate_id, office, election_year,
+        rank() over (partition by office, election_year order by total_receipts desc) as total_receipts_rank,
+        rank() over (partition by office, election_year order by ending_cash desc) as cash_on_hand_rank,
+        rank() over (partition by office, election_year order by total_disbursements desc) as total_disbursements_rank,
+        s.primary_election_status
+    from fec_candidates c
+    inner join fec_candidate_summaries s using (candidate_id)
+    where
+        candidate_status = 'C'
+)x
+where primary_election_status is null
+;
 
 drop table if exists agg_fec_candidate_timeline;
 create table agg_fec_candidate_timeline as
