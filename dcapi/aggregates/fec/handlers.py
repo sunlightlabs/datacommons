@@ -14,15 +14,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
             r.total_receipts_rank,
             r.total_disbursements_rank,
             r.cash_on_hand_rank,
-            (
-                select max(total_receipts_rank)
-                from agg_fec_candidate_rankings rkg
-                where
-                    rkg.office = c.office
-                    and c.election_year = rkg.election_year
-                    and (rkg.primary_election_status = s.primary_election_status 
-                        or rkg.primary_election_status is null)
-            ) as max_rank,
+            num_candidates_in_field,
             total_individual_contributions - refunds_to_individuals as indiv,
             contributions_from_other_committees,
             contributions_from_party_committees,
