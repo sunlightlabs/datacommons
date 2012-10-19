@@ -12,8 +12,8 @@ class CandidateSummaryHandler(EntitySingletonHandler):
             total_receipts - (candidate_loan_repayments + other_loan_repayments + refunds_to_individuals + refunds_to_committees) as total_raised,
             r.office,
             r.total_receipts_rank,
-            r.cash_on_hand_rank,
             r.total_disbursements_rank,
+            r.cash_on_hand_rank,
             (
                 select max(total_receipts_rank)
                 from agg_fec_candidate_rankings rkg
