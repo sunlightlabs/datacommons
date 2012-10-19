@@ -30,7 +30,7 @@ create_tmp_crp_committees_stmt = """
     	CmteID char(9) NOT NULL,
     	PACShort varchar(50) NULL,
     	Affiliate varchar(50) NULL,
-    	UltOrg varchar(40) NULL,
+    	UltOrg varchar(50) NULL,
     	RecipID char(9) NULL,
     	RecipCode char(2) NULL,
     	FECCandID char(9) NULL,
