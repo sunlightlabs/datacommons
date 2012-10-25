@@ -25,5 +25,6 @@ urlpatterns = patterns('',
     url(r'^epa', include('dcapi.epa.urls')),
     url(r'^faca', include('dcapi.faca.urls')),
     url(r'^aggregates/', include('dcapi.aggregates.urls')),
+    url(r'^refine/', include('dcapi.reconcile.urls')),
     url(r'^', include('dcapi.rapportive.urls')),
 )
