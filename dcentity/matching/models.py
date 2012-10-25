@@ -146,4 +146,23 @@ class ContributorsByStateForLEO(models.Model):
         db_table = 'leo_matching_contrib_names_by_state'
 
 
+class SuperPACDonor(models.Model):
+    """
+    create table research__superpac_donors as
+        select contributor_name as name, string_agg(trim(both from committee_id), ',') as committee_ids, string_agg(trim(both from committee_name), ',') as committee_names
+        from fec_committee_itemized
+        where committee_type = 'O' and contributor_name is not null
+        group by contributor_name;
+
+    alter table research__superpac_donors add column id serial;
+    """
+
+    name = models.CharField(max_length=200)
+    committee_ids = models.CharField(max_length=255)
+    committee_names = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'research__superpac_donors'
+
+
 
