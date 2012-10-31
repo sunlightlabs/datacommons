@@ -9,7 +9,7 @@ from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 from dcdata.utils.sql import parse_int, parse_date
 from decimal import Decimal
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import transaction, reset_queries
 from django.db.models.fields import CharField
 from optparse import make_option
 from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier
@@ -118,12 +118,14 @@ class LoadContributions(BaseCommand):
         
         try:
             input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), FIELDNAMES, skiprows=1 + int(options['skip']))
-            
+
             output_func = chain_filters(
                 LoaderEmitter(loader),
                 #Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
-                Every(self.COMMIT_FREQUENCY, progress_tick))
-            
+                Every(self.COMMIT_FREQUENCY, progress_tick),
+                Every(self.COMMIT_FREQUENCY, lambda i: reset_queries()),
+            )
+
             record_processor = self.get_record_processor(loader.import_session)
 
             load_data(input_iterator, record_processor, output_func)

@@ -91,6 +91,11 @@ group by
     le.id, coalesce(le.name, fe.name, lb.name),
     cycle;
 
+create index agg_bundling__recipient_id on agg_bundling (recipient_id);
+create index agg_bundling__firm_id on agg_bundling (firm_id);
+create index agg_bundling__lobbyist_id on agg_bundling (lobbyist_id);
+create index agg_bundling__cycle on agg_bundling (cycle);
+
 drop view if exists lobbyist_bundling_denormalized_view;
 create view lobbyist_bundling_denormalized_view as
     select
