@@ -89,6 +89,18 @@ where
 ;
 
 
+-- update is_superpac from FEC data
+update tmp_matchbox_organizationmetadata
+set is_superpac = true
+from matchbox_entityattribute a
+inner join fec_committees c on (c.committee_id = a.value and a.namespace = 'urn:fec:committee')
+where
+    matchbox_organizationmetadata.entity_id = a.entity_id
+    and matchbox_organizationmetadata.cycle = 2012
+    and c.committee_type = 'O'
+;
+
+
 update
     tmp_matchbox_organizationmetadata as om
 set
