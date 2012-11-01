@@ -3,7 +3,7 @@ from dcentity.models import Entity
 from django.conf import settings
 from name_cleaver import PoliticianNameCleaver, IndividualNameCleaver, \
         OrganizationNameCleaver
-from name_cleaver.names import PersonName
+from name_cleaver.exception import UnparseableNameException
 
 import re
 
@@ -73,7 +73,7 @@ class IndividualReconciler(object):
         potential_matches = self.get_potential_matches_for_subject(subject_name)
         service.log.info(u'Potential matches: {0}; '.format(potential_matches.count()))
 
-        matches_we_like = self.cull_match_pool(subject_name, potential_matches)
+        matches_we_like = self.cull_match_pool(subject_name, potential_matches, service)
 
         return_vals = []
         confidence_levels = matches_we_like.keys()
@@ -112,20 +112,27 @@ class IndividualReconciler(object):
 
         return obj
 
-    def cull_match_pool(self, subject_name, full_match_pool):
+    def cull_match_pool(self, subject_name, full_match_pool, service):
         matches_we_like = {}
         for match in full_match_pool:
-            match_name = self.name_cleaver(match.name).parse()
-            confidence = self.name_cleaver.compare(match_name, subject_name)
+            try:
+                match_name = self.name_cleaver(match.name).parse()
+            except UnparseableNameException as e:
+                service.log.debug("Couldn't parse name {} for match entity id {}".format(match.name, match.id))
 
-            if confidence >= self.min_confidence_threshold:
-                #metadata_confidence = self.get_metadata_confidence(match, subject_obj)
+            if self.name_cleaver.name_processing_failed(match_name):
+                continue
+            else:
+                confidence = self.name_cleaver.compare(match_name, subject_name)
 
-                if confidence not in matches_we_like.keys():
-                    matches_we_like[confidence] = []
+                if confidence >= self.min_confidence_threshold:
+                    #metadata_confidence = self.get_metadata_confidence(match, subject_obj)
 
-                #matches_we_like[confidence].append((match,metadata_confidence))
-                matches_we_like[confidence].append(match)
+                    if confidence not in matches_we_like.keys():
+                        matches_we_like[confidence] = []
+
+                    #matches_we_like[confidence].append((match,metadata_confidence))
+                    matches_we_like[confidence].append(match)
 
         return matches_we_like
 

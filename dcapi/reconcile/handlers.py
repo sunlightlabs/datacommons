@@ -1,4 +1,5 @@
 from piston.handler import BaseHandler
+from piston.utils import rc
 from dcentity.matching.reconciler import ReconcilerService
 import json
 import re
@@ -38,18 +39,13 @@ class EntityReconciliationHandler(BaseHandler):
 
         elif queries:
             q = json.loads(queries)
-            for key, query in q.items():
-                result[key] = {}
-                result[key]['result'] = self.do_query(query)
-        else:
-            import pdb; pdb.set_trace()
-            q = json.loads(request.POST)
-            for key, query in q.items():
-                if not re.match(r'q\d', key):
-                    continue
+            if q is not None:
 
-                result[key] = {}
-                result[key]['result'] = self.do_query(query)
+                for key, query in q.iteritems():
+                    result[key] = {}
+                    result[key]['result'] = self.do_query(query)
+            else:
+                print "We couldn't decode our queries JSON! D:"
 
         return result
 
@@ -65,16 +61,17 @@ class EntityReconciliationHandler(BaseHandler):
         type_hint = None
         type_ = None
 
-        for p in properties:
-            if p.get('pid') == type_hint_column:
-                type_hint = p.get('v')
+        if properties:
+            for p in properties:
+                if p.get('pid') == type_hint_column:
+                    type_hint = p.get('v')
 
-        if type_hint:
-            if re.match(r'individual', type_hint.lower()):
-                type_ = 'individual'
-            elif re.match(r'politician', type_hint.lower()):
-                type_ = 'politician'
-            else:
-                type_ = 'organization'
+            if type_hint:
+                if re.match(r'individual', type_hint.lower()):
+                    type_ = 'individual'
+                elif re.match(r'politician', type_hint.lower()):
+                    type_ = 'politician'
+                else:
+                    type_ = 'organization'
 
         return type_
