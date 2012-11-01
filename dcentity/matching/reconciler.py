@@ -21,16 +21,16 @@ class ReconcilerService(object):
 
     def start(self, limit=None):
         if self.entity_type == 'politician':
-            self.log.info("Trying name: {} with type: {} on PoliticianNameCleaver".format(self.subject_name, self.entity_type))
+            self.log.info(u"Trying name: {} with type: {} on PoliticianNameCleaver".format(self.subject_name, self.entity_type))
             subject_name_obj = self.try_name_cleaver_flavor(PoliticianNameCleaver)
             self.reconciler = PoliticianReconciler()
 
         elif self.entity_type == 'individual':
-            self.log.info("Trying name: {} with type: {} on IndividualNameCleaver".format(self.subject_name, self.entity_type))
+            self.log.info(u"Trying name: {} with type: {} on IndividualNameCleaver".format(self.subject_name, self.entity_type))
             subject_name_obj = self.try_name_cleaver_flavor(IndividualNameCleaver)
             self.reconciler = IndividualReconciler()
         else:
-            self.log.info("Trying name: {} with type: {} on OrganizationNameCleaver".format(self.subject_name, self.entity_type))
+            self.log.info(u"Trying name: {} with type: {} on OrganizationNameCleaver".format(self.subject_name, self.entity_type))
             subject_name_obj = self.try_name_cleaver_flavor(OrganizationNameCleaver)
             self.reconciler = OrganizationReconciler()
 
@@ -70,7 +70,7 @@ class IndividualReconciler(object):
     def search(self, service, subject_name, limit=None):
         # search Match entities
         potential_matches = self.get_potential_matches_for_subject(subject_name)
-        service.log.info('Potential matches: {0}; '.format(potential_matches.count()))
+        service.log.info(u'Potential matches: {0}; '.format(potential_matches.count()))
 
         matches_we_like = self.cull_match_pool(subject_name, potential_matches)
 
