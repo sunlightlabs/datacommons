@@ -2,7 +2,8 @@ from dcdata.utils.log import set_up_logger
 from dcentity.models import Entity
 from django.conf import settings
 from name_cleaver import PoliticianNameCleaver, IndividualNameCleaver, \
-        OrganizationNameCleaver, PersonName
+        OrganizationNameCleaver
+from name_cleaver.names import PersonName
 
 import re
 
