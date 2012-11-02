@@ -52,19 +52,21 @@ class EntityReconciliationHandler(BaseHandler):
     def do_query(self, query):
         # formatting according to the spec here:
         # http://code.google.com/p/google-refine/wiki/ReconciliationServiceApi
-        type_ = query.get('type', self.determine_type_from_properties(query.get('properties'), 'contributionType'))
-        matches = ReconcilerService(query['query'], type_, properties=query.get('properties')).start()
+        properties = self.normalize_properties(query)
+        type_ = query.get('type', self.determine_type_from_properties(properties, 'contributionType'))
+        matches = ReconcilerService(query['query'], type_, properties=properties).start()
 
         return matches
+
+    def normalize_properties(self, query):
+        return { x['pid']: x['v'] for x in query.get('properties') }
 
     def determine_type_from_properties(self, properties, type_hint_column):
         type_hint = None
         type_ = None
 
         if properties:
-            for p in properties:
-                if p.get('pid') == type_hint_column:
-                    type_hint = p.get('v')
+            type_hint = properties.get(type_hint_column):
 
             if type_hint:
                 if re.match(r'individual', type_hint.lower()):
