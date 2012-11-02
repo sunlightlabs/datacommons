@@ -95,7 +95,7 @@ class IndividualReconciler(object):
     def munge_match_into_result(self, match, confidence):
         return {
             'id': match.pk,
-            'name': match.name,
+            'name': str(PoliticianNameCleaver(match.name).parse()),
             'type': [match.type],
             'match': confidence >= self.high_confidence_threshold,
             'score': confidence,
