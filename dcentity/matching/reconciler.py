@@ -161,7 +161,7 @@ class PoliticianReconciler(IndividualReconciler):
             if subject_properties.get('district'):
                 match_set = match_set.filter(politician_metadata_by_cycle__district__contains=subject_properties.get('district'))
 
-            match_set = match_set.filter(politician_metadata_by_cycle__cycle=2012).distinct()
+            match_set = match_set.filter(politician_metadata_by_cycle__cycle=2012, politician_metadata_by_cycle__seat__icontains='federal').distinct()
 
             return match_set.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.last})
         else:
