@@ -53,7 +53,7 @@ class EntityReconciliationHandler(BaseHandler):
         # formatting according to the spec here:
         # http://code.google.com/p/google-refine/wiki/ReconciliationServiceApi
         type_ = query.get('type', self.determine_type_from_properties(query.get('properties'), 'contributionType'))
-        matches = ReconcilerService(query['query'], type_).start()
+        matches = ReconcilerService(query['query'], type_, properties=query.get('properties')).start()
 
         return matches
 

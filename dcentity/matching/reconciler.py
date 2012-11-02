@@ -19,6 +19,7 @@ class ReconcilerService(object):
     def __init__(self, subject_name, entity_type, *args, **kwargs):
         self.subject_name = subject_name
         self.entity_type = entity_type
+        self.subject_properties = kwargs.get('properties')
 
     def start(self, limit=None):
         if self.entity_type == 'politician':
@@ -38,7 +39,7 @@ class ReconcilerService(object):
         if not subject_name_obj:
             return []
         else:
-            return self.reconciler.search(self, subject_name_obj)
+            return self.reconciler.search(self, subject_name_obj, subject_properties=self.subject_properties)
 
     def try_name_cleaver_flavor(self, cleaver_class):
         try:
@@ -68,12 +69,13 @@ class IndividualReconciler(object):
 
         self.match_operator = 'icontains'
 
-    def search(self, service, subject_name, limit=None):
+    def search(self, service, subject_name, limit=None, subject_properties=None):
         # search Match entities
-        potential_matches = self.get_potential_matches_for_subject(subject_name)
+        potential_matches = self.get_potential_matches_for_subject(subject_name, subject_properties)
         service.log.info(u'Potential matches: {0}; '.format(potential_matches.count()))
 
         matches_we_like = self.cull_match_pool(subject_name, potential_matches, service)
+        service.log.info(u'Culled matches: {}'.format(len(matches_we_like)))
 
         return_vals = []
         confidence_levels = matches_we_like.keys()
@@ -99,7 +101,7 @@ class IndividualReconciler(object):
             'score': confidence,
         }
 
-    def get_potential_matches_for_subject(self, subject_name):
+    def get_potential_matches_for_subject(self, subject_name, subject_properties=None):
         """
             Takes a name cleaver object and ideally returns a loosely matched set of objects
             which we can then filter more stringently by scoring.
@@ -118,12 +120,13 @@ class IndividualReconciler(object):
             try:
                 match_name = self.name_cleaver(match.name).parse()
             except UnparseableNameException as e:
-                service.log.debug("Couldn't parse name {} for match entity id {}".format(match.name, match.id))
+                service.log.debug(u"Couldn't parse name {} for match entity id {}".format(match.name, match.id))
 
             if self.name_cleaver.name_processing_failed(match_name):
                 continue
             else:
                 confidence = self.name_cleaver.compare(match_name, subject_name)
+                service.log.debug(u"Match {}: {} found to have confidence {}".format(match.id, match.name, confidence))
 
                 if confidence >= self.min_confidence_threshold:
                     #metadata_confidence = self.get_metadata_confidence(match, subject_obj)
@@ -136,10 +139,11 @@ class IndividualReconciler(object):
 
         return matches_we_like
 
+
 class PoliticianReconciler(IndividualReconciler):
     name_cleaver = PoliticianNameCleaver
-    min_confidence_threshold = 1.2
-    high_confidence_threshold = 3
+    min_confidence_threshold = 1
+    high_confidence_threshold = 2
 
     def __init__(self, *args, **kwargs):
         self.match = Entity.objects.filter(type='politician')
@@ -147,6 +151,21 @@ class PoliticianReconciler(IndividualReconciler):
         self.match_id_type = 'uuid'
 
         self.match_operator = 'icontains'
+
+    def get_potential_matches_for_subject(self, subject_name, subject_properties=None):
+        if subject_properties:
+            if subject_properties.get('state'):
+                match_set = self.match.filter(politician_metadata_by_cycle__state=subject_properties.get('state'))
+            else:
+                match_set = self.match
+            if subject_properties.get('district'):
+                match_set = match_set.filter(politician_metadata_by_cycle__district__contains=subject_properties.get('district'))
+
+            match_set = match_set.filter(politician_metadata_by_cycle__cycle=2012).distinct()
+
+            return match_set.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.last})
+        else:
+            return super(PoliticianReconciler, self).get_potential_matches_for_subject(subject_name)
 
 
 class OrganizationReconciler(IndividualReconciler):
