@@ -154,14 +154,34 @@ class PoliticianReconciler(IndividualReconciler):
 
     def get_potential_matches_for_subject(self, subject_name, subject_properties=None):
         if subject_properties:
-            if subject_properties.get('state'):
-                match_set = self.match.filter(politician_metadata_by_cycle__state=subject_properties.get('state'))
-            else:
-                match_set = self.match
-            if subject_properties.get('district'):
+            office_map = {
+                'US House': 'federal:house',
+                'US Senate': 'federal:senate',
+                'President': 'federal:president',
+            }
+
+            skip_state = None
+            skip_district = None
+
+            match_set = self.match
+
+            if subject_properties.get('office'):
+                office = office_map[subject_properties['office']]
+                match_set = match_set.filter(politician_metadata_by_cycle__seat=office)
+
+                if office is 'federal:president':
+                    skip_state = True
+                    skip_district = True
+                elif office is 'federal:senate':
+                    skip_district = True
+
+            if not skip_state and subject_properties.get('state'):
+                match_set = match_set.filter(politician_metadata_by_cycle__state=subject_properties.get('state'))
+
+            if not skip_district and subject_properties.get('district'):
                 match_set = match_set.filter(politician_metadata_by_cycle__district__contains=subject_properties.get('district'))
 
-            match_set = match_set.filter(politician_metadata_by_cycle__cycle=2012, politician_metadata_by_cycle__seat__icontains='federal').distinct()
+            match_set = match_set.filter(politician_metadata_by_cycle__cycle__gte=2010).distinct()
 
             return match_set.filter(**{'{0}__{1}'.format(self.match_name_attr, self.match_operator): subject_name.last})
         else:
