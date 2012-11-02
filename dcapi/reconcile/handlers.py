@@ -9,13 +9,13 @@ class EntityReconciliationHandler(BaseHandler):
 
     service_metadata = {
                         "name": "Influence Explorer Reconciliation3",
-                        "identifierSpace": "http://staging.influenceexplorer.com/ns/entities",  # these are bogus values
-                        "schemaspace": "http://staging.influenceexplorer.com/ns/entity.object.id",  # to satisfy Refine
+                        "identifierSpace": "http://influenceexplorer.com/ns/entities",  # these are bogus values
+                        "schemaspace": "http://influenceexplorer.com/ns/entity.object.id",  # to satisfy Refine
                         "view": {
-                            "url": "http://staging.influenceexplorer.com/entity/{{id}}"
+                            "url": "http://influenceexplorer.com/entity/{{id}}"
                             },
                         "preview": {
-                            "url": "http://staging.influenceexplorer.com/entity/{{id}}",
+                            "url": "http://influenceexplorer.com/entity/{{id}}",
                             "width": 430,
                             "height": 300
                             },
