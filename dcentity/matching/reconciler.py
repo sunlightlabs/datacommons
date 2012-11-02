@@ -1,6 +1,7 @@
 from dcdata.utils.log import set_up_logger
 from dcentity.models import Entity
 from django.conf import settings
+from django.db.models import Q
 from name_cleaver import PoliticianNameCleaver, IndividualNameCleaver, \
         OrganizationNameCleaver
 from name_cleaver.exception import UnparseableNameException
@@ -169,17 +170,17 @@ class PoliticianReconciler(IndividualReconciler):
                 office = office_map[subject_properties['office']]
                 match_set = match_set.filter(politician_metadata_by_cycle__seat=office)
 
-                if office is 'federal:president':
-                    skip_state = True
-                    skip_district = True
-                elif office is 'federal:senate':
-                    skip_district = True
+            #    if office is 'federal:president':
+            #        skip_state = True
+            #        skip_district = True
+            #    elif office is 'federal:senate':
+            #        skip_district = True
 
-            if not skip_state and subject_properties.get('state'):
-                match_set = match_set.filter(politician_metadata_by_cycle__state=subject_properties.get('state'))
+            #if not skip_state and subject_properties.get('state'):
+            #    match_set = match_set.filter(politician_metadata_by_cycle__state=subject_properties.get('state'))
 
-            if not skip_district and subject_properties.get('district'):
-                match_set = match_set.filter(politician_metadata_by_cycle__district__contains=subject_properties.get('district'))
+            #if not skip_district and subject_properties.get('district'):
+            #    match_set = match_set.filter(politician_metadata_by_cycle__district__contains=subject_properties.get('district'))
 
             match_set = match_set.filter(politician_metadata_by_cycle__cycle__gte=2010).distinct()
 
