@@ -72,7 +72,7 @@ class IndividualReconciler(object):
 
     def search(self, service, subject_name, limit=None, subject_properties=None):
         # search Match entities
-        potential_matches = self.get_potential_matches_for_subject(subject_name, subject_properties)
+        potential_matches = self.get_potential_matches_for_subject(subject_name, subject_properties=subject_properties)
         service.log.info(u'Potential matches: {0}; '.format(potential_matches.count()))
 
         matches_we_like = self.cull_match_pool(subject_name, potential_matches, service)
@@ -86,17 +86,17 @@ class IndividualReconciler(object):
             # this will insert all the matches at the highest confidence level
             confidence_cutoff = -2 if len(confidence_levels) > 1 else -1
             for confidence in confidence_levels[confidence_cutoff:]:
-                for match in matches_we_like[confidence]:
-                    return_vals.append(self.munge_match_into_result(match, confidence))
+                for match, match_name in matches_we_like[confidence]:
+                    return_vals.append(self.munge_match_into_result(match, match_name, confidence))
 
         return_vals.sort(key=lambda x: x['score'], reverse=True)
 
         return return_vals
 
-    def munge_match_into_result(self, match, confidence):
+    def munge_match_into_result(self, match, match_name, confidence):
         return {
             'id': match.pk,
-            'name': str(PoliticianNameCleaver(match.name).parse()),
+            'name': match_name,
             'type': [match.type],
             'match': confidence >= self.high_confidence_threshold,
             'score': confidence,
@@ -136,7 +136,7 @@ class IndividualReconciler(object):
                         matches_we_like[confidence] = []
 
                     #matches_we_like[confidence].append((match,metadata_confidence))
-                    matches_we_like[confidence].append(match)
+                    matches_we_like[confidence].append((match, str(match_name)))
 
         return matches_we_like
 
@@ -201,7 +201,7 @@ class OrganizationReconciler(IndividualReconciler):
 
         self.match_operator = 'icontains'
 
-    def get_potential_matches_for_subject(self, subject_name):
+    def get_potential_matches_for_subject(self, subject_name, subject_properties=None):
         """
             Takes a name cleaver-ed object and ideally returns a loosely matched set of objects
             which we can then filter more stringently by scoring
