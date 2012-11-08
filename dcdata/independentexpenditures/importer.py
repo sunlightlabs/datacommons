@@ -28,13 +28,14 @@ def reload_indexp(working_dir):
 
         log = set_up_logger('indexp_importer', working_dir, 'IndExp Importer Fail')
         
-        log.info("downloading %s to %s..." % (DOWNLOAD_URL, LOCAL_FILE))
-        urllib.urlretrieve(DOWNLOAD_URL, LOCAL_FILE)
+        local_file_path = os.path.join(working_dir, LOCAL_FILE)
+        log.info("downloading %s to %s..." % (DOWNLOAD_URL, local_file_path))
+        urllib.urlretrieve(DOWNLOAD_URL, local_file_path)
     
         log.info("uploading to table %s..." % TABLE_NAME)
         c = connection.cursor()
         c.execute("DELETE FROM %s" % TABLE_NAME)
-        c.copy_expert("COPY %s FROM STDIN CSV HEADER" % TABLE_NAME, open(LOCAL_FILE, 'r'))
+        c.copy_expert("COPY %s FROM STDIN CSV HEADER" % TABLE_NAME, open(local_file_path, 'r'))
         execute_file(SQL_POSTLOAD_FILE)
         
         log.info("Import Succeeded.")
