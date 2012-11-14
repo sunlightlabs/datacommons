@@ -31,7 +31,7 @@ from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, \
     CommitteeSummaryHandler, CandidateStateHandler, \
     CandidateTimelineHandler, CandidateItemizedDownloadHandler, \
     CommitteeItemizedDownloadHandler, CommitteeTopContribsHandler, \
-    LargestDonationsInLastMonthHandler
+    LargestDonationsInLastMonthHandler, ElectionSummaryHandler
 from dcapi.aggregates.independentexpenditures.handlers import \
     CandidateIndExpHandler, CommitteeIndExpHandler, \
     CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
