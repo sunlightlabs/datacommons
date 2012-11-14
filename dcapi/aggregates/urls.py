@@ -246,7 +246,6 @@ urlpatterns = patterns('',
         Resource(CommitteeItemizedDownloadHandler, **ad)),
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_indexp_itemized\.(?P<emitter_format>.+)$',
-<<<<<<< HEAD
         Resource(CommitteeIndExpDownloadHandler, **ad)),
 
     # -- entity type top lists --
@@ -314,12 +313,10 @@ urlpatterns = patterns('',
     # largest donations in last month (offers PAC, candidate, and individual)
     url(r'^fec/last_month/largest_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(LargestDonationsInLastMonthHandler, **ad)),
-=======
-        Resource(CommitteeIndExpDownloadHandler, **ad)),      
 
+    # --------- election summary ----------
     url(r'^election/2012/summary\.(?P<emitter_format>.+)$',
         Resource(ElectionSummaryHandler, **ad)),
->>>>>>> master
 )
 
 
