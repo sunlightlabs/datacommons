@@ -218,7 +218,7 @@ class TopPoliticiansByReceiptsByOfficeHandler(TopListHandler):
         from(
             select
                 entity_id,
-                candidate_name,
+                s.candidate_name,
                 substring(race from 1 for 1) as office,
                 total_receipts,
                 rank() over (partition by substring(race from 1 for 1) order by total_receipts desc)
