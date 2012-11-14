@@ -1,13 +1,14 @@
 from django.core.management.base import CommandError, BaseCommand
 from django.db.utils             import DatabaseError
 from django.db                   import connections, transaction
-from name_cleaver                import IndividualNameCleaver, RunningMatesNames
+from name_cleaver                import IndividualNameCleaver, RunningMatesNames, NICKNAMES
 from optparse                    import make_option
 
 import datetime
 import pylibmc
 import re
 import sys
+import django.db
 
 
 class MatchingCommand(BaseCommand):
@@ -64,12 +65,12 @@ class MatchingCommand(BaseCommand):
         table = options['table'] or self.generate_table_name()
 
         cursor = connections['default'].cursor()
-        if options.has_key('table') and options['table']:
+        if options.get('table'):
             print 'Resuming with table {0}'.format(table)
         else:
             try:
                 print 'Creating table {0}'.format(table)
-                cursor.execute('create table {0} (id serial primary key, subject_id {1} not null, match_id {2}, confidence numeric not null)'.format(table, self.subject_id_type, self.match_id_type))
+                cursor.execute('create table {0} (id serial primary key, subject_id {1} not null, match_id {2}, confidence numeric not null, metadata_confidence numeric)'.format(table, self.subject_id_type, self.match_id_type))
                 transaction.commit()
             except DatabaseError:
                 transaction.rollback()
@@ -97,14 +98,15 @@ class MatchingCommand(BaseCommand):
                 potential_matches = self.get_potential_matches_for_subject(subject_name, subject)
                 log_msg += 'Potential matches: {0}; '.format(potential_matches.count())
 
-                matches_we_like = self.cull_match_pool(subject_name, potential_matches)
+                matches_we_like = self.cull_match_pool(subject_name, subject, potential_matches)
 
                 confidence_levels = matches_we_like.keys()
                 if len(confidence_levels):
                     confidence_levels.sort()
 
-                    for match in matches_we_like[confidence_levels[-1]]:
-                        self.insert_match(cursor, table, match, subject, confidence_levels[-1])
+                    # this will insert all the matches at the highest confidence level
+                    for match, metadata_confidence in matches_we_like[confidence_levels[-1]]:
+                        self.insert_match(cursor, table, match, subject, confidence_levels[-1], metadata_confidence)
 
                         if options['do_post_insert']:
                             self.post_insert()
@@ -120,6 +122,9 @@ class MatchingCommand(BaseCommand):
 
                 print log_msg
                 sys.stdout.flush()
+
+                # make sure Django doesn't leak memory due to DB query logging
+                django.db.reset_queries()
 
 
         except KeyboardInterrupt:
@@ -155,21 +160,30 @@ class MatchingCommand(BaseCommand):
             else:
                 print ' {}: {}'.format(*confidence)
 
+        # flush memcached to avoid bugs between script runs where MC gives back stale objects
+        self.mc.flush_all()
 
 
-    def cull_match_pool(self, subject_name, full_match_pool):
+
+    def cull_match_pool(self, subject_name, subject_obj, full_match_pool):
         matches_we_like = {}
         for match in full_match_pool:
             match_name = self.name_cleaver(getattr(match, self.match_name_attr)).parse()
             confidence = self.get_confidence(match_name, subject_name)
 
             if confidence >= self.confidence_threshold:
-                if not matches_we_like.has_key(confidence):
+                metadata_confidence = self.get_metadata_confidence(match, subject_obj)
+
+                if not confidence in matches_we_like:
                     matches_we_like[confidence] = []
 
-                matches_we_like[confidence].append(match)
+                matches_we_like[confidence].append((match, metadata_confidence))
 
         return matches_we_like
+
+    def get_metadata_confidence(self, match_obj, subject_obj):
+        """ Use this to check other fields and add more to the confidence score """
+        return 0
 
 
     def name_processing_failed(self, subject_name):
@@ -201,72 +215,6 @@ class MatchingCommand(BaseCommand):
         pass
 
 
-    # List of names which can be equated with each other
-    # Do not put names that cannot be considered equivalent
-    # in the same tuple, even if they have the same nickname.
-    # For instance, John and Jacob could both be shortened to
-    # Jack, but unless you want John and Jacob to be stand-ins
-    # for each other, they should not be together.
-    NICKNAMES = (
-        ('Allan', 'Allen', 'Alan', 'Al'),
-        ('Andre', u'Andr\00e9'),
-        ('Andrew', 'Andy', 'Drew'),
-        ('Antonio', 'Anthony', 'Tony', 'Anton'),
-        ('Barbara', 'Barb'),
-        ('Benjamin', 'Ben'),
-        ('Bernard', 'Bernie'),
-        ('Calvin', 'Cal'),
-        ('Charles', 'Chas', 'Chuck', 'Chucky', 'Charlie'),
-        ('Christine', 'Christina', 'Chris'),
-        ('Christopher', 'Chris'),
-        ('Daniel', 'Dan', 'Danny'),
-        ('David', 'Dave'),
-        ('Donald', 'Don', 'Donny'),
-        ('Douglas', 'Doug'),
-        ('Edward', 'Ed', 'Eddie'),
-        ('Francis', 'Frank', 'Frankie'),
-        ('Fredrick', 'Frederick', 'Fred', 'Freddy'),
-        ('Gerard', 'Gerry', 'Jerry'),
-        ('Gerald', 'Gerry', 'Jerry'),
-        ('Gregory', 'Greg'),
-        ('Harris', 'Harry', 'Harrison'),
-        ('Henry', 'Hank'),
-        ('Herbert', 'Herb'),
-        ('Howard', 'Howie'),
-        ('James', 'Jim', 'Jimmy'),
-        ('Jerome', 'Jerry'),
-        ('John', 'Jon', 'Johnny', 'Jack'),
-        ('Joseph', 'Joe'),
-        ('Judith', 'Judy'),
-        ('Katherine', 'Kathy'),
-        ('Catherine', 'Kathy'),
-        ('Kathleen', 'Kathy'),
-        ('Kenneth', 'Ken', 'Kenny'),
-        ('Lawrence', 'Laurence', 'Larry'),
-        ('Lewis', 'Louis', 'Lou'),
-        ('Matthew', 'Matt'),
-        ('Martin', 'Marty'),
-        ('Melvin', 'Melvyn' ,'Mel'),
-        ('Mervyn', 'Merv'),
-        ('Michael', 'Mike'),
-        ('Mitchell', 'Mitch'),
-        ('Nicholas', 'Nick'),
-        ('Patricia', 'Pat', 'Patty', 'Pati'),
-        ('Patrick', 'Pat'),
-        ('Peter', 'Pete'),
-        ('Philip', 'Phillip', 'Phil'),
-        ('Randall', 'Randy'),
-        ('Richard', 'Rick', 'Dick', 'Rich'),
-        ('Robert', 'Rob', 'Robby', 'Bobby', 'Bob'),
-        ('Steven', 'Stephen', 'Steve'),
-        ('Stewart', 'Stuart', 'Stu'),
-        ('Terrance', 'Terry'),
-        ('Thomas', 'Tom', 'Thom', 'Tommy'),
-        ('William', 'Bill', 'Billy', 'Will', 'Willy'),
-        ('Willis', 'Will'),
-    )
-
-
     def get_confidence(self, name1, name2):
         score = 0
 
@@ -280,7 +228,7 @@ class MatchingCommand(BaseCommand):
         if name1.first == name2.first:
             score += 1
         else:
-            for name_set in self.NICKNAMES:
+            for name_set in NICKNAMES:
                 if set(name_set).issuperset([name1.first, name2.first]):
                     score += 0.6
                     break
@@ -314,10 +262,10 @@ class MatchingCommand(BaseCommand):
         return score
 
 
-    def insert_match(self, cursor, table_name, match, subject, confidence):
+    def insert_match(self, cursor, table_name, match, subject, confidence, metadata_confidence=None):
         # matches can be null if we are putting in a no-confidence record for no potential matches found
         if match:
-            cursor.execute("insert into {0} (subject_id, match_id, confidence) values ('{1}', '{2}', {3})".format(table_name, subject.pk, match.pk, confidence))
+            cursor.execute("insert into {0} (subject_id, match_id, confidence, metadata_confidence) values ('{1}', '{2}', {3}, {4})".format(table_name, subject.pk, match.pk, confidence, metadata_confidence))
         else:
             cursor.execute("insert into {0} (subject_id, confidence) values ('{1}', {2})".format(table_name, subject.pk, confidence))
 
@@ -325,6 +273,3 @@ class MatchingCommand(BaseCommand):
     def generate_table_name(self):
         date_time_now = datetime.datetime.now().strftime('%Y%m%d_%H%M')
         return '_'.join([self.match_table_prefix, 'matches', date_time_now])
-
-
-

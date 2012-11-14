@@ -1,19 +1,21 @@
-from django.db import connection
-from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopListHandler, execute_top, EntityTopListHandler
+from piston.handler import BaseHandler
+
+from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopListHandler, execute_top, execute_one, EntityTopListHandler
 
 
 class CandidateSummaryHandler(EntitySingletonHandler):
-        
-    args = ['entity_id']    
-    fields = "total_raised total_receipts_rank total_disbursements_rank cash_on_hand_rank max_rank contributions_indiv contributions_pac contributions_party contributions_candidate transfers_in disbursements cash_on_hand date".split()
-    
+
+    args = ['entity_id']
+    fields = "total_raised office total_receipts_rank total_disbursements_rank cash_on_hand_rank max_rank contributions_indiv contributions_pac contributions_party contributions_candidate transfers_in disbursements cash_on_hand date".split()
+
     stmt = """
         select
             total_receipts - (candidate_loan_repayments + other_loan_repayments + refunds_to_individuals + refunds_to_committees) as total_raised,
+            r.office,
             r.total_receipts_rank,
-            r.cash_on_hand_rank,
             r.total_disbursements_rank,
-            (select count(*) from fec_candidates r where r.candidate_status = 'C' and r.office = c.office) as max_rank,
+            r.cash_on_hand_rank,
+            num_candidates_in_field,
             total_individual_contributions - refunds_to_individuals as indiv,
             contributions_from_other_committees,
             contributions_from_party_committees,
@@ -33,7 +35,7 @@ class CandidateSummaryHandler(EntitySingletonHandler):
 
 class CommitteeSummaryHandler(EntitySingletonHandler):
 
-    args = ['entity_id']    
+    args = ['entity_id']
     fields = "total_raised contributions_from_indiv contributions_from_pacs transfers_from_affiliates nonfederal_transfers_received loans_received disbursements cash_on_hand debts contributions_to_committees independent_expenditures_made party_coordinated_expenditures_made nonfederal_expenditure_share first_filing_date last_filing_date num_committee_filings".split()
 
     stmt = """
@@ -48,8 +50,8 @@ class CommitteeSummaryHandler(EntitySingletonHandler):
             sum(cash_close_of_period),
             sum(debts_owed),
             sum(contributions_to_committees),
-            sum(independent_expenditures_made), 
-            sum(party_coordinated_expenditures_made), 
+            sum(independent_expenditures_made),
+            sum(party_coordinated_expenditures_made),
             sum(nonfederal_expenditure_share),
             min(through_date),
             max(through_date),
@@ -62,9 +64,9 @@ class CommitteeSummaryHandler(EntitySingletonHandler):
 
 
 class CandidateStateHandler(PieHandler):
-    
+
     args = ['entity_id']
-    
+
     stmt = """
         select
             case when c.office_state = i.state then 'in-state' else 'out-of-state' end as local,
@@ -78,6 +80,7 @@ class CandidateStateHandler(PieHandler):
         group by local
     """
 
+
 class CandidateTimelineHandler(TopListHandler):
 
     candidates_fields = "entity_id candidate_id candidate_name race party incumbent".split()
@@ -89,7 +92,7 @@ class CandidateTimelineHandler(TopListHandler):
         where
             election_year = '2012'
             and candidate_status = 'C'
-            and race in 
+            and race in
                 (select race
                 from fec_candidates c
                 inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
@@ -97,7 +100,7 @@ class CandidateTimelineHandler(TopListHandler):
                     candidate_status = 'C'
                     and a.entity_id = %s)
     """
-    
+
     timeline_stmt = """
         with non_zero_data as
             (select week, cumulative_raised
@@ -110,28 +113,26 @@ class CandidateTimelineHandler(TopListHandler):
     """
 
     def read(self, request, **kwargs):
-        c = connection.cursor()
-        
         raw_candidates_result = execute_top(self.candidates_stmt, kwargs['entity_id'])
         candidates = [dict(zip(self.candidates_fields, row)) for row in raw_candidates_result]
-        
+
         # this makes a separate query for each candidate
         # if this proves to be slow it could be done in one query with slightly more complex code
         for candidate in candidates:
             raw_timeline = execute_top(self.timeline_stmt, candidate['candidate_id'])
             candidate['timeline'] = [amount for (week, amount) in raw_timeline]
-        
+
         return candidates
 
 
 class CandidateItemizedDownloadHandler(EntityTopListHandler):
-    
+
     args = ['entity_id']
-    
+
     fields = "contributor_name date amount contributor_type transaction_type organization occupation city state zipcode candidate_name party race status".split()
-    
+
     stmt = """
-        select contributor_name, date, amount, contributor_type, transaction_type, 
+        select contributor_name, date, amount, contributor_type, transaction_type,
             employer, occupation, city, state, zipcode,
             candidate_name, party, race, status
         from fec_candidate_itemized i
@@ -140,6 +141,7 @@ class CandidateItemizedDownloadHandler(EntityTopListHandler):
             a.entity_id = %s
         order by amount desc
     """
+
 
 class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 
@@ -159,6 +161,7 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
         order by amount desc
     """
 
+
 class CommitteeTopContribsHandler(EntityTopListHandler):
 
     args = ['entity_id', 'limit']
@@ -175,6 +178,7 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
         order by sum(amount) desc
         limit %s
     """
+
 
 class LargestDonationsInLastMonthHandler(TopListHandler):
     args = ['limit']
@@ -204,3 +208,35 @@ class LargestDonationsInLastMonthHandler(TopListHandler):
     """
 
 
+class ElectionSummaryHandler(BaseHandler):
+    """Used on SunlightFoundation site, not in brisket."""
+
+    fields = "house_receipts house_expenditures senate_receipts senate_expenditures romney_receipts romney_disbursements obama_receipts obama_disbursements house_indexp senate_indexp presidential_indexp".split()
+
+    stmt = """
+        with office_totals as (
+            select substring(candidate_id for 1) as office, sum(total_receipts) as receipts, sum(total_disbursements) as expenditures
+            from fec_candidate_summaries
+            group by substring(candidate_id for 1)
+        ), office_indexp as (
+            select candidate_office as office, sum(amount) as total_spending
+            from fec_indexp
+            group by candidate_office
+        )
+        select
+            (select receipts from office_totals where office = 'H') as house_receipts,
+            (select expenditures from office_totals where office = 'H') as house_expenditures,
+            (select receipts from office_totals where office = 'S') as senate_receipts,
+            (select expenditures from office_totals where office = 'S') as senate_expenditures,
+            (select total_receipts from fec_candidate_summaries where candidate_id = 'P80003353') as romney_receipts,
+            (select total_disbursements from fec_candidate_summaries where candidate_id = 'P80003353') as romney_disbursements,
+            (select total_receipts from fec_candidate_summaries where candidate_id = 'P80003338') as obama_receipts,
+            (select total_disbursements from fec_candidate_summaries where candidate_id = 'P80003338') as obama_disbursements,
+            (select total_spending from office_indexp where office = 'H') as house_indexp,
+            (select total_spending from office_indexp where office = 'S') as senate_indexp,
+            (select total_spending from office_indexp where office = 'P') as presidential_indexp
+    """
+
+    def read(self, request):
+        result = execute_one(self.stmt)
+        return dict(zip(self.fields, result))

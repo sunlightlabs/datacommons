@@ -81,7 +81,7 @@ class Contribution(models.Model):
     # cycle and basic transaction fields
     cycle = models.IntegerField()
     transaction_namespace = models.CharField(max_length=64)
-    transaction_id = models.CharField(max_length=32) # <cycle>:<fec_transaction_id>, <nimsp_id>
+    transaction_id = models.CharField(max_length=64) # <cycle>:<fec_transaction_id>, <nimsp_id>
     transaction_type = models.CharField(max_length=32, choices=TRANSACTION_TYPES)
     filing_id = models.CharField(max_length=128, blank=True)
     is_amendment = models.BooleanField(default=False)

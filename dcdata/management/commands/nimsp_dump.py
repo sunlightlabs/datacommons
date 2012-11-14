@@ -30,14 +30,15 @@ class NIMSPDump2CSV(BaseNimspImporter):
         select_fields = ",".join([sql_field for (name, sql_field, conversion_func) in CSV_SQL_MAPPING])
 
         create_indexes_stmt = """
-            create index rrbid on RecipientReportsBundle (RecipientReportsBundleID);
-            create index syrid on StateYearReports(StateYearReportsID);
-            create index candid on Candidates(CandidateID);
-            create index osid on OfficeSeats(OfficeSeatID);
-            create index ocid on OfficeCodes(OfficeCode);
-            create index commid on Committees(CommitteeID);
-            create index ccid on CatCodes(CatCode);
-            create index p_candid on PartyLookup(PartyLookupID );
+            create index recipid_idx on Recipients (RecipientID);
+            create index rrbid_idx on RecipientReportsBundle (RecipientReportsBundleID);
+            create index syrid_idx on StateYearReports(StateYearReportsID);
+            create index candid_idx on Candidates(CandidateID);
+            create index osid_idx on OfficeSeats(OfficeSeatID);
+            create index ocid_idx on OfficeCodes(OfficeCode);
+            create index commid_idx on Committees(CommitteeID);
+            create index ccid_idx on CatCodes(CatCode);
+            create index p_candid_idx on PartyLookup(PartyLookupID );
         """
 
         stmt = """
@@ -64,13 +65,21 @@ class NIMSPDump2CSV(BaseNimspImporter):
             host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
         )
+
+        try:
+            cursor = connection.cursor()
+            self.log.info('Creating indexes...'.format(outfile_path))
+            cursor.execute(create_indexes_stmt)
+            cursor.close()
+        except cursor.OperationalError as e:
+            self.log.info('Tried to create database indexes but they already existed. Moving on.')
+            self.log.info(e)
+
         cursor = connection.cursor()
-
-        self.log.info('Creating indexes...'.format(outfile_path))
-        cursor.execute(create_indexes_stmt)
-
         self.log.info('Dumping data to {0}...'.format(outfile_path))
+        self.log.info(stmt)
         cursor.execute(stmt)
+        cursor.close()
         self.log.info('Data dump complete.')
 
         self.archive_file(file_path, timestamp=True)

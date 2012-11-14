@@ -117,3 +117,52 @@ class MemberOfCongressWithBioguide(models.Model):
     name = property(build_name)
     padded_district = property(pad_district)
 
+
+class LocalElectionOfficial(models.Model):
+    state = models.CharField(max_length=64)
+    board = models.CharField(max_length=255, null=True)
+    office = models.CharField(max_length=64, null=True)
+    name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'local_election_officials'
+
+
+class ContributorsByStateForLEO(models.Model):
+    """
+    create table tmp_akr_leo_names_by_state as (
+        select distinct contributor_name as name, contributor_state as state, contributor_employer as employer, contributor_occupation as occupation, contributor_city as city
+        from contribution_contribution
+        where contributor_type = 'I' and cycle in (2010, 2012)
+    );
+    """
+    name = models.CharField(max_length=255, db_index=True)
+    state = models.CharField(max_length=2, db_index=True)
+    employer = models.CharField(max_length=255, blank=True, null=True)
+    occupation = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'leo_matching_contrib_names_by_state'
+
+
+class SuperPACDonor(models.Model):
+    """
+    create table research__superpac_donors as
+        select contributor_name as name, string_agg(trim(both from committee_id), ',') as committee_ids, string_agg(trim(both from committee_name), ',') as committee_names
+        from fec_committee_itemized
+        where committee_type = 'O' and contributor_name is not null
+        group by contributor_name;
+
+    alter table research__superpac_donors add column id serial;
+    """
+
+    name = models.CharField(max_length=200)
+    committee_ids = models.CharField(max_length=255)
+    committee_names = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'research__superpac_donors'
+
+
+

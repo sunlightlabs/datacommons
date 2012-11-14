@@ -88,7 +88,6 @@ class Command(BaseCommand):
         self.today = datetime.today().strftime("%Y%m%d")
         self.cursor = connections['default'].cursor()
 
-
         try:
             if not options['skip_indivs']:
                 self.create_individuals()
@@ -103,10 +102,10 @@ class Command(BaseCommand):
             transaction.rollback()
             raise
 
-
     @transaction.commit_manually()
     def create_individuals(self):
         self.log.info("Starting to find individuals to create...")
+        self.log.debug("This is a debug log")
 
         self.cursor.execute('drop table if exists tmp_individuals_{0}'.format(self.today), None)
         creation_sql = """
@@ -118,6 +117,7 @@ class Command(BaseCommand):
                     where
                         lobbyist_name != ''
                         and not exists (select * from matchbox_entityattribute where substring(value for 11) = substring(lobbyist_ext_id for 11))
+                        and not exists (select * from matchbox_entityblacklist meb where meb.name = lobbyist_name and type = 'individual')
                     group by lobbyist_ext_id
 
                     union
@@ -128,6 +128,7 @@ class Command(BaseCommand):
                         contributor_name != ''
                         and contributor_ext_id like 'U%'
                         and not exists (select * from matchbox_entityattribute where value = contributor_ext_id)
+                        and not exists (select * from matchbox_entityblacklist meb where meb.name = contributor_name and type = 'individual')
                         {1}
                     group by contributor_ext_id
                 )x
@@ -176,24 +177,8 @@ class Command(BaseCommand):
                             e.type = 'organization'
                             and lower(l.registrant_name) = lower(a.alias)
                     )
+                    and not exists (select * from matchbox_entityblacklist meb where meb.name = registrant_name and type = 'organization')
                 group by lower(registrant_name)
-
-                union
-
-                select coalesce(client_ext_id, 0::varchar(128)) as crp_id, 0 as nimsp_id, max(l.client_name) as name
-                from lobbying_lobbying l
-                where
-                    l.use = 't'
-                    and client_name != ''
-                    and not exists (
-                        select *
-                        from matchbox_entity e
-                        inner join matchbox_entityalias a on e.id = a.entity_id
-                        where
-                            e.type = 'organization'
-                            and lower(l.client_name) = lower(a.alias)
-                    )
-                group by lower(client_name), client_ext_id
 
                 union
 
@@ -210,8 +195,10 @@ class Command(BaseCommand):
                             e.type = 'organization'
                             and lower(l.client_parent_name) = lower(a.alias)
                     )
+                    and not exists (select * from matchbox_entityblacklist meb where meb.name = client_parent_name and type = 'organization')
                 group by lower(client_parent_name)
         """.format(self.today)
+
         self.cursor.execute(tmp_sql, None)
         transaction.commit()
         self.log.info("- Table tmp_lobbying_orgs_{0} populated.".format(self.today))
@@ -254,9 +241,11 @@ class Command(BaseCommand):
                     and recipient_name != ''
                     and recipient_ext_id != ''
                     and not exists (select * from matchbox_entityattribute where value = recipient_ext_id)
+                    and not exists (select * from matchbox_entityblacklist meb where meb.name = recipient_name and type = 'politician')
                     {1}
                 group by transaction_namespace, recipient_ext_id
         """.format(self.today, self.get_namespace_clause())
+
         self.cursor.execute(tmp_sql, None)
         transaction.commit()
         self.log.info("- Table tmp_politicians_{0} populated.".format(self.today))

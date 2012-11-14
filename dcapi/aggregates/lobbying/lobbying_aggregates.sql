@@ -32,15 +32,6 @@ create table assoc_lobbying_client as
         on lower(a.alias) = lower(l.client_name)
     where
         e.type = 'organization'
-
-    union
-
-    select a.entity_id, l.transaction_id
-    from matchbox_entityattribute a
-    inner join lobbying_lobbying l
-        on a.value = l.client_ext_id
-    where
-        a.namespace = 'urn:crp:organization'
 ;
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_entity_id on assoc_lobbying_client (entity_id)';
@@ -133,12 +124,19 @@ drop table if exists assoc_lobbying_lobbyist;
 
 select date_trunc('second', now()) || ' -- create table assoc_lobbying_lobbyist as';
 create table assoc_lobbying_lobbyist as
-    select a.entity_id, l.id
-    from matchbox_entityattribute a
-    inner join lobbying_lobbyist l
-        on substring(a.value for 11) = substring(l.lobbyist_ext_id for 11)
-    where
-        a.namespace = 'urn:crp:individual';
+    select entity_id, l.id from (
+        select entity_id, coalesce(max(lobbyist_ext_id_exact), max(lobbyist_ext_id)) as lobbyist_ext_id from (
+            select a.entity_id, case when a.value = l.lobbyist_ext_id then l.lobbyist_ext_id else null end as lobbyist_ext_id_exact, l.lobbyist_ext_id
+            from matchbox_entityattribute a
+                inner join lobbying_lobbyist l
+                    on substring(a.value for 11) = substring(l.lobbyist_ext_id for 11)
+                where
+                    a.namespace = 'urn:crp:individual'
+        )x
+        group by entity_id
+    )y
+    inner join lobbying_lobbyist l using (lobbyist_ext_id)
+;
 
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entity_id)';
 create index assoc_lobbying_lobbyist_entity_id on assoc_lobbying_lobbyist (entity_id);
@@ -582,8 +580,8 @@ select date_trunc('second', now()) || ' -- create table agg_lobbying_bills_for_r
 create table agg_lobbying_bills_for_registrant as
     with lobbying_by_cycle as (
         select
-            ra.entity_id as registrant_entity, 
-            r.cycle, 
+            ra.entity_id as registrant_entity,
+            r.cycle,
             b.bill_type,
             b.bill_no,
             b.congress_no,

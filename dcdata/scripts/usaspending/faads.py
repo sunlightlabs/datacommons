@@ -1,5 +1,6 @@
 from helpers import splitCode, nullable, recovery_act, datestamp, \
         splitInt, correctionLateIndicator
+from dcdata.grants.models import Grant
 
 
 FIELDS = [('unique_transaction_id', None),
@@ -20,9 +21,9 @@ FIELDS = [('unique_transaction_id', None),
                 ('agency_code', splitCode),
                 ('federal_award_id', None),
                 ('federal_award_mod', None),
-                ('fed_funding_amount', splitInt),
-                ('non_fed_funding_amount', splitInt),
-                ('total_funding_amount', splitInt),
+                ('fed_funding_amount', None),
+                ('non_fed_funding_amount', None),
+                ('total_funding_amount', None),
                 ('obligation_action_date', nullable),
                 ('starting_date', nullable),
                 ('ending_date', nullable),
@@ -53,7 +54,7 @@ FIELDS = [('unique_transaction_id', None),
                 ('recip_cat_type', splitCode),
                 ('asst_cat_type', splitCode),
                 ('recipient_cd', splitCode),
-                ('maj_agency_cat', splitCode),
+                ('maj_agency_cat', lambda x: splitCode(x)[:Grant._meta.get_field('maj_agency_cat').max_length]),
                 ('rec_flag', recovery_act),
                 ('uri', None),
                 ('recipient_state_code', splitCode)]
