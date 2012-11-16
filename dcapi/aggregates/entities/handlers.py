@@ -43,7 +43,7 @@ get_totals_stmt = """
          where entity_id = %s) c
     full outer join
          (select *
-         from agg_lobbying_totals
+         from agg_lobbying_by_cycle_rolled_up
          where entity_id = %s) l
     using (cycle)
     full outer join
@@ -190,7 +190,7 @@ class EntitySearchHandler(BaseHandler):
             on e.id = pm.entity_id
         left join organization_metadata_latest_cycle_view om
             on e.id = om.entity_id
-        left join agg_lobbying_totals l
+        left join agg_lobbying_by_cycle_rolled_up l
             on e.id = l.entity_id and l.cycle = -1
         left join agg_entities a
             on e.id = a.entity_id and a.cycle = -1

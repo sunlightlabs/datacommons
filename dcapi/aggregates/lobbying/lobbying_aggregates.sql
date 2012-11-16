@@ -144,83 +144,165 @@ select date_trunc('second', now()) || ' -- create index assoc_lobbying_lobbyist_
 create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id);
 
 
--- Total Spent
+-- Total Spent per Entity, per Year
+-- Does not take into account any subsidiary relationships or include industries
 
-select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_totals';
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_by_entity_year';
 drop table if exists agg_lobbying_totals;
+drop table if exists agg_lobbying_by_entity_year;
 
-select date_trunc('second', now()) || ' -- create table agg_lobbying_totals as';
-create table agg_lobbying_totals as
-    with lobbying_by_cycle as (
+select date_trunc('second', now()) || ' -- create table agg_lobbying_by_entity_year as';
+create table agg_lobbying_by_entity_year as
+    with lobbying_by_year as (
         select
             entity_id,
-            coalesce(lobbyist.cycle, coalesce(firm.cycle, coalesce(non_firm_registrant.cycle, non_firm_client.cycle))) as cycle,
-            coalesce(lobbyist.count, coalesce(firm.count, coalesce(non_firm_registrant.count, coalesce(non_firm_client.count, 0))))::integer as count,
-            coalesce(non_firm_registrant.amount, coalesce(non_firm_client.amount, 0)) as non_firm_spending,
+            coalesce(lobbyist.year, coalesce(firm.year, coalesce(client_in_house.year, client_out_of_house.year))) as year,
+            coalesce(lobbyist.count, coalesce(firm.count, coalesce(client_in_house.count, coalesce(client_out_of_house.count, 0))))::integer as count,
+            coalesce(client_in_house.amount, coalesce(client_out_of_house.amount, 0)) as non_firm_spending,
             coalesce(firm.amount, 0) as firm_income
         from
-            (select entity_id, r.cycle, count(r)
+            (select entity_id, r.year, count(r)
             from lobbying_report r
             inner join lobbying_lobbyist l using (transaction_id)
             inner join assoc_lobbying_lobbyist la using (id)
-            group by entity_id, r.cycle) as lobbyist
+            group by entity_id, r.year) as lobbyist
         full outer join
-            (select entity_id, r.cycle, count(r), sum(amount) as amount
+            (select entity_id, r.year, count(r), sum(amount) as amount
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
-            inner join organization_metadata_latest_cycle_view m using (entity_id)
             where
-                m.lobbying_firm = 't'
-            group by entity_id, r.cycle) as firm
-        using (entity_id, cycle)
+                registrant_is_firm
+            group by entity_id, r.year) as firm
+        using (entity_id, year)
         full outer join
-            (select entity_id, r.cycle, count(r), sum(amount) as amount
+            -- in-house
+            --coalescing to only this number will make it so a parent which has a child doing in-house lobbying will only use the child's number
+            (select entity_id, r.year, count(r), sum(amount) as amount
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
-            left join organization_metadata_latest_cycle_view m using (entity_id)
             where
-                coalesce(m.lobbying_firm, 'f') = 'f'
-                and lower(r.registrant_name) = lower(r.client_name)
-            group by entity_id, r.cycle) as non_firm_registrant
-        using (entity_id, cycle)
+                not registrant_is_firm
+            group by entity_id, r.year) as client_in_house
+        using (entity_id, year)
         full outer join
-            (select entity_id, r.cycle, count(r), sum(amount) as amount
+            -- out-of-house
+            (select entity_id, r.year, count(r), sum(amount) as amount
             from lobbying_report r
-            inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) ca using (transaction_id)
-            left join organization_metadata_latest_cycle_view m using (entity_id)
-            left join matchbox_entity e on e.id = ca.entity_id
+            inner join assoc_lobbying_client ca using (transaction_id)
             where
-                coalesce(m.lobbying_firm, 'f') = 'f'
-                and case when e.type = 'industry' then r.include_in_industry_totals else 't' end
-            group by entity_id, r.cycle) as non_firm_client
-        using (entity_id, cycle)
+                registrant_is_firm
+            group by entity_id, r.year) as client_out_of_house
+        using (entity_id, year)
     )
 
         select
             entity_id,
+            year,
+            sum(count) as count,
+            sum(non_firm_spending) as non_firm_spending,
+            sum(firm_income) as firm_income
+        from
+            lobbying_by_year
+        group by
+            entity_id, year
+;
+
+select date_trunc('second', now()) || ' -- create index agg_lobbying_by_entity_year__entity_id on agg_lobbying_by_entity_year (entity_id)';
+create index agg_lobbying_by_entity_year__entity_id on agg_lobbying_by_entity_year (entity_id);
+select date_trunc('second', now()) || ' -- create index agg_lobbying_by_entity_year__year on agg_lobbying_by_entity_year (year)';
+create index agg_lobbying_by_entity_year__year on agg_lobbying_by_entity_year (year);
+
+
+-- Total Spent, Rolling up into Cycles and Parent/Subsidiary Relationships
+-- (also includes industries)
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_by_cycle_rolled_up';
+drop table if exists agg_lobbying_by_cycle_rolled_up;
+
+select date_trunc('second', now()) || ' -- create table agg_lobbying_by_cycle_rolled_up as';
+create table agg_lobbying_by_cycle_rolled_up as
+    with lobbying_with_parents_and_industries_by_cycle as (
+        select
+            entity_id,
+            parent_entity_id,
+            industry_entity_id,
+            subindustry_entity_id,
             cycle,
             count,
             non_firm_spending,
             firm_income
-        from
-            lobbying_by_cycle
+        from (
+            select
+                entity_id,
+                year + (year % 2) as cycle,
+                sum(count) as count,
+                sum(non_firm_spending) as non_firm_spending,
+                sum(firm_income) as firm_income
+            from
+                agg_lobbying_by_entity_year
+            group by
+                entity_id, year + (year % 2)
+        ) lobbying_by_cycle
+        left join matchbox_organizationmetadata using (entity_id, cycle)
+    ),
+    lobbying_all_entity_types_by_cycle as (
+        select
+            entity_id,
+            cycle,
+            sum(count) as count,
+            sum(non_firm_spending) as non_firm_spending,
+            sum(firm_income) as firm_income
+        from (
+            select entity_id, cycle, count, non_firm_spending, firm_income
+            from lobbying_with_parents_and_industries_by_cycle
+
+            union all
+
+            select parent_entity_id as entity_id, cycle, count, non_firm_spending, firm_income
+            from lobbying_with_parents_and_industries_by_cycle
+            where parent_entity_id is not null
+        ) x
+        group by entity_id, cycle
 
         union all
 
-        select
-            entity_id,
-            -1                     as cycle,
-            sum(count)             as count,
-            sum(non_firm_spending) as non_firm_spending,
-            sum(firm_income)       as firm_income
-        from
-            lobbying_by_cycle
-        group by
-            entity_id
+        select industry_entity_id as entity_id, cycle, sum(count), sum(non_firm_spending), sum(firm_income)
+        from lobbying_with_parents_and_industries_by_cycle
+        where industry_entity_id is not null
+        group by industry_entity_id, cycle
+
+        union all
+
+        select subindustry_entity_id as entity_id, cycle, sum(count), sum(non_firm_spending), sum(firm_income)
+        from lobbying_with_parents_and_industries_by_cycle
+        where subindustry_entity_id is not null
+        group by subindustry_entity_id, cycle
+    )
+
+    select
+        entity_id,
+        cycle,
+        count,
+        non_firm_spending,
+        firm_income
+    from lobbying_all_entity_types_by_cycle
+
+    union all
+
+    select
+        entity_id,
+        -1,
+        sum(count),
+        sum(non_firm_spending),
+        sum(firm_income)
+    from lobbying_all_entity_types_by_cycle
+    group by entity_id
 ;
 
-select date_trunc('second', now()) || ' -- create index agg_lobbying_totals_idx on agg_lobbying_totals (entity_id)';
-create index agg_lobbying_totals_idx on agg_lobbying_totals (entity_id);
+select date_trunc('second', now()) || ' -- create index agg_lobbying_by_cycle_rolled_up__entity_id on agg_lobbying_by_cycle_rolled_up (entity_id)';
+create index agg_lobbying_by_cycle_rolled_up__entity_id on agg_lobbying_by_cycle_rolled_up (entity_id);
+select date_trunc('second', now()) || ' -- create index agg_lobbying_by_cycle_rolled_up__cycle on agg_lobbying_by_cycle_rolled_up (cycle)';
+create index agg_lobbying_by_cycle_rolled_up__cycle on agg_lobbying_by_cycle_rolled_up (cycle);
 
 
 -- Firms Hired by Client
