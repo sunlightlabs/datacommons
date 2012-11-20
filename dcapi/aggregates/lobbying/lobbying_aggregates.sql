@@ -156,10 +156,11 @@ create table agg_lobbying_by_entity_year as
     with lobbying_by_year as (
         select
             entity_id,
-            coalesce(lobbyist.year, coalesce(firm.year, coalesce(client_in_house.year, client_out_of_house.year))) as year,
-            coalesce(lobbyist.count, coalesce(firm.count, coalesce(client_in_house.count, coalesce(client_out_of_house.count, 0))))::integer as count,
-            coalesce(client_in_house.amount, coalesce(client_out_of_house.amount, 0)) as non_firm_spending,
-            coalesce(firm.amount, 0) as firm_income
+            coalesce(lobbyist.year, firm.year, client_in_house.year, client_out_of_house.year) as year,
+            coalesce(lobbyist.count, firm.count, client_in_house.count, client_out_of_house.count, 0)::integer as count,
+            coalesce(client_in_house.amount, client_out_of_house.amount, 0) as non_firm_spending,
+            coalesce(firm.amount, 0) as firm_income,
+            coalesce(firm.include_in_industry_totals, client_in_house.include_in_industry_totals, client_out_of_house.include_in_industry_totals, 'f') as include_in_industry_totals
         from
             (select entity_id, r.year, count(r)
             from lobbying_report r
@@ -167,31 +168,31 @@ create table agg_lobbying_by_entity_year as
             inner join assoc_lobbying_lobbyist la using (id)
             group by entity_id, r.year) as lobbyist
         full outer join
-            (select entity_id, r.year, count(r), sum(amount) as amount
+            (select entity_id, r.year, count(r), sum(amount) as amount, include_in_industry_totals
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
             where
                 registrant_is_firm
-            group by entity_id, r.year) as firm
+            group by entity_id, r.year, include_in_industry_totals) as firm
         using (entity_id, year)
         full outer join
             -- in-house
             --coalescing to only this number will make it so a parent which has a child doing in-house lobbying will only use the child's number
-            (select entity_id, r.year, count(r), sum(amount) as amount
+            (select entity_id, r.year, count(r), sum(amount) as amount, include_in_industry_totals
             from lobbying_report r
             inner join assoc_lobbying_registrant ra using (transaction_id)
             where
                 not registrant_is_firm
-            group by entity_id, r.year) as client_in_house
+            group by entity_id, r.year, include_in_industry_totals) as client_in_house
         using (entity_id, year)
         full outer join
             -- out-of-house
-            (select entity_id, r.year, count(r), sum(amount) as amount
+            (select entity_id, r.year, count(r), sum(amount) as amount, include_in_industry_totals
             from lobbying_report r
             inner join assoc_lobbying_client ca using (transaction_id)
             where
                 registrant_is_firm
-            group by entity_id, r.year) as client_out_of_house
+            group by entity_id, r.year, include_in_industry_totals) as client_out_of_house
         using (entity_id, year)
     )
 
@@ -200,11 +201,12 @@ create table agg_lobbying_by_entity_year as
             year,
             sum(count) as count,
             sum(non_firm_spending) as non_firm_spending,
-            sum(firm_income) as firm_income
+            sum(firm_income) as firm_income,
+            include_in_industry_totals
         from
             lobbying_by_year
         group by
-            entity_id, year
+            entity_id, year, include_in_industry_totals
 ;
 
 select date_trunc('second', now()) || ' -- create index agg_lobbying_by_entity_year__entity_id on agg_lobbying_by_entity_year (entity_id)';
@@ -230,18 +232,20 @@ create table agg_lobbying_by_cycle_rolled_up as
             cycle,
             count,
             non_firm_spending,
-            firm_income
+            firm_income,
+            include_in_industry_totals
         from (
             select
                 entity_id,
                 year + (year % 2) as cycle,
                 sum(count) as count,
                 sum(non_firm_spending) as non_firm_spending,
-                sum(firm_income) as firm_income
+                sum(firm_income) as firm_income,
+                include_in_industry_totals
             from
                 agg_lobbying_by_entity_year
             group by
-                entity_id, year + (year % 2)
+                entity_id, year + (year % 2), include_in_industry_totals
         ) lobbying_by_cycle
         left join matchbox_organizationmetadata using (entity_id, cycle)
     ),
@@ -268,14 +272,14 @@ create table agg_lobbying_by_cycle_rolled_up as
 
         select industry_entity_id as entity_id, cycle, sum(count), sum(non_firm_spending), sum(firm_income)
         from lobbying_with_parents_and_industries_by_cycle
-        where industry_entity_id is not null
+        where industry_entity_id is not null and include_in_industry_totals
         group by industry_entity_id, cycle
 
         union all
 
         select subindustry_entity_id as entity_id, cycle, sum(count), sum(non_firm_spending), sum(firm_income)
         from lobbying_with_parents_and_industries_by_cycle
-        where subindustry_entity_id is not null
+        where subindustry_entity_id is not null and include_in_industry_totals
         group by subindustry_entity_id, cycle
     )
 
@@ -306,8 +310,7 @@ create index agg_lobbying_by_cycle_rolled_up__cycle on agg_lobbying_by_cycle_rol
 
 
 -- Firms Hired by Client
--- Note: We don't include records where the registrant_name = client_name. These don't represent an actual firm/client relationship,
--- they're just the way client firms report their overall spending.
+-- Note: We exclude records where the registrant is the client, e.g. the lobbying is done in-house
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_registrants_for_client';
 drop table if exists agg_lobbying_registrants_for_client;
@@ -321,7 +324,7 @@ create table agg_lobbying_registrants_for_client as
         inner join (table assoc_lobbying_client union table assoc_lobbying_client_parent union all table assoc_lobbying_client_industry) as ca using (transaction_id)
         inner join matchbox_entity ce on ce.id = ca.entity_id
         left join assoc_lobbying_registrant as ra using (transaction_id)
-        where lower(registrant_name) != lower(client_name)
+        where not registrant_is_firm
             and case when ce.type = 'industry' then r.include_in_industry_totals else 't' end
         group by ca.entity_id, cycle, r.registrant_name, ra.entity_id
     )
