@@ -1,4 +1,5 @@
 from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
+from dcapi.aggregates.handlers import TopListHandler
 
 
 class OrgRegistrantsHandler(EntityTopListHandler):
@@ -166,7 +167,7 @@ class TopOrgsLobbyingHandler(TopListHandler):
 
     stmt = """
         select name, entity_id, non_firm_spending, cycle
-        from agg_lobbying_totals
+        from agg_lobbying_by_cycle_rolled_up
         inner join matchbox_entity on matchbox_entity.id = entity_id
         where
             non_firm_spending > 0
@@ -189,7 +190,7 @@ class TopFirmsByIncomeHandler(TopListHandler):
 
     stmt = """
         select name, entity_id, firm_income, cycle
-        from agg_lobbying_totals
+        from agg_lobbying_by_cycle_rolled_up
         inner join matchbox_entity on matchbox_entity.id = entity_id
         where cycle = %s and firm_income > 0
         order by firm_income desc
@@ -204,12 +205,12 @@ class TopIndustriesLobbyingHandler(TopListHandler):
 
     stmt = """
         select name, entity_id, non_firm_spending, cycle
-        from agg_lobbying_totals
+        from agg_lobbying_by_cycle_rolled_up
         inner join matchbox_entity on matchbox_entity.id = entity_id
-        where 
-            non_firm_spending > 0 
+        where
+            non_firm_spending > 0
             and type = 'industry'
-            and cycle = %s 
+            and cycle = %s
         order by non_firm_spending desc
         limit %s
     """
