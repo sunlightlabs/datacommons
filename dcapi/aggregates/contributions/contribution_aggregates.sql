@@ -17,7 +17,7 @@ create table agg_suppressed_catcodes as values
     ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'),
     ('Z4100'), ('Z4200'), ('Z4300'),
     ('Z5000'), ('Z5100'), ('Z5200'), ('Z5300'),
-    ('Z7777'), 
+    ('Z7777'),
     ('Z8888'),
     ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9800'), ('Z9999');
 
@@ -431,8 +431,8 @@ create index recipient_associations_transaction_id on recipient_associations (tr
 
 
 
-drop table if exists agg_entity_to_entity;
-CREATE TABLE agg_entity_to_entity (
+drop table if exists contributions_flat;
+create table contributions_flat (
     transaction_namespace character varying(64),
     amount numeric,
     count bigint,
@@ -440,6 +440,7 @@ CREATE TABLE agg_entity_to_entity (
     contributor_name character varying(255),
     contributor_entity uuid,
     contributor_type character varying(255),
+    contributor_category character varying(255),
     organization_name character varying(255),
     organization_entity uuid,
     parent_organization_name character varying(255),
@@ -447,12 +448,30 @@ CREATE TABLE agg_entity_to_entity (
     recipient_name character varying(255),
     recipient_entity uuid,
     recipient_type character varying(255),
-    industry_entity uuid,
-    industry_name varchar(255),
     party character varying(64),
     seat character varying(64)
 );
 
+insert into contributions_flat (
+    transaction_id, transaction_namespace, amount, count, cycle,
+    contributor_name, contributor_type, contributor_category,
+    organization_name, parent_organization_name, recipient_name,
+    recipient_type, party, seat
+)
+select
+    transaction_id, transaction_namespace, amount, count, cycle,
+    contributor_name, contributor_type, contributor_category,
+    organization_name, parent_organization_name, recipient_name,
+    recipient_type, party, seat
+from
+    contributions_all_relevant;
+
+update contributions_flat c set contributor_entity = entity_id from contributor_associations a where c.transaction_id = a.transaction_id;
+update contributions_flat c set recipient_entity = entity_id from recipient_associations a where c.transaction_id = a.transaction_id;
+update contributions_flat c set organization_entity = entity_id from organization_associations a where c.transaction_id = a.transaction_id;
+update contributions_flat c set parent_organization_entity = entity_id from parent_organization_associations a where c.transaction_id = a.transaction_id;
+
+-- TODO: look over these indexes and update the table name
 CREATE INDEX agg_entity_to_entity__contributor_type_idx ON agg_entity_to_entity USING btree (contributor_type);
 CREATE INDEX agg_entity_to_entity__contributor_entity_idx ON agg_entity_to_entity USING btree (contributor_entity);
 CREATE INDEX agg_entity_to_entity__cycle_idx ON agg_entity_to_entity USING btree (cycle);
@@ -526,12 +545,11 @@ drop table if exists agg_sectors_to_cand cascade;
 select date_trunc('second', now()) || ' -- create table agg_sectors_to_cand';
 create table agg_sectors_to_cand as
     with contribs_by_cycle as (
-        select ra.entity_id as recipient_entity, coalesce(substring(codes.catorder for 1), 'Y') as sector, c.cycle, count(*), sum(amount) as amount,
-            rank() over (partition by ra.entity_id, cycle order by sum(amount) desc) as rank
-        from (table contributions_individual union table contributions_organization) c
-        inner join recipient_associations ra using (transaction_id)
+        select recipient_entity, coalesce(substring(codes.catorder for 1), 'Y') as sector, c.cycle, count(*), sum(amount) as amount,
+            rank() over (partition by recipient_entity, cycle order by sum(amount) desc) as rank
+        from contributions_flat c
         left join agg_cat_map codes on c.contributor_category = codes.catcode
-        group by ra.entity_id, coalesce(substring(codes.catorder for 1), 'Y'), c.cycle
+        group by recipient_entity, coalesce(substring(codes.catorder for 1), 'Y'), c.cycle
     )
 
     select recipient_entity, sector, cycle, count, amount
@@ -563,15 +581,14 @@ select date_trunc('second', now()) || ' -- create table agg_industries_to_cand';
 create table agg_industries_to_cand as
     with contribs_by_cycle as (
         select
-            ra.entity_id as recipient_entity,
+            recipient_entity,
             coalesce(ia.entity_id, (select entity_id from matchbox_entityattribute where value = 'Y00')) as industry_entity,
             coalesce(me.name, 'UNKNOWN') as industry,
             c.cycle,
             count(*),
             sum(amount) as amount,
-            rank() over (partition by ra.entity_id, cycle order by sum(amount) desc) as rank
-        from (table contributions_individual union table contributions_organization) c
-        inner join recipient_associations ra using (transaction_id)
+            rank() over (partition by recipient_entity, cycle order by sum(amount) desc) as rank
+        from contributions_flat c
         left join industry_associations ia using (transaction_id)
         left join matchbox_entity me on me.id = ia.entity_id
         left join matchbox_entityattribute ma on ma.entity_id = ia.entity_id
@@ -579,7 +596,7 @@ create table agg_industries_to_cand as
             -- exclude subindustries
             coalesce(ma.namespace, 'urn:crp:industry') = 'urn:crp:industry'
             and substring(c.contributor_category for 1) not in ('', 'Y', 'Z')
-        group by ra.entity_id, ia.entity_id, coalesce(me.name, 'UNKNOWN'), c.cycle
+        group by recipient_entity, ia.entity_id, coalesce(me.name, 'UNKNOWN'), c.cycle
     )
 
     select recipient_entity, industry_entity, industry, cycle, count, amount
@@ -610,15 +627,14 @@ select date_trunc('second', now()) || ' -- create table agg_unknown_industries_t
 create table agg_unknown_industries_to_cand as
     with unknown_by_cycle as (
         select
-            ra.entity_id as recipient_entity,
+            recipient_entity,
             c.cycle,
             count(*),
             sum(amount) as amount
-        from (table contributions_individual union table contributions_organization) c
-        inner join recipient_associations ra using (transaction_id)
+        from contributions_flat c
         where
             substring(c.contributor_category for 1) in ('', 'Y', 'Z')
-        group by ra.entity_id, c.cycle
+        group by recipient_entity, c.cycle
     )
 
     table unknown_by_cycle
@@ -643,7 +659,7 @@ create table agg_cands_from_indiv as
     with individual_contributions_by_cycle as (
         select contributor_entity, recipient_name, recipient_entity, cycle, count, amount,
             rank() over (partition by contributor_entity, cycle order by amount desc) as rank
-        from agg_entity_to_entity
+        from contributions_flat
         where contributor_type = 'individual'
     )
 
@@ -676,7 +692,7 @@ create table agg_orgs_from_indiv as
     with individual_to_org_contributions_by_cycle as (
     select contributor_entity, recipient_name, recipient_entity, cycle, count, amount,
             rank() over (partition by contributor_entity, cycle order by amount desc) as rank
-        from agg_entity_to_entity
+        from contributions_flat
         where contributor_type = 'individual' and recipient_type = 'organization'
         group by contributor_entity, recipient_name, recipient_entity, cycle, count, amount
     )
@@ -725,7 +741,7 @@ create table agg_orgs_to_cand as
                 left join biggest_organization_associations ca using (transaction_id)
                 left join matchbox_entity oe on oe.id = ca.entity_id
                 where
-                    lower(organization_name) not in (select * from agg_suppressed_orgnames)    
+                    lower(organization_name) not in (select * from agg_suppressed_orgnames)
                 group by ra.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, cycle
             ) top_pacs
             full outer join (
@@ -735,7 +751,7 @@ create table agg_orgs_to_cand as
                 inner join recipient_associations ra using (transaction_id)
                 left join biggest_organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
-                where 
+                where
                     lower(case when organization_name != '' then c.organization_name else contributor_name end) not in (select * from agg_suppressed_orgnames)
                 group by ra.entity_id, coalesce(oe.name, case when organization_name != '' then c.organization_name else contributor_name end), oa.entity_id, cycle
             ) top_indivs
