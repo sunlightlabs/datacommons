@@ -59,7 +59,7 @@ get_totals_stmt = """
     full outer join (
         select cycle, count
         from agg_pogo_totals
-        where entity_id = %s) cm 
+        where entity_id = %s) cm
     using (cycle)
     full outer join (
         select cycle, count
@@ -93,6 +93,7 @@ get_totals_stmt = """
     using (cycle)
 """
 
+
 def get_totals(entity_id):
     totals = dict()
     for row in execute_top(get_totals_stmt, *[entity_id] * 11):
@@ -103,10 +104,10 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 
-                     'lobbying_count', 'firm_income', 'non_firm_spending', 
-                     'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount', 
-                     'earmark_count', 'earmark_amount', 
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount',
+                     'lobbying_count', 'firm_income', 'non_firm_spending',
+                     'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount',
+                     'earmark_count', 'earmark_amount',
                      'contractor_misconduct_count',
                      'epa_actions_count',
                      'regs_docket_count', 'regs_document_count', 'regs_submitted_docket_count', 'regs_submitted_document_count',
@@ -153,9 +154,9 @@ class EntityAttributeHandler(BaseHandler):
             return error_response
 
         if bioguide_id:
-            entities = BioguideInfo.objects.filter(bioguide_id = bioguide_id)
+            entities = BioguideInfo.objects.filter(bioguide_id=bioguide_id)
         else:
-            entities = EntityAttribute.objects.filter(namespace = namespace, value = id)
+            entities = EntityAttribute.objects.filter(namespace=namespace, value=id)
 
         return [{'id': e.entity_id} for e in entities]
 
@@ -166,7 +167,7 @@ class EntitySearchHandler(BaseHandler):
     fields = [
         'id', 'name', 'type',
         'count_given', 'count_received', 'count_lobbied',
-        'total_given','total_received', 'firm_income', 'non_firm_spending',
+        'total_given', 'total_received', 'firm_income', 'non_firm_spending',
         'state', 'party', 'seat', 'lobbying_firm', 'is_superpac'
     ]
 
@@ -197,7 +198,7 @@ class EntitySearchHandler(BaseHandler):
     """
 
     def read(self, request):
-        query = request.GET.get('search', None)
+        query = request.GET.get('search')
         if not query:
             error_response = rc.BAD_REQUEST
             error_response.write("Must include a query in the 'search' parameter.")
@@ -233,11 +234,11 @@ class EntitySimpleHandler(BaseHandler):
     """
 
     def read(self, request):
-        count = request.GET.get('count', None)
-        start = request.GET.get('start', None)
-        end = request.GET.get('end', None)
-        entity_type = request.GET.get('type', None)
-        
+        count = request.GET.get('count')
+        start = request.GET.get('start')
+        end = request.GET.get('end')
+        entity_type = request.GET.get('type')
+
         if entity_type:
             where_clause = "where type = %s"
         else:
@@ -245,7 +246,7 @@ class EntitySimpleHandler(BaseHandler):
 
         if count:
             return dict(count=execute_top(self.count_stmt % where_clause, *([entity_type] if entity_type else []))[0][0])
-        
+
         if start is not None and end is not None:
             try:
                 start = int(start)
@@ -263,7 +264,6 @@ class EntitySimpleHandler(BaseHandler):
             error_response = rc.BAD_REQUEST
             error_response.write("Only 10,000 entities can be retrieved at a time.")
             return error_response
-        
+
         raw_result = execute_top(self.stmt % where_clause, *([entity_type] if entity_type else []) + [start, end - start + 1])
         return [dict(zip(self.fields, row)) for row in raw_result]
-
