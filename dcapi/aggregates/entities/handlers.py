@@ -199,13 +199,19 @@ class EntitySearchHandler(BaseHandler):
 
     def read(self, request):
         query = request.GET.get('search')
+        entity_type = request.GET.get('type')
         if not query:
             error_response = rc.BAD_REQUEST
             error_response.write("Must include a query in the 'search' parameter.")
             return error_response
 
+        if entity_type:
+            self.stmt += '\n        where e.type = %s'
+
         parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
-        raw_result = execute_top(self.stmt, parsed_query)
+        query_params = (parsed_query)
+        query_params = [x for x in (parsed_query, entity_type) if x]
+        raw_result = execute_top(self.stmt, *query_params)
 
         return [dict(zip(self.fields, row)) for row in raw_result]
 
