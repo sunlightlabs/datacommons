@@ -1,5 +1,4 @@
 from piston.handler import BaseHandler
-from piston.utils import rc
 from dcentity.matching.reconciler import ReconcilerService
 import json
 import re
@@ -59,7 +58,10 @@ class EntityReconciliationHandler(BaseHandler):
         return matches
 
     def normalize_properties(self, query):
-        return { x['pid']: x['v'] for x in query.get('properties') }
+        if not 'properties' in query:
+            return None
+        else:
+            return { x['pid']: x['v'] for x in query.get('properties') }
 
     def determine_type_from_properties(self, properties, type_hint_column):
         type_hint = None

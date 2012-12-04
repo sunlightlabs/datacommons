@@ -21,6 +21,7 @@ class ReconcilerService(object):
         self.subject_name = subject_name
         self.entity_type = entity_type
         self.subject_properties = kwargs.get('properties')
+        self.log.info("Initializing ReconcilerService")
 
     def start(self, limit=None):
         if self.entity_type == 'politician':
@@ -90,6 +91,8 @@ class IndividualReconciler(object):
                     return_vals.append(self.munge_match_into_result(match, match_name, confidence))
 
         return_vals.sort(key=lambda x: x['score'], reverse=True)
+
+        service.log.debug("Returning values: {}".format(return_vals))
 
         return return_vals
 
