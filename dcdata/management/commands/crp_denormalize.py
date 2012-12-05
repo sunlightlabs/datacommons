@@ -130,7 +130,7 @@ def load_candidates(dataroot, cycles=CYCLES):
             key = "%s:%s" % (record.pop('cycle'), record['fec_cand_id'].upper())
             del record['no_pacs']
 
-            if candidates.has_key(key) and not (record['curr_cand'] == 'Y' and record['cycle_cand'] == 'Y'):
+            if key in candidates and not (record['curr_cand'] == 'Y' and record['cycle_cand'] == 'Y'):
                 continue
 
             candidates[key] = record
