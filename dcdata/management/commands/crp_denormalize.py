@@ -24,12 +24,15 @@ class RecipientFilter(Filter):
     def add_recipient(self, record, committee):
         # cmte_id != recip_id indicates a candidate committee
         if committee['cmte_id'] != committee['recip_id']:
-            candidate = self._candidates.get('%s:%s' % (record['cycle'], committee['fec_cand_id'].strip().upper()), None)
+            key = '{}:{}'.format(record['cycle'], committee['fec_cand_id'].strip().upper())
+            candidate = self._candidates.get(key)
             if candidate:
                 self.add_candidate_recipient(record, candidate, committee)
                 return record
-                
-        self.add_committee_recipient(record, committee)    
+            else:
+                logging.warn("candidate recipient expected but not found for cycle:fec_candid: " % key)
+
+        self.add_committee_recipient(record, committee)
         return record
 
 
@@ -55,7 +58,7 @@ class RecipientFilter(Filter):
             (crp_seat, crp_state, crp_district) = RecipientFilter.parse_crp_seat(candidate['dist_id_run_for'])
             if crp_seat == 'federal:house' and crp_state == record['recipient_state']:
                 record['district'] = crp_district
-                
+
 
     @staticmethod
     def parse_fec_seat(fec_id):
@@ -127,7 +130,7 @@ def load_candidates(dataroot, cycles=CYCLES):
             key = "%s:%s" % (record.pop('cycle'), record['fec_cand_id'].upper())
             del record['no_pacs']
 
-            if candidates.has_key(key) and not (record['curr_cand'] == 'Y' and record['cycle_cand'] == 'Y'):
+            if key in candidates and not (record['curr_cand'] == 'Y' and record['cycle_cand'] == 'Y'):
                 continue
 
             candidates[key] = record

@@ -1,5 +1,4 @@
 from piston.handler import BaseHandler
-from piston.utils import rc
 from dcentity.matching.reconciler import ReconcilerService
 import json
 import re
