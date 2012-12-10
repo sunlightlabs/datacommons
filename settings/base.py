@@ -48,7 +48,7 @@ MIDDLEWARE_CLASSES = (
     'dcapi.middleware.APIMiddleware',
 )
 
-ROOT_URLCONF = 'datacommons.urls'
+ROOT_URLCONF = 'urls'
 
 INSTALLED_APPS = (
     'django.contrib.admin',
