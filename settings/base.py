@@ -190,5 +190,3 @@ import re
 IGNORABLE_404_URLS = (
     re.compile(r'\.php$'),
 )
-
-from local_settings import *
