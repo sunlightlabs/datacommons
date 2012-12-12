@@ -43,7 +43,6 @@ MIDDLEWARE_CLASSES = (
     'piston.middleware.CommonMiddlewareCompatProxy',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-#    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'locksmith.auth.middleware.APIKeyMiddleware',
     'dcapi.middleware.APIMiddleware',
 )
@@ -56,7 +55,6 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'debug_toolbar',
     'mediasync',
     'locksmith.auth',
     'locksmith.logparse',
@@ -89,6 +87,7 @@ LOCKSMITH_HTTP_HEADER = None
 LOCKSMITH_LOG_PATH = '/var/log/nginx/dc_web_access.log'
 
 from django.core.urlresolvers import resolve
+
 def api_resolve(x):
     match = resolve(x)
     if hasattr(match.func, 'handler'):
@@ -101,10 +100,7 @@ LOCKSMITH_LOG_CUSTOM_TRANSFORM = api_resolve
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-INTERNAL_IPS = ('127.0.0.1','209.190.229.199')
-DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS': False,
-}
+INTERNAL_IPS = ('127.0.0.1', '209.190.229.199')
 
 from public.sync_util import git_cache_fix
 MEDIASYNC = {
