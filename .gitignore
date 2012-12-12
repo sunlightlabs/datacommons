@@ -27,7 +27,6 @@ dcdata/test_data/denormalized/nimsp_allocated_contributions.csv
 dcdata/test_data/denormalized/nimsp_unallocated_contributions.csv.TMP
 dcdata/test_data/denormalized/nimsp_unallocated_contributions_salted.csv
 dcdata/test_data/denormalized/nimsp_unallocated_contributions_unsalted.csv
-dc_web/build
 .project
 .pydevproject
 PYSMELLTAGS
