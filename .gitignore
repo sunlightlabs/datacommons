@@ -36,3 +36,4 @@ nationwide_candidates.pkl
 postgresql.conf.*
 pgexperts.conf.*
 sysctl.conf.*
+settings/local.py
