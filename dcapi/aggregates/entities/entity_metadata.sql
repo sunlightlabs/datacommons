@@ -137,7 +137,8 @@ begin;
 delete from matchbox_organizationmetadata;
 
 insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id)
-    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id from tmp_matchbox_organizationmetadata;
+    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id from tmp_matchbox_organizationmetadata
+    where entity_id in (select id from matchbox_entity);
 
 commit;
 
@@ -203,7 +204,9 @@ insert into tmp_matchbox_indivorgaffiliations (individual_entity_id, organizatio
 delete from matchbox_indivorgaffiliations;
 
 insert into matchbox_indivorgaffiliations (individual_entity_id, organization_entity_id)
-    select individual_entity_id, organization_entity_id from tmp_matchbox_indivorgaffiliations;
+    select individual_entity_id, organization_entity_id from tmp_matchbox_indivorgaffiliations
+    where individual_entity_id in (select id from matchbox_entity)
+    and organization_entity_id in (select id from matchbox_entity);
 commit;
 
 begin;
