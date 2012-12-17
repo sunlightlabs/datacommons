@@ -138,7 +138,9 @@ delete from matchbox_organizationmetadata;
 
 insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id)
     select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id from tmp_matchbox_organizationmetadata
-    where entity_id in (select id from matchbox_entity);
+    where entity_id in (select id from matchbox_entity)
+        and parent_entity_id in (select id from matchbox_entity)
+    ;
 
 commit;
 
