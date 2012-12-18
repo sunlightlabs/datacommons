@@ -105,8 +105,8 @@ set is_superpac = true
 from matchbox_entityattribute a
 inner join fec_committees c on (c.committee_id = a.value and a.namespace = 'urn:fec:committee')
 where
-    matchbox_organizationmetadata.entity_id = a.entity_id
-    and matchbox_organizationmetadata.cycle = 2012
+    tmp_matchbox_organizationmetadata.entity_id = a.entity_id
+    and tmp_matchbox_organizationmetadata.cycle = 2012
     and c.committee_type = 'O'
 ;
 
@@ -147,7 +147,10 @@ begin;
 delete from matchbox_organizationmetadata;
 
 insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id)
-    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id from tmp_matchbox_organizationmetadata;
+    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id from tmp_matchbox_organizationmetadata
+    where entity_id in (select id from matchbox_entity)
+        and (parent_entity_id is null or parent_entity_id in (select id from matchbox_entity))
+    ;
 
 commit;
 
@@ -213,7 +216,9 @@ insert into tmp_matchbox_indivorgaffiliations (individual_entity_id, organizatio
 delete from matchbox_indivorgaffiliations;
 
 insert into matchbox_indivorgaffiliations (individual_entity_id, organization_entity_id)
-    select individual_entity_id, organization_entity_id from tmp_matchbox_indivorgaffiliations;
+    select individual_entity_id, organization_entity_id from tmp_matchbox_indivorgaffiliations
+    where individual_entity_id in (select id from matchbox_entity)
+    and organization_entity_id in (select id from matchbox_entity);
 commit;
 
 begin;
