@@ -1,3 +1,4 @@
+import os
 # Django settings for dc_web project.
 
 DEBUG = True
@@ -48,6 +49,7 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'urls'
+SYSTEM_API_KEY = open(os.path.expanduser('~/.api-key-ie')).read().strip()
 
 INSTALLED_APPS = (
     'django.contrib.admin',
