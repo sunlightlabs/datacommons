@@ -32,7 +32,7 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
 from saucebrush.sources import CSVSource
-from settings import PROJECT_ROOT
+from django.conf import settings
 from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
 from updates import edits, update
@@ -45,7 +45,7 @@ import sys
 
 
 
-dataroot = os.path.join(PROJECT_ROOT, 'dcdata', 'test_data')
+dataroot = os.path.join(settings.PROJECT_ROOT, 'dcdata', 'test_data')
 
 def assert_record_contains(tester, expected, actual):
     for (name, value) in expected.iteritems():
