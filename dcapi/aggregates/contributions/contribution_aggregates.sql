@@ -979,11 +979,16 @@ select date_trunc('second', now()) || ' -- create table agg_local_to_politician'
 create table agg_local_to_politician as
     with contribs_by_cycle as (
         select ra.entity_id as recipient_entity, c.cycle,
-            case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end as local,
+            case    when c.contributor_state = c.recipient_state then 'in-state' 
+                    when c.contributor_state = '' then ''
+                    else 'out-of-state' end as local,
             count(*), sum(amount) as amount
         from contributions_individual c
         inner join recipient_associations ra using (transaction_id)
-        group by ra.entity_id, c.cycle, case when c.contributor_state = c.recipient_state then 'in-state' else 'out-of-state' end
+        group by ra.entity_id, c.cycle, 
+            case    when c.contributor_state = c.recipient_state then 'in-state' 
+                    when c.contributor_state = '' then ''
+                    else 'out-of-state' end
     )
     select recipient_entity, cycle, local, count, amount
     from contribs_by_cycle
