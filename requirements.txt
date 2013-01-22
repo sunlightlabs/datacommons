@@ -7,6 +7,7 @@ psycopg2
 python-memcached
 gunicorn
 boto
+-e git://github.com/sunlightlabs/saucebrush.git@2cde3badad1e1b3d2f90c0e490c501b6dcd775f2#egg=saucebrush
 -e git+http://github.com/sunlightlabs/django-mediasync.git#egg=mediasync
 nose
 django-nose
