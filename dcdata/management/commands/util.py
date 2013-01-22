@@ -1,5 +1,5 @@
 from django.db           import connections
-from saucebrush.emitters import Emitter
+from saucebrush.emitters import Emitter, DjangoModelEmitter
 from saucebrush.filters  import Filter
 
 
@@ -60,5 +60,17 @@ class TableHandler(object):
             print "Dropping {0}.".format(self.db_table)
         cursor = connections['default'].cursor()
         cursor.execute("drop table {0} cascade".format(self.db_table))
+
+
+class SimpleDjangoModelEmitter(DjangoModelEmitter):
+    """ Emitter that populates a table corresponding to a django model.
+
+        Takes a Django model class and uses the ORM to insert the records into
+        the appropriate table.
+    """
+    def __init__(self, model_class):
+        super(SimpleDjangoModelEmitter, self).__init__()
+        self._dbmodel = model_class
+
 
 
