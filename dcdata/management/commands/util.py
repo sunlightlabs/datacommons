@@ -69,7 +69,15 @@ class SimpleDjangoModelEmitter(DjangoModelEmitter):
         the appropriate table.
     """
     def __init__(self, model_class):
-        super(SimpleDjangoModelEmitter, self).__init__()
+        # Don't want to do this, because of the crappy init:
+        #   super(SimpleDjangoModelEmitter, self).__init__()
+        #
+        # Essentially need to do this...
+        #   functools.partial(Emitter.__init__, self).__init__()
+        #
+        # ...but this will do the same, and it looks cleaner:
+        Emitter.__init__(self)
+
         self._dbmodel = model_class
 
 
