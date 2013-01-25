@@ -17,5 +17,6 @@ BeautifulSoup
 scrapelib
 httplib2
 csvkit
+pylibmc
 name-cleaver>=0.4.1
 -e git://github.com/sunlightlabs/ffs.git#egg=ffs
