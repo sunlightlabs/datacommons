@@ -1,7 +1,9 @@
 from django.core.management.base import CommandError, BaseCommand
 from django.db.utils             import DatabaseError
 from django.db                   import connections, transaction
-from name_cleaver                import IndividualNameCleaver, RunningMatesNames, NICKNAMES
+from name_cleaver                import IndividualNameCleaver
+from name_cleaver.names          import RunningMatesNames
+from name_cleaver.nicknames      import NICKNAMES
 from optparse                    import make_option
 
 import datetime
