@@ -64,7 +64,7 @@ class BundleHandler(TableHandler):
                     lambda x: x == 'A'),
             # Convert any stray floats to integers
             FieldModifier('reporting_period_amount semi_annual_amount'.split(), \
-                    lambda x: int(round(float(x))) if x else None),
+                    lambda x: int(round(float(x.replace('$','').replace(',','')))) if x else None),
             # Convert date formats
             FieldModifier('start_date end_date filing_date'.split(), \
                     lambda x: datetime.strptime(x, '%m/%d/%Y') if x else None),
