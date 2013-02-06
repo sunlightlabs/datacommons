@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Lobbying(models.Model):
-    transaction_id = models.CharField(max_length=64, primary_key=True, db_index=True)
+    transaction_id = models.CharField(max_length=64, primary_key=True)
     transaction_type = models.CharField(max_length=8)
     transaction_type_desc = models.CharField(max_length=128, blank=True, null=True) # or do this in a lookup?
 
