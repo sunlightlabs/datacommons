@@ -1,11 +1,8 @@
+import os
 # Django settings for dc_web project.
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-
-SENTRY_ADMINS = (
-    'arowland@sunlightfoundation.com',
-)
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -47,12 +44,12 @@ MIDDLEWARE_CLASSES = (
     'piston.middleware.CommonMiddlewareCompatProxy',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-#    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'locksmith.auth.middleware.APIKeyMiddleware',
     'dcapi.middleware.APIMiddleware',
 )
 
-ROOT_URLCONF = 'datacommons.urls'
+ROOT_URLCONF = 'urls'
+SYSTEM_API_KEY = open(os.path.expanduser('~/.api-key-ie')).read().strip()
 
 INSTALLED_APPS = (
     'django.contrib.admin',
@@ -60,7 +57,6 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'debug_toolbar',
     'mediasync',
     'locksmith.auth',
     'locksmith.logparse',
@@ -78,8 +74,6 @@ INSTALLED_APPS = (
     'dcapi.aggregates',
     'dcapi.rapportive',
     'public',
-    'sentry',
-    'raven.contrib.django',
     'django_nose',
     'gunicorn',
 )
@@ -95,6 +89,7 @@ LOCKSMITH_HTTP_HEADER = None
 LOCKSMITH_LOG_PATH = '/var/log/nginx/dc_web_access.log'
 
 from django.core.urlresolvers import resolve
+
 def api_resolve(x):
     match = resolve(x)
     if hasattr(match.func, 'handler'):
@@ -107,10 +102,7 @@ LOCKSMITH_LOG_CUSTOM_TRANSFORM = api_resolve
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-INTERNAL_IPS = ('127.0.0.1','209.190.229.199')
-DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS': False,
-}
+INTERNAL_IPS = ('127.0.0.1', '209.190.229.199')
 
 from public.sync_util import git_cache_fix
 MEDIASYNC = {
@@ -196,5 +188,3 @@ import re
 IGNORABLE_404_URLS = (
     re.compile(r'\.php$'),
 )
-
-from local_settings import *

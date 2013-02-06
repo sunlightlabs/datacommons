@@ -8,13 +8,13 @@ class EntityReconciliationHandler(BaseHandler):
 
     service_metadata = {
                         "name": "Influence Explorer Reconciliation3",
-                        "identifierSpace": "http://staging.influenceexplorer.com/ns/entities",  # these are bogus values
-                        "schemaspace": "http://staging.influenceexplorer.com/ns/entity.object.id",  # to satisfy Refine
+                        "identifierSpace": "http://influenceexplorer.com/ns/entities",  # these are bogus values
+                        "schemaspace": "http://influenceexplorer.com/ns/entity.object.id",  # to satisfy Refine
                         "view": {
-                            "url": "http://staging.influenceexplorer.com/entity/{{id}}"
+                            "url": "http://influenceexplorer.com/entity/{{id}}"
                             },
                         "preview": {
-                            "url": "http://staging.influenceexplorer.com/entity/{{id}}",
+                            "url": "http://influenceexplorer.com/entity/{{id}}",
                             "width": 430,
                             "height": 300
                             },
@@ -38,42 +38,44 @@ class EntityReconciliationHandler(BaseHandler):
 
         elif queries:
             q = json.loads(queries)
-            for key, query in q.items():
-                result[key] = {}
-                result[key]['result'] = self.do_query(query)
-        else:
-            import pdb; pdb.set_trace()
-            q = json.loads(request.POST)
-            for key, query in q.items():
-                if not re.match(r'q\d', key):
-                    continue
+            if q is not None:
 
-                result[key] = {}
-                result[key]['result'] = self.do_query(query)
+                for key, query in q.iteritems():
+                    result[key] = {}
+                    result[key]['result'] = self.do_query(query)
+            else:
+                print "We couldn't decode our queries JSON! D:"
 
         return result
 
     def do_query(self, query):
         # formatting according to the spec here:
         # http://code.google.com/p/google-refine/wiki/ReconciliationServiceApi
-        matches = ReconcilerService(query['query'], self.determine_type_from_properties(query['properties'], 'contributionType')).start()
+        properties = self.normalize_properties(query)
+        type_ = query.get('type', self.determine_type_from_properties(properties, 'contributionType'))
+        matches = ReconcilerService(query['query'], type_, properties=properties).start()
 
         return matches
+
+    def normalize_properties(self, query):
+        if not 'properties' in query:
+            return None
+        else:
+            return { x['pid']: x['v'] for x in query.get('properties') }
 
     def determine_type_from_properties(self, properties, type_hint_column):
         type_hint = None
         type_ = None
 
-        for p in properties:
-            if p.get('pid') == type_hint_column:
-                type_hint = p.get('v')
+        if properties:
+            type_hint = properties.get(type_hint_column)
 
-        if type_hint:
-            if re.match(r'individual', type_hint.lower()):
-                type_ = 'individual'
-            elif re.match(r'politician', type_hint.lower()):
-                type_ = 'politician'
-            else:
-                type_ = 'organization'
+            if type_hint:
+                if re.match(r'individual', type_hint.lower()):
+                    type_ = 'individual'
+                elif re.match(r'politician', type_hint.lower()):
+                    type_ = 'politician'
+                else:
+                    type_ = 'organization'
 
         return type_

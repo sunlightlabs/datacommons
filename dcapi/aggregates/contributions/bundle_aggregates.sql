@@ -19,7 +19,9 @@ create table assoc_bundle_recipients as
         entity_id
     from
         contribution_bundle_latest
-        inner join contribution_committee on committee_fec_id = committee_id
+        inner join contribution_committee on
+            committee_fec_id = committee_id
+            and case when report_year % 2 = 0 then report_year = cycle else report_year + 1 = cycle end
         inner join matchbox_entityattribute on recipient_id = value
     where
         namespace in ('urn:crp:recipient', 'urn:fec:committee');

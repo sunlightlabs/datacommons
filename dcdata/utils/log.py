@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 import os.path
 
-from settings import LOGGING_EMAIL
+from django.conf import settings
 
 class EncodingFormatter(logging.Formatter):
 
@@ -16,13 +16,12 @@ class EncodingFormatter(logging.Formatter):
             result = result.encode(self.encoding or 'utf-8')
         return result
 
-def set_up_logger(importer_name, log_path, email_subject, email_recipients=LOGGING_EMAIL['recipients']):
+def set_up_logger(importer_name, log_path, email_subject, email_recipients=settings.LOGGING_EMAIL['recipients']):
     # create logger
     log = logging.getLogger(importer_name)
     log.setLevel(logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    
-    
+
     # create console handler and set level to debug
     ch = logging.FileHandler(os.path.join(log_path, importer_name + '.log'))
     ch.setLevel(logging.DEBUG)
@@ -30,13 +29,13 @@ def set_up_logger(importer_name, log_path, email_subject, email_recipients=LOGGI
     log.addHandler(ch)
 
     # create email handler and set level to warn
-    if LOGGING_EMAIL:
+    if settings.LOGGING_EMAIL:
         eh = logging.handlers.SMTPHandler(
-            (LOGGING_EMAIL['host'], LOGGING_EMAIL['port']), # host
-            LOGGING_EMAIL['username'], # from address
+            (settings.LOGGING_EMAIL['host'], settings.LOGGING_EMAIL['port']), # host
+            settings.LOGGING_EMAIL['username'], # from address
             email_recipients,
             email_subject,
-            (LOGGING_EMAIL['username'], LOGGING_EMAIL['password']) # credentials tuple
+            (settings.LOGGING_EMAIL['username'], settings.LOGGING_EMAIL['password']) # credentials tuple
         )
         eh.setLevel(logging.WARN)
         eh.setFormatter(formatter)

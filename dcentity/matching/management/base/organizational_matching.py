@@ -1,5 +1,6 @@
 from dcentity.matching.management.base.matching import MatchingCommand
-from name_cleaver                               import OrganizationName, OrganizationNameCleaver
+from name_cleaver.names                         import OrganizationName
+from name_cleaver.cleaver                       import OrganizationNameCleaver
 import re
 
 class OrganizationalMatchingCommand(MatchingCommand):

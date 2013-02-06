@@ -7,6 +7,6 @@ for url in ${urls[@]}; do
     wget $url
     BASEFILE=`basename $url`
     gunzip $BASEFILE
-    /home/datacommons/virt/bin/python /home/datacommons/lib/python/datacommons/dc_web/manage.py uploadbulk -z ${BASEFILE%.*z}
+    /home/datacommons/virt/bin/python /home/datacommons/lib/python/datacommons/manage.py uploadbulk -z ${BASEFILE%.*z}
     rm ${BASEFILE%.*z}
 done;

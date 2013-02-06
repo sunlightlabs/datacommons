@@ -14,10 +14,10 @@ class BaseUSASpendingConverter(BaseImporter):
         most current set of files should be symlinked to "latest".
     """
 
-    IN_DIR =       '/home/usaspending/usaspending/latest/datafeeds'
-    DONE_DIR =     '/home/usaspending/usaspending/latest/DONE'
-    REJECTED_DIR = '/home/usaspending/usaspending/latest/REJECTED'
-    OUT_DIR =      '/home/usaspending/usaspending/latest/OUT'
+    IN_DIR =       '/home/usaspend/usaspending/latest/datafeeds'
+    DONE_DIR =     '/home/usaspend/usaspending/latest/DONE'
+    REJECTED_DIR = '/home/usaspend/usaspending/latest/REJECTED'
+    OUT_DIR =      '/home/usaspend/usaspending/latest/OUT'
     FILE_PATTERN = '*_All_*.csv'  # bash-style, ala '*.sql'
 
     email_subject = 'Unhappy USASpending App'
