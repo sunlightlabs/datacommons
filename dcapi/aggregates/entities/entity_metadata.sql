@@ -150,7 +150,21 @@ begin;
 analyze matchbox_organizationmetadata;
 commit;
 
-
+begin;
+drop table if exists organization_metadata_latest_cycle_view;
+create table organization_metadata_latest_cycle_view as
+    select distinct on (entity_id)
+        entity_id,
+        cycle,
+        lobbying_firm,
+        parent_entity_id,
+        industry_entity_id,
+        subindustry_entity_id,
+        is_superpac
+    from matchbox_organizationmetadata
+    order by entity_id, cycle desc
+;
+commit;
 
 -- Politician Metadata
 
@@ -187,6 +201,26 @@ insert into matchbox_politicianmetadata (entity_id, cycle, state, state_held, di
 commit;
 begin;
 analyze matchbox_politicianmetadata;
+commit;
+
+begin;
+drop table politician_metadata_latest_cycle_view;
+create table if exists politician_metadata_latest_cycle_view as
+    select distinct on (entity_id)
+        entity_id,
+        cycle,
+        state,
+        state_held,
+        district,
+        district_held,
+        party,
+        seat,
+        seat_held,
+        seat_status,
+        seat_result
+    from matchbox_politicianmetadata
+    order by entity_id, cycle desc
+;
 commit;
 
 
