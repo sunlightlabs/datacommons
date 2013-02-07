@@ -9,7 +9,6 @@ create or replace view organization_metadata_latest_cycle_view as
         subindustry_entity_id,
         is_superpac
     from matchbox_organizationmetadata
-    where cycle <= 2012
     order by entity_id, cycle desc
 ;
 
