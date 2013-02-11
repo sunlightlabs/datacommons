@@ -186,7 +186,7 @@ class Command(BaseCommand):
             return None
 
         try:
-            years_of_service = soup.findAll('table')[1].find('tr').findAll('td')[1].findAll('font')[2].next.next.next.strip()
+            years_of_service = soup.findAll('table')[1].find('tr').findAll('td')[1].findAll('font')[1].next.strip()
 
             bio_a = soup.findAll('table')[1].find('tr').findAll('td')[1].find('p').find('font').extract().renderContents()
             bio_b = soup.findAll('table')[1].find('tr').findAll('td')[1].find('p').renderContents()
