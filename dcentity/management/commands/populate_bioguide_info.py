@@ -2,7 +2,7 @@ import urllib, urllib2, logging
 
 from django.conf                 import settings
 from django.core.management.base import BaseCommand
-from django.db                   import connection, transaction
+from django.db                   import connections, transaction
 from BeautifulSoup               import BeautifulSoup
 
 try:
@@ -37,7 +37,7 @@ class Command(BaseCommand):
         # chunk size
         limit = int(args[0]) if args and len(args) else 500
         offset = int(args[1]) if args and len(args) > 1 else 0
-        cursor = connection.cursor()
+        cursor = connections['default'].cursor()
 
         # get count
         cursor.execute("""
@@ -102,7 +102,12 @@ class Command(BaseCommand):
 
             for (entity_id, name, crp_id) in politicians:
 
-                bioguide_id = self.get_bioguide_id(crp_id)
+                entity = Entity.get(pk=entity_id)
+
+                if hasattr(entity, 'bioguide_info') and entity.bioguide_info.bioguide_id:
+                    bioguide_id = entity.bioguide_info.bioguide_id
+                else:
+                    bioguide_id = self.get_bioguide_id(entity_id)
 
                 if bioguide_id:
                     self.log.info("Found bioguide id for {0}: {1}".format(name, bioguide_id))
@@ -141,6 +146,7 @@ class Command(BaseCommand):
                 select entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service from tmp_matchbox_bioguideinfo""")
 
             transaction.commit()
+            self.log.info('Committed.')
 
         self.log.info("Done.")
 
