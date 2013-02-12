@@ -164,12 +164,13 @@ class Command(BaseCommand):
             'all_legislators': 1,
         })
 
-        url = "http://services.sunlightlabs.com/api/legislators.get.json?"
+        url = "http://congress.api.sunlightfoundation.com/legislators?"
         api_call = url + arguments
 
         try:
             fp = urllib2.urlopen(api_call)
         except urllib2.HTTPError:
+            self.log.error('api call didn''t work for %s'%crp_id)
             return None
         except urllib2.URLError:
             try:
