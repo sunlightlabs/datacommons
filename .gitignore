@@ -1,5 +1,7 @@
 *.db
 *.pyc
+*.swh
+*.swi
 *.swp
 *.swk
 *.swl
@@ -37,3 +39,4 @@ postgresql.conf.*
 pgexperts.conf.*
 sysctl.conf.*
 settings/dev.py
+settings/local.py
