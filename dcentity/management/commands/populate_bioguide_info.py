@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand
 from django.db                   import connections, transaction
 from dcentity.models             import Entity
 from BeautifulSoup               import BeautifulSoup
+from optparse                    import make_option
 
 import urllib
 import urllib2
@@ -18,6 +19,21 @@ class Command(BaseCommand):
     args = '<limit> <offset (optional)>'
 
     help = 'Populate Bioguide info'
+
+    option_list = BaseCommand.option_list + (
+            make_option('--skip-w-bio',
+                action='store_true',
+                default='False',
+                dest='skip_w_bio',
+                help="Don't try to find bios for any bioguideinfo records which already have them.",
+            ),
+            make_option('--only-w-id',
+                action='store_true',
+                default='False',
+                dest='only_w_id',
+                help="Only scrape info for entities for which we've already found/populated bioguide_ids",
+            ),
+    )
 
     def __init__(self):
         self.set_up_logger()
@@ -43,19 +59,28 @@ class Command(BaseCommand):
         offset = int(args[1]) if args and len(args) > 1 else 0
         cursor = connections['default'].cursor()
 
-        # get count
-        cursor.execute("""
+        skip_populated_bio_clause = 'and (bio is null or bio = \'\')' if options['skip_w_bio'] else ''
+        require_bioguide_id_clause = 'and bioguide_id is not null' if options['only_w_id'] else ''
+
+        get_count_sql = """
             select
                 count(*)
             from
                 matchbox_entity e
                 inner join politician_metadata_latest_cycle_view pm
                     on e.id = pm.entity_id
+                left join matchbox_bioguideinfo bi on e.id = bi.entity_id
             where
                 seat like 'federal%%'
-        """)
-        total = cursor.fetchone()
+                {}
+                {}
+        """.format(skip_populated_bio_clause, require_bioguide_id_clause)
+        # get count
 
+        self.log.debug(get_count_sql)
+        cursor.execute(get_count_sql)
+
+        total = cursor.fetchone()
         transaction.rollback()
 
         count = 0
@@ -70,7 +95,7 @@ class Command(BaseCommand):
 
             select_sql = """
                 select
-                    entity_id,
+                    e.id as entity_id,
                     name,
                     ea.value as crp_id
                 from
@@ -78,14 +103,17 @@ class Command(BaseCommand):
                     inner join politician_metadata_latest_cycle_view pm
                         on e.id = pm.entity_id
                     left join matchbox_entityattribute ea using (entity_id)
+                    left join matchbox_bioguideinfo bi on e.id = bi.entity_id
                 where
                     seat like 'federal%%'
                     and (ea.namespace is null or ea.namespace = 'urn:crp:recipient')
+                    {2}
+                    {3}
                 order by
-                    entity_id
+                    e.id
                 {0}
                 {1}
-            """.format(limit_clause, offset_clause)
+            """.format(limit_clause, offset_clause, skip_populated_bio_clause, require_bioguide_id_clause)
 
             self.log.debug(select_sql)
             cursor.execute(select_sql)
@@ -127,13 +155,14 @@ class Command(BaseCommand):
                         found_ids_and_info.append((entity_id, bioguide_id, bio, bio_url, photo_url, years))
 
             self.log.info("Creating temp table tmp_matchbox_bioguideinfo")
-            cursor.execute("create temp table tmp_matchbox_bioguideinfo on commit drop as select * from matchbox_bioguideinfo limit 0");
+            cursor.execute("create temp table tmp_matchbox_bioguideinfo on commit drop as select * from matchbox_bioguideinfo limit 0")
 
 
             self.log.info("Inserting into tmp_matchbox_bioguideinfo...")
 
             values_string = ",".join(["(%s, %s, %s, %s, %s, %s)" for x in found_ids_and_info])
             insert_sql = "insert into tmp_matchbox_bioguideinfo (entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service) values %s" % values_string
+            self.log.debug(insert_sql)
             cursor.execute(insert_sql, [item for sublist in found_ids_and_info for item in sublist])
 
             self.log.info("Finished inserting into temp table. {0} rows inserted.".format(count_found))
