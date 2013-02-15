@@ -1,6 +1,7 @@
 from django.conf                 import settings
 from django.core.management.base import BaseCommand
 from django.db                   import connections, transaction
+from dcentity.models             import Entity
 from BeautifulSoup               import BeautifulSoup
 
 import urllib
@@ -105,7 +106,7 @@ class Command(BaseCommand):
 
             for (entity_id, name, crp_id) in politicians:
 
-                entity = Entity.get(pk=entity_id)
+                entity = Entity.objects.get(pk=entity_id)
 
                 if hasattr(entity, 'bioguide_info') and entity.bioguide_info.bioguide_id:
                     bioguide_id = entity.bioguide_info.bioguide_id
