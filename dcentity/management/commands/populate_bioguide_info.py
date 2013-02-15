@@ -1,14 +1,17 @@
-import urllib, urllib2, logging
-
 from django.conf                 import settings
 from django.core.management.base import BaseCommand
 from django.db                   import connections, transaction
 from BeautifulSoup               import BeautifulSoup
 
+import urllib
+import urllib2
+import logging
+
 try:
     import json
 except:
     import simplejson as json
+
 
 class Command(BaseCommand):
     args = '<limit> <offset (optional)>'
@@ -150,7 +153,6 @@ class Command(BaseCommand):
 
         self.log.info("Done.")
 
-
     def get_bioguide_id(self, crp_id):
         ''' attempt to determine the bioguide_id of this legislastor, or
         return None. '''
@@ -204,7 +206,6 @@ class Command(BaseCommand):
         except TypeError:
             self.log.error("Couldn't parse one of the bioguide components from the page. Tough luck, mate. Continuing...")
             return None
-
 
     def photo_url(self, bioguide_id):
         return "http://assets.sunlightfoundation.com/moc/100x125/%s.jpg" % bioguide_id if bioguide_id else None
