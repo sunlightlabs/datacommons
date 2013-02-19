@@ -106,9 +106,9 @@ class Entity(models.Model):
                 metadata['revolving_door_entity'] = self.lobbying_activity.lobbyist_entity.public_representation()
 
             if self.politician_metadata_by_cycle.filter(seat__istartswith='federal').count():
-                metadata['state_politician_entities'] = [ x.state_politician_entity for x in self.state_offices_held.all() ]
+                metadata['state_politician_entities'] = [ x.state_politician_entity.public_representation() for x in self.state_offices_held.all() ]
             else:
-                metadata['federal_politician_entities'] = [ x.federal_politician_entity for x in self.federal_offices_held.all() ]
+                metadata['federal_politician_entities'] = [ x.federal_politician_entity.public_representation() for x in self.federal_offices_held.all() ]
 
 
         elif self.type == 'organization':
