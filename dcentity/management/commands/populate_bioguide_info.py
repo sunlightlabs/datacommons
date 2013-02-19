@@ -110,7 +110,7 @@ class Command(BaseCommand):
                 if hasattr(entity, 'bioguide_info') and entity.bioguide_info.bioguide_id:
                     bioguide_id = entity.bioguide_info.bioguide_id
                 else:
-                    bioguide_id = self.get_bioguide_id(entity_id)
+                    bioguide_id = self.get_bioguide_id(crp_id)
 
                 if bioguide_id:
                     self.log.info("Found bioguide id for {0}: {1}".format(name, bioguide_id))
@@ -166,11 +166,9 @@ class Command(BaseCommand):
 
         url = "http://congress.api.sunlightfoundation.com/legislators?"
         api_call = url + arguments
-
         try:
             fp = urllib2.urlopen(api_call)
         except urllib2.HTTPError:
-            self.log.error('api call didn''t work for %s'%crp_id)
             return None
         except urllib2.URLError:
             try:
@@ -178,10 +176,15 @@ class Command(BaseCommand):
             except urllib2.URLError:
                 self.log.warn('Connection timed out.')
                 return None
+        except:
+            return None
 
         js = json.loads(fp.read())
 
-        return js['response']['legislator']['bioguide_id']
+        try:
+            return js['results'][0]['bioguide_id']
+        except IndexError:
+            return None
 
     def get_bioguide_info(self, bioguide_id):
         # scrape congress' bioguide site for years of service and official bio
