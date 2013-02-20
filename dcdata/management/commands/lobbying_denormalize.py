@@ -4,12 +4,13 @@ from dcdata.utils.dryrub import CSVFieldVerifier, FieldCountValidator, \
     VerifiedCSVSource
 from saucebrush.sources import CSVSource
 from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, \
-        FieldAdder, FieldModifier, UnicodeFilter
+    FieldAdder, UnicodeFilter
 from saucebrush.emitters import CSVEmitter
 from saucebrush import run_recipe
 
 import os
 import os.path
+import subprocess
 
 # util functions
 
@@ -89,10 +90,21 @@ def agency_handler(inpath, outpath, infields, outfields):
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
 
+
 def issue_handler(inpath, outpath, infields, outfields):
 
+    """
+    This file comes in with fields containing \n, while the overall file has \r\n for linebreaks.
+    Since python will always interpret \n as a line ending, we need to eradicate those before
+    opening the file in Python.
+    """
+    subprocess.call(['cat {inpath} | tr "\\n" " " > {outpath}'.format(inpath=inpath, outpath=outpath)])
+    # make sure the file has a final linebreak at the end
+    subprocess.call(['echo "\n" >> {outpath}'.format(outpath=outpath)])
+
     run_recipe(
-        VerifiedCSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        # reading the file in "universal line break" mode should treat any weird line endings as actual line endings
+        VerifiedCSVSource(open(inpath, 'Ur'), fieldnames=infields, quotechar='|'),
         FieldCountValidator(len(FILE_TYPES['lob_issue'])),
         CSVFieldVerifier(),
         FieldRenamer({
@@ -103,10 +115,10 @@ def issue_handler(inpath, outpath, infields, outfields):
             'specific_issue': 'SpecIssue',
             'year': 'Year',
         }),
-        FieldModifier(('general_issue', 'specific_issue'), lambda x: x.replace('\n', ' ') if x else ''),
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
+
 
 def bills_handler(inpath, outpath, infields, outfields):
 
