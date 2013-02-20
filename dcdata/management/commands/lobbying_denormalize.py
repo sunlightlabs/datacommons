@@ -98,9 +98,10 @@ def issue_handler(inpath, outpath, infields, outfields):
     Since python will always interpret \n as a line ending, we need to eradicate those before
     opening the file in Python.
     """
-    subprocess.call(['cat {inpath} | tr "\\n" " " > {outpath}'.format(inpath=inpath, outpath=outpath)])
+    subprocess.call(['cat {0} | tr "\\n" " " > {0}.new'.format(inpath)], shell=True)
     # make sure the file has a final linebreak at the end
-    subprocess.call(['echo "\n" >> {outpath}'.format(outpath=outpath)])
+    subprocess.call(['echo "\n" >> {0}.new'.format(inpath)], shell=True)
+    subprocess.call(['mv {0}.new {0}'.format(inpath)], shell=True)
 
     run_recipe(
         # reading the file in "universal line break" mode should treat any weird line endings as actual line endings
