@@ -1,0 +1,7 @@
+create index matchbox_organizationmetadata__industry_entity_id_idx on matchbox_organizationmetadata (industry_entity_id);
+create index matchbox_entityattribute__entity_id_idx on matchbox_entityattribute (entity_id);
+create index matchbox_entityalias__entity_id_idx on matchbox_entityalias (entity_id);
+create index matchbox_indivorgaffiliations__individual_entity_id_idx  on matchbox_indivorgaffiliations (individual_entity_id);
+create index matchbox_indivorgaffiliations__organization_entity_id_idx on matchbox_indivorgaffiliations (organization_entity_id);
+create index geo_zip__msa_id_idx on geo_zip (msa_id);
+create index pogo_misconduct__contractor_id_idx on pogo_misconduct (contractor_id);

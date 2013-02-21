@@ -1,18 +1,24 @@
 from dcdata.lobbying.models import Lobbying, Lobbyist, Issue, Bill, Agency
 from dcdata.management.base.importer import BaseImporter
-from dcdata.utils.dryrub import CSVFieldVerifier, FieldCountValidator, VerifiedCSVSource
+from dcdata.utils.dryrub import CSVFieldVerifier, FieldCountValidator, \
+    VerifiedCSVSource
 from saucebrush.sources import CSVSource
 from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, \
-        FieldAdder, FieldModifier, UnicodeFilter
+    FieldAdder, UnicodeFilter
 from saucebrush.emitters import CSVEmitter
 from saucebrush import run_recipe
-import os, os.path
+
+import os
+import os.path
+import subprocess
 
 # util functions
+
 
 def name_proc(standardized, raw):
     if standardized or raw:
         return (standardized or raw).strip()
+
 
 def yn_proc(yn):
     if yn:
@@ -22,15 +28,16 @@ def yn_proc(yn):
 
 # denormalization handlers
 
+
 def lobbying_handler(inpath, outpath, infields, outfields):
 
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         UnicodeFilter(),
         FieldRemover('Source'),
-        FieldMerger({'registrant_name': ('Registrant','RegistrantRaw')}, name_proc),
+        FieldMerger({'registrant_name': ('Registrant', 'RegistrantRaw')}, name_proc),
         FieldMerger({'registrant_is_firm': ('IsFirm',)}, yn_proc),
-        FieldMerger({'client_name': ('Client','Client_raw')}, name_proc),
+        FieldMerger({'client_name': ('Client', 'Client_raw')}, name_proc),
         FieldMerger({'amount': ('Amount',)}, lambda x: float(x or 0)),
         FieldMerger({'affiliate': ('Affiliate',)}, yn_proc),
         FieldMerger({'filing_included_nsfs': ('IncludeNSFS',)}, yn_proc),
@@ -49,12 +56,13 @@ def lobbying_handler(inpath, outpath, infields, outfields):
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
 
+
 def lobbyist_handler(inpath, outpath, infields, outfields):
 
     run_recipe(
         CSVSource(open(inpath), fieldnames=infields, quotechar='|'),
         FieldAdder('id', ''),
-        FieldMerger({'lobbyist_name': ('Lobbyist','Lobbyist_raw')}, name_proc),
+        FieldMerger({'lobbyist_name': ('Lobbyist', 'Lobbyist_raw')}, name_proc),
         FieldMerger({'member_of_congress': ('FormerCongMem',)}, yn_proc),
         FieldRenamer({
             'transaction': 'Uniqid',
@@ -66,6 +74,7 @@ def lobbyist_handler(inpath, outpath, infields, outfields):
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
+
 
 def agency_handler(inpath, outpath, infields, outfields):
 
@@ -81,10 +90,22 @@ def agency_handler(inpath, outpath, infields, outfields):
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
 
+
 def issue_handler(inpath, outpath, infields, outfields):
 
+    """
+    This file comes in with fields containing \n, while the overall file has \r\n for linebreaks.
+    Since python will always interpret \n as a line ending, we need to eradicate those before
+    opening the file in Python.
+    """
+    subprocess.call(['cat {0} | tr "\\n" " " > {0}.new'.format(inpath)], shell=True)
+    # make sure the file has a final linebreak at the end
+    subprocess.call(['echo "\n" >> {0}.new'.format(inpath)], shell=True)
+    subprocess.call(['mv {0}.new {0}'.format(inpath)], shell=True)
+    subprocess.call(['fromdos -a {0}'.format(inpath)], shell=True)
+
     run_recipe(
-        VerifiedCSVSource(open(inpath), fieldnames=infields, quotechar='|'),
+        VerifiedCSVSource(open(inpath, 'r'), fieldnames=infields, quotechar='|'),
         FieldCountValidator(len(FILE_TYPES['lob_issue'])),
         CSVFieldVerifier(),
         FieldRenamer({
@@ -95,10 +116,10 @@ def issue_handler(inpath, outpath, infields, outfields):
             'specific_issue': 'SpecIssue',
             'year': 'Year',
         }),
-        FieldModifier(('general_issue', 'specific_issue'), lambda x: x.replace('\n', ' ') if x else ''),
         #DebugEmitter(),
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
+
 
 def bills_handler(inpath, outpath, infields, outfields):
 
@@ -115,6 +136,7 @@ def bills_handler(inpath, outpath, infields, outfields):
         CSVEmitter(open(outpath, 'w'), fieldnames=outfields),
     )
 
+
 HANDLERS = {
     "lob_lobbying": lobbying_handler,
     "lob_lobbyist": lobbyist_handler,
@@ -123,19 +145,21 @@ HANDLERS = {
     "lob_bills": bills_handler,
 }
 
+
 FILE_TYPES = {
-    "lob_lobbying": ('Uniqid','RegistrantRaw','Registrant','IsFirm',
-                     'Client_raw','Client','Ultorg','Amount','Catcode',
-                     'Source','Self','IncludeNSFS','Use','Ind','Year',
-                     'Type','TypeLong','Affiliate'),
-    "lob_lobbyist": ('Uniqid','Lobbyist_raw','Lobbyist','LobbyistID',
-                     'Year','OfficalPos','CID','FormerCongMem'),
-    "lob_agency": ('UniqID','AgencyID','Agency'),
-    # "lob_indus": ('Ultorg','Client','Total','Year','Catcode'),
-    "lob_issue": ('SI_ID','UniqID','IssueID','Issue','SpecIssue','Year'),
-    "lob_bills": ('B_ID','SI_ID','CongNo','Bill_Name'),
-    # "lob_rpt": ('TypeLong','Typecode'),
+    "lob_lobbying": ('Uniqid', 'RegistrantRaw', 'Registrant', 'IsFirm',
+                     'Client_raw', 'Client', 'Ultorg', 'Amount', 'Catcode',
+                     'Source', 'Self', 'IncludeNSFS', 'Use', 'Ind', 'Year',
+                     'Type', 'TypeLong', 'Affiliate'),
+    "lob_lobbyist": ('Uniqid', 'Lobbyist_raw', 'Lobbyist', 'LobbyistID',
+                     'Year', 'OfficalPos', 'CID', 'FormerCongMem'),
+    "lob_agency": ('UniqID', 'AgencyID', 'Agency'),
+    # "lob_indus": ('Ultorg', 'Client', 'Total', 'Year', 'Catcode'),
+    "lob_issue": ('SI_ID', 'UniqID', 'IssueID', 'Issue', 'SpecIssue', 'Year'),
+    "lob_bills": ('B_ID', 'SI_ID', 'CongNo', 'Bill_Name'),
+    # "lob_rpt": ('TypeLong', 'Typecode'),
 }
+
 
 MODELS = {
     "lob_lobbying": Lobbying,
@@ -144,8 +168,9 @@ MODELS = {
     "lob_issue": Issue,
     "lob_bills": Bill,
 }
-# management command
 
+
+# management command
 class Command(BaseImporter):
 
     IN_DIR       = '/home/datacommons/data/auto/lobbying/raw/IN'
@@ -155,12 +180,11 @@ class Command(BaseImporter):
 
     FILE_PATTERN = 'lob_*.txt'
 
-
     def do_for_file(self, file_path):
         self.log.info('Starting {0}...'.format(file_path))
         table = os.path.basename(file_path).split('.')[0]
 
-        if FILE_TYPES.has_key(table):
+        if table in FILE_TYPES:
             handler = HANDLERS.get(table, None)
             infields = FILE_TYPES[table]
 
@@ -177,4 +201,3 @@ class Command(BaseImporter):
                 self.log.info("Done with {0}.".format(inpath))
 
         self.archive_file(file_path, timestamp=True)
-

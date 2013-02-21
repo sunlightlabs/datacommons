@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import MySQLdb
-import psycopg2,psycopg2.extensions
+import psycopg2
+import psycopg2.extensions
+import random
+import sys
+
 from optparse import OptionParser
-
-import random, re, sys
-
-from settings import OTHER_DATABASES
+from django.conf import settings
 
 DEFAULT_N = 2500
 
@@ -22,39 +23,39 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 
 try:
     nimsp_con = MySQLdb.connect(
-        db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
-        user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
-        host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
-        passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+        db=settings.OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+        user=settings.OTHER_DATABASES['nimsp']['DATABASE_USER'],
+        host=settings.OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in settings.OTHER_DATABASES['nimsp'] else 'localhost',
+        passwd=settings.OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
 )
     nimsp_cur = nimsp_con.cursor()
 except Exception, e:
-    print "Unable to connect to %s database: %s" % (OTHER_DATABASES['nimsp']['DATABASE_NAME'], e) 
+    print "Unable to connect to %s database: %s" % (settings.OTHER_DATABASES['nimsp']['DATABASE_NAME'], e) 
     sys.exit(1)
 
 
 try:
     util_con = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-            OTHER_DATABASES['util']['DATABASE_NAME'],
-            OTHER_DATABASES['util']['DATABASE_USER'],
-            OTHER_DATABASES['util']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['util'] else 'localhost',
-            OTHER_DATABASES['util']['DATABASE_PASSWORD'],
+            settings.OTHER_DATABASES['util']['DATABASE_NAME'],
+            settings.OTHER_DATABASES['util']['DATABASE_USER'],
+            settings.OTHER_DATABASES['util']['DATABASE_HOST'] if 'DATABASE_HOST' in settings.OTHER_DATABASES['util'] else 'localhost',
+            settings.OTHER_DATABASES['util']['DATABASE_PASSWORD'],
             ))
     util_cur = util_con.cursor()
 except Exception, e:
-    print "Unable to connect to %s database: %s" % (OTHER_DATABASES['util']['DATABASE_NAME'], e) 
+    print "Unable to connect to %s database: %s" % (settings.OTHER_DATABASES['util']['DATABASE_NAME'], e) 
     sys.exit(1)
 
 try:
     salt_con = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-            OTHER_DATABASES['salts']['DATABASE_NAME'],
-            OTHER_DATABASES['salts']['DATABASE_USER'],
-            OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['salts'] else 'localhost',
-            OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
+            settings.OTHER_DATABASES['salts']['DATABASE_NAME'],
+            settings.OTHER_DATABASES['salts']['DATABASE_USER'],
+            settings.OTHER_DATABASES['salts']['DATABASE_HOST'] if 'DATABASE_HOST' in settings.OTHER_DATABASES['salts'] else 'localhost',
+            settings.OTHER_DATABASES['salts']['DATABASE_PASSWORD'],
             ))
     salt_cur = salt_con.cursor()
 except Exception, e:
-    print "Unable to connect to %s database: %s" % (OTHER_DATABASES['salts']['DATABASE_NAME'], e) 
+    print "Unable to connect to %s database: %s" % (settings.OTHER_DATABASES['salts']['DATABASE_NAME'], e) 
     sys.exit(1)
 
 

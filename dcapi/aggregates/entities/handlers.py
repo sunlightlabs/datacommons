@@ -205,13 +205,15 @@ class EntitySearchHandler(BaseHandler):
             error_response.write("Must include a query in the 'search' parameter.")
             return error_response
 
+        stmt = self.stmt
+
         if entity_type:
-            self.stmt += '\n        where e.type = %s'
+            stmt += '\n        where e.type = %s'
 
         parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
         query_params = (parsed_query)
         query_params = [x for x in (parsed_query, entity_type) if x]
-        raw_result = execute_top(self.stmt, *query_params)
+        raw_result = execute_top(stmt, *query_params)
 
         return [dict(zip(self.fields, row)) for row in raw_result]
 

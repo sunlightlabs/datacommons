@@ -148,7 +148,6 @@ create index assoc_lobbying_lobbyist_id on assoc_lobbying_lobbyist (id);
 -- Does not take into account any subsidiary relationships or include industries
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_by_entity_year';
-drop table if exists agg_lobbying_totals;
 drop table if exists agg_lobbying_by_entity_year;
 
 select date_trunc('second', now()) || ' -- create table agg_lobbying_by_entity_year as';

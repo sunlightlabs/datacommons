@@ -32,6 +32,9 @@ class OrgLevelBreakdownHandler(PieHandler):
 
 class PolLocalBreakdownHandler(PieHandler):
 
+    category_map = {'out-of-state': 'Out-of-State', 'in-state': 'In-State'}
+    default_key = 'Unknown'
+
     stmt = """
         select local, count, amount
         from agg_local_to_politician

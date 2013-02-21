@@ -10,7 +10,7 @@ from dcdata.management.base.nimsp_importer import BaseNimspImporter
 from saucebrush.emitters import CSVEmitter
 from saucebrush.filters import *
 
-from settings import LOADING_DIRECTORY
+from django.conf import settings
 
 from dcdata.utils.dryrub import VerifiedCSVSource, CSVFieldVerifier
 
@@ -233,12 +233,12 @@ class UnallocatedEmitter(CSVEmitter):
 
 class NIMSPDenormalize(BaseNimspImporter):
 
-    IN_DIR       = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/IN')
-    DONE_DIR     = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/DONE')
-    REJECTED_DIR = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/REJECTED')
-    OUT_DIR      = os.path.join(LOADING_DIRECTORY, 'nimsp/loading/IN')
+    IN_DIR       = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/denormalized/IN')
+    DONE_DIR     = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/denormalized/DONE')
+    REJECTED_DIR = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/denormalized/REJECTED')
+    OUT_DIR      = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/loading/IN')
 
-    SALTS_DB     = os.path.join(LOADING_DIRECTORY, 'nimsp/salts.db')
+    SALTS_DB     = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/salts.db')
 
     FILE_PATTERN = SQL_DUMP_FILE
 

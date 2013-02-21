@@ -5,10 +5,10 @@ from saucebrush import run_recipe
 from saucebrush.sources import CSVSource
 from saucebrush.filters import Filter, FieldRenamer, FieldModifier, \
     FieldRemover, UnicodeFilter, FieldCopier
-from saucebrush.emitters import DjangoModelEmitter, DebugEmitter
+from saucebrush.emitters import DebugEmitter
 from dcdata.contribution.models import Bundle, LobbyistBundle
 from dcdata.management.commands.util import NoneFilter, CountEmitter, \
-    TableHandler
+    TableHandler, SimpleDjangoModelEmitter
 from datetime import datetime
 
 
@@ -64,7 +64,7 @@ class BundleHandler(TableHandler):
                     lambda x: x == 'A'),
             # Convert any stray floats to integers
             FieldModifier('reporting_period_amount semi_annual_amount'.split(), \
-                    lambda x: int(round(float(x))) if x else None),
+                    lambda x: int(round(float(x.replace('$','').replace(',','')))) if x else None),
             # Convert date formats
             FieldModifier('start_date end_date filing_date'.split(), \
                     lambda x: datetime.strptime(x, '%m/%d/%Y') if x else None),
@@ -76,7 +76,7 @@ class BundleHandler(TableHandler):
             UnicodeFilter(),
             CountEmitter(every=200),
             #DebugEmitter(),
-            DjangoModelEmitter('settings', Bundle)
+            SimpleDjangoModelEmitter(Bundle)
         )
 
 
@@ -124,7 +124,7 @@ class LobbyistBundleHandler(TableHandler):
             UnicodeFilter(),
             CountEmitter(every=500),
             #DebugEmitter(),
-            DjangoModelEmitter('settings', LobbyistBundle)
+            SimpleDjangoModelEmitter(LobbyistBundle)
         )
 
 
