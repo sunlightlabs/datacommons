@@ -102,10 +102,10 @@ def issue_handler(inpath, outpath, infields, outfields):
     # make sure the file has a final linebreak at the end
     subprocess.call(['echo "\n" >> {0}.new'.format(inpath)], shell=True)
     subprocess.call(['mv {0}.new {0}'.format(inpath)], shell=True)
+    subprocess.call(['fromdos -a {0}'.format(inpath)], shell=True)
 
     run_recipe(
-        # reading the file in "universal line break" mode should treat any weird line endings as actual line endings
-        VerifiedCSVSource(open(inpath, 'Ur'), fieldnames=infields, quotechar='|'),
+        VerifiedCSVSource(open(inpath, 'r'), fieldnames=infields, quotechar='|'),
         FieldCountValidator(len(FILE_TYPES['lob_issue'])),
         CSVFieldVerifier(),
         FieldRenamer({
