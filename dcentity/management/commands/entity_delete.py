@@ -7,7 +7,6 @@ from optparse                    import make_option
 
 
 INDIVIDUAL_DELETE_MAX_WARN = 30
-ORGANIZATION_DELETE_MAX_WARN = 50
 POLITICIAN_DELETE_MAX_WARN = 50
 
 class Command(BaseCommand):
@@ -24,12 +23,6 @@ class Command(BaseCommand):
             dest='skip_pols',
             default=False,
             help='Skip politicians',
-        ),
-        make_option('-O', '--skip-orgs',
-            action='store_true',
-            dest='skip_orgs',
-            default=False,
-            help='Skip organizations',
         ),
     )
 
@@ -56,8 +49,6 @@ class Command(BaseCommand):
                 self.flag_individuals_for_deletion()
             if not options['skip_pols']:
                 self.flag_politicians_for_deletion()
-            if not options['skip_orgs']:
-                self.flag_organizations_for_deletion()
 
 
     @transaction.commit_on_success()
@@ -124,40 +115,6 @@ class Command(BaseCommand):
             self.log.warn("- The script marked {0} politicians to be deleted, but we typically don't see more than {1}".format(updated, POLITICIAN_DELETE_MAX_WARN))
         else:
             self.log.info("- Marked {0} politicians to be deleted.".format(updated))
-
-
-    @transaction.commit_on_success()
-    def flag_organizations_for_deletion(self):
-        self.log.info("Starting to flag organizations to delete...")
-
-        update_sql = """
-            update
-                matchbox_entity
-            set
-                should_delete = 't',
-                flagged_on = statement_timestamp()
-            where
-                type = 'organization'
-                and id not in (
-                    select distinct entity_id from organization_associations
-                    union all
-                    select distinct entity_id from parent_organization_associations
-                    union all
-                    select distinct entity_id from assoc_lobbying_client
-                    union all
-                    select distinct entity_id from assoc_lobbying_registrant
-                )
-        """
-        self.cursor.execute(update_sql)
-        self.log.info("- Update finished.")
-        transaction.set_dirty()
-
-        updated = self.cursor.rowcount
-
-        if updated > ORGANIZATION_DELETE_MAX_WARN:
-            self.log.warn("- The script marked {0} organizations to be deleted, but we typically don't see more than {1}".format(updated, ORGANIZATION_DELETE_MAX_WARN))
-        else:
-            self.log.info("- Marked {0} organizations to be deleted.".format(updated))
 
 
     def confirm(self, question):

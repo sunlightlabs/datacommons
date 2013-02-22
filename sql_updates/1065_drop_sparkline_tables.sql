@@ -1,0 +1,2 @@
+drop table agg_contribution_sparklines;
+drop table agg_contribution_sparklines_by_party;

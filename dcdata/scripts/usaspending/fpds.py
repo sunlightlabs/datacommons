@@ -1,30 +1,33 @@
-from helpers import *
+from helpers import nullable_float, splitCode, transformFlag, nullable, \
+        nullable_int, agency_name_lookup, recovery_act, datestamp, \
+        first_char
 
-FPDS_FIELDS = [
+from dcdata.contracts.models import Contract
+
+FIELDS = [
 ('unique_transaction_id', None),
 ('transaction_status', None),
 ('obligatedamount', nullable_float),
 ('baseandexercisedoptionsvalue', nullable_float),
 ('baseandalloptionsvalue', nullable_float),
-('maj_agency_cat', splitCode),
+('maj_agency_cat', lambda x: splitCode(x)[:Contract._meta.get_field('maj_agency_cat').max_length]),
 ('mod_agency', splitCode),
-('maj_fund_agency_cat', splitCode),
+('maj_fund_agency_cat', lambda x: splitCode(x)[:Contract._meta.get_field('maj_fund_agency_cat').max_length]),
 ('contractingofficeagencyid', splitCode),
-('contractingofficeid', None),
+('contractingofficeid', splitCode),
 ('fundingrequestingagencyid', splitCode),
-('fundingrequestingofficeid', None),
+('fundingrequestingofficeid', splitCode),
 ('fundedbyforeignentity', splitCode),
 ('signeddate', nullable),
 ('effectivedate', nullable),
 ('currentcompletiondate', nullable),
 ('ultimatecompletiondate', nullable),
 ('lastdatetoorder', None),
-('contractactiontype', splitCode),
+('contractactiontype', lambda x: x.split()[0].strip()),
 ('reasonformodification', splitCode),
 ('typeofcontractpricing', splitCode),
 ('priceevaluationpercentdifference', None),
 ('subcontractplan', splitCode),
-('type_of_contract', splitCode),
 ('lettercontract', splitCode),
 ('multiyearcontract', transformFlag),
 ('performancebasedservicecontract', splitCode),
@@ -43,7 +46,7 @@ FPDS_FIELDS = [
 ('account_title', None),
 ('rec_flag', recovery_act),
 ('typeofidc', None),
-('multipleorsingleawardidc', None),
+('multipleorsingleawardidc', splitCode),
 ('programacronym', None),
 ('vendorname', None),
 ('vendoralternatename', None),
@@ -75,7 +78,7 @@ FPDS_FIELDS = [
 ('mod_parent', None),
 ('locationcode', None),
 ('statecode', splitCode),
-('pop_state_code', None),
+('pop_state_code', splitCode),
 ('placeofperformancecountrycode', splitCode),
 ('placeofperformancezipcode', None),
 ('pop_cd', splitCode),
@@ -94,7 +97,7 @@ FPDS_FIELDS = [
 ('consolidatedcontract', transformFlag),
 ('countryoforigin', splitCode),
 ('placeofmanufacture', splitCode),
-('manufacturingorganizationtype', None),
+('manufacturingorganizationtype', splitCode),
 ('agencyid', splitCode),
 ('piid', None),
 ('modnumber', None),
@@ -144,7 +147,7 @@ FPDS_FIELDS = [
 ('saaobflag', transformFlag),
 ('nonprofitorganizationflag', transformFlag),
 ('haobflag', transformFlag),
-('verysmallbusinessflag', transformFlag),
+('emergingsmallbusinessflag', transformFlag),
 ('hospitalflag', transformFlag),
 ('contractingofficerbusinesssizedetermination', splitCode),
 ('receivescontracts', splitCode),
@@ -157,21 +160,13 @@ FPDS_FIELDS = [
 ('otherstatutoryauthority', None),
 ('interagencycontractingauthority', splitCode),
 ('isserviceprovider', transformFlag),
-
 ]
 
-CALCULATED_FPDS_FIELDS = [
+CALCULATED_FIELDS = [
         ('agency_name', 'agencyid', agency_name_lookup),
         ('contracting_agency_name', 'contractingofficeagencyid', agency_name_lookup),
         ('requesting_agency_name', 'fundingrequestingagencyid', agency_name_lookup),
         ('imported_on', None, datestamp),
 ]
 
-
-
-
-
-        
-    
-    
     

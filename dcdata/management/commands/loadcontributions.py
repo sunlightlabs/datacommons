@@ -9,7 +9,7 @@ from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 from dcdata.utils.sql import parse_int, parse_date
 from decimal import Decimal
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import transaction, reset_queries
 from django.db.models.fields import CharField
 from optparse import make_option
 from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier
@@ -17,35 +17,7 @@ import os
 import saucebrush
 import sys
 import traceback
-
-
-
-# todo: we should just change the denormalize scripts to put the proper value in these fields
-class ContributorFilter(Filter):
-    type_mapping = {'individual': 'I', 'committee': 'C', 'organization': 'O'}
-    def process_record(self, record):
-        record['contributor_type'] = self.type_mapping.get(record['contributor_type'], '')
-        return record
-
-class OrganizationFilter(Filter):
-    def process_record(self, record):
-        return record
-
-class ParentOrganizationFilter(Filter):
-    def process_record(self, record):
-        return record
-
-# todo: we should just change the denormalize scripts to put the proper value in these fields
-class RecipientFilter(Filter):
-    type_mapping = {'politician': 'P', 'committee': 'C'}
-    def process_record(self, record):
-        record['recipient_type'] = self.type_mapping.get(record['recipient_type'], '')
-        return record
-
-class CommitteeFilter(Filter):    
-    def process_record(self, record):
-        return record
-    
+ 
     
 class UnicodeFilter(Filter):
     def __init__(self, method='replace'):
@@ -131,12 +103,6 @@ class LoadContributions(BaseCommand):
                 BooleanFilter('is_amendment'),
                 UnicodeFilter(),
                 
-                ContributorFilter(),
-                OrganizationFilter(),
-                ParentOrganizationFilter(),
-                RecipientFilter(),
-                CommitteeFilter(),
-                
                 StringLengthFilter(Contribution))
     
     @transaction.commit_manually
@@ -152,12 +118,14 @@ class LoadContributions(BaseCommand):
         
         try:
             input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)), FIELDNAMES, skiprows=1 + int(options['skip']))
-            
+
             output_func = chain_filters(
                 LoaderEmitter(loader),
                 #Every(self.COMMIT_FREQUENCY, lambda i: transaction.commit()),
-                Every(self.COMMIT_FREQUENCY, progress_tick))
-            
+                Every(self.COMMIT_FREQUENCY, progress_tick),
+                Every(self.COMMIT_FREQUENCY, lambda i: reset_queries()),
+            )
+
             record_processor = self.get_record_processor(loader.import_session)
 
             load_data(input_iterator, record_processor, output_func)

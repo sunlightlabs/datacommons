@@ -4,11 +4,13 @@ from dcdata.contracts.models import Contract
 from dcdata.contribution.models import Contribution
 from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.earmarks.models import Earmark, Member
-from dcdata.loading import model_fields, LoaderEmitter, SkipRecordException
+from dcdata.loading import model_fields, LoaderEmitter
 from dcdata.management.commands.crp_denormalize import load_candidates, \
     load_committees
 from dcdata.management.commands.crp_denormalize_individuals import \
     CRPDenormalizeIndividual
+from dcdata.management.commands.crp_denormalize_pac2candidate import CRPDenormalizePac2Candidate
+from dcdata.management.commands.crp_denormalize_pac2pac import CRPDenormalizePac2Pac
 from dcdata.management.commands.loadcontributions import LoadContributions, \
     ContributionLoader, StringLengthFilter
 from dcdata.management.commands.loadearmarks import FIELDS as EARMARK_FIELDS, \
@@ -18,7 +20,8 @@ from dcdata.models import Import
 from dcdata.processor import load_data, chain_filters, compose_one2many, \
     SkipRecordException
 from dcdata.scripts.usaspending.converter import USASpendingDenormalizer
-from dcdata.scripts.usaspending.loader import Loader
+from dcdata.scripts.usaspending.contracts_loader import Loader as ContractsLoader
+from dcdata.scripts.usaspending.grants_loader import Loader as GrantsLoader
 from dcdata.utils.dryrub import FieldCountValidator, VerifiedCSVSource, \
     CSVFieldVerifier
 from decimal import Decimal
@@ -29,7 +32,7 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import Skip, SkipTest
 from saucebrush.filters import ConditionalFilter, YieldFilter, FieldModifier
 from saucebrush.sources import CSVSource
-from settings import LOADING_DIRECTORY
+from django.conf import settings
 from scripts.nimsp.common import CSV_SQL_MAPPING
 from scripts.nimsp.salt import DCIDFilter, SaltFilter
 from updates import edits, update
@@ -42,7 +45,7 @@ import sys
 
 
 
-dataroot = os.path.join(LOADING_DIRECTORY, 'test_data')
+dataroot = os.path.join(settings.PROJECT_ROOT, 'dcdata', 'test_data')
 
 def assert_record_contains(tester, expected, actual):
     for (name, value) in expected.iteritems():
@@ -51,11 +54,13 @@ def assert_record_contains(tester, expected, actual):
 
 
 class TestRecipientFilter(TestCase):
+    
+    candidates = load_candidates(dataroot)
+    committees = load_committees(dataroot)
 
+    @attr('crp')
     def test(self):
-        processor = CRPDenormalizeIndividual.get_record_processor((),
-                                                                  load_candidates(dataroot),
-                                                                  load_committees(dataroot))
+        processor = CRPDenormalizeIndividual.get_record_processor((), self.candidates, self.committees)
 
         input_row = ["2008","0000011","i3003166469 ","ADAMS, KENT","N00005985","Adams & Boswell","","K1000",
                         "12/11/2006","1000","PO  12523","BEAUMONT","TX","77726","RN","15 ","C00257402","","M",
@@ -67,10 +72,10 @@ class TestRecipientFilter(TestCase):
 
         assert_record_contains(self, {'recipient_name': 'Henry Bonilla (R)',
                                       'recipient_party': 'R',
-                                      'recipient_type': 'politician',
+                                      'recipient_type': 'P',
                                       'recipient_ext_id': 'N00005985',
                                       'seat_status': ' ',
-                                      'seat_result': None,
+                                      'seat_result': '',
                                       'recipient_state': 'TX',
                                       'seat': 'federal:house',
                                       'district': 'TX-23'},
@@ -87,9 +92,9 @@ class TestRecipientFilter(TestCase):
 
         assert_record_contains(self, {'recipient_name': 'National Assn of Realtors',
                                       'recipient_party': '',
-                                      'recipient_type': 'committee',
+                                      'recipient_type': 'C',
                                       'recipient_ext_id': 'C00030718',
-                                      'seat_result': None},
+                                      'seat_result': ''},
                                        output_record)
 
         input_row = ["2010","1087969","U00000034611","ROTHSCHILD, STANFORD  Z","C00420174",
@@ -103,6 +108,132 @@ class TestRecipientFilter(TestCase):
 
         assert_record_contains(self, {'recipient_category': 'Z4100' }, output_record)
 
+
+    def test_single_denormalization(self, filetype, input, expected_output):
+        if filetype == 'indivs':
+            processor = CRPDenormalizeIndividual.get_record_processor((), self.candidates, self.committees)
+        elif filetype == 'pacs':
+            processor = CRPDenormalizePac2Candidate.get_record_processor((), self.candidates, self.committees)
+        elif filetype == 'pac_other':
+            processor = CRPDenormalizePac2Pac.get_record_processor((), self.candidates, self.committees)
+        else:
+            self.assertFail()
+            
+        self.assertEqual(len(FILE_TYPES[filetype]), len(input))
+        (output_record,) = processor(dict(zip(FILE_TYPES[filetype], input)))
+        
+        assert_record_contains(self, expected_output, output_record)
+
+    @attr('crp')
+    @attr('crp_recip_test')
+    def test_multiple_committees(self):
+        obama_presidential_output = {
+            'recipient_name': 'Barack Obama (D)',
+            'recipient_party': 'D',
+            'recipient_type': 'P',
+            'recipient_ext_id': 'N00009638',
+            'seat_status': 'O',
+            'seat_result': 'W',
+            'recipient_state': '',
+            'recipient_state_held': 'IL',
+            'district': '',
+            'district_held': '',
+            'seat': 'federal:president',
+            'seat_held': 'federal:senate',
+        }
+    
+        obama_senate_output = {
+            'recipient_name': 'Barack Obama (D)',
+            'recipient_party': 'D',
+            'recipient_type': 'P',
+            'recipient_ext_id': 'N00009638',
+            'seat_status': 'O',
+            'seat_result': 'W',
+            'recipient_state': 'IL',
+            'recipient_state_held': 'IL',
+            'district': '',
+            'district_held': '',
+            'seat': 'federal:senate',
+            'seat_held': 'federal:senate',
+        }
+        
+        obama_joint_committee_output = {
+            'recipient_name': 'Obama Victory Fund',
+            'recipient_party': 'D',
+            'recipient_type': 'C',
+            'recipient_ext_id': 'C00451393',
+            'seat_status': '',
+            'seat_result': '',
+            'recipient_state': '',
+            'recipient_state_held': '',
+            'district': '',
+            'district_held': '',
+            'seat': '',
+            'seat_held': '',
+        }
+        
+        # Indiv to Obama's Presidential Campaign
+        self.test_single_denormalization(
+            'indivs',
+            ["2008","0122915","j1001132124 ","ABRAHAM, ZENNIE","N00009638","Sports Business Simulations","","Y4000","03/31/2007","1000","375 Van Buren Ave 19","OAKLAND","CA","94610","DW","15 ","C00431445","","U","","27930593447","","","     "],
+            obama_presidential_output
+        )
+
+        # Indiv to Obama's Senate Campaign
+        self.test_single_denormalization(
+            'indivs',
+            ["2008","0187565","i3003206205 ","CARY, LAURA H","N00009638","Retired","","J1200","01/16/2007","1400","","SHELBURNE","VT","05482","DW","15 ","C00411934","","F","N/A/RETIRED","27020123473","","","I/PAC"],
+            obama_senate_output
+        )
+ 
+        # Indiv to Obama Victory Fund. NOT candidate Obama
+        self.test_single_denormalization(
+            'indivs',
+            ["2008","2532238","i30038406641","BAROKAS, LARRY L MR","C00451393","Attorney","","K1000","06/30/2008","2000","6220 78th Ave SE","MERCER ISLAND","WA","98040","DP","15 ","C00451393","","M","SELF-EMPLOYED/ATTORNEY","28932320278","Attorney","Self-employed","Gen  "],
+            obama_joint_committee_output
+        )
+
+        # PAC to Obama's Presidential run
+        self.test_single_denormalization(
+            'pacs',
+            ["2008","3477813","C00419986","N00009638","270","09/05/2008","Z5200","24K","D","P80003338"],
+            obama_presidential_output
+        )
+        
+        # PAC to Obama's Senate run
+        self.test_single_denormalization(
+            'pacs',
+            ["2008","2915130","C00287904","N00009638","2300","07/30/2008","Z1200","24K","D","S4IL00180"],
+            obama_senate_output
+        )
+        
+        # pac2pac with Obama Presidential candidate ID recipient
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","3495910","C30000673","Focus on the Family","KVOR-AM","Colorado Springs","CO","80919","","J1110","10/23/2008","6345.0","N00009638","D","P80003338","DW","Z1200","N","   ","P","28934172534","29 ","J1110","PAC  "],
+            obama_presidential_output
+        )
+
+        # pac2pac with Obama Presidential committee ID recipient (filer)
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","0843761","C00431445","M-PAC","M Pac","Birmingham","IL","35203","","J2100","07/09/2007","500.0","N00009638","D","C00365270","DW","Z1200","A","Q3 ","P","27931430697","18K","J2100","PAC  "],
+            obama_presidential_output
+        )
+        
+        # pac2pac with Obama joint committee recipient (filer)
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","3327614","C00451393","Obama for America","America, Obama For","Las Vegas","NV","89169","","Z1200","10/09/2008","337.0","C00451393","D","C00431445","DP","Z4200","N","12G","P","28992933066","18G","Z1200","PAC  "],
+            obama_joint_committee_output
+        )
+
+        # pac2pac with Obama joint committe recipient (donor filed)
+        self.test_single_denormalization(
+            'pac_other',
+            ["2008","4155934","C00439984","Ojai Valley Democratic Club","Obama Victory Fund","Los Angeles","CA","90067","","J1200",10/29/2008,4000.0,"C00451393","D","C00451393","DP","Z4200","N","30G","P","28934796639","24K","J1200","PAC  "],
+            obama_joint_committee_output
+        )
 
 
 class TestNIMSPDenormalize(TestCase):
@@ -124,6 +255,8 @@ class TestNIMSPDenormalize(TestCase):
                 os.remove(path)
 
 
+    @attr('nimsp')
+    @attr('salting')
     def test_salting(self):
         input_string = '"3327568","341.66","2006-11-07","MISC CONTRIBUTIONS $10000 AND UNDER","UNITEMIZED DONATIONS",\
                         "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","Z2400","0","0",\
@@ -137,34 +270,30 @@ class TestNIMSPDenormalize(TestCase):
 
         self.assertEqual(2, len(output))
         self.assertAlmostEqual(Decimal('341.66'), output[0]['amount'] + output[1]['amount'])
+        assert_record_contains(self, {'cycle': '2006'}, output[0])
+        assert_record_contains(self, {'cycle': '2006'}, output[1])
 
 
+    @attr('nimsp')
     def test_command_do_for_file(self):
         nd = NIMSPDenormalize()
-        nd.do_for_file(os.path.join(dataroot, 'denormalized/nimsp_partial_denormalization.csv'))
+        nd.do_for_file(os.path.join(nd.IN_DIR, 'nimsp_partial_denormalization.csv'))
 
-        allocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_allocated_contributions.csv')
-        unallocated_path = os.path.join(NIMSPDenormalize.OUT_DIR, 'nimsp_unallocated_contributions.csv')
+        allocated_path = os.path.join(nd.OUT_DIR, 'nimsp_allocated_contributions.csv')
+        unallocated_path = os.path.join(nd.OUT_DIR, 'nimsp_unallocated_contributions.csv')
         self.assertEqual(9, sum(1 for _ in open(allocated_path, 'r')))
         self.assertEqual(4, sum(1 for _ in open(unallocated_path, 'r')))
 
+        # remove script output files
         os.remove(allocated_path)
         os.remove(unallocated_path)
 
-
-    def test_recipient_state(self):
-        """
-            The call to test_command, below, originally accessed the 'loadcontributions' command,
-            which has been removed because it was testing too much at once. This test, since it
-            tests only loaded contributions, should be rewritten and moved elsewhere. (TODO)
-        """
-        raise SkipTest
-        self.test_command()
-
-        self.assertEqual(7, Contribution.objects.filter(recipient_state='OR').count())
-        self.assertEqual(2, Contribution.objects.filter(recipient_state='WA').count())
+        # undo the script's archiving of our test file
+        os.rename(nd.archived_file_path, os.path.join(nd.IN_DIR, 'nimsp_partial_denormalization.csv'))
 
 
+    @attr('nimsp')
+    @attr('salting')
     def test_salt_filter(self):
         connection = sqlite3.connect(self.salts_db_path)
         connection.cursor().execute('delete from salts where nimsp_id = 9999')
@@ -183,10 +312,10 @@ class TestNIMSPDenormalize(TestCase):
         self.assertEqual(2, len(output))
 
 
+    @attr('nimsp')
     def test_contributor_type(self):
-        input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent",\
-                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0",\
-                        "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+        input_string = '"3327568","341.66","2006-11-07","Adams, Kent","Adams, Kent","MISC CONTRIBUTIONS $100.00 AND UNDER","","","","Adams & Boswell","","","","","","","OR","","A1000","0","0","0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+
         source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
         output = list()
 
@@ -194,11 +323,10 @@ class TestNIMSPDenormalize(TestCase):
 
         load_data(source, processor, output.append)
 
-        assert_record_contains(self, {'contributor_type': 'individual', 'organization_name': "Adams & Boswell"}, output[0])
+        assert_record_contains(self, {'contributor_type': 'I', 'organization_name': "Adams & Boswell"}, output[0])
 
-        input_string = '"3327568","341.66","2006-11-07","Kent Adams","Kent Adams",\
-                        "MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","A1000","0","0",\
-                        "0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+        input_string = '"3327568","341.66","2006-11-07","Kent Adams","Kent Adams","MISC CONTRIBUTIONS $100.00 AND UNDER","","","","","","","","","","","OR","","A1000","0","0","0",\N,"0","1825","PAC 483","2006",\N,\N,\N,\N,\N,\N,"I","PAC 483","130","OR"'
+
         source = CSVSource([input_string], [name for (name, _, _) in CSV_SQL_MAPPING])
         output = list()
 
@@ -206,7 +334,7 @@ class TestNIMSPDenormalize(TestCase):
 
         load_data(source, processor, output.append)
 
-        assert_record_contains(self, {'contributor_type': 'committee', 'organization_name': "Kent Adams"}, output[0])
+        assert_record_contains(self, {'contributor_type': 'C', 'organization_name': "Kent Adams"}, output[0])
 
 
 class TestCRPDenormalizeAll(TestCase):
@@ -278,7 +406,7 @@ class TestCRPIndividualDenormalization(TestCase):
         self.assertEqual(set(model_fields('contribution.Contribution')), set(output_records[0].keys()))
 
 class TestCRPDenormalizePac2Candidate(TestCase):
-    output_path = os.path.join(dataroot, 'denormalized/denorm_pac2cand.txt')
+    output_path = os.path.join(dataroot , 'denormalized/denorm_pac2cand.txt')
 
     @attr('crp')
     def test_command(self):
@@ -336,13 +464,11 @@ class TestLoadContributions(TestCase):
         denormalizer = CRPDenormalizeIndividual.get_record_processor({}, {}, {})
 
         load_data([input_record], denormalizer, denormalized_records.append)
-        
+
         print denormalized_records[0]
 
         self.assertEqual(1, len(denormalized_records))
         self.assertEqual(u'123.45', denormalized_records[0]['amount'])
-
-        Contribution.objects.all().delete()
 
         loader = ContributionLoader(
                 source='unittest',
@@ -357,12 +483,16 @@ class TestLoadContributions(TestCase):
         self.assertEqual(1, Contribution.objects.all().count())
         self.assertEqual(Decimal('123.45'), Contribution.objects.all()[0].amount)
 
+
     @attr('crp')
+    @attr('nimsp')
     def test_bad_value(self):
         # the second record has an out-of-range date
-        input_rows = [',,2006,urn:nimsp:transaction,4cd6577ede2bfed859e21c10f9647d3f,,,False,8.5,2006-11-07,|BOTTGER, ANTHONY|,,,,SEWER WORKER,CITY OF PORTLAND,,19814 NE HASSALO,PORTLAND,OR,97230,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,',
-                      ',,1998,urn:nimsp:transaction,227059e3c32af276f5b37642922e415c,,,False,200,0922-09-08,|TRICK, BILL|,,,,,,,BOX 2730,TUSCALOOSA,AL,35403,B1500,,,,,,,,|BENTLEY, ROBERT J|,3188,,R,politician,AL,,,,,,,G,AL-21,state:upper,,L',
-                      ',,2006,urn:nimsp:transaction,dd0af37dca3bf26b2aa602e4d8756c19,,,False,8,2006-11-07,|BRAKE, PATRICK|,,,,UTILITY WORKER,CITY OF PORTLAND,,73728 SOLD RD,RAINIER,OR,97048,X3000,,CITY OF PORTLAND,,,,,,PAC 483,1825,,I,committee,OR,,,PAC 483,1825,,I,,,,,']
+        input_rows = [
+            ',,1990,urn:nimsp:transaction,4d7fb87bd9c298fa9213192ef4132f7a,,,False,3000,2010-10-01,"ABNEY, PAT",,,,,,,,,,Z9020,,,,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,1990,urn:nimsp:transaction,1e54c96b1e5c3de2616d847effe9d679,,,False,1000,0922-10-02,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,committee,STAT EMPLOYEES UNION,,,XXX,ANCHORAGE,AK,,L1200,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,AMERICAN FEDERATION OF STATE COUNTY & MUNICIPAL EMPLOYEES/AFSCME,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,2010,urn:nimsp:transaction,3ebbe6c350c60d7848bee589b1b43d5a,,,False,5000,2010-09-01,3M,5,committee,N/A,N/A,,3M CENTER BUILDING 225-1S-15,ST PAUL,MN,55144,M0000,3M,,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,committee,IA,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,,,,,,,',
+        ]
 
         loader = ContributionLoader(
                 source='unittest',
@@ -379,11 +509,50 @@ class TestLoadContributions(TestCase):
         load_data(source, processor, output)
         sys.stderr = old_stderr
 
-        self.assertTrue(mystderr.getvalue())
+        self.assertRegexpMatches(mystderr.getvalue(), 'Exception: Year 922 is not a valid year\.')
         self.assertEqual(2, Contribution.objects.count())
-        
-        
+        self.assertEqual(1, Contribution.objects.filter(recipient_state='AK').count())
+        self.assertEqual(1, Contribution.objects.filter(recipient_state='IA').count())
+        self.assertEqual(1, Contribution.objects.filter(district='AK-7').count())
+        self.assertEqual(1, Contribution.objects.filter(seat_result='L').count())
+
+
+    @attr('nimsp')
+    def test_recipient_state(self):
+        input_rows = [
+            # import_reference, cycle transaction_namespace transaction_id transaction_type filing_id is_amendment amount date contributor_name contributor_ext_id contributor_type contributor_occupation contributor_employer contributor_gender contributor_address contributor_city contributor_state contributor_zipcode contributor_category organization_name organization_ext_id parent_organization_name parent_organization_ext_id recipient_name recipient_ext_id recipient_party recipient_type recipient_state recipient_state_held recipient_category committee_name committee_ext_id committee_party candidacy_status district district_held seat seat_held seat_status seat_result
+            ',,1990,urn:nimsp:transaction,4d7fb87bd9c298fa9213192ef4132f7a,,,False,3000,2010-10-01,"ABNEY, PAT",,,,,,,,,,Z9020,,,,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,1990,urn:nimsp:transaction,1e54c96b1e5c3de2616d847effe9d679,,,False,1000,2010-10-02,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,committee,STAT EMPLOYEES UNION,,,XXX,ANCHORAGE,AK,,L1200,ALASKA STATE EMPLOYEES ASSOCIATION LOCAL 52,,AMERICAN FEDERATION OF STATE COUNTY & MUNICIPAL EMPLOYEES/AFSCME,,"ABNEY, PAT",132423,D,politician,AK,,,,,,True,AK-7,,state:lower,,,L',
+            ',,2010,urn:nimsp:transaction,3ebbe6c350c60d7848bee589b1b43d5a,,,False,5000,2010-09-01,3M,5,committee,N/A,N/A,,3M CENTER BUILDING 225-1S-15,ST PAUL,MN,55144,M0000,3M,,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,committee,IA,,,RESPONSIBILITY AND INTERGRITY NOW RAIN FUND,9276,I,,,,,,,',
+        ]
+
+        loader = ContributionLoader(
+                source='unittest',
+                description='unittest',
+                imported_by='unittest'
+            )
+        source = CSVSource(input_rows, model_fields('contribution.Contribution'))
+        processor = LoadContributions.get_record_processor(loader.import_session)
+        output = LoaderEmitter(loader).process_record
+
+        load_data(source, processor, output)
+
+        # leaving this here: snippet to pretty print Django objects for debugging
+        #import pprint
+        #for obj in Contribution.objects.all():
+        #    dict_ = zip([ x.name for x in Contribution._meta.fields ], [ x.value_to_string(obj) for x in Contribution._meta.fields])
+        #    print pprint.pformat(dict_)
+
+        self.assertEqual(2, Contribution.objects.filter(recipient_state='AK').count())
+        self.assertEqual(1, Contribution.objects.filter(recipient_state='IA').count())
+        # making sure to test some of the last fields on the model, too
+        # because when CSV parsing goes wrong, these will definitely go wrong
+        self.assertEqual(2, Contribution.objects.filter(district='AK-7').count())
+        self.assertEqual(2, Contribution.objects.filter(seat_result='L').count())
+
+
     @attr('crp')
+    @attr('nimsp')
     @attr('crp_bogus_warnings')
     def test_bogus_warnings(self):
         """ When running the full loadcontributions, I get about 1.7M warnings of records with extra fields.
@@ -403,10 +572,6 @@ class TestLoadContributions(TestCase):
         processor = LoadContributions.get_record_processor(loader.import_session)
         output = LoaderEmitter(loader).process_record
 
-        sys.stderr.write('Will this show up????')
-
-        self.assertEqual(0, Contribution.objects.all().count())
-
         load_data(source, processor, output)
 
         self.assertEqual(1, Contribution.objects.all().count())
@@ -414,6 +579,8 @@ class TestLoadContributions(TestCase):
 
 class TestProcessor(TestCase):
 
+    @attr('nimsp')
+    @attr('crp')
     def test_chain(self):
         f = compose_one2many()
 
@@ -441,6 +608,8 @@ class TestProcessor(TestCase):
 
         self.assertEqual(['acd', 'ace', 'acf', 'bcd', 'bce', 'bcf'], list(f('')))
 
+    @attr('nimsp')
+    @attr('crp')
     def test_filters(self):
         class Cube(YieldFilter):
             def process_record(self, r):
@@ -465,6 +634,8 @@ class TestProcessor(TestCase):
         self.assertEqual([{'value': 2}, {'value': 4}, {'value': 8}], f({'value':2}))
         self.assertEqual([{'value': 2}, {'value': 4}, {'value': 8}], f({'value':-2}))
 
+    @attr('nimsp')
+    @attr('crp')
     def test_field_count_validator(self):
         validator = FieldCountValidator(2)
 
@@ -491,6 +662,8 @@ class TestProcessor(TestCase):
         self.assertTrue(mystderr.getvalue())
         self.assertEqual([double, double], output)
 
+    @attr('nimsp')
+    @attr('crp')
     def test_verified_csv_source(self):
         processor.TERMINATE_ON_ERROR = False
 
@@ -510,6 +683,8 @@ class TestProcessor(TestCase):
         self.assertTrue(mystderr.getvalue())
         self.assertEqual([{'a': '1', 'b': '2', 'c': '3'}], output)
 
+    @attr('nimsp')
+    @attr('crp')
     def test_string_length(self):
         original = {'contributor_zipcode': '123456',\
                     'contributor_employer': '1111111111222222222233333333334444444444555555555566666666667777777777',\
@@ -541,15 +716,15 @@ class TestEarmarks(TestCase):
         ',,3000000,,3000000,,"101st Airborne/Air Assault Injury Prevention and Performance Enhancement Initiative","Fort Campbell",,"KY","Defense","Research, Development, Test & Evaluation","Army",,,,,,"Corker; Specter","R; D","TN; PA",,,"University of Pittsburgh",',
         ',,500000,,500000,,"10th Avenue South Corridor Extension, Waverly, IA","Waverly",,"IA","Transportation-Housing and Urban Development","Federal Highway Administration","Surface Transportation Priorities",,"Braley","D","IA",,"Grassley; Harkin","R; D","IA; IA",,,,',
         ',500000,,,500000,,"10th St. Connector-To extend 10th Street from Dickinson Avenue to Stantonsburg Road, Greenville, NC","Greenville",,"NC","Transportation-Housing and Urban Development","Federal Highway Administration","Transportation & Community & System Preservation",,"Jones, Walter","R","NC",,"Burr","R","NC",,,,'
-    ]    
-    
+    ]
+
     def test_raw_fields(self):
         source = VerifiedCSVSource(self.csv2008[0:1], EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, None)
         output = list()
-        
+
         load_data(source, processor, output.append)
-        
+
         self.assertEqual(1, len(output))
         self.assertEqual("Abercrombie", output[0]['house_members'])
         self.assertEqual("D", output[0]['house_parties'])
@@ -558,27 +733,25 @@ class TestEarmarks(TestCase):
         self.assertEqual("Bingaman; Cochran; Kennedy", output[0]['senate_members'])
         self.assertEqual("D; R; D", output[0]['senate_parties'])
         self.assertEqual("NM; MS; MA", output[0]['senate_states'])
-        
-    
+
+
     def test_process_earmarks(self):
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, None)
         output = list()
-        
+
         load_data(source, processor, output.append)
-        
+
         self.assertEqual(9, len(output))
-        
+
     def test_save_earmarks(self):
-        Earmark.objects.all().delete()
-        Member.objects.all().delete()
         import_ref = Import.objects.create()
-        
+
         source = VerifiedCSVSource(self.csv2008 + self.csv2009 + self.csv2010, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
-        
+
         load_data(source, processor, save_earmark)
-        
+
         self.assertEqual(9, Earmark.objects.count())
         self.assertEqual(18, Member.objects.count())
 
@@ -586,27 +759,25 @@ class TestEarmarks(TestCase):
         variants = [
             ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo,Undisclosed,,',
             ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President-Solo & Und.,Undisclosed (President),,',
-            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President and Member(s),O & M-Disclosed,,',                        
-            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",Judiciary,O & M-Undisclosed,,',                        
-            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",something wrong,Something else entirely,,',                        
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",President and Member(s),O & M-Disclosed,,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",Judiciary,O & M-Undisclosed,,',
+            ',,,,10000000,,"11th Air Force Consolidated Command Center",,,"AK","Defense","Operation and Maintenance","Air Force",,,,,,"Stevens","R","AK",something wrong,Something else entirely,,',
         ]
 
-        Earmark.objects.all().delete()
-        Member.objects.all().delete()
         import_ref = Import.objects.create()
-        
+
         source = VerifiedCSVSource(variants, EARMARK_FIELDS)
         processor = LoadTCSEarmarks.get_record_processor(0, import_ref)
         load_data(source, processor, save_earmark)
 
         self.assertEqual(5, Earmark.objects.count())
-        
+
         self.assertEqual(1, Earmark.objects.filter(undisclosed='u').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='p').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='o').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='m').count())
         self.assertEqual(1, Earmark.objects.filter(undisclosed='').count())
-        
+
         self.assertEqual(1, Earmark.objects.filter(presidential='p').count())
         self.assertEqual(1, Earmark.objects.filter(presidential='u').count())
         self.assertEqual(1, Earmark.objects.filter(presidential='m').count())
@@ -816,12 +987,10 @@ class TestConverter(TestCase):
     @attr('usaspending')
     @attr('grants')
     def test_prepare_grants_file(self):
-        grants_file = 'test_data/usaspending/out/grants.out'
-        contracts_file = 'test_data/usaspending/out/contracts.out'
+        in_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_data/usaspending')
+        out_dir = os.path.join(in_dir, 'out')
 
-        out_dir = os.path.dirname(grants_file)
-
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
+        USASpendingDenormalizer().parse_directory(in_dir, out_dir)
 
         self.assert_file_contents_eq('''
 dce6cc6b47be826b03f5729738ed97a2|active|201006291|17.310||MULTIPLE RECIPIENTS|||YAVAPAI|025||USA|21||1635|||175000|0|175000|2010-03-31|2010-01-01|2010-03-31|10|1|||04**025|ARIZONA|YAVAPAI||03  |Energy Employees Occupational Illness Compensation|Employment Standards Administration  Department of Labor|ENERGY EMPLOYEES OCCUPATIONAL ILLNESS COMPENSATION.|||16|1523|000||||0|0|2010|AZ|i|d|ZZ|16|N|17.310-ARIZONA-YAVAPAI-20100331-10|AZ|20110111
@@ -834,22 +1003,20 @@ f9e7a41d8585b0e0cb2b52a9f4bd26f4|active|201004053|10.450||ACE PROPERTY AND CASUA
 239422b6dd7b2a88d8ff5e0bab119532|active|201010051|64.114||MULTIPLE RECIPIENTS|||DOUGLAS|019|||21|(none)|3640|||0|0|0|2010-09-28|||08|1|||41019**|OREGON|DOUGLAS||    ||VA- VETERANS BENEFIT ADMINISTRATION|||  |  ||   ||||534491|-3310|2010|OR|i|l|ZZ|36|N|6411420100982|OR|20110111
 01db4707cf4c5d6d021697f3f31f6b9f|active|201010051|10.998|SAI EXEMPT|MISSOURI SYSTEM UNIVERSITY|15670|COLUMBIA|Boone|019|652111230|USA|06|A|12D3|9069910|1|38519|0|0|2010-02-01|2009-10-01|2010-09-30|11|2|||29019|MISSOURI|COLUMBIA|652113020|MO09||Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|153890272|11|12|2900|   |310 JESSE HALL|||0|0|2010|MO|h|o|MO09|12|N|12D3019069910         1     1282900|MO|20110111
 e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC.|65000|SCOTTSDALE|Maricopa|013|852602490|USA|22|A|12D3|9069806|1|754|0|0|2010-03-01|2009-10-01|2010-09-30|11|2|||04013|ARIZONA|SCOTTSDALE|852602441|AZ05||Foreign Agricultural Service (10)|FAS LONG TERM STANDING AGREEMENTS FOR STORAGE  TRANSPORTATION AND LEASE|116899969|11|12|2900|   |14605 NORTH AIRPORT DRIVE|||0|0|2010|AZ|f|o|AZ05|12|N|12D3019069806         1     1282900|AZ|20110111
-       ''', grants_file)
+       ''', os.path.join(out_dir, 'grants.out'))
 
     @attr('usaspending')
     @attr('contracts')
     def test_prepare_contracts_file(self):
-        grants_file = 'test_data/usaspending/out/grants.out'
-        contracts_file = 'test_data/usaspending/out/contracts.out'
+        in_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_data/usaspending')
+        out_dir = os.path.join(in_dir, 'out')
 
-        out_dir = os.path.dirname(grants_file)
-
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
+        USASpendingDenormalizer().parse_directory(in_dir, out_dir)
 
         self.assert_file_contents_eq('''
 37adc9010a603b98304be859dad2695e|active|GOVPLACE||7014|Automation Modernization, Customs and Border Protection|HSBP1010J00525|0||0|7001|HSHQDC07D00025|N|0|2010-08-12|2010-07-30|2010-08-29|2010-08-29|616022.12|f|616022.12|f|f|616022.12|7014|f|ITCD|f|7014|f|f|ITCD||f|X|f|f|C|J|f||f||N: No|||f|Brocade switches|f|f|f|f|X|f|X|X|f||f|1||||t|X|7050|D||541519|C|f||f||E|US|D|15707 ROCKFIELD BLVD STE 305|||IRVINE|CA|926182829|USA|9570508830000|48||VA|US|221503224||11|D||MAFO|SBA||NONE|30||20000000.0|FAIR||5|A||f|f|f|f|f|f|||S||957050883|2010|GOVPLACE|70|70|CA48|VA11|70|0531|||c|||
 0d42d94514b1a7031be23d1974c5e1bb|active|SUPREME FOODSERVICE AG||9700||610G|0||0|9700|SPM30008D3153|N|0|2010-07-03|2010-07-03|2010-07-12|2010-07-12|77431.0|f|77431.0|f|f|77431.0|97AS|f|SPM300|f|97AS|f|f|SPM300||f|X|f|f|C|J|f||f||N: No||X|f|4514806667OTHER GROCERY AND RE|f|f|t|f|X|f|X||f|Z|f|1||||f|X|8910|D|B2|424490|C|f|000|f|Z|E|SZ|E|ZIEGELBRUECKSTRASSE 66|||ZIEGELBRUECKE||8866|CHE|4813475520000||||SZ||||A||NP|NONE|INTERNATIONAL ORG|NONE|2073||700000000.0|||5|A||f|f|f|f|f|f|||O||400210806|2010|SUPREME GROUP HOLDING SARL|97|89|ZZ|ZZ|||||c|||
-        ''', contracts_file)
+        ''', os.path.join(out_dir, 'contracts.out'))
 
     def assert_file_contents_eq(self, expected_contents, actual_file_path):
         self.maxDiff = None
@@ -862,43 +1029,39 @@ e492d89d31b84482175215714d54ed3d|active|201010051|10.998|SAI EXEMPT|EUMOTIF  INC
         return [ x for x in values if re.search(r'[^ ]', x) ]
 
 
-class TestLoader(TestCase):
-    
+class TestContractsLoader(TestCase):
+
     @attr('usaspending')
     @attr('contracts')
     @attr('usaspending_split_unicode')
     def test_split_unicode(self):
-        Contract.objects.all().delete()
-        
-        grants_file = 'test_data/usaspending/out/grants.out'
         contracts_file = 'test_data/usaspending/out/contracts.out'
 
-        out_dir = os.path.dirname(grants_file)
+        out_dir = os.path.dirname(contracts_file)
 
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/bad_unicode'), out_dir, grants_file, contracts_file)
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/bad_unicode'), out_dir)
 
-        Loader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
+        ContractsLoader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
 
         self.assertEqual(1, Contract.objects.all().count())
-        
+
         expected_program_code = 'FREQUENCY UP-CONVERSION DETECTION SYSTEM WITH SINGLE PHOTON SENSITIVITY WITHIN 1-1.8 \xc3\x82\xc2\xb5M AND 3-4 \xc3\x82\xc2\xb5M'
-        
+
         self.assertEqual(expected_program_code.decode('utf8'), Contract.objects.all()[0].majorprogramcode)
-        
+
 
     def setUp(self):
-        grants_file = 'test_data/usaspending/out/grants.out'
         contracts_file = 'test_data/usaspending/out/contracts.out'
 
-        out_dir = os.path.dirname(grants_file)
+        out_dir = os.path.dirname(os.path.abspath(contracts_file))
 
-        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(__file__), 'test_data/usaspending'), out_dir, grants_file, contracts_file)
-        
+        USASpendingDenormalizer().parse_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_data/usaspending'), out_dir)
+
 
     @attr('usaspending')
     @attr('grants')
     def test_loader_faads_sql(self):
-        
+
         sql = """
 COPY grants_grant
 (unique_transaction_id, transaction_status, fyq, cfda_program_num, sai_number, recipient_name, recipient_city_code, recipient_city_name, recipient_county_name, recipient_county_code, recipient_zip, recipient_country_code, recipient_type, action_type, agency_code, federal_award_id, federal_award_mod, fed_funding_amount, non_fed_funding_amount, total_funding_amount, obligation_action_date, starting_date, ending_date, assistance_type, record_type, correction_late_ind, fyq_correction, principal_place_code, principal_place_state, principal_place_cc, principal_place_zip, principal_place_cd, cfda_program_title, agency_name, project_description, duns_no, duns_conf_code, progsrc_agen_code, progsrc_acnt_code, progsrc_subacnt_code, receip_addr1, receip_addr2, receip_addr3, face_loan_guran, orig_sub_guran, fiscal_year, principal_place_state_code, recip_cat_type, asst_cat_type, recipient_cd, maj_agency_cat, rec_flag, uri, recipient_state_code, imported_on)
@@ -906,7 +1069,7 @@ FROM 'test_data/usaspending/out/grants.out'
 CSV QUOTE '"'
         """
 
-        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_faads_sql(os.path.abspath('./test_data/usaspending/out/grants.out')))
+        self.assert_eq_ignoring_leading_trailing_space(sql, GrantsLoader().sql_str(os.path.abspath('./test_data/usaspending/out/grants.out')))
 
 
     @attr('usaspending')
@@ -914,18 +1077,18 @@ CSV QUOTE '"'
     def test_loader_fpds_sql(self):
         sql = """
 COPY contracts_contract
-(unique_transaction_id, transaction_status, vendorname, lastdatetoorder, agencyid, account_title, piid, modnumber, vendordoingasbusinessname, transactionnumber, idvagencyid, idvpiid, aiobflag, idvmodificationnumber, signeddate, effectivedate, currentcompletiondate, ultimatecompletiondate, obligatedamount, shelteredworkshopflag, baseandexercisedoptionsvalue, veteranownedflag, srdvobflag, baseandalloptionsvalue, contractingofficeagencyid, womenownedflag, contractingofficeid, minorityownedbusinessflag, fundingrequestingagencyid, saaobflag, apaobflag, fundingrequestingofficeid, purchasereason, baobflag, fundedbyforeignentity, haobflag, naobflag, contractactiontype, typeofcontractpricing, verysmallbusinessflag, reasonformodification, federalgovernmentflag, majorprogramcode, costorpricingdata, solicitationid, costaccountingstandardsclause, stategovernmentflag, descriptionofcontractrequirement, localgovernmentflag, gfe_gfp, seatransportation, consolidatedcontract, lettercontract, multiyearcontract, performancebasedservicecontract, contingencyhumanitarianpeacekeepingoperation, tribalgovernmentflag, contractfinancing, purchasecardaspaymentmethod, numberofactions, walshhealyact, servicecontractact, davisbaconact, clingercohenact, interagencycontractingauthority, productorservicecode, contractbundling, claimantprogramcode, principalnaicscode, recoveredmaterialclauses, educationalinstitutionflag, systemequipmentcode, hospitalflag, informationtechnologycommercialitemcategory, useofepadesignatedproducts, countryoforigin, placeofmanufacture, streetaddress, streetaddress2, streetaddress3, city, state, zipcode, vendorcountrycode, dunsnumber, congressionaldistrict, locationcode, statecode, placeofperformancecountrycode, placeofperformancezipcode, nonprofitorganizationflag, placeofperformancecongressionaldistrict, extentcompeted, competitiveprocedures, solicitationprocedures, typeofsetaside, organizationaltype, evaluatedpreference, numberofemployees, research, annualrevenue, statutoryexceptiontofairopportunity, reasonnotcompeted, numberofoffersreceived, commercialitemacquisitionprocedures, hbcuflag, commercialitemtestprogram, smallbusinesscompetitivenessdemonstrationprogram, a76action, sdbflag, firm8aflag, hubzoneflag, phoneno, faxno, contractingofficerbusinesssizedetermination, otherstatutoryauthority, eeparentduns, fiscal_year, mod_parent, maj_agency_cat, psc_cat, vendor_cd, pop_cd, progsourceagency, progsourceaccount, progsourcesubacct, rec_flag, type_of_contract, agency_name, contracting_agency_name, requesting_agency_name) 
+(unique_transaction_id, transaction_status, vendorname, lastdatetoorder, agencyid, account_title, piid, modnumber, vendordoingasbusinessname, transactionnumber, idvagencyid, idvpiid, aiobflag, idvmodificationnumber, signeddate, effectivedate, currentcompletiondate, ultimatecompletiondate, obligatedamount, shelteredworkshopflag, baseandexercisedoptionsvalue, veteranownedflag, srdvobflag, baseandalloptionsvalue, contractingofficeagencyid, womenownedflag, contractingofficeid, minorityownedbusinessflag, fundingrequestingagencyid, saaobflag, apaobflag, fundingrequestingofficeid, purchasereason, baobflag, fundedbyforeignentity, haobflag, naobflag, contractactiontype, typeofcontractpricing, emergingsmallbusinessflag, reasonformodification, federalgovernmentflag, majorprogramcode, costorpricingdata, solicitationid, costaccountingstandardsclause, stategovernmentflag, descriptionofcontractrequirement, localgovernmentflag, gfe_gfp, seatransportation, consolidatedcontract, lettercontract, multiyearcontract, performancebasedservicecontract, contingencyhumanitarianpeacekeepingoperation, tribalgovernmentflag, contractfinancing, purchasecardaspaymentmethod, numberofactions, walshhealyact, servicecontractact, davisbaconact, clingercohenact, interagencycontractingauthority, productorservicecode, contractbundling, claimantprogramcode, principalnaicscode, recoveredmaterialclauses, educationalinstitutionflag, systemequipmentcode, hospitalflag, informationtechnologycommercialitemcategory, useofepadesignatedproducts, countryoforigin, placeofmanufacture, streetaddress, streetaddress2, streetaddress3, city, state, zipcode, vendorcountrycode, dunsnumber, congressionaldistrict, locationcode, statecode, placeofperformancecountrycode, placeofperformancezipcode, nonprofitorganizationflag, placeofperformancecongressionaldistrict, extentcompeted, competitiveprocedures, solicitationprocedures, typeofsetaside, organizationaltype, evaluatedpreference, numberofemployees, research, annualrevenue, statutoryexceptiontofairopportunity, reasonnotcompeted, numberofoffersreceived, commercialitemacquisitionprocedures, hbcuflag, commercialitemtestprogram, smallbusinesscompetitivenessdemonstrationprogram, a76action, sdbflag, firm8aflag, hubzoneflag, phoneno, faxno, contractingofficerbusinesssizedetermination, otherstatutoryauthority, eeparentduns, fiscal_year, mod_parent, maj_agency_cat, psc_cat, vendor_cd, pop_cd, progsourceagency, progsourceaccount, progsourcesubacct, rec_flag, agency_name, contracting_agency_name, requesting_agency_name)
 FROM '/home/akr/work/datacommons/test_data/usaspending/out/contracts.out'
 CSV QUOTE \'"\'
         """
 
-        self.assert_eq_ignoring_leading_trailing_space(sql, Loader().make_fpds_sql(os.path.abspath('./test_data/usaspending/out/contracts.out')))
+        self.assert_eq_ignoring_leading_trailing_space(sql, ContractsLoader().sql_str(os.path.abspath('./test_data/usaspending/out/contracts.out')))
 
 
     @attr('usaspending')
     @attr('grants')
     def test_insert_faads(self):
-        Loader().insert_faads(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/grants.out'))
+        GrantsLoader().insert_faads(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/grants.out'))
 
         cursor = connections['default'].cursor()
         cursor.execute('select count(*) from grants_grant')
@@ -936,7 +1099,7 @@ CSV QUOTE \'"\'
     @attr('usaspending')
     @attr('contracts')
     def test_insert_fpds(self):
-        Loader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
+        ContractsLoader().insert_fpds(os.path.join(os.path.dirname(__file__), 'test_data/usaspending/out/contracts.out'))
 
         cursor = connections['default'].cursor()
         cursor.execute('select count(*) from contracts_contract')
@@ -950,13 +1113,13 @@ CSV QUOTE \'"\'
         # this test will fail with a DB error. I believe the code is correct--works when run from psql.
         # appears that psycopg's copy_from doesn't correctly interpret quoted fields.
         raise SkipTest
-        
+
         input = StringIO('1b649a7c08ba717c09abd378c660dba1|active|DELL MARKETING LIMITED PARTNERSHIP||4735||GST0904DF3801|AO02||0|4730|GS35F4076D|N|0|2004-11-09|2004-11-09|2004-11-09|2004-11-09|-0.02|f|-0.02|f|f|-0.02|4735|f|DF000|f|1700|f|f|N62271||f|X|f|f|C|J|f|K|f||||X|f|"Dell | EMC CX500 Disk Processor Enclosure Array (221-4205)"|f|f|N|f|X|f|X||f||f|1|NULL|NULL|NULL|f|X|7021|D||334111||f||f||E|||ONE DELL WAY|||ROUND ROCK|TX|786820001|USA|8779365180000|10|63500|TX|US||NULL||CDO|CDO|||||0||0.0|||4|D|NULL|f|f|f|f|f|f|||O||114315195|2005|DELL INC.|47|70|TX10|ZZ||||NULL|c||||20110114')
 
         self.assertEqual(0, Contract.objects.all().count())
 
         cursor = connections['default'].cursor()
-        cursor.copy_from(input, 'contracts_contract', sep='|', null='NULL', columns=Loader().fpds_fields())
+        cursor.copy_from(input, 'contracts_contract', sep='|', null='NULL', columns=ContractsLoader().fields())
 
         self.assertEqual(1, Contract.objects.all().count())
 

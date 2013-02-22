@@ -1,17 +1,20 @@
+from dcdata.management.base.extractor import Extractor
 import os
 
-from dcdata.management.base.nimsp_importer import BaseNimspImporter
 
-
-class NimspExtractor(BaseNimspImporter):
+class NimspExtractor(Extractor):
 
     IN_DIR       = '/home/datacommons/data/auto/nimsp/download/IN'
     DONE_DIR     = '/home/datacommons/data/auto/nimsp/download/DONE'
     REJECTED_DIR = '/home/datacommons/data/auto/nimsp/download/REJECTED'
     OUT_DIR      = '/home/datacommons/data/auto/nimsp/raw/IN'
+
     FILE_PATTERN = 'Sunlight.*.tar.gz'
 
     LOG_PATH = '/home/datacommons/data/auto/log/nimsp_extractor.log'
+
+    def __init__(self):
+        super(NimspExtractor, self).__init__()
 
     def do_for_file(self, file_path):
         try:

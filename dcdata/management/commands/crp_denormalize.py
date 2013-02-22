@@ -21,107 +21,85 @@ class RecipientFilter(Filter):
         self._candidates = candidates
         self._committees = committees
 
-    def process_record(self, record):
-        self.add_empty_recipient(record)
-        recip_id = record['recip_id'].strip().upper()
-        if recip_id and recip_id.startswith('N'):
-            candidate = self._candidates.get('%s:%s' % (record['cycle'], recip_id), None)
-            self.add_candidate_recipient(candidate, record)
-        elif recip_id and recip_id.startswith('C'):
-            committee = self._committees.get('%s:%s' % (record['cycle'], recip_id), None)
-            self.add_committee_recipient(committee, record)
+    def add_recipient(self, record, committee):
+        # cmte_id != recip_id indicates a candidate committee
+        if committee['cmte_id'] != committee['recip_id']:
+            key = '{}:{}'.format(record['cycle'], committee['fec_cand_id'].strip().upper())
+            candidate = self._candidates.get(key)
+            if candidate:
+                self.add_candidate_recipient(record, candidate, committee)
+                return record
+            else:
+                logging.warn("candidate recipient expected but not found for cycle:fec_candid: " % key)
 
+        self.add_committee_recipient(record, committee)
         return record
 
-    @staticmethod
-    def add_empty_recipient(record):
-        """ Initialize recipient fields so that nothing is left as 'None'. """
 
-        record['recipient_name'] = ''
-        record['recipient_party'] = ''
-        record['recipient_type'] = ''
-        record['recipient_ext_id'] = ''
-        record['recipient_category'] = ''
+    @staticmethod
+    def get_recip_code_result(recip_code):
+        recip_code = recip_code.strip().upper()
+        return recip_code[1] if len(recip_code) > 1 and recip_code[1] in ('W','L') else ""
+
+    @staticmethod
+    def add_candidate_recipient(record, candidate, committee):
+        record['recipient_name'] = candidate['first_last_p']
+        record['recipient_party'] = candidate['party']
+        record['recipient_type'] = 'P'
+        record['recipient_category'] = committee['prim_code'] if committee else ''
+        record['recipient_ext_id'] = candidate['cid']
+        record['seat_status'] = candidate['crp_ico']
+        record['seat_result'] = RecipientFilter.get_recip_code_result(candidate['recip_code']) if candidate['curr_cand'] and candidate['cycle_cand'] else ''
+
+        (record['seat_held'], record['recipient_state_held'], record['district_held']) = RecipientFilter.parse_crp_seat(candidate['dist_id_curr'].strip()) if candidate['dist_id_curr'].strip() else ('', '', '')
+        (record['seat'], record['recipient_state'], record['district']) = RecipientFilter.parse_fec_seat(candidate['fec_cand_id'])
+        # FEC ID often has incorrect district, so fall back to CRP if CRP ID is also showing House
+        if record['seat'] == 'federal:house':
+            (crp_seat, crp_state, crp_district) = RecipientFilter.parse_crp_seat(candidate['dist_id_run_for'])
+            if crp_seat == 'federal:house' and crp_state == record['recipient_state']:
+                record['district'] = crp_district
+
+
+    @staticmethod
+    def parse_fec_seat(fec_id):
+        if fec_id[0] == 'P':
+            return ('federal:president', '', '')
+        elif fec_id[0] == 'S':
+            return ('federal:senate', fec_id[2:4], '')
+        elif fec_id[0] == 'H':
+            return ('federal:house', fec_id[2:4], fec_id[2:4] + '-' + fec_id[4:6])
+        else:
+            raise Exception('Unknown FEC ID: %s' % fec_id)
+
+    @staticmethod
+    def parse_crp_seat(seat):
+        if len(seat.strip()) == 4:
+            if seat == 'PRES':
+                return ('federal:president', '', '')
+            else:
+                state = seat[0:2]
+                if seat[2] == 'S':
+                    return ('federal:senate', state, '')
+                else:
+                    # house seats are coded like ('MD04', 'NY10')
+                    return ('federal:house', state, "%s-%s" % (seat[:2], seat[2:]))
+
+    @staticmethod
+    def add_committee_recipient(record, committee):
+        record['recipient_name'] = committee['pac_short']
+        record['recipient_party'] = committee['party']
+        record['recipient_type'] = 'C'
+        record['recipient_ext_id'] = committee['cmte_id']
+        record['recipient_category'] = committee['prim_code']
+
         record['seat_status'] = ''
         record['seat_result'] = ''
-
         record['recipient_state'] = ''
         record['seat'] = ''
         record['district'] = ''
         record['recipient_state_held'] = ''
         record['seat_held'] = ''
         record['district_held'] = ''
-
-
-    @staticmethod
-    def get_recip_code_result(recip_code):
-        recip_code = recip_code.strip().upper()
-        return recip_code[1] if len(recip_code) >1 and recip_code[1] in ('W','L') else ""
-
-    @staticmethod
-    def add_candidate_recipient(candidate, record):
-        if candidate:
-            record['recipient_name'] = candidate['first_last_p']
-            record['recipient_party'] = candidate['party']
-            record['recipient_type'] = 'politician'
-            record['recipient_ext_id'] = candidate['cid']
-            record['seat_status'] = candidate['crp_ico']
-            record['seat_result'] = RecipientFilter.get_recip_code_result(candidate['recip_code'])
-
-            seat_held = candidate['dist_id_curr'].upper()
-            seat_in_race = candidate['dist_id_run_for'].upper()
-
-            RecipientFilter.standardize_seat(seat_held, record, '_held')
-            RecipientFilter.standardize_seat(seat_in_race, record)
-
-            # the above also populates
-            # record['recipient_state']
-            # record['seat']
-            # record['district']
-            # record['recipient_state_held']
-            # record['seat_held']
-            # record['district_held']
-
-
-    @staticmethod
-    def standardize_seat(seat, record, label=''):
-        state_key    = RecipientFilter.format_key('recipient_state', label)
-        seat_key     = RecipientFilter.format_key('seat', label)
-        district_key = RecipientFilter.format_key('district', label)
-
-        record[seat_key] = ''
-        record[state_key] = ''
-        record[district_key] = ''
-
-        # The strip() is needed to catch the case where CRP leaves
-        # the field "blank," legitimately, but it's actually '    '
-
-        if len(seat.strip()) == 4:
-            if seat == 'PRES':
-                record[state_key] = ''
-                record[seat_key] = 'federal:president'
-            else:
-                record[state_key] = seat[0:2]
-                if seat[2] == 'S':
-                    record[seat_key] = 'federal:senate'
-                else:
-                    # house seats are coded like ('MD04', 'NY10')
-                    record[seat_key] = 'federal:house'
-                    record[district_key] = "%s-%s" % (seat[:2], seat[2:])
-
-    @staticmethod
-    def format_key(key, extra):
-        return ''.join([key, extra])
-
-    @staticmethod
-    def add_committee_recipient(committee, record):
-        if committee:
-            record['recipient_name'] = committee['pac_short']
-            record['recipient_party'] = committee['party']
-            record['recipient_type'] = 'committee'
-            record['seat_result'] = RecipientFilter.get_recip_code_result(committee['recip_code'])
-            record['recipient_ext_id'] = committee['cmte_id']
-            record['recipient_category'] = committee['prim_code']
 
 
 
@@ -137,29 +115,37 @@ def load_catcodes(dataroot):
     return catcodes
 
 
-def load_candidates(dataroot):
+
+def load_candidates(dataroot, cycles=CYCLES):
+    """return map of cycle:fecID -> record"""
+
     candidates = { }
     fields = FILE_TYPES['cands']
-    for cycle in CYCLES:
+
+    for cycle in cycles:
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cands%s.txt' % cycle)
         reader = csv.DictReader(open(path), fieldnames=fields, quotechar="|")
+
         for record in reader:
-            key = "%s:%s" % (record.pop('cycle'), record['cid'].upper())
-            del record['fec_cand_id']
+            key = "%s:%s" % (record.pop('cycle'), record['fec_cand_id'].upper())
             del record['no_pacs']
+
+            if key in candidates and not (record['curr_cand'] == 'Y' and record['cycle_cand'] == 'Y'):
+                continue
+
             candidates[key] = record
+
     return candidates
 
 
-def load_committees(dataroot):
+def load_committees(dataroot, cycles=CYCLES):
     committees = { }
     fields = FILE_TYPES['cmtes']
-    for cycle in CYCLES:
+    for cycle in cycles:
         path = os.path.join(os.path.abspath(dataroot), 'raw', 'crp', 'cmtes%s.txt' % cycle)
         reader = csv.DictReader(open(path), fieldnames=fields, quotechar="|")
         for record in reader:
             key = "%s:%s" % (record.pop('cycle'), record['cmte_id'].upper())
-            del record['fec_cand_id']
             del record['source']
             del record['sensitive']
             del record['is_foreign']
@@ -203,12 +189,16 @@ class FECOccupationFilter(Filter):
         if record['occ_ef'] and record['emp_ef']:
             record['contributor_occupation'] = record['occ_ef']
             record['contributor_employer'] = record['emp_ef']
-        elif record['fec_occ_emp'].count('/') == 1:
-            (emp, occ) = record['fec_occ_emp'].split('/')
-            record['contributor_occupation'] = occ
-            record['contributor_employer'] = emp
+        elif 'fec_occ_emp' in record:
+            if record['fec_occ_emp'].count('/') == 1:
+                (emp, occ) = record['fec_occ_emp'].split('/')
+                record['contributor_occupation'] = occ
+                record['contributor_employer'] = emp
+            else:
+                record['contributor_occupation'] = record['fec_occ_emp']
+                record['contributor_employer'] = ''
         else:
-            record['contributor_occupation'] = record['fec_occ_emp']
+            record['contributor_occupation'] = ''
             record['contributor_employer'] = ''
 
         return record
@@ -255,10 +245,10 @@ class CRPDenormalizeBase(BaseCommand):
         catcodes = load_catcodes(dataroot)
 
         print "Loading candidates..."
-        candidates = load_candidates(dataroot)
+        candidates = load_candidates(dataroot, cycles)
 
         print "Loading committees..."
-        committees = load_committees(dataroot)
+        committees = load_committees(dataroot, cycles)
 
         self.denormalize(dataroot, cycles, catcodes, candidates, committees)
 

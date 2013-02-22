@@ -1,10 +1,5 @@
-import os
 import re
-import csv
-import json
 from collections import defaultdict
-
-from django.conf import settings
 
 from dcentity.tools import utils
 

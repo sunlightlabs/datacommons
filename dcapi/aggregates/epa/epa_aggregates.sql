@@ -21,26 +21,30 @@ select date_trunc('second', now()) || '-- Copying org_map from file';
 
 drop view if exists epa_echo_relevant_actions;
 
-drop table if exists epa_echo_actions cascade;
+drop table if exists tmp_epa_echo_actions;
 
-create table epa_echo_actions as
-select i.enfocnu as case_num, max(enfornm) as case_name,
-    (select min(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu) as first_date,
-    (select max(subacad) from epa_echo_milestone m where m.enfocnu = i.enfocnu) as last_date,
-    (select subacty from epa_echo_milestone m where m.enfocnu = i.enfocnu order by subacad limit 1) as first_date_significance,
-    (select subacty from epa_echo_milestone m where m.enfocnu = i.enfocnu order by subacad desc limit 1) as last_date_significance,
-    (select sum(coalesce(enfccaa, 0) + coalesce(enfcraa, 0) + coalesce(enfotpa, 0) + coalesce(enfotsa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty,
-    (select sum(coalesce(enfops, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfops,
-    (select sum(coalesce(enfccaa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfccaa,
-    (select sum(coalesce(enfcraa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfcraa,
-    (select sum(coalesce(enfotpa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfotpa,
-    (select sum(coalesce(enfotsa, 0)) from epa_echo_penalty p where p.enfocnu = i.enfocnu) as penalty_enfotsa,
-    (select count(distinct defennm) from epa_echo_defendant d where d.enfocnu = i.enfocnu) as num_defendants,
-    (select array_to_string(array_agg(distinct d.defennm), ', ') from epa_echo_defendant d where d.enfocnu = i.enfocnu) as defendants,
-    (select array_to_string(array_agg(distinct f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as locations,
-    (select array_to_string(array_agg(distinct f.fcltyad || ', ' || f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.enfocnu = i.enfocnu) as location_addresses
+create table tmp_epa_echo_actions as
+select i.activity_id as activity_id, enfocnu as case_num, max(enfornm) as case_name,
+    (select min(subacad) from epa_echo_milestone m where m.activity_id = i.activity_id) as first_date,
+    (select max(subacad) from epa_echo_milestone m where m.activity_id = i.activity_id) as last_date,
+    (select subacty from epa_echo_milestone m where m.activity_id = i.activity_id order by subacad limit 1) as first_date_significance,
+    (select subacty from epa_echo_milestone m where m.activity_id = i.activity_id order by subacad desc limit 1) as last_date_significance,
+    (select sum(coalesce(enfccaa, 0) + coalesce(enfcraa, 0) + coalesce(enfotpa, 0) + coalesce(enfotsa, 0)) from epa_echo_penalty p where p.activity_id = i.activity_id) as penalty,
+    (select sum(coalesce(enfops, 0)) from epa_echo_penalty p where p.activity_id = i.activity_id) as penalty_enfops,
+    (select sum(coalesce(enfccaa, 0)) from epa_echo_penalty p where p.activity_id = i.activity_id) as penalty_enfccaa,
+    (select sum(coalesce(enfcraa, 0)) from epa_echo_penalty p where p.activity_id = i.activity_id) as penalty_enfcraa,
+    (select sum(coalesce(enfotpa, 0)) from epa_echo_penalty p where p.activity_id = i.activity_id) as penalty_enfotpa,
+    (select sum(coalesce(enfotsa, 0)) from epa_echo_penalty p where p.activity_id = i.activity_id) as penalty_enfotsa,
+    (select sum(coalesce(enfcslp, 0)) from epa_echo_penalty p where p.activity_id = i.activity_id) as penalty_enfcslp,
+    (select count(distinct defennm) from epa_echo_defendant d where d.activity_id = i.activity_id) as num_defendants,
+    (select array_to_string(array_agg(distinct d.defennm), ', ') from epa_echo_defendant d where d.activity_id = i.activity_id) as defendants,
+    (select array_to_string(array_agg(distinct f.fcltcit || ', ' || f.fcltstc), '; ') from epa_echo_facility f where f.activity_id = i.activity_id) as locations,
+    (select array_to_string(array_agg(distinct f.fcltyad || ', ' || f.fcltcit || ', ' || f.fcltstc || ' ' || f.fcltpst), '; ') from epa_echo_facility f where f.activity_id = i.activity_id) as location_addresses
 from epa_echo_case_identifier i
-group by i.enfocnu;
+group by i.activity_id, enfocnu;
+
+drop table if exists epa_echo_actions cascade;
+alter table tmp_epa_echo_actions rename to epa_echo_actions;
 
 create index epa_echo_actions_case_num_idx on epa_echo_actions (case_num);
 create index epa_echo_actions_case_name_idx on epa_echo_actions using gin(to_tsvector('datacommons', case_name));
@@ -64,12 +68,12 @@ drop table if exists assoc_epa_echo_org cascade;
 
 select date_trunc('second', now()) || '-- create table assoc_epa_echo_org_ultorg';
 create table assoc_epa_echo_org as
-    select d.enfocnu as case_num, max(d.defennm) as defendant_name, e.id as entity_id
+    select d.activity_id, a.case_num, max(d.defennm) as defendant_name, e.id as entity_id
     from epa_echo_relevant_actions a
-    inner join epa_echo_defendant d on d.enfocnu = a.case_num
+    inner join epa_echo_defendant d on d.activity_id = a.activity_id
     inner join epa_echo_org_map m on d.defennm = m.defendant_name
     inner join matchbox_entity e on e.name = m.org_name or e.name = m.ultorg_name
-    group by d.enfocnu, e.id;
+    group by d.activity_id, a.case_num, e.id;
 
 
 -- Totals
@@ -87,7 +91,7 @@ create table agg_epa_echo_totals as
             count(*),
             sum(penalty) as amount
         from epa_echo_relevant_actions a
-        inner join assoc_epa_echo_org o using (case_num)
+        inner join assoc_epa_echo_org o using (activity_id)
         group by entity_id, cycle
     )
 

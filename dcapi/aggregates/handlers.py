@@ -10,25 +10,38 @@ ALL_CYCLES = '-1'
 DEFAULT_LIMIT = '10'
 DEFAULT_CYCLE = ALL_CYCLES
 
+class SQLBindingError(Exception):
+    pass
+
 
 def execute_top(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt, args)
+
+    execute(cursor, stmt, args)
+
     return list(cursor)
 
 def execute_pie(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt, args)
+    execute(cursor, stmt, args)
     return dict([(category, (count, amount)) for (category, count, amount) in cursor])
 
 def execute_one(stmt, *args):
     cursor = connection.cursor()
-    cursor.execute(stmt, args)
+    execute(cursor, stmt, args)
 
     if cursor.rowcount <= 0:
         return None
     else:
         return cursor.fetchone()
+
+def execute(cursor, stmt, args):
+    try:
+        # Just gonna leave this here...
+        # print cursor.mogrify(stmt, args)
+        cursor.execute(stmt, args)
+    except IndexError:
+        raise SQLBindingError("You didn't include the right number of binding parameters in your query.")
 
 
 def check_empty(result, *entity_ids):
@@ -82,10 +95,14 @@ class EntitySingletonHandler(BaseHandler):
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
 
-        raw_result = execute_one(self.stmt, *[kwargs[param] for param in self.args])
-        labeled_result = dict(zip(self.fields, raw_result))
+        result = execute_one(self.stmt, *[kwargs[param] for param in self.args])
 
-        return check_empty(labeled_result, kwargs['entity_id'])
+        if result:
+            result = dict(zip(self.fields, result))
+        else:
+            result = {}
+
+        return check_empty(result, kwargs['entity_id'])
 
 
 class PieHandler(BaseHandler):

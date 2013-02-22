@@ -2,12 +2,14 @@ from dcapi.common.handlers import FilterHandler
 from dcapi.common.schema import InclusionField, FulltextField, ComparisonField
 from dcapi.schema import Schema
 from dcdata.contracts.models import Contract
+from dcdata.utils.sql import parse_date
+
 
 CONTRACTS_SCHEMA = Schema(
     InclusionField('agency_id', 'agencyid'),
     InclusionField('contracting_agency_id', 'contractingofficeagencyid'),
     InclusionField('fiscal_year'),
-    InclusionField('place_distrct', 'congressionaldistrict'),
+    InclusionField('place_district', 'congressionaldistrict'),
     InclusionField('place_state', 'statecode'),
     InclusionField('requesting_agency_id', 'fundingrequestingagencyid'),
     InclusionField('vendor_state', 'state'),
@@ -23,7 +25,8 @@ CONTRACTS_SCHEMA = Schema(
 
     ComparisonField('obligated_amount', 'obligatedamount', cast=int),
     ComparisonField('current_amount', 'baseandexercisedoptionsvalue', cast=int),
-    ComparisonField('maximum_amount', 'baseandalloptionsvalue', cast=int)
+    ComparisonField('maximum_amount', 'baseandalloptionsvalue', cast=int),
+    ComparisonField('signed_date', 'signeddate', cast=parse_date),
 )
 
 
@@ -42,7 +45,7 @@ class ContractsFilterHandler(FilterHandler):
     fields.remove('imported_on')
 
 
-    ordering = ['-fiscal_year','-baseandexercisedoptionsvalue']
+    ordering = ['-fiscal_year','-obligatedamount']
     filename = 'contracts'
         
     def queryset(self, params):

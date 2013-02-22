@@ -31,6 +31,9 @@ class OrgLevelBreakdownHandler(PieHandler):
 
 class PolLocalBreakdownHandler(PieHandler):
 
+    category_map = {'out-of-state': 'Out-of-State', 'in-state': 'In-State'}
+    default_key = 'Unknown'
+
     stmt = """
         select local, count, amount
         from agg_local_to_politician
@@ -126,6 +129,20 @@ class OrgRecipientsHandler(EntityTopListHandler):
         limit %s
     """
 
+class OrgPACRecipientsHandler(EntityTopListHandler):
+
+    fields = ['name', 'id', 'total_count', 'direct_count', 'employee_count', 'total_amount', 'direct_amount', 'employee_amount']
+
+    stmt = """
+        select recipient_name, recipient_entity, total_count, pacs_count, indivs_count, total_amount, pacs_amount, indivs_amount
+        from
+            agg_pacs_from_org
+        where
+            organization_entity = %s
+            and cycle = %s
+        order by total_amount desc
+        limit %s
+    """
 
 class OrgRecipientsLifetimeHandler(EntityTopListHandler):
     args = ['entity_id', 'cycle']
@@ -346,105 +363,6 @@ class IndustryOrgHandler(EntityTopListHandler):
         order by total_amount desc
         limit %s
     """
-
-
-class SparklineHandler(EntityTopListHandler):
-
-    args   = 'cycle entity_id cycle entity_id cycle entity_id cycle'.split()
-    fields = ['step', 'amount']
-
-    stmt = """
-        select
-            all_steps_and_dates.step,
-            coalesce(amounts_by_date.amount, 0) as amount
-        from (
-            select
-                rank() over (order by date_step) as step,
-                date_step
-            from (
-                select distinct
-                    case when %s != -1 then generate_series else date_trunc('quarter', generate_series) end as date_step
-                from generate_series(
-                    (select date_trunc('year', min(date_step)) from agg_contribution_sparklines where entity_id = %s and cycle = %s),
-                    (select max(date_step) from agg_contribution_sparklines where entity_id = %s and cycle = %s),
-                    '1 month'
-                )
-            ) x
-        ) all_steps_and_dates
-        left join (
-            select
-                date_step,
-                amount
-            from
-                agg_contribution_sparklines
-            where
-                entity_id = %s
-                and cycle = %s
-        ) amounts_by_date using (date_step)
-        order by
-            step
-    """
-
-class SparklineByPartyHandler(BaseHandler):
-
-    args   = 'cycle entity_id cycle entity_id cycle entity_id cycle'.split()
-    fields = ['step', 'amount']
-
-    stmt = """
-        select
-            recipient_party,
-            all_steps_parties_and_dates.step,
-            coalesce(amounts_by_date.amount, 0) as amount
-        from (
-            select
-                recipient_party,
-                rank() over (partition by recipient_party order by date_step) as step,
-                date_step
-            from (
-                select distinct
-                    case when %s != -1 then generate_series else date_trunc('quarter', generate_series) end as date_step,
-                    recipient_party
-                from generate_series(
-                    (select date_trunc('year', min(date_step)) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s),
-                    (select max(date_step) from agg_contribution_sparklines_by_party where entity_id = %s and cycle = %s),
-                    '1 month'
-                )
-                cross join (
-                    select recipient_party from (values ('D'), ('R'), ('O')) as parties(recipient_party)
-                ) x
-            ) y
-        ) all_steps_parties_and_dates
-        left join (
-            select
-                case
-                    when recipient_party in('D', 'R') then recipient_party
-                    else 'O'
-                end as recipient_party,
-                date_step,
-                amount
-            from
-                agg_contribution_sparklines_by_party
-            where
-                entity_id = %s
-                and cycle = %s
-        ) amounts_by_date using (date_step, recipient_party)
-        order by
-            step,
-            recipient_party
-    """
-
-    def read(self, request, **kwargs):
-        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
-
-        raw_result = execute_top(self.stmt, *[kwargs[param] for param in self.args])
-
-        labeled_result = {}
-
-        for (party, step, amount) in raw_result:
-            if not labeled_result.has_key(party): labeled_result[party] = []
-            labeled_result[party].append(dict(zip(self.fields, (step, amount))))
-
-        return check_empty(labeled_result, kwargs['entity_id'])
 
 
 class ContributionAmountHandler(BaseHandler):

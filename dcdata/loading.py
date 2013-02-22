@@ -1,11 +1,11 @@
 from dcdata.models import Import
 from dcdata.processor import TerminateProcessingException, SkipRecordException
 from django.db import transaction
-from django.db.models import get_app, get_model, get_models
+from django.db.models import get_model
 from saucebrush.emitters import Emitter
 from saucebrush.filters import FieldFilter
-import datetime
 import sys
+import traceback
 
 #
 # saucebrush loading filters
@@ -36,7 +36,12 @@ class Loader(object):
     model = None
     field_handlers = { }
     
-    def __init__(self, source, description, imported_by):
+    def __init__(self, source, description, imported_by, **kwargs):
+
+        self.log_func = sys.stderr.write
+        log = kwargs.get('log')
+        if log:
+            self.log_func = log.warn
         
         # populate a fieldname/field mapping of model fields
         self.fields = { }
@@ -96,12 +101,14 @@ class Loader(object):
         
         try:
             obj.save()
-        except ValueError:
-            print record
-            print 'Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2]
-            raise SkipRecordException('Error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])            
+        except ValueError, e:
+            #import pprint
+            #self.log_func(pprint.pformat(record))
+            #self.log_func('Error saving record to database: %s' % repr(traceback.format_exc(e)))
+            raise SkipRecordException(e)
         except:
-            print record
+            import pprint
+            pprint.pprint(record)
             print 'Fatal error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2]
             raise TerminateProcessingException('Fatal error saving record to database: %s -- %s' % (sys.exc_info()[0], sys.exc_info()[1]), sys.exc_info()[2])
     
@@ -149,7 +156,7 @@ class LoaderEmitter(Emitter):
     def __init__(self, loader, commit_every=0):
         super(LoaderEmitter, self).__init__()
         self._loader = loader
-        self._commit_every = 0
+        self._commit_every = commit_every
         self._count = 0
     def process_record(self, record):
         self.emit_record(record)

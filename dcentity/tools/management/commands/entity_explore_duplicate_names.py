@@ -41,7 +41,6 @@ Results are presented in one of two ways:
     # Totally trusted results
     trusted = [
             "same state | same party | exact",
-            "missing one state | same party | exact",
             "same state | diff party; both 3rd | exact",
     ]
     # Possbly trusted results
@@ -50,6 +49,7 @@ Results are presented in one of two ways:
             "same state | same party | nicknames",
             "same state | same party | initials",
             "same state | same party | missing_suffix",
+            #"missing one state | same party | exact", # this was in trusted, but results were bad
     ]
 
     # Any name matching exactly those in here, with the listed conditions, will be
@@ -83,20 +83,33 @@ Results are presented in one of two ways:
         # Add person name classes
         rows = [(e, PersonName(fix_name(a or "")), s or "", p or "", o or "") for e,a,s,p,o in rows]
         by_last_name = defaultdict(list)
+
+        # group all entities by last name
         for row in rows:
             by_last_name[row[1].last].append(row)
+
         #count = 0
         #grand_total = len(rows)
         totals = defaultdict(int)
         groups = defaultdict(list)
+
         for last_name, entities in by_last_name.iteritems():
             #print count, grand_total, last_name, len(entities)
             #count += len(entities)
-            for eid1, name1, state1, party1, office1 in entities:
-                for eid2, name2, state2, party2, office2 in entities:
-                    # skip if we are the same, or if even maximal fuzziness fails
-                    if eid1 == eid2 or not name1.matches(name2):
+
+            # for each last name, split enities into a groups of state and federal politicians
+            # this will make all the "left sides" of the matches federal and all the right sides state
+            fed_entities =  [ entity for entity in entities if entity[4].startswith('federal') ]
+            state_entities =  [ entity for entity in entities if entity[4].startswith('state') ]
+
+
+            for eid1, name1, state1, party1, office1 in fed_entities:
+
+                for eid2, name2, state2, party2, office2 in state_entities:
+                    # skip if maximal fuzziness fails
+                    if not name1.matches(name2):
                         continue
+
                     state_checks = {
                         'same state': state1 == state2,
                         'diff state': state1 != state2,
@@ -146,11 +159,15 @@ Results are presented in one of two ways:
                                         if c3:
                                             key = " | ".join((n1, n2, n3))
                                             totals[key] += 1
-                                            groups[key].append((
+                                            match = (
                                                 (eid1, name1.name, state1, party1, office1),
                                                 (eid2, name2.name, state2, party2, office2)
-                                            ))
-                                            # Only one name match per entity.
+                                            )
+                                            # names can have multiple aliases which cause duplicate entity matches
+                                            # don't add these
+                                            if match not in groups[key]:
+                                                groups[key].append(match)
+
                                             break
 
 
@@ -168,10 +185,7 @@ Results are presented in one of two ways:
             for group in matches:
                 for n1, n2 in groups[group]:
                     if not n1[1] in self.excluded and not n2[1] in self.excluded:
-                        if "federal" in n2[-1]:
-                            writer.writerow(n2 + n1)
-                        else:
-                            writer.writerow(n1 + n2)
+                        writer.writerow(n1 + n2)
             print out.getvalue()
             out.close()
 

@@ -1,5 +1,5 @@
-
-from dcentity.models import *
+from dcentity.models import Entity, EntityAlias, EntityAttribute
+from django.db import transaction
 
 
 def build_entity(name, type, attributes):
@@ -18,15 +18,20 @@ def build_entity(name, type, attributes):
             EntityAttribute.objects.create(entity=e, namespace=namespace, value=value)
 
 
+class EntityException(Exception):
+    pass
+
+
+@transaction.commit_on_success()
 def merge_entities(merge_ids, target_id):
-    
+
     # error checking first: all entities exist and are of same type
     target = Entity.objects.get(id=target_id)
     if target_id in merge_ids:
-        raise "Target entity should not be in merge entities."
+        raise EntityException("Target entity should not be in merge entities.")
     if len(merge_ids) != Entity.objects.filter(id__in=merge_ids, type=target.type).count():
-        raise "All merge IDs must exist and be of same type as target."
-    
+        raise EntityException("All merge IDs must exist and be of same type as target.")
+
     # update aliases
     aliases = EntityAlias.objects.filter(entity__in=merge_ids + [target_id])
     distinct_aliases = set([a.alias for a in aliases])

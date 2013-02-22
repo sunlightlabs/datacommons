@@ -1,7 +1,7 @@
 #!/bin/bash
 
 server="http://my.followthemoney.org/sunlight/"
-date=2009-12-01
+date=2012-10-17
 
 if [ -n "$1" ]; then
    date=$1
@@ -35,7 +35,7 @@ fi
 cd $dest
 
 # this will put the files recursively in directories: my.followthemoney.org/sunlight/2010-09-22
-wget --user $user --password $passwd -r -l1 --no-parent -A.gz,.sql --reject "index.html" http://my.followthemoney.org/sunlight/$date/
+wget --user $user --password $passwd -r -l1 --no-parent -A.gz,.sql --reject "index.html" $server$date/
 
 for f in $final_dest/*.gz; do
     echo "Unzipping $f"

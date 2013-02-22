@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models import Q
 
 class Import(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)

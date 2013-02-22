@@ -8,10 +8,9 @@ from dcdata.contribution.models import NIMSP_TRANSACTION_NAMESPACE
 from dcdata.management.base.nimsp_importer import BaseNimspImporter
 
 from saucebrush.emitters import CSVEmitter
-from saucebrush.sources import CSVSource
 from saucebrush.filters import *
 
-from settings import LOADING_DIRECTORY
+from django.conf import settings
 
 from dcdata.utils.dryrub import VerifiedCSVSource, CSVFieldVerifier
 
@@ -20,8 +19,6 @@ from dcdata.scripts.nimsp.salt import DCIDFilter, SaltFilter
 
 from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from dcdata.processor import chain_filters, load_data
-from django.core.management.base import BaseCommand, CommandError
-from optparse import make_option
 from dcdata.loading import model_fields
 from dcdata.utils.sql import parse_decimal, parse_int
 
@@ -147,7 +144,7 @@ class MultiFieldConversionFilter(Filter):
                 try:
                     record[key] = self._name_to_func[key](record[key])
                 except:
-                    warn(record, "Could not convert value '%s': %s" % (record[key], sys.exc_info()[0]))
+                    warn(record, "Could not convert value for key: '%s'; value :'%s': %s" % (key, record[key], sys.exc_info()[0]))
                     record[key] = None
 
         return record
@@ -164,10 +161,10 @@ class IdsFilter(Filter):
             error(record, 'record has both candidate and committee ids. unhandled.')
             return record
         elif record['candidate_id']:
-            record['recipient_type'] = 'politician'
+            record['recipient_type'] = 'P'
             record['recipient_ext_id'] = record['unique_candidate_id'] if record['unique_candidate_id'] and record['unique_candidate_id'] not in ('', '0') else None
         elif record['committee_id']:
-            record['recipient_type'] = 'committee'
+            record['recipient_type'] = 'C'
             record['recipient_ext_id'] = record['committee_ext_id'] = record['committee_id']
 
         # Contributor
@@ -195,15 +192,15 @@ class ContributorTypeFilter(Filter):
             record['contributor_type'] = None
         elif (record['contributor_category'] and record['contributor_category'].startswith(('J2', 'Z1', 'Z5'))) \
                 or (record['contributor_name'] and ',' not in record['contributor_name']):
-            record['contributor_type'] = 'committee'
+            record['contributor_type'] = 'C'
         else:
-            record['contributor_type'] = 'individual'
+            record['contributor_type'] = 'I'
 
-        if record['contributor_type'] == 'committee':
+        if record['contributor_type'] == 'C':
             if not record['organization_name']:
                 record['organization_name'] = record['contributor_name']
-            if not record['organization_ext_id']:
-                record['organization_ext_id'] = record['contributor_ext_id']
+            if not record.get('organization_ext_id'):
+                record['organization_ext_id'] = record.get('contributor_ext_id', '')
 
         return record
 
@@ -236,15 +233,12 @@ class UnallocatedEmitter(CSVEmitter):
 
 class NIMSPDenormalize(BaseNimspImporter):
 
-    IN_DIR       = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/IN')
-    DONE_DIR     = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/DONE')
-    REJECTED_DIR = os.path.join(LOADING_DIRECTORY, 'nimsp/denormalized/REJECTED')
-    OUT_DIR      = os.path.join(LOADING_DIRECTORY, 'nimsp/loading/IN')
+    IN_DIR       = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/denormalized/IN')
+    DONE_DIR     = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/denormalized/DONE')
+    REJECTED_DIR = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/denormalized/REJECTED')
+    OUT_DIR      = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/loading/IN')
 
-    #LOG_PATH = '/home/datacommons/data/auto/log/nimsp_denormalize.log'
-    #TODO: Make base class die if the above variable is not defined
-
-    SALTS_DB     = os.path.join(LOADING_DIRECTORY, 'nimsp/salts.db')
+    SALTS_DB     = os.path.join(settings.LOADING_DIRECTORY, 'nimsp/salts.db')
 
     FILE_PATTERN = SQL_DUMP_FILE
 

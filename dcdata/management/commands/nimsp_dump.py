@@ -3,7 +3,7 @@
 import os
 import MySQLdb
 
-from settings import OTHER_DATABASES
+from django.conf import settings
 
 from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from dcdata.management.base.nimsp_importer import BaseNimspImporter
@@ -15,8 +15,6 @@ class NIMSPDump2CSV(BaseNimspImporter):
     REJECTED_DIR = '/home/datacommons/data/auto/nimsp/dump/REJECTED'
     OUT_DIR      = '/home/datacommons/data/auto/nimsp/denormalized/IN'
     FILE_PATTERN = 'do_dump.txt'
-
-    LOG_PATH = '/home/datacommons/data/auto/log/nimsp_dump.log'
 
     def __init__(self):
         super(NIMSPDump2CSV, self).__init__()
@@ -30,6 +28,18 @@ class NIMSPDump2CSV(BaseNimspImporter):
         outfile_path = os.path.join(self.OUT_DIR, SQL_DUMP_FILE)
 
         select_fields = ",".join([sql_field for (name, sql_field, conversion_func) in CSV_SQL_MAPPING])
+
+        create_indexes_stmt = """
+            create index recipid_idx on Recipients (RecipientID);
+            create index rrbid_idx on RecipientReportsBundle (RecipientReportsBundleID);
+            create index syrid_idx on StateYearReports(StateYearReportsID);
+            create index candid_idx on Candidates(CandidateID);
+            create index osid_idx on OfficeSeats(OfficeSeatID);
+            create index ocid_idx on OfficeCodes(OfficeCode);
+            create index commid_idx on Committees(CommitteeID);
+            create index ccid_idx on CatCodes(CatCode);
+            create index p_candid_idx on PartyLookup(PartyLookupID );
+        """
 
         stmt = """
             select %s
@@ -50,15 +60,26 @@ class NIMSPDump2CSV(BaseNimspImporter):
             """ % (select_fields, outfile_path)
 
         connection = MySQLdb.connect(
-            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+            db=settings.OTHER_DATABASES['nimsp']['DATABASE_NAME'],
             user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
             host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
         )
-        cursor = connection.cursor()
 
+        try:
+            cursor = connection.cursor()
+            self.log.info('Creating indexes...'.format(outfile_path))
+            cursor.execute(create_indexes_stmt)
+            cursor.close()
+        except cursor.OperationalError as e:
+            self.log.info('Tried to create database indexes but they already existed. Moving on.')
+            self.log.info(e)
+
+        cursor = connection.cursor()
         self.log.info('Dumping data to {0}...'.format(outfile_path))
+        self.log.info(stmt)
         cursor.execute(stmt)
+        cursor.close()
         self.log.info('Data dump complete.')
 
         self.archive_file(file_path, timestamp=True)

@@ -28,7 +28,11 @@ TERMINATE_ON_ERROR = False
 
 
 # this method looks a little bare right now, but error handling and reporting will be going in soon
-def load_data(input_iterator, record_processor, output_func):
+def load_data(input_iterator, record_processor, output_func, log=None):
+
+    log_func = sys.stderr.write
+    if log:
+        log_func = log.error
     
     for record in input_iterator:
         try:
@@ -37,16 +41,19 @@ def load_data(input_iterator, record_processor, output_func):
                 output_func(output)
                 
         except SkipRecordException as e:
-            sys.stderr.write('Skipping processing of input record: "%s"\n' % record)
-            sys.stderr.write('Exception: %s\n' % e)
+            log_func('Skipping processing of input record: "%s"\n' % record)
+            log_func('Exception: %s\n' % e)
             if e.traceback:
-                traceback.print_tb(e.traceback)
-            sys.stderr.flush()
+                log_func(repr(traceback.format_tb(e.traceback)))
+
+            if not log:
+                sys.stderr.flush()
+
             if TERMINATE_ON_ERROR:
                 raise
             
         except TerminateProcessingException as e:
-            sys.stderr.write('Terminating processing on input record: "%s"\n' % record)
+            log_func('Terminating processing on input record: "%s"\n' % record)
             raise
 
 

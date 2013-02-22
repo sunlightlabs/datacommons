@@ -1,0 +1,1 @@
+update contribution_bundle set pdf_url = 'http://query.nictusa.com/pdf/' || substring(first_image_num::text from char_length(first_image_num::text)-2 for 3) || '/' || first_image_num || '/' || first_image_num || '.pdf';

@@ -1,20 +1,18 @@
 import sys
-import logging
 import os
-from optparse import make_option
-from django.core.management.base import CommandError
-from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier,\
-    VerifiedCSVSource
+from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer,\
-    Filter
-from saucebrush.emitters import CSVEmitter, DebugEmitter
+from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, \
+    FieldRenamer, Filter
+from saucebrush.emitters import CSVEmitter
 
 from dcdata.processor import chain_filters, load_data
-from dcdata.contribution.sources.crp import CYCLES, FILE_TYPES
+from dcdata.contribution.sources.crp import FILE_TYPES
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
-from crp_denormalize import *
+from crp_denormalize import CRPDenormalizeBase, parse_date_iso, \
+    RecipientFilter, FECOccupationFilter, CatCodeFilter, SpecFilter, \
+    SPEC, FIELDNAMES
 
 ### Filters
 
@@ -68,7 +66,17 @@ class CommitteeFilter(Filter):
             record['committee_name'] = ''
             record['committee_party'] = ''
         return record
- 
+
+class IndivRecipientFilter(RecipientFilter):
+    def __init__(self, candidates, committees):
+        super(IndivRecipientFilter, self).__init__(candidates, committees)
+
+    def process_record(self, record):
+        committee = self._committees.get('%s:%s' % (record['cycle'], record['cmte_id'].strip().upper()), None)
+        if committee:
+            self.add_recipient(record, committee)
+        return record
+
 
 class CRPDenormalizeIndividual(CRPDenormalizeBase):
 
@@ -92,7 +100,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
                 FieldRenamer({'contributor_name': 'contrib',
                           'parent_organization_name': 'ult_org',}),
          
-                RecipientFilter(candidates, committees),
+                IndivRecipientFilter(candidates, committees),
                 CommitteeFilter(committees),
                 OrganizationFilter(),
         
@@ -115,7 +123,7 @@ class CRPDenormalizeIndividual(CRPDenormalizeBase):
                 CatCodeFilter('contributor', catcodes),
         
                 # add static fields
-                FieldAdder('contributor_type', 'individual'),
+                FieldAdder('contributor_type', 'I'),
                 FieldAdder('is_amendment', False),
         
                 FieldMerger({'candidacy_status': ('curr_cand', 'cycle_cand')}, lambda curr, cycle: "" if cycle != 'Y' else curr == 'Y' and cycle == 'Y', keep_fields=False ),

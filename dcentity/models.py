@@ -105,8 +105,37 @@ class Entity(models.Model):
             if hasattr(self, 'lobbying_activity'):
                 metadata['revolving_door_entity'] = self.lobbying_activity.lobbyist_entity.public_representation()
 
-        elif self.type == 'organization' and hasattr(self, 'organization_metadata'):
-            metadata.update(self.organization_metadata.to_dict())
+            if self.politician_metadata_by_cycle.filter(seat__istartswith='federal').count():
+                metadata['state_politician_entities'] = [ x.state_politician_entity.public_representation() for x in self.state_offices_held.all() ]
+            else:
+                metadata['federal_politician_entities'] = [ x.federal_politician_entity.public_representation() for x in self.federal_offices_held.all() ]
+
+
+        elif self.type == 'organization':
+            if hasattr(self, 'organization_metadata_by_cycle'):
+                for data_by_cycle in self.organization_metadata_by_cycle.all():
+                    metadata[data_by_cycle.cycle] = data_by_cycle.to_dict()
+                    del(metadata[data_by_cycle.cycle]['cycle'])
+                    del(metadata[data_by_cycle.cycle]['id'])
+                    del(metadata[data_by_cycle.cycle]['entity'])
+
+                # assign latest cycle to old fields for backwards compatibility
+                # (might not need this going forward)
+                if hasattr(self, 'organization_metadata_for_latest_cycle'):
+                    latest = self.organization_metadata_for_latest_cycle.to_dict()
+                    del(latest['cycle'])
+                    del(latest['entity'])
+                    metadata.update(latest)
+                else:
+                    metadata['parent_entity'] = ''
+                    metadata['industry_entity'] = ''
+                    metadata['lobbying_firm'] = False
+                    metadata['child_entities'] = []
+
+            if hasattr(self, 'controlling_org'):
+                metadata['controlling_org'] = self.controlling_org.controlling_org_entity.public_representation()
+            if self.affiliated_superpacs.count() > 0:
+                metadata['affiliated_superpacs'] = [ x.superpac_entity.public_representation() for x in self.affiliated_superpacs.all() ]
 
         elif self.type == 'individual':
             # in the future, individuals should probably have their own metadata table,
@@ -190,19 +219,45 @@ class OrganizationMetadata(ExtensibleModel):
     extended_properties = ['parent_entity', 'child_entities']
     # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
 
-    entity = models.OneToOneField(Entity, related_name='organization_metadata', null=False, unique=True)
+    entity = models.ForeignKey(Entity, related_name='organization_metadata_by_cycle', null=False, db_index=True)
+
+    cycle = models.PositiveSmallIntegerField(db_index=True)
+
+    lobbying_firm   = models.BooleanField(default=False)
+    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True, db_index=True)
+    industry_entity = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True, db_index=True)
+    subindustry_entity = models.ForeignKey(Entity, related_name='subindustry_entity_for_cycle', null=True, db_index=True)
+    is_superpac     = models.BooleanField(default=False)
+
+
+    @property
+    def child_entities(self):
+        return [ x.entity.public_representation() for x in OrganizationMetadata.objects.filter(parent_entity=self.entity, cycle=self.cycle) ]
+
+    class Meta:
+        db_table = 'matchbox_organizationmetadata'
+
+
+class OrganizationMetadataLatest(ExtensibleModel):
+    extended_properties = ['parent_entity', 'child_entities']
+    # parent_entity needs to be called here so that it populates the whole object instead of just returning the entity_id
+
+    entity = models.OneToOneField(Entity, related_name='organization_metadata_for_latest_cycle', null=False, primary_key=True, on_delete=models.DO_NOTHING)
+
+    cycle = models.PositiveSmallIntegerField()
 
     lobbying_firm   = models.BooleanField(default=False)
     parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
     industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
+    is_superpac     = models.BooleanField(default=False)
 
-    def _child_entities(self):
-        return [ x.entity.public_representation() for x in self.entity.child_entity_set.all() ]
-
-    child_entities = property(_child_entities)
+    @property
+    def child_entities(self):
+        return [ x.entity.public_representation() for x in OrganizationMetadata.objects.filter(parent_entity=self.entity, cycle=self.cycle) ]
 
     class Meta:
-        db_table = 'matchbox_organizationmetadata'
+        db_table = 'organization_metadata_latest_cycle_view'
+        managed = False
 
 
 class PoliticianMetadata(models.Model):
@@ -224,7 +279,7 @@ class PoliticianMetadata(models.Model):
         db_table = 'matchbox_politicianmetadata'
 
 class PoliticianMetadataLatest(models.Model):
-    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True)
+    entity = models.OneToOneField(Entity, related_name='politician_metadata_for_latest_cycle', null=False, primary_key=True, on_delete=models.DO_NOTHING)
 
     cycle = models.PositiveSmallIntegerField()
 
@@ -286,6 +341,25 @@ class RevolvingDoor(models.Model):
         db_table = 'matchbox_revolvingdoor'
 
 
+class StateFederal(models.Model):
+    # counterintuitively, in order to find federal offices for a state politician,
+    # one must look for federal offices via their state entity_id, so the 'related_name'
+    # accessor names are reversed
+    state_politician_entity = models.ForeignKey(Entity, related_name='federal_offices_held')
+    federal_politician_entity = models.ForeignKey(Entity, related_name='state_offices_held')
+
+    class Meta:
+        db_table = 'matchbox_statefederal'
+
+
+class SuperPACLinks(models.Model):
+    superpac_entity = models.OneToOneField(Entity, related_name='controlling_org')
+    controlling_org_entity = models.ForeignKey(Entity, related_name='affiliated_superpacs')
+
+    class Meta:
+        db_table = 'matchbox_superpaclinks'
+
+
 class VotesmartInfo(models.Model):
     entity = models.OneToOneField(Entity, related_name='votesmart_info', null=False)
 
@@ -301,7 +375,7 @@ class BioguideInfo(models.Model):
     bioguide_id      = models.CharField(max_length=7, blank=True, null=True)
     bio              = models.TextField(null=True)
     bio_url          = models.URLField(null=True)
-    years_of_service = models.CharField(max_length=12, null=True)
+    years_of_service = models.CharField(max_length=32, null=True)
     photo_url        = models.URLField(null=True)
 
     created_on       = models.DateField(auto_now_add=True)

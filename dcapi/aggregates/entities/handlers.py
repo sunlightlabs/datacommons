@@ -1,3 +1,5 @@
+import re
+
 from dcapi.aggregates.handlers import execute_top
 from dcentity.models import Entity, EntityAttribute, BioguideInfo
 from piston.handler import BaseHandler
@@ -7,9 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from uuid import UUID
 
 
-
 get_totals_stmt = """
-     select cycle,
+    select cycle,
             coalesce(contributor_count,  0)::integer,
             coalesce(recipient_count,    0)::integer,
             coalesce(contributor_amount, 0)::float,
@@ -26,22 +27,31 @@ get_totals_stmt = """
             coalesce(e.count,            0)::integer,
             coalesce(e.amount,           0)::float,
             coalesce(cm.count,           0)::integer,
-            coalesce(epa.count,          0)::integer
-     from
+            coalesce(epa.count,          0)::integer,
+            coalesce(r.docket_count,     0)::integer,
+            coalesce(r.document_count,   0)::integer,
+            coalesce(rs.docket_count,    0)::integer,
+            coalesce(rs.document_count,  0)::integer,
+            coalesce(f.member_count,     0)::integer,
+            coalesce(f.committee_count,  0)::integer,
+            coalesce(indexp.spending_amount, 0)::float,
+            coalesce(fec_committee.total_raised, 0)::float,
+            coalesce(fec_committee.count, 0)::integer
+    from
          (select *
          from agg_entities
          where entity_id = %s) c
-     full outer join
+    full outer join
          (select *
-         from agg_lobbying_totals
+         from agg_lobbying_by_cycle_rolled_up
          where entity_id = %s) l
-     using (cycle)
-     full outer join
+    using (cycle)
+    full outer join
          (select *
          from agg_spending_totals
          where recipient_entity = %s) s
-     using (cycle)
-     full outer join
+    using (cycle)
+    full outer join
          (select *
          from agg_earmark_totals
          where entity_id = %s) e
@@ -49,18 +59,44 @@ get_totals_stmt = """
     full outer join (
         select cycle, count
         from agg_pogo_totals
-        where entity_id = %s
-    ) cm using (cycle)
+        where entity_id = %s) cm
+    using (cycle)
     full outer join (
         select cycle, count
         from agg_epa_echo_totals
-        where entity_id = %s
-    ) epa using (cycle)
+        where entity_id = %s) epa
+    using (cycle)
+    full outer join (
+        select cycle, docket_count, document_count
+        from agg_regulations_text_totals
+        where entity_id = %s) r
+    using (cycle)
+    full outer join (
+        select cycle, docket_count, document_count
+        from agg_regulations_submitter_totals
+        where entity_id = %s) rs
+    using (cycle)
+    full outer join (
+        select cycle, member_count, committee_count
+        from agg_faca_totals
+        where org_id = %s) f
+    using (cycle)
+    full outer join (
+        select cycle, spending_amount
+        from agg_fec_indexp_totals
+        where entity_id = %s) indexp
+    using (cycle)
+    full outer join (
+        select cycle, total_raised, count
+        from agg_fec_committee_summaries
+        where entity_id = %s) fec_committee
+    using (cycle)
 """
+
 
 def get_totals(entity_id):
     totals = dict()
-    for row in execute_top(get_totals_stmt, entity_id, entity_id, entity_id, entity_id, entity_id, entity_id):
+    for row in execute_top(get_totals_stmt, *[entity_id] * 11):
         totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
     return totals
 
@@ -68,7 +104,15 @@ def get_totals(entity_id):
 class EntityHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount', 'lobbying_count', 'firm_income', 'non_firm_spending', 'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount', 'earmark_count', 'earmark_amount', 'contractor_misconduct_count', 'epa_actions_count']
+    totals_fields = ['contributor_count', 'recipient_count', 'contributor_amount', 'recipient_amount',
+                     'lobbying_count', 'firm_income', 'non_firm_spending',
+                     'grant_count', 'contract_count', 'loan_count', 'grant_amount', 'contract_amount', 'loan_amount',
+                     'earmark_count', 'earmark_amount',
+                     'contractor_misconduct_count',
+                     'epa_actions_count',
+                     'regs_docket_count', 'regs_document_count', 'regs_submitted_docket_count', 'regs_submitted_document_count',
+                     'faca_member_count', 'faca_committee_count',
+                     'independent_expenditure_amount', 'fec_total_raised', 'fec_summary_count']
     ext_id_fields = ['namespace', 'id']
 
     def read(self, request, entity_id):
@@ -110,9 +154,9 @@ class EntityAttributeHandler(BaseHandler):
             return error_response
 
         if bioguide_id:
-            entities = BioguideInfo.objects.filter(bioguide_id = bioguide_id)
+            entities = BioguideInfo.objects.filter(bioguide_id=bioguide_id)
         else:
-            entities = EntityAttribute.objects.filter(namespace = namespace, value = id)
+            entities = EntityAttribute.objects.filter(namespace=namespace, value=id)
 
         return [{'id': e.entity_id} for e in entities]
 
@@ -123,8 +167,8 @@ class EntitySearchHandler(BaseHandler):
     fields = [
         'id', 'name', 'type',
         'count_given', 'count_received', 'count_lobbied',
-        'total_given','total_received', 'firm_income', 'non_firm_spending',
-        'state', 'party', 'seat', 'lobbying_firm'
+        'total_given', 'total_received', 'firm_income', 'non_firm_spending',
+        'state', 'party', 'seat', 'lobbying_firm', 'is_superpac'
     ]
 
     stmt = """
@@ -137,7 +181,7 @@ class EntitySearchHandler(BaseHandler):
             coalesce(a.recipient_amount,    0)::float,
             coalesce(l.firm_income,         0)::float,
             coalesce(l.non_firm_spending,   0)::float,
-            pm.state, pm.party, pm.seat, om.lobbying_firm
+            pm.state, pm.party, pm.seat, om.lobbying_firm, om.is_superpac
         from matchbox_entity e
         inner join (select distinct entity_id
                     from matchbox_entityalias ea
@@ -145,73 +189,92 @@ class EntitySearchHandler(BaseHandler):
             on e.id = ft_match.entity_id
         left join politician_metadata_latest_cycle_view pm
             on e.id = pm.entity_id
-        left join matchbox_organizationmetadata om
+        left join organization_metadata_latest_cycle_view om
             on e.id = om.entity_id
-        left join agg_lobbying_totals l
-            on e.id = l.entity_id
+        left join agg_lobbying_by_cycle_rolled_up l
+            on e.id = l.entity_id and l.cycle = -1
         left join agg_entities a
-            on e.id = a.entity_id
-        where
-            (a.cycle = -1 and l.cycle = -1)
-            or (a.cycle = -1 and l.cycle is null)
-            or (a.cycle is null and l.cycle = -1)
+            on e.id = a.entity_id and a.cycle = -1
     """
 
     def read(self, request):
-        query = request.GET.get('search', None)
+        query = request.GET.get('search')
+        entity_type = request.GET.get('type')
         if not query:
             error_response = rc.BAD_REQUEST
             error_response.write("Must include a query in the 'search' parameter.")
             return error_response
 
-        parsed_query = ' & '.join(unquote_plus(query).split(' '))
+        stmt = self.stmt
 
-        raw_result = execute_top(self.stmt, parsed_query)
+        if entity_type:
+            stmt += '\n        where e.type = %s'
+
+        parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
+        query_params = (parsed_query)
+        query_params = [x for x in (parsed_query, entity_type) if x]
+        raw_result = execute_top(stmt, *query_params)
 
         return [dict(zip(self.fields, row)) for row in raw_result]
+
 
 class EntitySimpleHandler(BaseHandler):
     allowed_methods = ('GET',)
 
-    fields = [
-        'id', 'name', 'type',
-    ]
+    fields = ['id', 'name', 'type', 'aliases']
+
+    stmt = """
+        select e.id, name, type, case when count(alias) = 0 then ARRAY[]::varchar[] else array_agg(alias) end as aliases
+        from matchbox_entity e
+        left join matchbox_entityalias a on
+            e.id = a.entity_id and e.name != a.alias
+        %s -- possible where clause for entity type
+        group by e.id, name, type
+        order by e.id
+        offset %%s
+        limit %%s
+    """
+
+    count_stmt = """
+        select count(*)
+        from matchbox_entity
+        %s -- possible where clause for entity type
+    """
 
     def read(self, request):
-        entity_type = request.GET.get('type', None)
-        count = request.GET.get('count', None)
-
-        start = request.GET.get('start', None)
-        end = request.GET.get('end', None)
-
-        qs = Entity.objects.all().order_by('id')
+        count = request.GET.get('count')
+        start = request.GET.get('start')
+        end = request.GET.get('end')
+        entity_type = request.GET.get('type')
 
         if entity_type:
-            qs = qs.filter(type=entity_type)
+            where_clause = "where type = %s"
+        else:
+            where_clause = ''
 
         if count:
-            return {'count': qs.count()}
+            return dict(count=execute_top(self.count_stmt % where_clause, *([entity_type] if entity_type else []))[0][0])
+
+        if start is not None and end is not None:
+            try:
+                start = int(start)
+                end = int(end)
+            except:
+                error_response = rc.BAD_REQUEST
+                error_response.write("Must provide integers for start and end.")
+                return error_response
         else:
-            if start is not None and end is not None:
-                try:
-                    start = int(start)
-                    end = int(end)
-                except:
-                    error_response = rc.BAD_REQUEST
-                    error_response.write("Must provide integers for start and end.")
-                    return error_response
-            else:
-                error_response = rc.BAD_REQUEST
-                error_response.write("Must specify valid start and end parameters.")
-                return error_response
+            error_response = rc.BAD_REQUEST
+            error_response.write("Must specify valid start and end parameters.")
+            return error_response
 
-            if (end < start or end - start > 10000):
-                error_response = rc.BAD_REQUEST
-                error_response.write("Only 10,000 entities can be retrieved at a time.")
-                return error_response
+        if (end < start or end - start > 10000):
+            error_response = rc.BAD_REQUEST
+            error_response.write("Only 10,000 entities can be retrieved at a time.")
+            return error_response
 
-            result = qs[start:end]
-            return [{'id': row.id, 'name': row.name, 'type': row.type} for row in result]
+        raw_result = execute_top(self.stmt % where_clause, *([entity_type] if entity_type else []) + [start, end - start + 1])
+        return [dict(zip(self.fields, row)) for row in raw_result]
 
 
 class PoliticianCommitteeHandler(BaseHandler):
@@ -236,4 +299,3 @@ class PoliticianCommitteeHandler(BaseHandler):
         raw_result = execute_top(stmt, kwargs['entity_id'])
 
         return [dict(zip(self.fields, row)) for row in raw_result]
-

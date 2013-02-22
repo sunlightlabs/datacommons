@@ -1,0 +1,2 @@
+insert into matchbox_sunlightinfo (entity_id, photo_url, notes) values ('d2d1b6f4ea644455b8845be3b4c8116c', 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Mitt_Romney_by_Gage_Skidmore_6.jpg/225px-Mitt_Romney_by_Gage_Skidmore_6.jpg', 'Wikipedia changed the photo URL. Changing it manually.'), ('90aeb3e849e04c13915dc89daa8d4f9a', 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Mitt_Romney_by_Gage_Skidmore_6.jpg/225px-Mitt_Romney_by_Gage_Skidmore_6.jpg', 'Wikipedia changed the photo URL. Changing it manually.');
+

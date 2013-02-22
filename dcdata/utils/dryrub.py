@@ -1,6 +1,5 @@
 import sys
-from saucebrush import utils
-from saucebrush.filters import Filter, ConditionalFilter
+from saucebrush.filters import Filter
 from saucebrush.emitters import Emitter
 from dcdata.processor import SkipRecordException
 from saucebrush.sources import CSVSource
@@ -10,15 +9,19 @@ from saucebrush.sources import CSVSource
 
 class FieldCountValidator(Filter):
     
-    def __init__(self, field_count):
+    def __init__(self, field_count, show_record=True):
         super(FieldCountValidator, self).__init__()
         self.field_count = field_count
+        self.show_record = show_record
         
     def process_record(self, record):
         if len(record) == self.field_count:
             return record
         else:
-            raise SkipRecordException('Expected %d fields, found %d.' % (self.field_count, len(record)))
+            if self.show_record:
+                raise SkipRecordException('Expected {} fields, found {}.\n\n{}'.format(self.field_count, len(record), record))
+            else:
+                raise SkipRecordException('Expected %d fields, found %d.' % (self.field_count, len(record)))
         
         
 class VerifiedCSVSource(CSVSource):

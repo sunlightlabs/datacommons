@@ -67,5 +67,19 @@ create index contribution_contribution_recipient_name_ft on contribution_contrib
 -- other indexes
 
 drop index if exists contribution_contribution_transaction_id;
+drop index if exists contribution_contribution_transaction_namespace;
+drop index if exists contribution_contribution_committee_ext_id;
+drop index if exists contribution_contribution_date;
+drop index if exists contribution_contribution_cycle;
 
-create index contribution_contribution_transaction_id on contribution_contribution (transaction_id);
+create unique index contribution_contribution_transaction_id on contribution_contribution (transaction_id);
+create index contribution_contribution_transaction_namespace on contribution_contribution (transaction_namespace);
+create index contribution_contribution_committee_ext_id on contribution_contribution (committee_ext_id);
+create index contribution_contribution_date on contribution_contribution (date);
+create index contribution_contribution_cycle on contribution_contribution (cycle);
+
+-- default sort order from API
+
+create index contribution_contribution_defaultsort on contribution_contribution (cycle desc, amount desc);
+
+

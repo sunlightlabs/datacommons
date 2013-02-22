@@ -1,27 +1,25 @@
-
 from saucebrush.filters import FieldAdder, FieldMerger, FieldModifier, FieldRenamer
 from saucebrush.emitters import CSVEmitter
 from saucebrush.utils import Files
 from dcdata.contribution.models import CRP_TRANSACTION_NAMESPACE
-import saucebrush
-
-from crp_denormalize import *
+from crp_denormalize import RecipientFilter, Filter, CRPDenormalizeBase, \
+    SpecFilter, parse_date_iso, CatCodeFilter, SPEC, FILE_TYPES, FIELDNAMES
 from dcdata.processor import chain_filters, load_data
-from optparse import make_option
-from dcdata.utils.dryrub import FieldCountValidator, CSVFieldVerifier,\
-    VerifiedCSVSource
+from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
+
+import os.path
 
 
 
 class Pac2CandRecipientFilter(RecipientFilter):
     def __init__(self, candidates):
         super(Pac2CandRecipientFilter, self).__init__(candidates, {})
-    def process_record(self, record):
-        cid = record['cid'].upper()
-        candidate = self._candidates.get('%s:%s' % (record['cycle'], cid), "")
-        self.add_candidate_recipient(candidate, record)
-        return record
 
+    def process_record(self, record):
+        candidate = self._candidates.get('%s:%s' % (record['cycle'], record['fec_cand_id'].upper()), "")
+        if candidate:
+            self.add_candidate_recipient(record, candidate, None)
+        return record
 
 class ContributorFilter(Filter):
     def __init__(self, committees):
@@ -33,7 +31,7 @@ class ContributorFilter(Filter):
         if committee:
             record['contributor_name'] = committee['pac_short']
             record['organization_name'] = record['contributor_name']
-            record['organization_ext_id'] = record['contributor_ext_id']
+            record['organization_ext_id'] = record['pac_id']
             record['contributor_party'] = committee['party']
         return record
 
@@ -56,10 +54,10 @@ class CRPDenormalizePac2Candidate(CRPDenormalizeBase):
             # contributor and recipient fields
             ContributorFilter(committees),
             FieldRenamer({'contributor_ext_id': 'pac_id'}),
-            FieldAdder('contributor_type', 'committee'),
+            FieldAdder('contributor_type', 'C'),
 
             Pac2CandRecipientFilter(candidates),
-            FieldAdder('recipient_type', 'politician'),
+            FieldAdder('recipient_type', 'P'),
 
             # catcode
             CatCodeFilter('contributor', catcodes),
