@@ -1,9 +1,9 @@
-django==1.3
+django
 django-debug-toolbar
 django-piston==0.2.2.1
 -e git://github.com/sunlightlabs/django-locksmith.git#egg=locksmith
 xlwt
-psycopg2
+psycopg2==2.4.1
 python-memcached
 gunicorn
 boto
@@ -13,11 +13,10 @@ django-nose
 lxml
 django-indexer
 django-paging
-django-sentry==1.13.5
-raven==1.1.5
 BeautifulSoup
 scrapelib
 httplib2
 csvkit
-name-cleaver
+pylibmc
+name-cleaver>=0.4.1
 -e git://github.com/sunlightlabs/ffs.git#egg=ffs

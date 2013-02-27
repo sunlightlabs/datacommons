@@ -12,6 +12,7 @@ INDIVIDUAL_CREATE_MAX_WARN = 100
 POLITICIAN_CREATE_MAX_WARN = 300
 ORGANIZATION_CREATE_MAX_WARN = 100
 
+
 class Command(BaseCommand):
 
     option_list = BaseCommand.option_list + (
@@ -61,6 +62,10 @@ class Command(BaseCommand):
             dest='namespace',
             help='Operate on only one namespace: [crp, nimsp]'
         ),
+        make_option('-c', '--cycle',
+            dest='cycle',
+            help='Find potential new entities from only a specified cycle (YYYY)'
+        ),
     )
 
     def __init__(self):
@@ -84,10 +89,10 @@ class Command(BaseCommand):
         self.force_pols = options['force_pols']
         self.force_orgs = options['force_orgs']
         self.namespace = options['namespace']
+        self.cycle = options['cycle']
 
         self.today = datetime.today().strftime("%Y%m%d")
         self.cursor = connections['default'].cursor()
-
 
         try:
             if not options['skip_indivs']:
@@ -103,14 +108,14 @@ class Command(BaseCommand):
             transaction.rollback()
             raise
 
-
     @transaction.commit_manually()
     def create_individuals(self):
         self.log.info("Starting to find individuals to create...")
+        self.log.debug("This is a debug log")
 
         self.cursor.execute('drop table if exists tmp_individuals_{0}'.format(self.today), None)
         creation_sql = """
-            create table tmp_individuals_{0} as
+            create table tmp_individuals_{date} as
                 select min(name) as name, id from (
                     select min(lobbyist_name) as name, lobbyist_ext_id as id
                     from lobbying_lobbyist
@@ -118,6 +123,8 @@ class Command(BaseCommand):
                     where
                         lobbyist_name != ''
                         and not exists (select * from matchbox_entityattribute where substring(value for 11) = substring(lobbyist_ext_id for 11))
+                        and not exists (select * from matchbox_entityblacklist meb where meb.name = lobbyist_name and type = 'individual')
+                        {cycle_clause}
                     group by lobbyist_ext_id
 
                     union
@@ -128,11 +135,13 @@ class Command(BaseCommand):
                         contributor_name != ''
                         and contributor_ext_id like 'U%'
                         and not exists (select * from matchbox_entityattribute where value = contributor_ext_id)
-                        {1}
+                        and not exists (select * from matchbox_entityblacklist meb where meb.name = contributor_name and type = 'individual')
+                        {namespace_clause}
+                        {cycle_clause}
                     group by contributor_ext_id
                 )x
                 group by id
-        """.format(self.today, self.get_namespace_clause())
+        """.format(date=self.today, namespace_clause=self.get_namespace_clause(), cycle_clause=self.get_cycle_clause())
 
         self.cursor.execute(creation_sql, None)
         transaction.commit()
@@ -155,14 +164,13 @@ class Command(BaseCommand):
         transaction.commit()
         self.log.info("- Created {0} individual entities.".format(len(results)))
 
-
     @transaction.commit_manually()
     def create_organizations(self):
         self.log.info("Starting to find organizations to create...")
 
         self.cursor.execute('drop table if exists tmp_lobbying_orgs_{0}'.format(self.today), None)
         tmp_sql = """
-            create table tmp_lobbying_orgs_{0} as
+            create table tmp_lobbying_orgs_{date} as
                 select 0::varchar(128) as crp_id, 0 as nimsp_id, max(l.registrant_name) as name
                 from lobbying_lobbying l
                 where
@@ -176,6 +184,8 @@ class Command(BaseCommand):
                             e.type = 'organization'
                             and lower(l.registrant_name) = lower(a.alias)
                     )
+                    and not exists (select * from matchbox_entityblacklist meb where meb.name = registrant_name and type = 'organization')
+                    {cycle_clause}
                 group by lower(registrant_name)
 
                 union
@@ -193,8 +203,11 @@ class Command(BaseCommand):
                             e.type = 'organization'
                             and lower(l.client_parent_name) = lower(a.alias)
                     )
+                    and not exists (select * from matchbox_entityblacklist meb where meb.name = client_parent_name and type = 'organization')
+                    {cycle_clause}
                 group by lower(client_parent_name)
-        """.format(self.today)
+        """.format(date=self.today, cycle_clause=self.get_cycle_clause())
+
         self.cursor.execute(tmp_sql, None)
         transaction.commit()
         self.log.info("- Table tmp_lobbying_orgs_{0} populated.".format(self.today))
@@ -222,14 +235,13 @@ class Command(BaseCommand):
         transaction.commit()
         self.log.info("- Created {0} organization entities.".format(len(results)))
 
-
     @transaction.commit_manually()
     def create_politicians(self):
         self.log.info("Starting to find politicians to create...")
 
         self.cursor.execute('drop table if exists tmp_politicians_{0}'.format(self.today), None)
         tmp_sql = """
-            create table tmp_politicians_{0} as
+            create table tmp_politicians_{date} as
                 select min(recipient_name) as name, transaction_namespace as namespace, recipient_ext_id as id
                 from contribution_contribution
                 where
@@ -237,9 +249,11 @@ class Command(BaseCommand):
                     and recipient_name != ''
                     and recipient_ext_id != ''
                     and not exists (select * from matchbox_entityattribute where value = recipient_ext_id)
-                    {1}
+                    and not exists (select * from matchbox_entityblacklist meb where meb.name = recipient_name and type = 'politician')
+                    {namespace_clause}
                 group by transaction_namespace, recipient_ext_id
-        """.format(self.today, self.get_namespace_clause())
+        """.format(date=self.today, namespace_clause=self.get_namespace_clause(), cycle_clause=self.get_cycle_clause())
+
         self.cursor.execute(tmp_sql, None)
         transaction.commit()
         self.log.info("- Table tmp_politicians_{0} populated.".format(self.today))
@@ -270,7 +284,6 @@ class Command(BaseCommand):
         transaction.commit()
         self.log.info("- Created {0} politician entities.".format(len(results)))
 
-
     def get_namespace_clause(self):
         namespace_clause = ''
         if self.namespace:
@@ -281,8 +294,12 @@ class Command(BaseCommand):
 
         return namespace_clause
 
+    def get_cycle_clause(self):
+        if self.cycle:
+            return 'and cycle = {0}'.format(self.cycle)
+        else:
+            return ''
 
 
 class EntityManagementError(Exception):
     pass
-

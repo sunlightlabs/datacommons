@@ -19,7 +19,9 @@ create table assoc_bundle_recipients as
         entity_id
     from
         contribution_bundle_latest
-        inner join contribution_committee on committee_fec_id = committee_id
+        inner join contribution_committee on
+            committee_fec_id = committee_id
+            and case when report_year % 2 = 0 then report_year = cycle else report_year + 1 = cycle end
         inner join matchbox_entityattribute on recipient_id = value
     where
         namespace in ('urn:crp:recipient', 'urn:fec:committee');
@@ -90,6 +92,11 @@ group by
     fe.id , coalesce(fe.name, lb.employer, lb.name),
     le.id, coalesce(le.name, fe.name, lb.name),
     cycle;
+
+create index agg_bundling__recipient_id on agg_bundling (recipient_id);
+create index agg_bundling__firm_id on agg_bundling (firm_id);
+create index agg_bundling__lobbyist_id on agg_bundling (lobbyist_id);
+create index agg_bundling__cycle on agg_bundling (cycle);
 
 drop view if exists lobbyist_bundling_denormalized_view;
 create view lobbyist_bundling_denormalized_view as

@@ -153,6 +153,8 @@ cross join (values (-1), (2012)) as cycles (cycle)
 where committee_entity is not null
 group by entity_id, cycle;
 
+create index agg_fec_indexp_totals__entity_id on agg_fec_indexp_totals (entity_id);
+create index agg_fec_indexp_totals__cycle on agg_fec_indexp_totals (cycle);
 
 
 

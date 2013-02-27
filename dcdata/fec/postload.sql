@@ -248,6 +248,8 @@ inner join matchbox_entityattribute a on c.committee_id = a.value and a.namespac
 cross join (values (-1), (2012)) as cycles (cycle)
 group by cycle, entity_id;
 
+create index agg_fec_committee_summaries__cycle on agg_fec_committee_summaries (cycle);
+create index agg_fec_committee_summaries__entity_id on agg_fec_committee_summaries (entity_id);
 
 
 -- these three are unfortunately not true in the data

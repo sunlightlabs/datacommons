@@ -2,12 +2,12 @@
 
 import re
 import sys
-
 import MySQLdb
-import psycopg2, psycopg2.extensions
+import psycopg2
+import psycopg2.extensions
 from optparse import OptionParser
 
-from settings import OTHER_DATABASES
+from django.conf import settings
 
 usage = "usage: %prog "
 
@@ -19,10 +19,10 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 
 try:
     nimsp_con = MySQLdb.connect(
-        db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
-        user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
-        host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
-        passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
+        db=settings.OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+        user=settings.OTHER_DATABASES['nimsp']['DATABASE_USER'],
+        host=settings.OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in settings.OTHER_DATABASES['nimsp'] else 'localhost',
+        passwd=settings.OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],
 )
     nimsp_cur1 = nimsp_con.cursor()
     nimsp_cur2 = nimsp_con.cursor()
@@ -32,10 +32,10 @@ except Exception, e:
 
 try:
     util_con = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (
-            OTHER_DATABASES['util']['DATABASE_NAME'],
-            OTHER_DATABASES['util']['DATABASE_USER'],
-            OTHER_DATABASES['util']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['util'] else 'localhost',
-            OTHER_DATABASES['util']['DATABASE_PASSWORD'],
+            settings.OTHER_DATABASES['util']['DATABASE_NAME'],
+            settings.OTHER_DATABASES['util']['DATABASE_USER'],
+            settings.OTHER_DATABASES['util']['DATABASE_HOST'] if 'DATABASE_HOST' in settings.OTHER_DATABASES['util'] else 'localhost',
+            settings.OTHER_DATABASES['util']['DATABASE_PASSWORD'],
             ))
     util_con.set_client_encoding('LATIN1')
     util_cur1 = util_con.cursor()

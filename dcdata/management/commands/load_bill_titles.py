@@ -1,9 +1,10 @@
 from dcdata.lobbying.models import Bill, BillTitle
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.http import Http404
 from optparse import make_option
 from time import sleep
-import os.path
 import urllib2
 import urllib
 try:
@@ -84,7 +85,7 @@ class Command(BaseCommand):
 
 
     def format_url(self, path, **params):
-        params.update({'key': 'a34dd813faff9072ff2753ff56bd2a1e73300976'})
+        params.update({'key': settings.OPEN_CONGRESS_API_KEY})
         params.update({'format': 'json'})
 
         return '?'.join([path, urllib.urlencode(params)])

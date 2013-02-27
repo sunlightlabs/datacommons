@@ -1,7 +1,9 @@
 from django.core.management.base import CommandError, BaseCommand
 from django.db.utils             import DatabaseError
 from django.db                   import connections, transaction
-from name_cleaver                import IndividualNameCleaver, RunningMatesNames
+from name_cleaver                import IndividualNameCleaver
+from name_cleaver.names          import RunningMatesNames
+from name_cleaver.nicknames      import NICKNAMES
 from optparse                    import make_option
 
 import datetime
@@ -65,7 +67,7 @@ class MatchingCommand(BaseCommand):
         table = options['table'] or self.generate_table_name()
 
         cursor = connections['default'].cursor()
-        if options.has_key('table') and options['table']:
+        if options.get('table'):
             print 'Resuming with table {0}'.format(table)
         else:
             try:
@@ -174,10 +176,10 @@ class MatchingCommand(BaseCommand):
             if confidence >= self.confidence_threshold:
                 metadata_confidence = self.get_metadata_confidence(match, subject_obj)
 
-                if not matches_we_like.has_key(confidence):
+                if not confidence in matches_we_like:
                     matches_we_like[confidence] = []
 
-                matches_we_like[confidence].append((match,metadata_confidence))
+                matches_we_like[confidence].append((match, metadata_confidence))
 
         return matches_we_like
 
@@ -215,78 +217,6 @@ class MatchingCommand(BaseCommand):
         pass
 
 
-    # List of names which can be equated with each other
-    # Do not put names that cannot be considered equivalent
-    # in the same tuple, even if they have the same nickname.
-    # For instance, John and Jacob could both be shortened to
-    # Jack, but unless you want John and Jacob to be stand-ins
-    # for each other, they should not be together.
-    NICKNAMES = (
-        ('Allan', 'Allen', 'Alan', 'Al'),
-        ('Allison', 'Alison', 'Ali', 'Aly', 'Allie'),
-        ('Andre', u'Andr\00e9'),
-        ('Andrew', 'Andy', 'Drew'),
-        ('Antonio', 'Anthony', 'Tony', 'Anton'),
-        ('Barbara', 'Barb'),
-        ('Benjamin', 'Ben'),
-        ('Bernard', 'Bernie'),
-        ('Calvin', 'Cal'),
-        ('Charles', 'Chas', 'Chuck', 'Chucky', 'Charlie'),
-        ('Christine', 'Christina', 'Chris'),
-        ('Christopher', 'Chris'),
-        ('Daniel', 'Dan', 'Danny'),
-        ('David', 'Dave'),
-        ('Donald', 'Don', 'Donny'),
-        ('Douglas', 'Doug'),
-        ('Edward', 'Ed', 'Eddie'),
-        ('Elizabeth', 'Liz', 'Lizbet', 'Lizbeth', 'Beth', 'Lizzie'),
-        ('Francis', 'Frank', 'Frankie'),
-        ('Fredrick', 'Frederick', 'Fred', 'Freddy'),
-        ('Gerard', 'Gerry', 'Jerry'),
-        ('Gerald', 'Gerry', 'Jerry'),
-        ('Gregory', 'Greg'),
-        ('Harris', 'Harry', 'Harrison'),
-        ('Henry', 'Hank'),
-        ('Herbert', 'Herb'),
-        ('Howard', 'Howie'),
-        ('James', 'Jim', 'Jimmy'),
-        ('Jerome', 'Jerry'),
-        ('John', 'Jon', 'Johnny', 'Jack'),
-        ('Joseph', 'Joe'),
-        ('Judith', 'Judy'),
-        ('Johnathan', 'John'),
-        ('Jonathan', 'Jon'),
-        ('Katherine', 'Kathy', 'Katie'),
-        ('Catherine', 'Cathy', 'Kathy'),
-        ('Kathleen', 'Kathy'),
-        ('Kenneth', 'Ken', 'Kenny'),
-        ('Lawrence', 'Laurence', 'Larry'),
-        ('Lewis', 'Louis', 'Lou'),
-        ('Matthew', 'Matt'),
-        ('Margaret', 'Marge', 'Margie', 'Maggie', 'Meg'),
-        ('Martin', 'Marty'),
-        ('Melvin', 'Melvyn' ,'Mel'),
-        ('Mervyn', 'Merv'),
-        ('Michael', 'Mike'),
-        ('Mitchell', 'Mitch'),
-        ('Nicholas', 'Nick'),
-        ('Patricia', 'Pat', 'Patty', 'Pati'),
-        ('Patrick', 'Pat'),
-        ('Peter', 'Pete'),
-        ('Philip', 'Phillip', 'Phil'),
-        ('Randall', 'Randy'),
-        ('Richard', 'Rick', 'Dick', 'Rich'),
-        ('Robert', 'Rob', 'Robby', 'Bobby', 'Bob'),
-        ('Steven', 'Stephen', 'Steve'),
-        ('Stephanie', 'Steph'),
-        ('Stewart', 'Stuart', 'Stu'),
-        ('Terrance', 'Terry'),
-        ('Thomas', 'Tom', 'Thom', 'Tommy'),
-        ('William', 'Bill', 'Billy', 'Will', 'Willy'),
-        ('Willis', 'Will'),
-    )
-
-
     def get_confidence(self, name1, name2):
         score = 0
 
@@ -300,7 +230,7 @@ class MatchingCommand(BaseCommand):
         if name1.first == name2.first:
             score += 1
         else:
-            for name_set in self.NICKNAMES:
+            for name_set in NICKNAMES:
                 if set(name_set).issuperset([name1.first, name2.first]):
                     score += 0.6
                     break
@@ -345,6 +275,3 @@ class MatchingCommand(BaseCommand):
     def generate_table_name(self):
         date_time_now = datetime.datetime.now().strftime('%Y%m%d_%H%M')
         return '_'.join([self.match_table_prefix, 'matches', date_time_now])
-
-
-
