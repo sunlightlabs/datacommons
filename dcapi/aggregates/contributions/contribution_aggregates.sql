@@ -430,12 +430,12 @@ select date_trunc('second', now()) || ' -- create index recipient_associations_t
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
 
-
 drop table if exists contributions_flat;
 create table contributions_flat (
+    transaction_id  varchar(64),
     transaction_namespace character varying(64),
     amount numeric,
-    count bigint,
+    "date" date,
     cycle integer,
     contributor_name character varying(255),
     contributor_entity uuid,
@@ -453,13 +453,13 @@ create table contributions_flat (
 );
 
 insert into contributions_flat (
-    transaction_id, transaction_namespace, amount, count, cycle,
+    transaction_id, transaction_namespace, amount, count, date, cycle,
     contributor_name, contributor_type, contributor_category,
     organization_name, parent_organization_name, recipient_name,
     recipient_type, party, seat
 )
 select
-    transaction_id, transaction_namespace, amount, count, cycle,
+    transaction_id, transaction_namespace, amount, count, date, cycle,
     contributor_name, contributor_type, contributor_category,
     organization_name, parent_organization_name, recipient_name,
     recipient_type, party, seat
