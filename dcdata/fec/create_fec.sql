@@ -1,10 +1,12 @@
-
-drop table if exists fec_candidates_import;
-create table fec_candidates_import (
-    candidate_id varchar(9) PRIMARY KEY,
+-- BEGIN: SOURCE TABLES
+drop table if exists fec_candidates cascade;
+create table fec_candidates (
+    candidate_id varchar(9),
+    cycle smallint,
     candidate_name varchar(200),
     party varchar(3),
     election_year integer,
+    race varchar(7),
     office_state varchar(2),
     office varchar(1),
     office_district varchar(2),
@@ -15,12 +17,14 @@ create table fec_candidates_import (
     street2 varchar(34),
     city varchar(30),
     state varchar(2),
-    zipcode varchar(9)
+    zipcode varchar(9),
+    primary key (candidate_id, cycle)
 );
 
-drop table if exists fec_committees;
+drop table if exists fec_committees cascade;
 create table fec_committees (
-    committee_id varchar(9) PRIMARY KEY,
+    committee_id varchar(9),
+    cycle smallint,
     committee_name varchar(200),
     treasurers_name varchar(90),
     street1 varchar(34),
@@ -34,11 +38,13 @@ create table fec_committees (
     filing_frequency varchar(1),
     interest_group varchar(1),
     connected_org varchar(200),
-    candidate_id varchar(9)
+    candidate_id varchar(9),
+    primary key (committee_id, cycle)
 );
 
-drop table if exists fec_indiv_import;
-create table fec_indiv_import (
+drop table if exists fec_indiv cascade;
+create table fec_indiv (
+    cycle smallint,
     filer_id varchar(9),
     amendment varchar(1),
     report_type varchar(3),
@@ -52,7 +58,7 @@ create table fec_indiv_import (
     zipcode varchar(9),
     employer varchar(38),
     occupation varchar(38),
-    date varchar(8),
+    "date" date,
     amount numeric(14,2),
     other_id varchar(9),
     transaction_id varchar(32),
@@ -62,8 +68,9 @@ create table fec_indiv_import (
     fec_record varchar(19)
 );
 
-drop table if exists fec_pac2cand_import;
-create table fec_pac2cand_import (
+drop table if exists fec_pac2cand cascade;
+create table fec_pac2cand (
+    cycle smallint,
     filer_id varchar(9),
     amendment varchar(1),
     report_type varchar(3),
@@ -77,7 +84,7 @@ create table fec_pac2cand_import (
     zipcode varchar(9),
     employer varchar(38),
     occupation varchar(38),
-    date varchar(8),
+    "date" date,
     amount numeric(14,2),
     other_id varchar(9),
     candidate_id varchar(9),
@@ -88,8 +95,9 @@ create table fec_pac2cand_import (
     fec_record varchar(19)
 );
 
-drop table if exists fec_pac2pac_import;
-CREATE TABLE fec_pac2pac_import (
+drop table if exists fec_pac2pac cascade;
+CREATE TABLE fec_pac2pac (
+    cycle smallint,
     filer_id varchar(9),
     amendment varchar(1),
     report_type varchar(3),
@@ -103,7 +111,7 @@ CREATE TABLE fec_pac2pac_import (
     zipcode varchar(9),
     employer varchar(38),
     occupation varchar(38),
-    date varchar(8),
+    "date" date,
     amount numeric(14,2),
     other_id varchar(9),
     transaction_id varchar(32),
@@ -113,9 +121,10 @@ CREATE TABLE fec_pac2pac_import (
     fec_record varchar(19)
 );
 
-drop table if exists fec_candidate_summaries;
+drop table if exists fec_candidate_summaries cascade;
 CREATE TABLE fec_candidate_summaries (
-    candidate_id varchar(9) PRIMARY KEY,
+    candidate_id varchar(9),
+    cycle smallint,
     candidate_name varchar(200),
     incumbent_challenger_open varchar(1),
     party varchar(1),
@@ -144,12 +153,14 @@ CREATE TABLE fec_candidate_summaries (
     contributions_from_party_committees numeric(14,2),       -- 17b
     ending_date date,
     refunds_to_individuals numeric(14,2),                    -- 28a
-    refunds_to_committees numeric(14,2)                      -- 28b & 28c?
+    refunds_to_committees numeric(14,2),                     -- 28b & 28c?
+    primary key (candidate_id, cycle)
 );
 
-drop table if exists fec_committee_summaries;
+drop table if exists fec_committee_summaries cascade;
 CREATE TABLE fec_committee_summaries (
-    committee_id varchar(9) PRIMARY KEY,
+    committee_id varchar(9),
+    cycle smallint,
     committee_name varchar(200),
     committee_type varchar(1),
     committee_designation varchar(1),
@@ -175,6 +186,125 @@ CREATE TABLE fec_committee_summaries (
     independent_expenditures_made numeric(14,2),
     party_coordinated_expenditures_made numeric(14,2),
     nonfederal_expenditure_share numeric(14,2),
-    through_date date
+    through_date date,
+    primary key (committee_id, cycle)
 );
 
+-- END: SOURCE TABLES
+
+-- BEGIN: UTILITY TABLES
+
+drop table if exists fec_out_of_date_cycles cascade;
+create table fec_out_of_date_cycles (
+    cycle smallint not null,
+    created_at timestamp default(now())
+);
+
+-- END: UTILITY TABLES
+
+-- BEGIN: AGGREGATE/COMPUTED TABLES
+
+CREATE TABLE agg_fec_candidate_cumulative_timeline (
+    candidate_id character varying(9),
+    cycle smallint,
+    race text,
+    week integer,
+    cumulative_raised numeric
+);
+CREATE TABLE agg_fec_candidate_rankings (
+    candidate_id character varying(9),
+    office character varying(1),
+    election_year integer,
+    primary_election_status character varying,
+    num_candidates_in_field bigint,
+    total_receipts_rank bigint,
+    cash_on_hand_rank bigint,
+    total_disbursements_rank bigint
+);
+CREATE TABLE agg_fec_candidate_timeline (
+    candidate_id character varying(9),
+    cycle smallint,
+    race text,
+    week integer,
+    count bigint,
+    amount numeric
+);
+CREATE TABLE agg_fec_committee_summaries (
+    cycle integer,
+    entity_id uuid,
+    total_raised numeric,
+    individual_contributions numeric,
+    contributions_from_other_committees numeric,
+    transfers_from_affiliates numeric,
+    nonfederal_transfers_received numeric,
+    total_loans_received numeric,
+    total_disbursements numeric,
+    cash_close_of_period numeric,
+    debts_owed numeric,
+    contributions_to_committees numeric,
+    independent_expenditures_made numeric,
+    party_coordinated_expenditures_made numeric,
+    nonfederal_expenditure_share numeric,
+    min_through_date date,
+    max_through_date date,
+    count bigint
+);
+create index agg_fec_committee_summaries__cycle on agg_fec_committee_summaries (cycle);
+create index agg_fec_committee_summaries__entity_id on agg_fec_committee_summaries (entity_id);
+
+CREATE TABLE agg_fec_race_status (
+    election_year integer,
+    race text,
+    special_election_status text,
+    primary_election_status text,
+    runoff_election_status text,
+    general_election_status text
+);
+CREATE TABLE fec_candidate_itemized (
+    contributor_name character varying(200),
+    cycle smallint,
+    date date,
+    amount numeric,
+    contributor_type text,
+    transaction_type text,
+    employer character varying,
+    occupation character varying,
+    city character varying(30),
+    state character varying(2),
+    zipcode character varying(9),
+    candidate_name character varying(200),
+    party character varying(3),
+    race text,
+    status character varying(1),
+    committee_id character varying(9),
+    candidate_id character varying(9)
+);
+create index fec_candidate_itemized_candidate_id on fec_candidate_itemized (candidate_id);
+create index fec_candidate_itemized_cycle on fec_candidate_itemized (cycle);
+
+CREATE TABLE fec_committee_itemized (
+    contributor_name character varying(200),
+    cycle smallint,
+    date date,
+    amount numeric,
+    contributor_type text,
+    contributor_committee_id character varying,
+    transaction_type text,
+    employer character varying,
+    occupation character varying(38),
+    city character varying(30),
+    state character varying(2),
+    zipcode character varying(9),
+    committee_name character varying(200),
+    committee_id character varying(9),
+    committee_designation character varying(1),
+    committee_type character varying(1),
+    committee_party character varying(3),
+    interest_group character varying(1),
+    connected_org character varying(200),
+    candidate_id character varying(9)
+);
+create index fec_committee_itemized_committee_id on fec_committee_itemized (committee_id);
+create index fec_committee_itemized__transaction_type_idx on fec_committee_itemized (transaction_type);
+
+-- END: AGGREGATE/COMPUTED TABLES
