@@ -1,8 +1,18 @@
 from django.core.management.base import CommandError, BaseCommand
 from django.db import connections, transaction
 
+from commando import command, true, store
+from django.conf import settings
+
 
 class Command(BaseCommand):
+    @command(description='Create partitions (by cycle) for FEC tables.')
+    @true('-T', '--all-tables', dest='all_tables', default=False,                 help="Create partitions for the whole set of FEC tables")
+    @store('-t', '--table',     dest='table',      default=None,                  help="Table to create partition for")
+    @store('-c', '--cycle',     dest='cycle',      default=settings.LATEST_CYCLE, help="Table to create partition for", required=True)
+
+    # TODO
+    #@store('-C', '--all-cycles', default=False, help="Create partitions for all cycles")
 
     idx_cols_by_table = {
         'fec_indiv':      ['filer_id'],
@@ -16,7 +26,7 @@ class Command(BaseCommand):
     }
 
     @transaction.commit_on_success
-    def handle(self, *args, **kwargs):
+    def handle(self, params):
         """
         Takes a relation name and a cycle and creates a partition for it.
         Current relation names for FEC data are:
@@ -29,14 +39,18 @@ class Command(BaseCommand):
             fec_committee_summaries
         """
 
-        base_table = args[-2]
-        cycle = args[-1]
+        cycle = params.cycle
 
-        if base_table is None:
-            raise CommandError("You must specify a table")
-        if cycle is None:
-            raise CommandError("You must specify a cycle")
+        if params.all_tables:
+            for table in self.idx_cols_by_table.keys():
+                self.create_partition(cycle, table)
+        elif params.table:
+            self.create_partition(cycle, params.table)
+        else:
+            if params.table is None:
+                raise CommandError("You must specify a table")
 
+    def create_partition(self, cycle, base_table):
         partition_name = '{}_{}'.format(base_table, cycle[-2:])
 
         create_stmt = """

@@ -4,7 +4,7 @@ import urllib
 
 from collections import namedtuple
 from dcdata.utils.log import set_up_logger
-from django.db import connection
+from django.db import connection, transaction
 from django.core.management import call_command
 
 
@@ -26,6 +26,7 @@ class FECImporter():
 
         self.log = set_up_logger('fec_importer', self.processing_dir, 'Unhappy FEC Importer')
 
+    @transaction.commit_manually()
     def run(self):
         if not self.skip_download:
             try:
@@ -59,6 +60,9 @@ class FECImporter():
             self.log.info("Restoring columns which were not in CSV and manually populating cycle on tables which require it...")
             self.restore_calculated_fields(c)
 
+            self.log.info("Finding what cycles are in this set of files...")
+            self.get_cycles_from_data(c)
+
             self.log.info("Dropping and recreating partitions for this cycle...")
             self.recreate_partitions()
 
@@ -71,8 +75,14 @@ class FECImporter():
             self.log.info("Deleting out of date cycle records.")
             self.delete_out_of_date_cycle_records(c)
 
+            self.log.info("Committing.")
+            transaction.commit()
+
             self.log.info("Done.")
         except Exception as e:
+            self.log.error("Rolling back.")
+            transaction.rollback()
+
             self.log.error(e)
             raise
 
@@ -90,13 +100,17 @@ class FECImporter():
         Certain tables have calculated fields that didn't exist in the original CSV,
         so we removed them from the temp tables. Now that the import is over, we add
         them back and populate them with values if necessary.
+        
+        (Most tables have a date that can be converted to a cycle, but not all.)
         """
 
         # We need to add the column back on. It was previously removed (relative to the permanent table),
         # so that we didn't have to alter our COPY commands (since cycle isn't in the file).
         cursor.execute('alter table %s add column race varchar(7)' % self.temp_table_name('fec_candidates'))
         cursor.execute('alter table %s add column cycle smallint' % self.temp_table_name('fec_committees'))
+        cursor.execute('alter table %s add column cycle smallint' % self.temp_table_name('fec_committee_summaries'))
         cursor.execute('update %s set cycle = %s' % (self.temp_table_name('fec_committees'), self.cycle))
+        cursor.execute('update %s set cycle = %s' % (self.temp_table_name('fec_committee_summaries'), self.cycle))
 
     def load(self, c):
         for conf in self.cycle_config:
@@ -158,6 +172,19 @@ class FECImporter():
 
     def _working_filename(self, config):
         return os.path.join(self._working_dir(config), config.filename)
+
+    def get_cycles_from_data(self, c):
+        """
+        The files contain data for cycles which are out of bounds for the file.
+        Query the temporary load tables to find out what cycles we're working with.
+        """
+
+        table_cycles = {}
+        for conf in self.cycle_config:
+            c.execute('select distinct cycle from {}'.format(self.temp_table_name(conf.sql_table)))
+            table_cycles[self.temp_table_name(conf.sql_table)] = c.fetchall()
+
+        self.log.info(table_cycles)
 
     def recreate_partitions(self):
         for conf in self.cycle_config:

@@ -160,21 +160,96 @@ select
 from tmp_fec_pac2pac;
 
 insert into fec_candidate_summaries (
+    candidate_id, cycle, candidate_name, incumbent_challenger_open,
+    party, party_affiliation, total_receipts, authorized_transfers_from,
+    total_disbursements, transfers_to_authorized, beginning_cash, ending_cash,
+    contributions_from_candidate, loans_from_candidate, other_loans,
+    candidate_loan_repayments, other_loan_repayments, debts_owed_by,
+    total_individual_contributions, state, district, special_election_status,
+    primary_election_status, runoff_election_status, general_election_status,
+    general_election_ct, contributions_from_other_committees,
+    contributions_from_party_committees, ending_date, refunds_to_individuals,
+    refunds_to_committees
 )
 select
-    to_cycle()
-    ...
+    candidate_id,
+    to_cycle(ending_date) as cycle,
+    candidate_name,
+    incumbent_challenger_open,
+    party,
+    party_affiliation,
+    total_receipts,
+    authorized_transfers_from,
+    total_disbursements,
+    transfers_to_authorized,
+    beginning_cash,
+    ending_cash,
+    contributions_from_candidate,
+    loans_from_candidate,
+    other_loans,
+    candidate_loan_repayments,
+    other_loan_repayments,
+    debts_owed_by,
+    total_individual_contributions,
+    state,
+    district,
+    special_election_status,
+    primary_election_status,
+    runoff_election_status,
+    general_election_status,
+    general_election_ct,
+    contributions_from_other_committees,
+    contributions_from_party_committees,
+    ending_date,
+    refunds_to_individuals,
+    refunds_to_committees
 from tmp_fec_candidate_summaries
 ;
 
 insert into fec_committee_summaries (
+    committee_id, cycle, committee_name, committee_type,
+    committee_designation, filing_frequency, total_receipts, 
+    transfers_from_affiliates, individual_contributions, 
+    contributions_from_other_committees, contributions_from_candidate, 
+    candidate_loans, total_loans_received, total_disbursements, 
+    transfers_to_affiliates, refunds_to_individuals, refunds_to_committees, 
+    candidate_loan_repayments, loan_repayments, cash_beginning_of_year, 
+    cash_close_of_period, debts_owed, nonfederal_transfers_received, 
+    contributions_to_committees, independent_expenditures_made, 
+    party_coordinated_expenditures_made, nonfederal_expenditure_share, 
+    through_date
 )
 select
-    to_cycle()
-    ...
-from tmp_fec_candidate_summaries
+    committee_id,
+    cycle,
+    committee_name,
+    committee_type,
+    committee_designation,
+    filing_frequency,
+    total_receipts,
+    transfers_from_affiliates,
+    individual_contributions,
+    contributions_from_other_committees,
+    contributions_from_candidate,
+    candidate_loans,
+    total_loans_received,
+    total_disbursements,
+    transfers_to_affiliates,
+    refunds_to_individuals,
+    refunds_to_committees,
+    candidate_loan_repayments,
+    loan_repayments,
+    cash_beginning_of_year,
+    cash_close_of_period,
+    debts_owed,
+    nonfederal_transfers_received,
+    contributions_to_committees,
+    independent_expenditures_made,
+    party_coordinated_expenditures_made,
+    nonfederal_expenditure_share,
+    through_date
+from tmp_fec_committee_summaries
 ;
-
 
 
 -- END POSTPROCESSING

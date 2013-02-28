@@ -15,6 +15,6 @@ alter table tmp_fec_pac2pac drop column cycle;
 alter table tmp_fec_candidate_summaries drop column cycle;
 alter table tmp_fec_committee_summaries drop column cycle;
 
-alter table tmp_fec_indiv alter column date type varchar(8);
-alter table tmp_fec_pac2cand alter column date type varchar(8);
-alter table tmp_fec_pac2pac alter column date type varchar(8);
+alter table tmp_fec_indiv alter column "date" type varchar(8);
+alter table tmp_fec_pac2cand alter column "date" type varchar(8);
+alter table tmp_fec_pac2pac alter column "date" type varchar(8);

@@ -5,7 +5,7 @@ from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopLis
 
 class CandidateSummaryHandler(EntitySingletonHandler):
 
-    args = ['entity_id']
+    args = ['entity_id', 'cycle']
     fields = "total_raised office total_receipts_rank total_disbursements_rank cash_on_hand_rank max_rank contributions_indiv contributions_pac contributions_party contributions_candidate transfers_in disbursements cash_on_hand date".split()
 
     stmt = """
@@ -25,11 +25,12 @@ class CandidateSummaryHandler(EntitySingletonHandler):
             ending_cash,
             ending_date
         from fec_candidates c
-        inner join fec_candidate_summaries s using (candidate_id)
+        inner join fec_candidate_summaries s using (candidate_id, cycle)
         inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
-        left join agg_fec_candidate_rankings r using (candidate_id)
+        left join agg_fec_candidate_rankings r on c.candidate_id = r.candidate_id and to_cycle(r.election_year) = c.cycle
         where
             a.entity_id = %s
+            and c.cycle = %s
     """
 
 

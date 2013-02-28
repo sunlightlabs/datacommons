@@ -48,6 +48,8 @@ MIDDLEWARE_CLASSES = (
     'dcapi.middleware.APIMiddleware',
 )
 
+LATEST_CYCLE = 2012
+
 ROOT_URLCONF = 'urls'
 SYSTEM_API_KEY = open(os.path.expanduser('~/.api-key-ie')).read().strip()
 
