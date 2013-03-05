@@ -195,6 +195,7 @@ class EntitySearchHandler(BaseHandler):
             on e.id = l.entity_id and l.cycle = -1
         left join agg_entities a
             on e.id = a.entity_id and a.cycle = -1
+        where case when e.type = 'politician' then a.recipient_count > 0 or a.recipient_amount > 0 else 't' end
     """
 
     def read(self, request):

@@ -64,9 +64,12 @@ insert_cmte_ids_stmt = """
     insert into matchbox_entityattribute (entity_id, namespace, value)
     select distinct entity_id, 'urn:fec:committee', c.CmteID
     from tmp_crp_committees c
-    inner join matchbox_entityalias a on a.namespace in ('', 'urn:crp:organization') and lower(a.alias) = lower(c.ultorg)
+    inner join matchbox_entityalias a on lower(a.alias) = lower(c.ultorg)
+    inner join matchbox_entity me on a.entity_id = me.id
     where
-        not exists
+        a.namespace in ('', 'urn:crp:organization')
+        and me.type = 'organization'
+        and not exists
             (select *
             from matchbox_entityattribute x
             where
