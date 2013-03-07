@@ -1233,3 +1233,43 @@ create table agg_top_contributors_by_party
 select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
 
 
+-- Sub Industry Contribution Totals (with industry and sector mapping)
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_subindustry_totals';
+drop table if exists agg_subindustry_totals;
+
+select date_trunc('second', now()) || ' -- create table agg_subindustry_totals';
+create table agg_subindustry_totals as (
+    select 
+        mea.value as subindustry_id,
+        meap.value as industry_id,
+        left(meap.value,1) as sector_id, 
+        me.name as subindustry,
+        mep.name as industry,
+        p.cycle,
+        p.D as contributions_to_democrats,
+        p.R as contributions_to_republicans,
+        p.D + p.R as total_contributions
+    from 
+        matchbox_entity me 
+        inner join matchbox_entityattribute mea on me.id = mea.entity_id and mea.namespace = 'urn:crp:subindustry' 
+        inner join matchbox_industrymetadata mim on mim.entity_id = me.id 
+        inner join matchbox_entity mep on mep.id = mim.parent_industry_id 
+        inner join matchbox_entityattribute meap on meap.entity_id = mim.parent_industry_id 
+        left outer join (
+            select 
+                 organization_entity, 
+                 cycle, 
+                 sum(D) as D, 
+                 sum(R) as R 
+            from    
+                (select
+                    organization_entity, 
+                    cycle, 
+                    case when recipient_party = 'D' then amount else 0 end as D, 
+                    case when recipient_party = 'R' then amount else 0 end as R 
+                from 
+                    agg_party_from_org) as i 
+            group by 
+                organization_entity,cycle) as p on p.organization_entity = me.id
+);
