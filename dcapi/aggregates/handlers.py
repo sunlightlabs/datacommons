@@ -35,6 +35,11 @@ def execute_one(stmt, *args):
     else:
         return cursor.fetchone()
 
+def execute_all(stmt, *args):
+    cursor = connection.cursor()
+    execute(cursor,stmt,args)
+    return cursor.fetchall()
+
 def execute(cursor, stmt, args):
     try:
         # Just gonna leave this here...
