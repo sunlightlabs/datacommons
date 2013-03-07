@@ -1,6 +1,6 @@
 from dcapi.aggregates.handlers import EntityTopListHandler, \
     EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, \
-    execute_top, check_empty
+    execute_top, check_empty, execute_all
 from django.core.cache import cache
 from piston.handler import BaseHandler
 
@@ -504,4 +504,48 @@ class TopOrgContributorsByAreaContributorTypeHandler(TopListHandler):
             amount desc, count desc
         limit %s
     """
+
+class SubIndustryTotalsHandler(BaseHandler):
+    args = ['cycle']
+    fields =  ['subindustry_id', 'industry_id', 'sector_id', 'total_contributions']
+
+    stmt = """
+        select
+            subindustry_id,
+            industry_id,
+            sector_id,
+            total_contributions
+        from
+            agg_subindustry_totals st
+        where 
+            not exists (select 1 from agg_suppressed_catcodes sc where column1 = subindustry_id)
+             %s
+        order by sector_id,industry_id,subindustry_id
+    """
+    
+    def read(self, request):
+        cycle = request.GET.get('cycle', ALL_CYCLES)
+
+        cache_key = self.get_cache_key('subindustry_totals', cycle)
+        cached = cache.get(cache_key, 'has expired')
+
+        if cached == 'has expired':
+            if cycle == ALL_CYCLES:
+                cycle_where = 'and cycle = -1'
+            else:
+                cycle_where = 'and cycle = %d' % int(cycle)
+
+            result = execute_all(self.stmt % cycle_where,[cycle])
+
+            if result:
+                result = [dict(zip(self.fields, row)) for row in result]
+
+            cache.set(cache_key, result)
+
+            return result
+        else:
+            return cached
+
+    def get_cache_key(self, query_name, cycle):
+        return "_".join([query_name, str(cycle)])
 
