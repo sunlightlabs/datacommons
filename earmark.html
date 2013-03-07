@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influence Explorer API | Earmark</title>
+    
+    
+  <link rel="shortcut icon" type="image/ico" href="http://s3.amazonaws.com/assets.sunlightfoundation.com/brisket/1.0/images/favicon.ico">
+  <link rel="stylesheet" type="text/css" href="documentup.css">
+  <script type="text/javascript" src="//use.typekit.net/egj6wnp.js"></script>
+  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+</head>
+  <body><div id="container">
+  <div id="nav">
+    
+      <div id="header">
+        <a href="index.html" id="logo">Influence Explorer API</a>
+      </div>
+    
+    <ul id="sections">
+      
+        <li>
+          <a href="#earmarks-schema">Earmarks Schema</a>
+          
+        </li>
+      
+    </ul>
+    
+    
+      <div class="extra twitter">
+        <iframe allowtransparency="true" frameborder="0" scrolling="no" style="width:162px; height:20px;" src="https://platform.twitter.com/widgets/follow_button.html?screen_name=sunlightlabs&show_count=false"></iframe></div><div class="thanks">powered by <a href="http://documentup.com">DocumentUp</a></div>
+    
+  </div>
+  <div id="content">
+    
+    <h2 id='earmarks-schema'>Earmarks Schema</h2 id='earmarks-schema'>
+<style>
+    dd{ clear: left; margin-bottom: 1em; }
+</style>
+
+<dl>
+    <dt>
+        fiscal_year
+    </dt>
+    <dd>
+        The fiscal year for the bill in which the earmark appears.
+    </dd>
+    <dt>
+        final_amount
+    </dt>
+    <dd>
+        The earmark amount in the final version of the bill.
+    </dd>
+    <dt>
+        budget_amount
+    </dt>
+    <dd>
+        The earmark amount in the President&#39;s budget proposal.
+    </dd>
+    <dt>
+        house_amount
+    </dt>
+    <dd>
+        The earmark amount in the version of the bill passed by the House.
+    </dd>
+    <dt>
+        senate_amount
+    </dt>
+    <dd>
+        The earmark amount in the version of the bill passed by the Senate.
+    </dd>
+    <dt>
+        omni_amount
+    </dt>
+    <dd>
+        The earmark amount in the omnibus appropriations bill.
+    </dd>
+    <dt>
+        bill, bill_section, bill_subsection
+    </dt>
+    <dd>
+        The bill, section and subsection where the earmark appears.
+    </dd>
+    <dt>
+        description
+    </dt>
+    <dd>
+        The earmark description.
+    </dd>
+    <dt>
+        notes
+    </dt>
+    <dd>
+        Notes added by Taxpayers for Common Sense.
+    </dd>
+    <dt>
+        presidential
+    </dt>
+    <dd>
+        <p>
+            Presidential earmarks are earmarks that appear in the President&#39;s initial
+            budget proposal.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Value</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>blank</td>
+                    <td>Not in the President&#39;s budget.</td>
+                </tr>
+                <tr>
+                    <td><code>p</code></td>
+                    <td>Included in the President&#39;s budget and disclosed by congress.</td>
+                </tr>
+                <tr>
+                    <td><code>u</code></td>
+                    <td>Included in the President&#39;s budget and not disclosed by congress.</td>
+                </tr>
+                <tr>
+                    <td><code>m</code></td>
+                    <td>Included in the President&#39;s budget and sponsored by members.</td>
+                </tr>
+                <tr>
+                    <td><code>j</code></td>
+                    <td>Included at the request of the judiciary.</td>
+                </tr>
+            </tbody>
+        </table>
+    </dd>
+    <dt>
+        undisclosed
+    </dt>
+    <dd>
+        <p>
+            Taxpayers for Common Sense&#39;s determination of whether the earmarks was
+            disclosed by congress. Undisclosed earmarks are found by reading the bill
+            text.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Value</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>blank</td>
+                    <td>Disclosed in congressional earmark reports.</td>
+                </tr>
+                <tr>
+                    <td><code>u</code></td>
+                    <td>Not disclosed by congress but found in bill text.</td>
+                </tr>
+                <tr>
+                    <td><code>p</code></td>
+                    <td>Not disclosed and in President&#39;s budget.</td>
+                </tr>
+                <tr>
+                    <td><code>o</code></td>
+                    <td>Disclosed Operations &amp; Maintenance earmark.</td>
+                </tr>
+                <tr>
+                    <td><code>m</code></td>
+                    <td>Undisclosed Operations &amp; Maintenance earmark.</td>
+                </tr>
+            </tbody>
+        </table>
+    </dd>
+    <dt>
+        members
+    </dt>
+    <dd>
+        The members that sponsored the earmark. Taxpayers for Common Sense lists
+        the members by last name, state and party. We have attempted to expand
+        these to full names, where possible. Due to formatting irregularities,
+        state, party or full name are sometimes missing.
+    </dd>
+    <dt>
+        location
+    </dt>
+    <dd>
+        The city and states where the earmark will be spent, when known.
+    </dd>
+    <dt>
+        recipients
+    </dt>
+    <dd>
+        The organization that will receive the earmark, when known.
+    </dd>
+</dl>
+  </div>
+</div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1265484-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influence Explorer API</title>
+    
+    
+  <link rel="shortcut icon" type="image/ico" href="http://s3.amazonaws.com/assets.sunlightfoundation.com/brisket/1.0/images/favicon.ico">
+  <link rel="stylesheet" type="text/css" href="documentup.css">
+  <script type="text/javascript" src="//use.typekit.net/egj6wnp.js"></script>
+  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+</head>
+  <body><div id="container">
+  <div id="nav">
+    
+      <div id="header">
+        <a href="index.html" id="logo">Influence Explorer API</a>
+      </div>
+    
+    <ul id="sections">
+      
+        <li>
+          <a href="#features">Features</a>
+          
+            <ul>
+              
+                <li>
+                  <a href="#features/entity-lookup-and-crosswalk">Entity Lookup and Crosswalk</a>
+                </li>
+              
+                <li>
+                  <a href="#features/itemized-data">Itemized Data</a>
+                </li>
+              
+                <li>
+                  <a href="#features/aggregate-data">Aggregate Data</a>
+                </li>
+              
+                <li>
+                  <a href="#features/support-community">Support/Community</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a href="#license">License</a>
+          
+        </li>
+      
+        <li>
+          <a href="#endpoints">Endpoints</a>
+          
+        </li>
+      
+        <li>
+          <a href="#common-parameters">Common Parameters</a>
+          
+            <ul>
+              
+                <li>
+                  <a href="#common-parameters/api-key">API Key</a>
+                </li>
+              
+                <li>
+                  <a href="#common-parameters/pagination-limiting">Pagination / Limiting</a>
+                </li>
+              
+                <li>
+                  <a href="#common-parameters/aggregate-limiting-cycle">Aggregate Limiting / Cycle</a>
+                </li>
+              
+                <li>
+                  <a href="#common-parameters/ranges-and-or-searches">Ranges and OR Searches</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a href="#client-libraries">Client Libraries</a>
+          
+        </li>
+      
+        <li>
+          <a href="#bulk-data">Bulk Data</a>
+          
+        </li>
+      
+        <li>
+          <a href="#data-changelog">Data Changelog</a>
+          
+        </li>
+      
+    </ul>
+    
+    
+      <div class="extra twitter">
+        <iframe allowtransparency="true" frameborder="0" scrolling="no" style="width:162px; height:20px;" src="https://platform.twitter.com/widgets/follow_button.html?screen_name=sunlightlabs&show_count=false"></iframe></div><div class="thanks">powered by <a href="http://documentup.com">DocumentUp</a></div>
+    
+  </div>
+  <div id="content">
+    
+    <h1>Influence Explorer API</h1>
+<p>Programmatic access tracking the influence of money in politics, brought
+to you by<br>the <a href="http://sunlightfoundation.com">Sunlight Foundation</a>.
+
+</p>
+<h2 id='features'>Features</h2 id='features'>
+<h3 id='features/entity-lookup-and-crosswalk'>Entity Lookup and Crosswalk</h3 id='features/entity-lookup-and-crosswalk'>
+<p>Look up IDs for political entities by name, retrieve basic biographical
+and other meta information, or find an entity ID from a variety of
+source IDs, including:
+
+</p>
+<ul>
+<li>Bioguide</li>
+<li>CRP</li>
+<li>NIMSP</li>
+<li>Sunlight&#39;s Lobbyist Registration Tracker URL</li>
+</ul>
+<h3 id='features/itemized-data'>Itemized Data</h3 id='features/itemized-data'>
+<p>Search and filter individual contributions, contracts, grants and
+lobbying registrations.
+
+</p>
+<h3 id='features/aggregate-data'>Aggregate Data</h3 id='features/aggregate-data'>
+<p>Find the most active Politicians, Individuals, Organizations and
+Industries based on receipts, expenditures and lobbying.
+
+</p>
+<h3 id='features/support-community'>Support/Community</h3 id='features/support-community'>
+<p>We have an
+<a href="https://groups.google.com/forum/?fromgroups#!forum/sunlightlabs-api-discuss">API mailing list</a>,
+and can be found on Twitter at
+<a href="http://twitter.com/sunlightlabs">@sunlightlabs</a>.
+
+</p>
+<h2 id='license'>License</h2 id='license'>
+<p>Data returned by this service is subject to the use restrictions set by
+the <a href="http://www.fec.gov">Federal Election Commission</a>. By accessing this
+data, you understand that you are using the data subject to all
+applicable local, state and federal law, including FEC restrictions.
+
+</p>
+<p>All data licensed under a
+<a href="http://creativecommons.org/licenses/by-nc-sa/3.0/us/">Creative Commons BY-NC-SA license</a>.
+By downloading data and accessing the API you are agreeing to the terms
+of the license.
+
+</p>
+<p>Federal campaign contribution and lobbying records must be attributed to
+<a href="http://www.opensecrets.org">OpenSecrets.org</a>.
+
+</p>
+<p>State campaign contribution records must be attributed to
+<a href="www.followthemoney.org">FollowTheMoney.org</a>.
+
+</p>
+<h2 id='endpoints'>Endpoints</h2 id='endpoints'>
+<p>All calls to the Influence Explorer API share the same root URI:
+
+</p>
+<pre><code class="text">http://transparencydata.com/api/:version/</code></pre>
+<p>The current verison is <code>1.0</code>.
+
+</p>
+<p>The URI scheme is not strictly RESTful, but methods can be grouped into
+6 logical categories:
+
+</p>
+<table>
+    <thead>
+        <tr>
+            <th width="35%">Endpoint</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong><a href="entities.html">Entity Lookups</a></strong></td>
+            <td>Search for politicians, individuals, organizations and
+                industries, or retrieve crosswalk IDs from a variety of
+                sources.
+            </td>
+        </tr>
+        <tr>
+            <td><strong><a href="politicians.html">Politician Aggregates</a></strong></td>
+            <td>Find aggregate campaign finance information about political
+                candidates at the state and federal levels.
+            </td>
+        </tr>
+        <tr>
+            <td><strong><a href="individuals.html">Individual Aggregates</a></strong></td>
+            <td>Find aggregate campaign finance information about individual
+                donors.
+            </td>
+        </tr>
+        <tr>
+            <td><strong><a href="organizations.html">Organization Aggregates</a></strong></td>
+            <td>Find aggregate campaign finance information about organizations,
+                including PACs, corporations and lobbying firms.
+            </td>
+        </tr>
+        <tr>
+            <td><strong><a href="industries.html">Industry Aggregates</a></strong></td>
+            <td>Find aggregate campaign finance information about various
+                industries are involved in lobbying.
+            </td>
+        </tr>
+        <tr>
+            <td><strong><a href="search.html">Itemized Search Methods</a></strong></td>
+            <td>Search itemized campaign contributions, federal contract awards,
+                federal grant awards and federal lobbying registrations.
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id='common-parameters'>Common Parameters</h2 id='common-parameters'>
+<h3 id='common-parameters/api-key'>API Key</h3 id='common-parameters/api-key'>
+<p>All requests to the Influence Explorer API require a Sunlight API key.
+An API key is
+<a href="http://services.sunlightlabs.com/accounts/register/">free to register</a>
+and has no usage limits.
+
+</p>
+<p>API keys can be provided with a request through the query string:
+
+</p>
+<pre><code>/entities<span class="variable">.json</span>?apikey=[your_api_key]</code></pre>
+<h3 id='common-parameters/pagination-limiting'>Pagination / Limiting</h3 id='common-parameters/pagination-limiting'>
+<p>All itemized endpoints respond to <code>page</code> and <code>per_page</code> parameters to
+scroll through the data, passed like so:
+
+</p>
+<pre><code>/contributions<span class="variable">.json</span>?page=<span class="number">2</span>&amp;per_page=<span class="number">100</span></code></pre>
+<p>By default, the first page is returned, with 1,000 records per page.
+The maximum <code>per_page</code> value is 100,000.
+
+</p>
+<h3 id='common-parameters/aggregate-limiting-cycle'>Aggregate Limiting / Cycle</h3 id='common-parameters/aggregate-limiting-cycle'>
+<p>Except where specified, all aggregate endpoints respond to <code>limit</code> and
+<code>cycle</code> parameters, to limit the number of top results returned, and to
+base superlative calculations on a given election year:
+
+</p>
+<pre><code>/aggregates/pols/top_10<span class="variable">.json</span>?cycle=<span class="number">2012</span></code></pre>
+<p>In this example, the limit parameter is part of the method name (top_:limit).
+
+</p>
+<h3 id='common-parameters/ranges-and-or-searches'>Ranges and OR Searches</h3 id='common-parameters/ranges-and-or-searches'>
+<p>Some parameters are specified in this documentation as the types
+<code>comparison</code> or <code>inclusion</code>. These fields support logical operators
+prepended to their values to denote a range of values or multiple
+values to include:
+
+</p>
+<h4>Comparison (range)</h4>
+<table>
+    <tr>
+        <td><code>&gt;|</code></td>
+        <td>Greater than or equal to, eg. <code>&gt;|1000</code></td>
+    </tr>
+    <tr>
+        <td><code>&lt;</code></td>
+        <td>Less than, eg. <code>&lt;1000000</code></td>
+    </tr>
+    <tr>
+        <td><code>&gt;&lt;||</code></td>
+        <td>Between, eg. <code>&gt;&lt;|1000|5000</code></td>
+    </tr>
+</table>
+
+<h4>Inclusion (boolean OR)</h4>
+<dl>
+    <dt><code>2006|2008|2010</code></dt>
+    <dd>Include results from 2006, 2008 and 2010.</dd>
+</dl>
+
+<h2 id='client-libraries'>Client Libraries</h2 id='client-libraries'>
+<ul>
+<li><a href="http://github.com/dqminh/transparencydata-php">PHP</a> by Dao Quang Minh</li>
+<li><a href="http://github.com/sunlightlabs/python-transparencydata">Python</a> by
+  The Sunlight Foundation</li>
+<li><a href="http://github.com/pengwynn/transparency-data">Ruby</a> by Wynn
+  Netherland and Luigi Montanez</li>
+</ul>
+<h2 id='bulk-data'>Bulk Data</h2 id='bulk-data'>
+<p>For analysis that requires access to large portions of our data, we
+offer (and strongly encourage!) a bulk data set for free. See the
+<a href="bulk_data.html">Bulk Data page</a> for a list of available downloads.
+
+</p>
+<h2 id='data-changelog'>Data Changelog</h2 id='data-changelog'>
+<h4>January 9, 2013</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 11/29/2012 release.</li>
+</ul>
+<h4>October 31, 2012</h4>
+<ul>
+<li>State Campaign Finance Data: updated to private 10/18/2012 release.</li>
+</ul>
+<h4>October 25, 2012</h4>
+<ul>
+<li>Federal Grants: updated to USASpending.gov&#39;s 10/19/2012 release.</li>
+</ul>
+<h4>October 15, 2012</h4>
+<ul>
+<li>Federal Lobbying Data: updated to CRP&#39;s 9/21/2012 release.</li>
+</ul>
+<h4>August 31, 2012</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 8/24/2012 release.</li>
+</ul>
+<h4>April 23, 2012</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to private 4/2/2012 CRP release.</li>
+<li>Contractor Misconduct Data: updated to POGO&#39;s 3/3/2012 release.</li>
+</ul>
+<h4>March 21, 2012</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to private 3/16/2012 CRP release.</li>
+<li>State Campaign Finance Data: updated to private 3/13/2012 release.</li>
+<li>Federal Grants &amp; Contracts: updated to USASpending.gov&#39;s 3/1/2012 release.</li>
+<li>Federal Advisory Committee Act: updated with GSA&#39;s release of 2011 data.</li>
+</ul>
+<h4>February 24, 2012</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to private 2/15/2012 CRP release.</li>
+<li>State Campaign Finance Data: updated to NIMSP&#39;s 1/31/2012 release.</li>
+</ul>
+<h4>January 6, 2012</h4>
+<ul>
+<li>Federal Lobbying Data: updated to CRP&#39;s 12/8/2011 release.</li>
+<li>Contractor Misconduct Data: updated to POGO&#39;s 12/21/2011 release.</li>
+</ul>
+<h4>October 27, 2011</h4>
+<p>-Federal Campaign Finance Data: updated to CRP&#39;s 10/3/2011 release.
+-EPA ECHO Data: updated to 10/19/2011 release.
+
+</p>
+<h4>July 23, 2011</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 5/20/2011 release.</li>
+<li>State Campaign Finance Data: updated to NIMSP&#39;s 7/11/2011 release (private).</li>
+</ul>
+<h4>June 21, 2011</h4>
+<ul>
+<li>Federal Lobbying Data: updated to CRP&#39;s 5/24/2011 release.</li>
+<li>Federal Grants &amp; Contracts: updated to USASpending.gov&#39;s 6/1/2011 release.</li>
+</ul>
+<h4>June 6, 2011</h4>
+<ul>
+<li>Contractor Misconduct Data: initial release of Project on Government Oversight&#39;s Federal Contractor Misconduct data, 1995-2011.</li>
+</ul>
+<h4>April 20, 2011</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 4/13/2011 release (private).</li>
+<li>Federal Lobbying Data: updated to CRP&#39;s 3/25/2011 release.</li>
+<li>State Campaign Finance Data: updated to NIMSP&#39;s March 2011 release (private).</li>
+<li>Federal Grants &amp; Contracts: updated to USASpending.gov&#39;s 3/1/2011 release.</li>
+</ul>
+<h4>March 22, 2011</h4>
+<ul>
+<li>Federal Lobbying Data: updated to CRP&#39;s 2/22/2011 release.</li>
+<li>Federal Grants &amp; Contracts: updated to USASpending.gov&#39;s 3/1/2011 release.</li>
+</ul>
+<h4>February 1, 2011</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 1/8/2011 release.</li>
+<li>Federal Lobbying Data: updated to CRP&#39;s 11/15/2010 release.</li>
+<li>State Campaign Finance Data: updated to NIMSP&#39;s December 2010 release (private).</li>
+<li>Federal Grants &amp; Contracts: updated to USASpending.gov&#39;s 1/1/2011 release.</li>
+</ul>
+<h4>December 2, 2010</h4>
+<ul>
+<li>Earmark Data: initial release of Taxpayers for Common Sense&#39;s fiscal year 2008-2010 earmark data.</li>
+</ul>
+<h4>November 8, 2010</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 10/23/2010 release.</li>
+<li>Federal Lobbying Data: updated to CRP&#39;s 10/24/2010 release.</li>
+</ul>
+<h4>October 26, 2010</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 9/30/2010 release.</li>
+<li>State Campaign Finance Data: updated to NIMSP&#39;s September 2010 release (private).</li>
+<li>Federal Lobbying Data: updated to CRP&#39;s 9/20/2010 release.</li>
+</ul>
+<h4>September 9, 2010</h4>
+<ul>
+<li>Federal Campaign Finance Data: updated to CRP&#39;s 8/23/2010 release.</li>
+<li>State Campaign Finance Data: updated to NIMSP&#39;s June 2010 release (private).</li>
+<li>Federal Lobbying Data: updated to CRP&#39;s 8/27/2010 release.</li>
+<li>Federal Grants &amp; Contracts: provided by USASpending.gov on request in April 2010.</li>
+</ul>
+<h4>Initial Data</h4>
+<ul>
+<li>All data current as of March 2010.</li>
+</ul>
+
+  </div>
+</div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1265484-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+</body>
+</html>

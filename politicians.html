@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influence Explorer API | Politicians</title>
+    
+    
+  <link rel="shortcut icon" type="image/ico" href="http://s3.amazonaws.com/assets.sunlightfoundation.com/brisket/1.0/images/favicon.ico">
+  <link rel="stylesheet" type="text/css" href="documentup.css">
+  <script type="text/javascript" src="//use.typekit.net/egj6wnp.js"></script>
+  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+</head>
+  <body><div id="container">
+  <div id="nav">
+    
+      <div id="header">
+        <a href="index.html" id="logo">Influence Explorer API</a>
+      </div>
+    
+    <ul id="sections">
+      
+        <li>
+          <a href="#common-parameters">Common Parameters</a>
+          
+        </li>
+      
+        <li>
+          <a href="#methods">Methods</a>
+          
+            <ul>
+              
+                <li>
+                  <a href="#methods/top-politicians">Top Politicians</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/top-contributors">Top Contributors</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/top-industries">Top Industries</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/unknown-industries">Unknown Industries</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/top-sectors">Top Sectors</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/local-breakdown">Local Breakdown</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/contributor-type-breakdown">Contributor Type Breakdown</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/fec-summary">FEC Summary</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/fec-independent-expenditures">FEC Independent Expenditures</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+    </ul>
+    
+    
+      <div class="extra twitter">
+        <iframe allowtransparency="true" frameborder="0" scrolling="no" style="width:162px; height:20px;" src="https://platform.twitter.com/widgets/follow_button.html?screen_name=sunlightlabs&show_count=false"></iframe></div><div class="thanks">powered by <a href="http://documentup.com">DocumentUp</a></div>
+    
+  </div>
+  <div id="content">
+    
+    <h1>Politician Aggregates</h1>
+<h2 id='common-parameters'>Common Parameters</h2 id='common-parameters'>
+<p>Unless otherwise specified, all aggregate methods respond to
+<code>entity_id</code>, <code>limit</code>, and <code>cycle</code> parameters.
+
+</p>
+<h2 id='methods'>Methods</h2 id='methods'>
+<h3 id='methods/top-politicians'>Top Politicians</h3 id='methods/top-politicians'>
+<p>By contributions received, in dollars.
+
+</p>
+<pre><code>/aggregates/pols/top_:limit<span class="variable">.json</span></code></pre>
+<h4>Parameters</h4>
+<ul>
+<li><strong><code>cycle</code> and <code>limit</code> only, this method returns multiple entities.</strong></li>
+</ul>
+<h4>Example</h4>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pols/top_1<span class="preprocessor">.json</span>?cycle=<span class="number">2006</span>&amp;apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>[
+    {
+        "<span class="attribute">count</span>": <span class="value"><span class="string">"5322"</span></span>,
+        "<span class="attribute">name</span>": <span class="value"><span class="string">"WESTLY, STEVE"</span></span>,
+        "<span class="attribute">state</span>": <span class="value"><span class="string">"CA"</span></span>,
+        "<span class="attribute">seat</span>": <span class="value"><span class="string">"state:governor"</span></span>,
+        "<span class="attribute">amount</span>": <span class="value"><span class="string">"45272319.37"</span></span>,
+        "<span class="attribute">party</span>": <span class="value"><span class="string">"D"</span></span>,
+        "<span class="attribute">id</span>": <span class="value"><span class="string">"44d550f60eb14260928f9365415e5644"</span>
+    </span>}
+]</code></pre>
+<hr>
+<h3 id='methods/top-contributors'>Top Contributors</h3 id='methods/top-contributors'>
+<p>The top contributing organizations to a given candidate. Giving is
+broken down into money given directly (by the organization&#39;s PAC), versus
+money given by individuals employed by or associated with the organization.
+
+</p>
+<pre><code>/aggregates/pol/:entity_id/contributors<span class="variable">.json</span></code></pre>
+<h4>Example</h4>
+<p>Get Barack Obama&#39;s top donor from 2012:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">4148</span>b26f6f1c437cb50ea9ca4699417a/contributors<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>[
+    {
+        "<span class="attribute">employee_amount</span>": <span class="value"><span class="string">"1161884.00"</span></span>,
+        "<span class="attribute">total_amount</span>": <span class="value"><span class="string">"1161884.00"</span></span>,
+        "<span class="attribute">total_count</span>": <span class="value"><span class="string">"2235"</span></span>,
+        "<span class="attribute">name</span>": <span class="value"><span class="string">"University of California"</span></span>,
+        "<span class="attribute">direct_count</span>": <span class="value"><span class="string">"0"</span></span>,
+        "<span class="attribute">employee_count</span>": <span class="value"><span class="string">"2235"</span></span>,
+        "<span class="attribute">id</span>": <span class="value"><span class="string">"0e85264c0c0e4dfb9a4b38cfc181f030"</span></span>,
+        "<span class="attribute">direct_amount</span>": <span class="value"><span class="string">"0"</span>
+    </span>}
+]</code></pre>
+<hr>
+<h3 id='methods/top-industries'>Top Industries</h3 id='methods/top-industries'>
+<p>Top contributing industries, ranked by dollars given.
+
+</p>
+<pre><code>/aggregates/pol/:entity_id/contributors/industries<span class="variable">.json</span></code></pre>
+<h4>Example</h4>
+<p>Get Barack Obama&#39;s top contributing industry from 2012:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">4148</span>b26f6f1c437cb50ea9ca4699417a/contributors/industries<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>[
+    {
+        "<span class="attribute">count</span>": <span class="value"><span class="string">"88315"</span></span>,
+        "<span class="attribute">amount</span>": <span class="value"><span class="string">"43633891.00"</span></span>,
+        "<span class="attribute">id</span>": <span class="value"><span class="string">"b21467ae32924f84ada9076535401a91"</span></span>,
+        "<span class="attribute">should_show_entity</span>": <span class="value"><span class="literal">false</span></span>,
+        "<span class="attribute">name</span>": <span class="value"><span class="string">"RETIRED"</span>
+    </span>}
+]</code></pre>
+<hr>
+<h3 id='methods/unknown-industries'>Unknown Industries</h3 id='methods/unknown-industries'>
+<p>Contribution count and total for a politician from unknown industries.
+
+</p>
+<pre><code>/aggregates/pol/:entity_id/contributors/industries_unknown<span class="variable">.json</span></code></pre>
+<h4>Parameters</h4>
+<ul>
+<li><strong>Does not support <code>limit</code>, as only a single aggregate is returned.</strong></li>
+</ul>
+<h4>Example</h4>
+<p>Get unknown industry contributions for Barack Obama in 2012:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">4148</span>b26f6f1c437cb50ea9ca4699417a/contributors/industries_unknown<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>{
+    "<span class="attribute">count</span>": <span class="value"><span class="string">"141945"</span></span>,
+    "<span class="attribute">amount</span>": <span class="value"><span class="string">"69115733.00"</span>
+</span>}</code></pre>
+<hr>
+<h3 id='methods/top-sectors'>Top Sectors</h3 id='methods/top-sectors'>
+<p>Contribution totals by sector to a given politician.
+
+</p>
+<pre><code>/aggregates/pol/:entity_id/contributors/sectors<span class="variable">.json</span></code></pre>
+<h4>Example</h4>
+<p>Get top sector for Barack Obama in 2012:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">4148</span>b26f6f1c437cb50ea9ca4699417a/contributors/sectors<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>[
+    {
+        "<span class="attribute">sector</span>": <span class="value"><span class="string">"W"</span></span>,
+        "<span class="attribute">count</span>": <span class="value"><span class="string">"147016"</span></span>,
+        "<span class="attribute">amount</span>": <span class="value"><span class="string">"72870168.00"</span>
+    </span>}
+]</code></pre>
+<p>Sectors are codified by letter:
+
+</p>
+<dl>
+    <dt><code>A</code></dt>
+    <dd>Agribusiness</dd>
+    <dt><code>B</code></dt>
+    <dd>Communications/Electronics</dd>
+    <dt><code>C</code></dt>
+    <dd>Construction</dd>
+    <dt><code>D</code></dt>
+    <dd>Defense</dd>
+    <dt><code>E</code></dt>
+    <dd>Energy/Natural Resources</dd>
+    <dt><code>F</code></dt>
+    <dd>Finance/Insurance/Real Estate</dd>
+    <dt><code>H</code></dt>
+    <dd>Health</dd>
+    <dt><code>K</code></dt>
+    <dd>Lawyers and Lobbyists</dd>
+    <dt><code>M</code></dt>
+    <dd>Transportation</dd>
+    <dt><code>N</code></dt>
+    <dd>Misc. Business</dd>
+    <dt><code>Q</code></dt>
+    <dd>Ideology/Single Issue</dd>
+    <dt><code>P</code></dt>
+    <dd>Labor</dd>
+    <dt><code>W</code></dt>
+    <dd>Other</dd>
+    <dt><code>Y</code></dt>
+    <dd>Unknown</dd>
+    <dt><code>Z</code></dt>
+    <dd>Administrative Use</dd>
+</dl>
+
+<hr>
+<h3 id='methods/local-breakdown'>Local Breakdown</h3 id='methods/local-breakdown'>
+<p>A breakdown of how much of the money raised by a politician came from
+inside or outside their home state.
+
+</p>
+<pre><code>/aggretages/pol/:entity_id/contributors/local_breakdown<span class="variable">.json</span></code></pre>
+<h4>Parameters</h4>
+<ul>
+<li><strong>Does not support <code>limit</code>, as only a single aggregate is returned.</strong></li>
+</ul>
+<h4>Example</h4>
+<p>Get local breakdown for Barack Obama&#39;s 2002 Senate race:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">97737</span>bb56b6a4211bcc57a837368b1a4/contributors/local_breakdown<span class="preprocessor">.json</span>?cycle=<span class="number">2002</span>&amp;apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>{
+    "<span class="attribute">In-State</span>": <span class="value">[
+        <span class="string">"96"</span>,
+        <span class="string">"69925.00"</span>
+    ]</span>,
+    "<span class="attribute">Out-of-State</span>": <span class="value">[
+        <span class="string">"3"</span>,
+        <span class="string">"400.00"</span>
+    ]
+</span>}</code></pre>
+<p>Values are an array of [&quot;number of contributions&quot;, &quot;total amount&quot;]
+
+</p>
+<hr>
+<h3 id='methods/contributor-type-breakdown'>Contributor Type Breakdown</h3 id='methods/contributor-type-breakdown'>
+<p>A breakdown of how much of the money raised came from individuals versus
+organzations (PACs).
+
+</p>
+<h4>Parameters</h4>
+<ul>
+<li><strong>Does not support <code>limit</code>, as only a single aggregate is returned.</strong></li>
+</ul>
+<h4>Example</h4>
+<p>Get a type breakdown of Obama&#39;s contributors for the 2012 cycle:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">4148</span>b26f6f1c437cb50ea9ca4699417a/contributors/type_breakdown<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>{
+    "<span class="attribute">Individuals</span>": <span class="value">[
+        <span class="string">"458162"</span>,
+        <span class="string">"255754102.00"</span>
+    ]</span>,
+    "<span class="attribute">PACs</span>": <span class="value">[
+        <span class="string">"7"</span>,
+        <span class="string">"9700.00"</span>
+    ]
+</span>}</code></pre>
+<hr>
+<h3 id='methods/fec-summary'>FEC Summary</h3 id='methods/fec-summary'>
+<p>Latest figures from the FEC&#39;s summary report.
+
+</p>
+<h4>Parameters</h4>
+<ul>
+<li><strong>Does not support <code>cycle</code>, as the data returned only applies to the current or
+  latest cycle</strong></li>
+<li><strong>Does not support <code>limit</code>, as only a single aggregate is returned.</strong></li>
+</ul>
+<h4>Example</h4>
+<p>Get Obama&#39;s latest FEC summary:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">4148</span>b26f6f1c437cb50ea9ca4699417a/fec_summary<span class="preprocessor">.json</span>?apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>{
+    "<span class="attribute">contributions_pac</span>": <span class="value"><span class="string">"0.00"</span></span>,
+    "<span class="attribute">office</span>": <span class="value"><span class="string">"P"</span></span>,
+    "<span class="attribute">total_receipts_rank</span>": <span class="value"><span class="number">1</span></span>,
+    "<span class="attribute">max_rank</span>": <span class="value"><span class="number">40</span></span>,
+    "<span class="attribute">contributions_candidate</span>": <span class="value"><span class="string">"5000.00"</span></span>,
+    "<span class="attribute">transfers_in</span>": <span class="value"><span class="string">"176450000.00"</span></span>,
+    "<span class="attribute">cash_on_hand_rank</span>": <span class="value"><span class="number">2</span></span>,
+    "<span class="attribute">total_raised</span>": <span class="value"><span class="string">"724607132.15"</span></span>,
+    "<span class="attribute">disbursements</span>": <span class="value"><span class="string">"729647986.73"</span></span>,
+    "<span class="attribute">total_disbursements_rank</span>": <span class="value"><span class="number">1</span></span>,
+    "<span class="attribute">date</span>": <span class="value"><span class="string">"2012-11-26"</span></span>,
+    "<span class="attribute">contributions_indiv</span>": <span class="value"><span class="string">"541012836.42"</span></span>,
+    "<span class="attribute">contributions_party</span>": <span class="value"><span class="string">"8610.28"</span></span>,
+    "<span class="attribute">cash_on_hand</span>": <span class="value"><span class="string">"5397399.35"</span>
+</span>}</code></pre>
+<hr>
+<h3 id='methods/fec-independent-expenditures'>FEC Independent Expenditures</h3 id='methods/fec-independent-expenditures'>
+<p>Top independent expenditures for and against a politician.
+
+</p>
+<pre><code>/aggregates/pol/:entity_id/fec_indexp<span class="variable">.json</span></code></pre>
+<h4>Parameters</h4>
+<ul>
+<li><strong>Does not support <code>cycle</code> or <code>limit</code>; returns all results from the latest cycle.</strong></li>
+</ul>
+<h4>Example</h4>
+<p>Get independent expenditures for Obama in the latest election cycle:
+
+</p>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/pol/<span class="number">4148</span>b26f6f1c437cb50ea9ca4699417a/fec_indexp<span class="preprocessor">.json</span>?apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>[
+    {
+        <span class="method">committee_name:</span> <span class="comment">"RESTORE OUR FUTURE, INC."</span>,
+        <span class="method">amount:</span> <span class="comment">"88572359.38"</span>,
+        <span class="method">support_oppose:</span> <span class="comment">"Oppose"</span>,
+        <span class="method">committee_entity:</span> <span class="comment">"a0951518abe24d7a95cb99dac25caf90"</span>
+    },
+    {
+        <span class="method">committee_name:</span> <span class="comment">"American Crossroads"</span>,
+        <span class="method">amount:</span> <span class="comment">"84622440.84"</span>,
+        <span class="method">support_oppose:</span> <span class="comment">"Oppose"</span>,
+        <span class="method">committee_entity:</span> <span class="comment">"1f7f4dc28a5b42f78ce438c1215768c6"</span>
+    },
+    ...snip...
+]</code></pre>
+
+  </div>
+</div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1265484-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influence Explorer API | Entities</title>
+    
+    
+  <link rel="shortcut icon" type="image/ico" href="http://s3.amazonaws.com/assets.sunlightfoundation.com/brisket/1.0/images/favicon.ico">
+  <link rel="stylesheet" type="text/css" href="documentup.css">
+  <script type="text/javascript" src="//use.typekit.net/egj6wnp.js"></script>
+  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+</head>
+  <body><div id="container">
+  <div id="nav">
+    
+      <div id="header">
+        <a href="index.html" id="logo">Influence Explorer API</a>
+      </div>
+    
+    <ul id="sections">
+      
+        <li>
+          <a href="#methods">Methods</a>
+          
+            <ul>
+              
+                <li>
+                  <a href="#methods/search-by-name">Search by Name</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/id-lookup">ID Lookup</a>
+                </li>
+              
+                <li>
+                  <a href="#methods/entity-overview">Entity Overview</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+    </ul>
+    
+    
+      <div class="extra twitter">
+        <iframe allowtransparency="true" frameborder="0" scrolling="no" style="width:162px; height:20px;" src="https://platform.twitter.com/widgets/follow_button.html?screen_name=sunlightlabs&show_count=false"></iframe></div><div class="thanks">powered by <a href="http://documentup.com">DocumentUp</a></div>
+    
+  </div>
+  <div id="content">
+    
+    <h1>Entity Lookups</h1>
+<h2 id='methods'>Methods</h2 id='methods'>
+<h3 id='methods/search-by-name'>Search by Name</h3 id='methods/search-by-name'>
+<p>Search for politicians, individuals, organizations or industries with a
+given name.
+
+</p>
+<pre><code>/entities<span class="variable">.json</span></code></pre>
+<h4>Parameters</h4>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Required</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>search</code></td>
+            <td>Required</td>
+            <td>The name to search for. Spaces should be URL encoded or
+                represented as a plus sign (+). There are no logical
+                operators or grouping
+            </td>
+        </tr>
+        <tr>
+            <td><code>type</code></td>
+            <td></td>
+            <td>Filter results to a particular type of entity. Possible
+                values are
+                <code>politician</code>,
+                <code>organization</code>,
+                <code>individual</code> or
+                <code>industry</code>.
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>Example</h4>
+<pre><code><span class="title">http</span>://transparencydata.org/api/<span class="number">1.0</span>/entities.json?apikey=<span class="type">YOUR_KEY</span>&amp;search=<span class="type">Barack</span>+<span class="type">Obama</span>&amp;<span class="typedef"><span class="keyword">type</span>=politician</span></code></pre>
+<h4>Response</h4>
+<pre><code>[
+    {
+        <span class="method">name:</span> <span class="comment">"Barack Obama (D)"</span>,
+        <span class="method">count_given:</span> <span class="number">0</span>,
+        <span class="method">firm_income:</span> <span class="number">0</span>,
+        <span class="method">count_lobbied:</span> <span class="number">0</span>,
+        <span class="method">seat:</span> <span class="comment">"federal:president"</span>,
+        <span class="method">total_received:</span> <span class="number">656313987</span>,
+        <span class="method">state:</span> <span class="comment">""</span>,
+        <span class="method">lobbying_firm:</span> null,
+        <span class="method">count_received:</span> <span class="number">1164442</span>,
+        <span class="method">party:</span> <span class="comment">"D"</span>,
+        <span class="method">total_given:</span> <span class="number">0</span>,
+        <span class="method">type:</span> <span class="comment">"politician"</span>,
+        <span class="method">id:</span> <span class="comment">"4148b26f6f1c437cb50ea9ca4699417a"</span>,
+        <span class="method">non_firm_spending:</span> <span class="number">0</span>,
+        <span class="method">is_superpac:</span> null
+    },
+    {
+        <span class="method">name:</span> <span class="comment">"OBAMA, BARACK"</span>,
+        <span class="method">count_given:</span> <span class="number">0</span>,
+        <span class="method">firm_income:</span> <span class="number">0</span>,
+        <span class="method">count_lobbied:</span> <span class="number">0</span>,
+        <span class="method">seat:</span> <span class="comment">"state:upper"</span>,
+        <span class="method">total_received:</span> <span class="number">445595.36</span>,
+        <span class="method">state:</span> <span class="comment">"IL"</span>,
+        <span class="method">lobbying_firm:</span> null,
+        <span class="method">count_received:</span> <span class="number">892</span>,
+        <span class="method">party:</span> <span class="comment">"D"</span>,
+        <span class="method">total_given:</span> <span class="number">0</span>,
+        <span class="method">type:</span> <span class="comment">"politician"</span>,
+        <span class="method">id:</span> <span class="comment">"97737bb56b6a4211bcc57a837368b1a4"</span>,
+        <span class="method">non_firm_spending:</span> <span class="number">0</span>,
+        <span class="method">is_superpac:</span> null
+    }
+]</code></pre>
+<p>This call can result in multiple response objects. In this case, we get
+a hit for President Obama in the context of Illinois Senate races and
+in presidential elections.
+
+</p>
+<hr>
+<h3 id='methods/id-lookup'>ID Lookup</h3 id='methods/id-lookup'>
+<p>Crosswalk between several input ID forms and the transparencydata IDs
+native to this service.
+
+</p>
+<pre><code>/entities/id_lookup<span class="variable">.json</span></code></pre>
+<h4>Paramteters</h4>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Required</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>id</code></td>
+            <td>Required, if supplied with <code>namespace</code></td>
+            <td>The entity ID to look up
+            </td>
+        </tr>
+        <tr>
+            <td><code>namespace</code></td>
+            <td>Required, if supplied with <code>id</code></td>
+            <td>The type of ID to match. Possible values are:<br>
+                <dl>
+                    <dt><code>urn:crp:individual</code></dt>
+                    <dd>A CRP ID for an individual contributor or 
+                        lobbyist.<br>                        Begins with <code>U</code> or
+                        <code>C</code>.</dd>
+                    <dt><code>urn:crp:organization</code></dt>
+                    <dd>A CRP ID for an organization.<br>                        Begins with
+                        <code>D</code>.</dd>
+                    <dt><code>urn:crp:recipient</code></dt>
+                    <dd>A CRP ID for a politician.<br>                        Begins with
+                        <code>N</code>.</dd>
+                    <dt><code>urn:crp:industry</code></dt>
+                    <dd>CRP&#39;s 3-letter category order.</dd>
+                    <dt><code>urn:crp:subindustry</code></dt>
+                    <dd>CRP&#39;s 5-letter category code.</dd>
+                    <dt><code>urn:nimsp:organization</code></dt>
+                    <dd>A NIMSP ID for an organization.<br>                        Integer-valued.</dd>
+                    <dt><code>urn:nimsp:recipient</code></dt>
+                    <dd>A NIMSP ID for a politician.<br>                        Integer-valued.</dd>
+                    <dt><code>urn:nimsp:subindustry</code></dt>
+                    <dd>NIMSP&#39;s 5-letter category code.</dd>
+                    <dt><code>urn:sunlight:
+lobbyist_registration_tracker_url</code></dt>
+                    <dd>URL of Sunlight&#39;s lobbyist registration tracker
+                        page.</dd>
+                </dl>
+            </td>
+        </tr>
+        <tr>
+            <td><code>bioguide_id</code></td>
+            <td>Required, if <code>namespace</code> and <code>id</code>
+                are omitted.</td>
+            <td>The ID of a member of congress in the
+                <a href="http://bioguide.congress.gov/biosearch/biosearch.asp">Congressional Bioguide</a>.
+                Mutually exclusive to the id/namespace parameters.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>Example</h4>
+<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.org</span>/api/<span class="number">1.0</span>/entities/id_lookup<span class="preprocessor">.json</span>?apikey=YOUR_KEY&amp;bioguide_id=L000551</code></pre>
+<h4>Response</h4>
+<pre><code>[
+    {
+        "<span class="attribute">id</span>": <span class="value"><span class="string">"6d1ec9c94ae748c6b86cc250761c6b13"</span>
+    </span>}
+]</code></pre>
+<hr>
+<h3 id='methods/entity-overview'>Entity Overview</h3 id='methods/entity-overview'>
+<p>General information about the given entity.
+
+</p>
+<pre><code>/entities/:entity_id<span class="variable">.json</span></code></pre>
+<h4>Parameters</h4>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Required</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>entity_id</code></td>
+            <td>Required</td>
+            <td>The transparencydata ID to look up.
+            </td>
+        </tr>
+        <tr>
+            <td><code>cycle</code></td>
+            <td></td>
+            <td>Limit contribution totals to the given election cycle(s).
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>Example</h4>
+<pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/entities/<span class="number">97737</span>bb56b6a4211bcc57a837368b1a4<span class="variable">.json</span>?apikey=YOUR_KEY</code></pre>
+<h4>Response</h4>
+<pre><code>{
+    "name": "OBAMA, BARACK",
+    "totals": {
+        "2004": {
+            "faca_committee_count": 0,
+            "faca_member_count": 0,
+            "regs_submitted_docket_count": 0,
+            "earmark_count": 0,
+            "regs_docket_count": 0,
+            "recipient_amount": 29350.11,
+            "fec_summary_count": 0,
+            "independent_expenditure_amount": 0,
+            "non_firm_spending": 0,
+            "grant_count": 0,
+            "contract_amount": 0,
+            "earmark_amount": 0,
+            "loan_count": 0,
+            "contract_count": 0,
+            "contributor_count": 0,
+            "regs_document_count": 0,
+            "recipient_count": 44,
+            "firm_income": 0,
+            "regs_submitted_document_count": 0,
+            "loan_amount": 0,
+            "epa_actions_count": 0,
+            "contractor_misconduct_count": 0,
+            "fec_total_raised": 0,
+            "lobbying_count": 0,
+            "contributor_amount": 0,
+            "grant_amount": 0
+        }
+        ...snip...
+    },
+    "external_ids": [
+        {
+            "namespace": "urn:nimsp:recipient",
+            "id": "17677"
+        }
+    ],
+    "type": "politician",
+    "id": "97737bb56b6a4211bcc57a837368b1a4",
+    "metadata": {
+        "2004": {
+            "district": "IL-13",
+            "state": "IL",
+            "seat_result": "",
+            "district_held": "",
+            "seat": "state:upper",
+            "seat_held": "",
+            "state_held": "",
+            "seat_status": "",
+            "party": "D"
+        },
+        ...snip...
+        "bio": "<span class="tag">&lt;<span class="title">p</span>></span>Barack Hussein Obama II (i /bəˈrɑːk huːˈseɪn oʊˈbɑːmə/; born August 4, 1961) is the 44th and current President of the United States. He is the first African American to hold the office. Obama previously served as a United States Senator from Illinois, from January 2005 until he resigned after his election to the presidency in November 2008.<span class="tag">&lt;/<span class="title">p</span>></span><span class="tag">&lt;<span class="title">p</span>></span>A native of Honolulu, Hawaii, Obama is a graduate of Columbia University and Harvard Law School, where he was the president of the Harvard Law Review. He was a community organizer in Chicago before earning his law degree. He worked as a civil rights attorney in Chicago and taught constitutional law at the University of Chicago Law School from 1992 to 2004.<span class="tag">&lt;/<span class="title">p</span>></span>",
+        "seat_held": "",
+        "source_name": "wikipedia_info",
+        "district": "IL-13",
+        "federal_politician_entities": [
+            {
+                "name": "Barack Obama (D)",
+                "type": "politician",
+                "id": "4148b26f6f1c437cb50ea9ca4699417a"
+            }
+        ],
+        "seat_result": "",
+        "district_held": "",
+        "seat": "state:upper",
+        "state": "IL",
+        "bio_url": "http://en.wikipedia.org/wiki/Barack_Obama",
+        "state_held": "",
+        "seat_status": "",
+        "party": "D",
+        "entity": "97737bb56b6a4211bcc57a837368b1a4",
+        "photo_url": "http://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Official_portrait_of_Barack_Obama.jpg/245px-Official_portrait_of_Barack_Obama.jpg"
+    }
+}</code></pre>
+
+  </div>
+</div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1265484-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+</body>
+</html>
