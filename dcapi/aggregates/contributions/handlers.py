@@ -526,26 +526,15 @@ class SubIndustryTotalsHandler(BaseHandler):
     def read(self, request):
         cycle = request.GET.get('cycle', ALL_CYCLES)
 
-        cache_key = self.get_cache_key('subindustry_totals', cycle)
-        cached = cache.get(cache_key, 'has expired')
-
-        if cached == 'has expired':
-            if cycle == ALL_CYCLES:
-                cycle_where = 'and cycle = -1'
-            else:
-                cycle_where = 'and cycle = %d' % int(cycle)
-
-            result = execute_all(self.stmt % cycle_where,[cycle])
-
-            if result:
-                result = [dict(zip(self.fields, row)) for row in result]
-
-            cache.set(cache_key, result)
-
-            return result
+        if cycle == ALL_CYCLES:
+            cycle_where = 'and cycle = -1'
         else:
-            return cached
+            cycle_where = 'and cycle = %d' % int(cycle)
 
-    def get_cache_key(self, query_name, cycle):
-        return "_".join([query_name, str(cycle)])
+        result = execute_all(self.stmt % cycle_where,[cycle])
+
+        if result:
+            result = [dict(zip(self.fields, row)) for row in result]
+
+        return result
 
