@@ -11,7 +11,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopLobbyistBundlersHandler, TopPoliticiansByReceiptsByOfficeHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
-    SubIndustryTotalsHandler
+    SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -300,6 +300,9 @@ urlpatterns = patterns('',
 
     url(r'^industries/subindustry_totals\.(?P<emitter_format>.+)$',
         Resource(SubIndustryTotalsHandler, **ad)),
+
+    url(r'^industries/top_(?P<limit>[0-9]+)_industries_time_series\.(?P<emitter_format>.+)$',
+        Resource(TopIndustriesTimeSeriesHandler, **ad)),
 
     # -------- politicians -------
     # top political fundraisers by office

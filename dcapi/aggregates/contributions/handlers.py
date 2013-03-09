@@ -505,6 +505,7 @@ class TopOrgContributorsByAreaContributorTypeHandler(TopListHandler):
         limit %s
     """
 
+
 class SubIndustryTotalsHandler(BaseHandler):
     args = ['cycle']
     fields =  ['subindustry_id', 'industry_id', 'sector_id', 'total_contributions']
@@ -538,3 +539,55 @@ class SubIndustryTotalsHandler(BaseHandler):
 
         return result
 
+class TopIndustriesTimeSeriesHandler(BaseHandler):
+    args = ['limit', 'cycle']
+    fields = ['industry_id', 'industry', 'cycle', 'contributions_to_democrats',
+              'contributions_to_republicans', 'total_contributions']
+
+    stmt = """
+            select
+                aitp.industry_id,aitp.industry,
+                cycle,
+                sum(contributions_to_democrats) as contributions_to_democrats,
+                sum(contributions_to_republicans) as contributions_to_republicans,
+                sum(total_contributions) as total_contributions
+            from
+                tmp_bl_agg_industry_to_party aitp
+            join
+                (   select
+                        industry_id
+                    from
+                        (   select
+                                industry_id,
+                                cycle,
+                                sum(total_contributions),
+                                rank() over (partition by cycle order by sum(total_contributions) desc) as rank
+                            from
+                                tmp_bl_agg_industry_to_party
+                            where
+                                subindustry_id not in ('Y0000','Y4000','Y2000','Y1200','Y1000','X1200')
+                            group by
+                                industry_id,cycle) as x
+                    where
+                        rank <= %s
+                        and
+                        cycle = %s ) topn on aitp.industry_id = topn.industry_id
+            where
+                cycle > 0
+            group by
+                aitp.industry_id,aitp.industry,cycle
+            order by
+                aitp.industry, aitp.cycle;
+    """
+
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
+        limit = request.GET.get('limit')
+        print request.GET
+
+        raw_result = execute_all(self.stmt, *[kwargs[param] for param in self.args])
+
+        if raw_result:
+            labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
+
+        return labeled_result
