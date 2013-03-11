@@ -1,32 +1,33 @@
 from django.core.management.base import CommandError, BaseCommand
 from django.db import connections, transaction
-
-from commando import command, true, store
+from optparse import make_option
 from django.conf import settings
+from dcdata.fec.config import INDEX_COLS_BY_TABLE_FEC
 
 
 class Command(BaseCommand):
-    @command(description='Create partitions (by cycle) for FEC tables.')
-    @true('-T', '--all-tables', dest='all_tables', default=False,                 help="Create partitions for the whole set of FEC tables")
-    @store('-t', '--table',     dest='table',      default=None,                  help="Table to create partition for")
-    @store('-c', '--cycle',     dest='cycle',      default=settings.LATEST_CYCLE, help="Table to create partition for", required=True)
-
-    # TODO
-    #@store('-C', '--all-cycles', default=False, help="Create partitions for all cycles")
-
-    idx_cols_by_table = {
-        'fec_indiv':      ['filer_id'],
-        'fec_candidates': [],
-        'fec_pac2cand':   ['candidate_id', 'other_id'],
-        'fec_pac2pac':    ['filer_id', 'other_id'],
-        'fec_committees': [],
-        'fec_candidates': [],
-        'fec_candidate_summaries': [],
-        'fec_committee_summaries': [],
-    }
+    option_list = BaseCommand.option_list + (
+        make_option('-T', '--all-tables',
+            action='store_true',
+            dest='all_tables',
+            default=False,
+            help='Create partitions for the whole set of FEC tables'
+        ),
+        make_option('-t', '--table',
+            action='store',
+            dest='table',
+            help='Table to create partition for'
+        ),
+        make_option('-c', '--cycle',
+            action='store',
+            dest='cycle',
+            default=settings.LATEST_CYCLE,
+            help='Cycle to create partition for'
+        ),
+    )
 
     @transaction.commit_on_success
-    def handle(self, params):
+    def handle(self, *args, **kwargs):
         """
         Takes a relation name and a cycle and creates a partition for it.
         Current relation names for FEC data are:
@@ -39,19 +40,25 @@ class Command(BaseCommand):
             fec_committee_summaries
         """
 
-        cycle = params.cycle
+        cycle = kwargs['cycle']
 
-        if params.all_tables:
-            for table in self.idx_cols_by_table.keys():
+        if kwargs['all_tables']:
+            for table in INDEX_COLS_BY_TABLE_FEC.keys():
                 self.create_partition(cycle, table)
-        elif params.table:
-            self.create_partition(cycle, params.table)
+        elif kwargs['table']:
+            self.create_partition(cycle, kwargs['table'])
         else:
-            if params.table is None:
+            if kwargs['table'] is None:
                 raise CommandError("You must specify a table")
 
     def create_partition(self, cycle, base_table):
         partition_name = '{}_{}'.format(base_table, cycle[-2:])
+
+        if len(cycle) < 4:
+            if int(cycle) > 80:
+                cycle = '19' + cycle
+            else:
+                cycle = '20' + cycle
 
         create_stmt = """
             create table {} (
@@ -63,7 +70,7 @@ class Command(BaseCommand):
         c = connections['default'].cursor()
         c.execute(create_stmt)
 
-        for colname in self.idx_cols_by_table[base_table]:
+        for colname in INDEX_COLS_BY_TABLE_FEC[base_table]:
             idx_stmt = 'create index {0}__{1}_idx on {0} ({1})'.format(
                 partition_name,
                 colname

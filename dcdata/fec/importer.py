@@ -60,8 +60,8 @@ class FECImporter():
             self.log.info("Restoring columns which were not in CSV and manually populating cycle on tables which require it...")
             self.restore_calculated_fields(c)
 
-            self.log.info("Finding what cycles are in this set of files...")
-            self.get_cycles_from_data(c)
+            #self.log.info("Finding what cycles are in this set of files...")
+            #self.get_cycles_from_data(c)
 
             self.log.info("Dropping and recreating partitions for this cycle...")
             self.recreate_partitions()
@@ -80,10 +80,9 @@ class FECImporter():
 
             self.log.info("Done.")
         except Exception as e:
-            self.log.error("Rolling back.")
             transaction.rollback()
 
-            self.log.error(e)
+            self.log.exception(e)
             raise
 
     def insert_out_of_date_cycle_records(self, cursor):
@@ -181,6 +180,7 @@ class FECImporter():
 
         table_cycles = {}
         for conf in self.cycle_config:
+            self.log.info(table_cycles)
             c.execute('select distinct cycle from {}'.format(self.temp_table_name(conf.sql_table)))
             table_cycles[self.temp_table_name(conf.sql_table)] = c.fetchall()
 
@@ -188,8 +188,8 @@ class FECImporter():
 
     def recreate_partitions(self):
         for conf in self.cycle_config:
-            call_command('delete_partition__fec', conf.sql_table, self.cycle)
-            call_command('create_partition__fec', conf.sql_table, self.cycle)
+            call_command('delete_partition__fec', table=conf.sql_table, cycle=self.cycle)
+            call_command('create_partition__fec', table=conf.sql_table, cycle=self.cycle)
 
     def temp_table_name(self, table):
         return 'tmp_{}'.format(table)

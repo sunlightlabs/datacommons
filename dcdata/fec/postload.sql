@@ -94,7 +94,9 @@ select
     memo_code,
     memo_text,
     fec_record
-from tmp_fec_indiv;
+from tmp_fec_indiv
+where date is not null and to_date(date, 'MMDDYYYY') < '20210101'::date
+;
 
 insert into fec_pac2cand (
     cycle, filer_id, amendment, report_type, election_type, microfilm_location,
@@ -126,7 +128,9 @@ select
     memo_code,
     memo_text,
     fec_record
-from tmp_fec_pac2cand;
+from tmp_fec_pac2cand
+where date is not null and to_date(date, 'MMDDYYYY') < '20210101'::date
+;
 
 insert into fec_pac2pac (
     cycle, filer_id, amendment, report_type, election_type, microfilm_location,
@@ -157,7 +161,9 @@ select
     memo_code,
     memo_text,
     fec_record
-from tmp_fec_pac2pac;
+from tmp_fec_pac2pac
+where date is not null and to_date(date, 'MMDDYYYY') < '20210101'::date
+;
 
 insert into fec_candidate_summaries (
     candidate_id, cycle, candidate_name, incumbent_challenger_open,
@@ -204,6 +210,7 @@ select
     refunds_to_individuals,
     refunds_to_committees
 from tmp_fec_candidate_summaries
+where ending_date is not null and ending_date < '20210101'::date
 ;
 
 insert into fec_committee_summaries (
@@ -249,6 +256,7 @@ select
     nonfederal_expenditure_share,
     through_date
 from tmp_fec_committee_summaries
+where through_date is not null and through_date < '20210101'::date
 ;
 
 
