@@ -394,6 +394,7 @@ from fec_candidates c
         inner join fec_committees c on c.committee_id = t.filer_id and c.cycle = t.cycle
     ) i using (committee_id, cycle)
 ;
+analyze fec_candidate_itemized;
 
 
 delete from fec_committee_itemized where cycle in (select cycle from fec_out_of_date_cycles);
@@ -446,6 +447,7 @@ from fec_committees c
         -- which we're not interested in here.
         substring(transaction_type for 2)::integer between 10 and 19
 ;
+analyze fec_committee_itemized;
 
 
 delete from agg_fec_committee_summaries where cycle in (select cycle from fec_out_of_date_cycles);
@@ -475,6 +477,7 @@ from fec_committee_summaries c
         and a.namespace = 'urn:fec:committee'
 --cross join (values (-1), (2014)) as cycles (cycle)
 group by cycle, entity_id;
+analyze agg_fec_committee_summaries;
 
 -- these three are unfortunately not true in the data
 -- alter table fec_candidates add constraint fec_candidates_committee_id foreign key (committee_id) references fec_committees (committee_id);
