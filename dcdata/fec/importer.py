@@ -63,7 +63,7 @@ class FECImporter():
             #self.log.info("Finding what cycles are in this set of files...")
             #self.get_cycles_from_data(c)
 
-            self.log.info("Dropping and recreating partitions for this cycle...")
+            self.log.info("Dropping and recreating partitions for this cycle ({})...".format(self.cycle))
             self.recreate_partitions()
 
             self.log.info("Inserting out of date cycle records.")
@@ -87,9 +87,11 @@ class FECImporter():
 
     def insert_out_of_date_cycle_records(self, cursor):
         cursor.execute('insert into fec_out_of_date_cycles (cycle) values (%s)' % self.cycle)
+        self._log_rows_affected(cursor)
 
     def delete_out_of_date_cycle_records(self, cursor):
         cursor.execute('delete from fec_out_of_date_cycles where cycle = %s' % self.cycle)
+        self._log_rows_affected(cursor)
 
     def _create_temp_tables(self, c):
         self.execute_file(c, SQL_PRELOAD_FILE)
@@ -114,7 +116,6 @@ class FECImporter():
     def load(self, c):
         for conf in self.cycle_config:
             infile = open(self._working_filename(conf) + '.utf8', 'r')
-            c.execute("DELETE FROM %s" % conf.sql_table)
             tmp_table = 'tmp_{}'.format(conf.sql_table)
             # note: quote character is an arbitrary ASCII code that is unlikely to appear in data.
             # FEC uses single and double quotes and most other printable characters in the data,
@@ -133,6 +134,7 @@ class FECImporter():
         for statement in statements:
             self.log.info("Executing %s" % statement)
             cursor.execute(statement)
+            self._log_rows_affected(cursor)
 
     def _working_dir(self, conf):
         filename = conf.url.split("/")[-1]
@@ -172,19 +174,20 @@ class FECImporter():
     def _working_filename(self, config):
         return os.path.join(self._working_dir(config), config.filename)
 
-    def get_cycles_from_data(self, c):
-        """
-        The files contain data for cycles which are out of bounds for the file.
-        Query the temporary load tables to find out what cycles we're working with.
-        """
+    # This is not needed, but not getting rid of it just yet.
+    #def get_cycles_from_data(self, c):
+    #    """
+    #    The files contain data for cycles which are out of bounds for the file.
+    #    Query the temporary load tables to find out what cycles we're working with.
+    #    """
 
-        table_cycles = {}
-        for conf in self.cycle_config:
-            self.log.info(table_cycles)
-            c.execute('select distinct cycle from {}'.format(self.temp_table_name(conf.sql_table)))
-            table_cycles[self.temp_table_name(conf.sql_table)] = c.fetchall()
+    #    table_cycles = {}
+    #    for conf in self.cycle_config:
+    #        self.log.info(table_cycles)
+    #        c.execute('select distinct cycle from {}'.format(self.temp_table_name(conf.sql_table)))
+    #        table_cycles[self.temp_table_name(conf.sql_table)] = c.fetchall()
 
-        self.log.info(table_cycles)
+    #    self.log.info(table_cycles)
 
     def recreate_partitions(self):
         for conf in self.cycle_config:
@@ -220,3 +223,6 @@ class FECImporter():
             F('ftp://ftp.fec.gov/FEC/%s/weball%s.zip' % (cycle4, cycle2), 'weball%s.txt' % cycle2, 'fec_candidate_summaries'),
             F('ftp://ftp.fec.gov/FEC/%s/webk%s.zip' % (cycle4, cycle2), 'webk%s.txt' % cycle2, 'fec_committee_summaries')
         ]
+
+    def _log_rows_affected(self, cursor):
+        self.log.debug('Rows affected: {}'.format(cursor.rowcount))

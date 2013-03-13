@@ -25,7 +25,9 @@ select
     city,
     state,
     zipcode
-from tmp_fec_candidates;
+from tmp_fec_candidates
+where election_year is not null and election_year between 1985 and 2020
+;
 
 
 insert into fec_committees (
@@ -95,7 +97,7 @@ select
     memo_text,
     fec_record
 from tmp_fec_indiv
-where date is not null and to_date(date, 'MMDDYYYY') < '20210101'::date
+where date is not null and to_date(date, 'MMDDYYYY') between '19850101'::date and '20210101'::date
 ;
 
 insert into fec_pac2cand (
@@ -129,7 +131,7 @@ select
     memo_text,
     fec_record
 from tmp_fec_pac2cand
-where date is not null and to_date(date, 'MMDDYYYY') < '20210101'::date
+where date is not null and to_date(date, 'MMDDYYYY') between '19850101'::date and '20210101'::date
 ;
 
 insert into fec_pac2pac (
@@ -162,7 +164,7 @@ select
     memo_text,
     fec_record
 from tmp_fec_pac2pac
-where date is not null and to_date(date, 'MMDDYYYY') < '20210101'::date
+where date is not null and to_date(date, 'MMDDYYYY') between '19850101'::date and '20210101'::date
 ;
 
 insert into fec_candidate_summaries (
