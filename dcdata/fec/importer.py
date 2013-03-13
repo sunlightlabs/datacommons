@@ -108,10 +108,17 @@ class FECImporter():
         # We need to add the column back on. It was previously removed (relative to the permanent table),
         # so that we didn't have to alter our COPY commands (since cycle isn't in the file).
         cursor.execute('alter table %s add column race varchar(7)' % self.temp_table_name('fec_candidates'))
-        cursor.execute('alter table %s add column cycle smallint' % self.temp_table_name('fec_committees'))
-        cursor.execute('alter table %s add column cycle smallint' % self.temp_table_name('fec_committee_summaries'))
-        cursor.execute('update %s set cycle = %s' % (self.temp_table_name('fec_committees'), self.cycle))
-        cursor.execute('update %s set cycle = %s' % (self.temp_table_name('fec_committee_summaries'), self.cycle))
+
+        for table in 'fec_candidates fec_committees fec_candidate_summaries fec_committee_summaries fec_indiv fec_pac2cand fec_pac2pac'.split():
+            cursor.execute('alter table %s add column cycle smallint' % self.temp_table_name(table))
+
+        for table in 'fec_candidates fec_committees fec_candidate_summaries fec_committee_summaries'.split():
+            cursor.execute('update %s set cycle = %s' % (self.temp_table_name(table), self.cycle))
+
+        for table in 'fec_indiv fec_pac2cand fec_pac2pac'.split():
+            cursor.execute("""
+                update {} set cycle = case when "date" is null then {} else to_cycle(to_date("date", 'MMDDYYYY')) end
+            """.format(self.temp_table_name(table), self.cycle))
 
     def load(self, c):
         for conf in self.cycle_config:

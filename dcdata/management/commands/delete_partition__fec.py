@@ -4,6 +4,7 @@ from optparse import make_option
 from django.conf import settings
 from dcdata.fec.config import INDEX_COLS_BY_TABLE_FEC
 
+from optparse import make_option
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -24,6 +25,11 @@ class Command(BaseCommand):
             default=settings.LATEST_CYCLE,
             help='Cycle to delete partition for'
         ),
+    )
+
+    option_list = BaseCommand.option_list + (
+        make_option('-t', '--table',      dest='table',      action='store',      help="Table to delete partition for"),
+        make_option('-c', '--cycle',      dest='cycle',      action='store',      help="Table to delete partition for")
     )
 
     @transaction.commit_on_success

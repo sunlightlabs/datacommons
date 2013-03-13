@@ -5,7 +5,7 @@ insert into fec_candidates (
 )
 select 
     candidate_id,
-    to_cycle(election_year) as cycle, 
+    cycle,
     candidate_name,
     party,
     election_year,
@@ -26,7 +26,7 @@ select
     state,
     zipcode
 from tmp_fec_candidates
-where election_year is not null and election_year between 1985 and 2020
+inner join fec_cycles using (cycle)
 ;
 
 
@@ -74,7 +74,7 @@ insert into fec_indiv (
     memo_code, memo_text, fec_record
 )
 select
-    to_cycle(to_date(date, 'MMDDYYYY')) as cycle,
+    cycle,
     filer_id,
     amendment,
     report_type,
@@ -97,7 +97,7 @@ select
     memo_text,
     fec_record
 from tmp_fec_indiv
-where date is not null and to_date(date, 'MMDDYYYY') between '19850101'::date and '20210101'::date
+inner join fec_cycles using (cycle)
 ;
 
 insert into fec_pac2cand (
@@ -107,7 +107,7 @@ insert into fec_pac2cand (
     file_num, memo_code, memo_text, fec_record
 )
 select
-    to_cycle(to_date(date, 'MMDDYYYY')) as cycle,
+    cycle,
     filer_id,
     amendment,
     report_type,
@@ -131,7 +131,7 @@ select
     memo_text,
     fec_record
 from tmp_fec_pac2cand
-where date is not null and to_date(date, 'MMDDYYYY') between '19850101'::date and '20210101'::date
+inner join fec_cycles using (cycle)
 ;
 
 insert into fec_pac2pac (
@@ -141,7 +141,7 @@ insert into fec_pac2pac (
     memo_code, memo_text, fec_record
 )
 select
-    to_cycle(to_date(date, 'MMDDYYYY')) as cycle,
+    cycle,
     filer_id,
     amendment,
     report_type,
@@ -164,7 +164,7 @@ select
     memo_text,
     fec_record
 from tmp_fec_pac2pac
-where date is not null and to_date(date, 'MMDDYYYY') between '19850101'::date and '20210101'::date
+inner join fec_cycles using (cycle)
 ;
 
 insert into fec_candidate_summaries (
@@ -181,7 +181,7 @@ insert into fec_candidate_summaries (
 )
 select
     candidate_id,
-    to_cycle(ending_date) as cycle,
+    cycle,
     candidate_name,
     incumbent_challenger_open,
     party,
@@ -212,7 +212,7 @@ select
     refunds_to_individuals,
     refunds_to_committees
 from tmp_fec_candidate_summaries
-where ending_date is not null and ending_date < '20210101'::date
+inner join fec_cycles using (cycle)
 ;
 
 insert into fec_committee_summaries (
@@ -258,7 +258,7 @@ select
     nonfederal_expenditure_share,
     through_date
 from tmp_fec_committee_summaries
-where through_date is not null and through_date < '20210101'::date
+inner join fec_cycles using (cycle)
 ;
 
 

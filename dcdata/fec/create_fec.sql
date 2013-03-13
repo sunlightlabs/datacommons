@@ -200,6 +200,12 @@ create table fec_out_of_date_cycles (
     created_at timestamp default(now())
 );
 
+drop table if exists fec_cycles cascade;
+create table fec_cycles (
+    cycle smallint not null,
+    created_at timestamp default(now())
+);
+
 -- END: UTILITY TABLES
 
 -- BEGIN: AGGREGATE/COMPUTED TABLES
