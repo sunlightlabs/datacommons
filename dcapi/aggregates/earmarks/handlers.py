@@ -28,6 +28,10 @@ class TopEarmarksHandler(EntityTopListHandler):
     
     
 class LocalEarmarksHandler(PieHandler):
+
+    category_map = {'out-of-state': 'Out-of-State', 'in-state': 'In-State',
+            'unknown':'Unknown'}
+    #default_key = 'Unknown'
     
     stmt = """
         select local, count, amount
