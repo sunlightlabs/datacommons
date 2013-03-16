@@ -67,6 +67,8 @@ create table fec_indiv (
     memo_text varchar(100),
     fec_record varchar(19)
 );
+create index fec_indiv__cycle on fec_indiv (cycle);
+create index fec_indiv__filer_id on fec_indiv (filer_id);
 
 drop table if exists fec_pac2cand cascade;
 create table fec_pac2cand (
@@ -94,6 +96,8 @@ create table fec_pac2cand (
     memo_text varchar(100),
     fec_record varchar(19)
 );
+create index fec_pac2cand__cycle on fec_pac2cand (cycle);
+create index fec_pac2cand__filer_id on fec_pac2cand (filer_id);
 
 drop table if exists fec_pac2pac cascade;
 CREATE TABLE fec_pac2pac (
@@ -120,6 +124,8 @@ CREATE TABLE fec_pac2pac (
     memo_text varchar(100),
     fec_record varchar(19)
 );
+create index fec_pac2pac__cycle on fec_pac2pac (cycle);
+create index fec_pac2pac__filer_id on fec_pac2pac (filer_id);
 
 drop table if exists fec_candidate_summaries cascade;
 CREATE TABLE fec_candidate_summaries (
