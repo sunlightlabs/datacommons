@@ -169,7 +169,7 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 
 class CommitteeTopContribsHandler(EntityTopListHandler):
 
-    args = ['entity_id', 'limit']
+    args = ['entity_id', 'cycle', 'limit']
     fields = "contributor_name transaction_type count amount".split()
 
     stmt = """
@@ -178,6 +178,7 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
             a.entity_id = %s
+            and i.cycle = %s
             and transaction_type in ('10', '11', '15', '15e', '15j', '22y')
         group by contributor_name, transaction_type
         order by sum(amount) desc
