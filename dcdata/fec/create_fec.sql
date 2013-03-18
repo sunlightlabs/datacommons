@@ -272,6 +272,7 @@ CREATE TABLE agg_fec_race_status (
     runoff_election_status text,
     general_election_status text
 );
+
 CREATE TABLE fec_candidate_itemized (
     contributor_name character varying(200),
     cycle smallint,
@@ -292,7 +293,9 @@ CREATE TABLE fec_candidate_itemized (
     candidate_id character varying(9)
 );
 create index fec_candidate_itemized_candidate_id on fec_candidate_itemized (candidate_id);
+create index fec_candidate_itemized_committee_id on fec_candidate_itemized (committee_id);
 create index fec_candidate_itemized_cycle on fec_candidate_itemized (cycle);
+create index fec_candidate_itemized__transaction_type_idx on fec_candidate_itemized (transaction_type);
 
 CREATE TABLE fec_committee_itemized (
     contributor_name character varying(200),
@@ -316,7 +319,8 @@ CREATE TABLE fec_committee_itemized (
     connected_org character varying(200),
     candidate_id character varying(9)
 );
-create index fec_committee_itemized_committee_id on fec_committee_itemized (committee_id);
+create index fec_committee_itemized__cycle on fec_committee_itemized (cycle);
+create index fec_committee_itemized__committee_id on fec_committee_itemized (committee_id);
 create index fec_committee_itemized__transaction_type_idx on fec_committee_itemized (transaction_type);
 
 -- END: AGGREGATE/COMPUTED TABLES

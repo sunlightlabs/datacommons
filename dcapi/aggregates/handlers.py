@@ -1,4 +1,3 @@
-
 from dcentity.models import Entity
 from django.db import connection
 from piston.handler import BaseHandler

@@ -75,10 +75,11 @@ class CandidateStateHandler(PieHandler):
             sum(amount),
             count(*)
         from fec_candidates c
-        inner join fec_indiv i on c.committee_id = i.filer_id
+        inner join fec_indiv i on c.committee_id = i.filer_id and c.cycle = i.cycle
         inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         where
             a.entity_id = %s
+            and c.cycle = %s
         group by local
     """
 
@@ -86,7 +87,7 @@ class CandidateTimelineHandler(EntityTopListHandler):
 
     candidates_fields = "entity_id candidate_id candidate_name race party incumbent".split()
     candidates_stmt = """
-        select entity_id, candidate_id, e.name, race, party, incumbent_challenger_open
+        select distinct entity_id, candidate_id, e.name, race, party, incumbent_challenger_open
         from fec_candidates c
         inner join matchbox_entityattribute a on c.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         inner join matchbox_entity e on a.entity_id = e.id
