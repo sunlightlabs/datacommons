@@ -8,6 +8,8 @@ from django.conf import settings
 from dcdata.scripts.nimsp.common import CSV_SQL_MAPPING, SQL_DUMP_FILE
 from dcdata.management.base.nimsp_importer import BaseNimspImporter
 
+OTHER_DATABASES = settings.OTHER_DATABASES
+
 
 class NIMSPDump2CSV(BaseNimspImporter):
     IN_DIR       = '/home/datacommons/data/auto/nimsp/dump/IN'
@@ -60,7 +62,7 @@ class NIMSPDump2CSV(BaseNimspImporter):
             """ % (select_fields, outfile_path)
 
         connection = MySQLdb.connect(
-            db=settings.OTHER_DATABASES['nimsp']['DATABASE_NAME'],
+            db=OTHER_DATABASES['nimsp']['DATABASE_NAME'],
             user=OTHER_DATABASES['nimsp']['DATABASE_USER'],
             host=OTHER_DATABASES['nimsp']['DATABASE_HOST'] if 'DATABASE_HOST' in OTHER_DATABASES['nimsp'] else 'localhost',
             passwd=OTHER_DATABASES['nimsp']['DATABASE_PASSWORD'],

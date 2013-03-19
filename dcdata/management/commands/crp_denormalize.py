@@ -23,14 +23,13 @@ class RecipientFilter(Filter):
 
     def add_recipient(self, record, committee):
         # cmte_id != recip_id indicates a candidate committee
-        if committee['cmte_id'] != committee['recip_id']:
-            key = '{}:{}'.format(record['cycle'], committee['fec_cand_id'].strip().upper())
+        fec_cand_id = committee['fec_cand_id'].strip()
+        if committee['cmte_id'] != committee['recip_id'] and fec_cand_id:
+            key = '{}:{}'.format(record['cycle'], fec_cand_id.upper())
             candidate = self._candidates.get(key)
             if candidate:
                 self.add_candidate_recipient(record, candidate, committee)
                 return record
-            else:
-                logging.warn("candidate recipient expected but not found for cycle:fec_candid: " % key)
 
         self.add_committee_recipient(record, committee)
         return record
