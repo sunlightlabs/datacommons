@@ -20,6 +20,9 @@ create table fec_candidates (
     zipcode varchar(9),
     primary key (candidate_id, cycle)
 );
+create index fec_candidates__candidate_status on fec_candidates (candidate_status);
+create index fec_candidates__incumbent_challenger_open on fec_candidates (incumbent_challenger_open);
+
 
 drop table if exists fec_committees cascade;
 create table fec_committees (
