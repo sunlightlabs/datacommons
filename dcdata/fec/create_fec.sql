@@ -295,6 +295,7 @@ CREATE TABLE fec_candidate_itemized (
 create index fec_candidate_itemized_candidate_id on fec_candidate_itemized (candidate_id);
 create index fec_candidate_itemized_committee_id on fec_candidate_itemized (committee_id);
 create index fec_candidate_itemized_cycle on fec_candidate_itemized (cycle);
+create index fec_candidate_itemized_date on fec_candidate_itemized (date);
 create index fec_candidate_itemized__transaction_type_idx on fec_candidate_itemized (transaction_type);
 
 CREATE TABLE fec_committee_itemized (
@@ -320,6 +321,7 @@ CREATE TABLE fec_committee_itemized (
     candidate_id character varying(9)
 );
 create index fec_committee_itemized__cycle on fec_committee_itemized (cycle);
+create index fec_candidate_itemized_date on fec_candidate_itemized (date);
 create index fec_committee_itemized__committee_id on fec_committee_itemized (committee_id);
 create index fec_committee_itemized__transaction_type_idx on fec_committee_itemized (transaction_type);
 

@@ -475,7 +475,6 @@ from fec_committee_summaries c
     inner join matchbox_entityattribute a 
         on c.committee_id = a.value 
         and a.namespace = 'urn:fec:committee'
---cross join (values (-1), (2014)) as cycles (cycle)
 group by cycle, entity_id;
 analyze agg_fec_committee_summaries;
 
