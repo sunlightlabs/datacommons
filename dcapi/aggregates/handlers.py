@@ -1,6 +1,7 @@
 
 from dcentity.models import Entity
 from django.db import connection
+from django.conf import settings
 from piston.handler import BaseHandler
 from piston.utils import rc
 
@@ -41,6 +42,13 @@ def execute_all(stmt, *args):
     return cursor.fetchall()
 
 def execute(cursor, stmt, args):
+    if settings.DEBUG:
+        print cursor.mogrify(stmt, args)
+
+        cursor.execute('explain ' + stmt, args)
+        for x in cursor.fetchall():
+            print x[0]
+        
     try:
         # Just gonna leave this here...
         # print cursor.mogrify(stmt, args)
