@@ -1,6 +1,6 @@
 from dcdata.fec.importer import *
 
-cycles = '96 98 00 02 04 06 08 10 12'.split()
+cycles = '96 98 00 02 04 06 08 10 12 14'.split()
 
 def cycle_configs(cycles):
 	return reduce(lambda x, y: x + y, [cycle_config(c) for c in cycles])
