@@ -187,21 +187,29 @@ drop table if exists tmp_assoc_indiv_id cascade;
 select date_trunc('second', now()) || ' -- create table tmp_assoc_indiv_id';
 create table tmp_assoc_indiv_id as
     select entity_id, transaction_id
-    from contributions_all_relevant c
-    inner join matchbox_entityattribute a
-        on (a.value = c.contributor_ext_id
-            -- a 12th digit of '0' can be ignored
-            or (length(a.value) = 12 and substring(a.value from 12 for 1) = '0' and substring(a.value for 11) = c.contributor_ext_id))
-    inner join matchbox_entity e
-        on e.id = a.entity_id
-    where
-        e.type = 'individual'
-        and a.value != ''
-        and (
-            (a.namespace = 'urn:crp:individual' and c.transaction_namespace = 'urn:fec:transaction' and c.contributor_type = 'I')
-            or (a.namespace = 'urn:nimsp:individual' and c.transaction_namespace = 'urn:nimsp:transaction' and (c.contributor_type is null or c.contributor_type != 'C'))
-        );
+        from (select * from contributions_all_relevant where transaction_namespace = 'urn:fec:transaction' and contributor_type = 'I') c
+        inner join matchbox_entityattribute a
+            on a.value ~* (c.contributor_ext_id || '0?')
+        inner join matchbox_entity e
+            on e.id = a.entity_id
+        where
+            e.type = 'individual'
+            and a.value != ''
+            and a.namespace = 'urn:crp:individual'
 
+    union all
+
+    select entity_id, transaction_id
+        from (select * from contributions_all_relevant where transaction_namespace = 'urn:nimsp:transaction' and (contributor_type is null or contributor_type != 'C')) c
+        inner join matchbox_entityattribute a
+            on a.value = c.contributor_ext_id
+        inner join matchbox_entity e
+            on e.id = a.entity_id
+        where
+            e.type = 'individual'
+            and a.value != ''
+            and a.namespace = 'urn:nimsp:individual'
+;
 create index tmp_assoc_indiv_id_entity on tmp_assoc_indiv_id (entity_id);
 create index tmp_assoc_indiv_id_transaction on tmp_assoc_indiv_id (transaction_id);
 
