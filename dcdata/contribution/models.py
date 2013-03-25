@@ -1,10 +1,13 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from dcdata.models import Import
+from common.db.fields.uuid_field import UUIDField
+import uuid
 
 
 NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
 CRP_TRANSACTION_NAMESPACE = 'urn:fec:transaction'
+DC_TRANSACTION_NAMESPACE = 'urn:dc:transaction'
 UNITTEST_TRANSACTION_NAMESPACE = 'urn:unittest:transaction'
 
 
@@ -174,6 +177,56 @@ class Contribution(models.Model):
         # save if all checks passed
         super(Contribution, self).save(**kwargs)
 
+
+class ContributionDC(models.Model):
+    transaction_id = UUIDField(primary_key=True, auto=True, default=uuid.uuid4().hex)
+    committee_name = models.CharField(max_length=100)
+    contributor_name = models.CharField(max_length=100)
+    contributor_entity = UUIDField(null=True)
+    contributor_type = models.CharField(max_length=24)
+    contributor_type_internal = models.CharField(max_length=12)
+    payment_type = models.CharField(max_length=42, null=True)
+    contributor_address = models.CharField(max_length=40, null=True)
+    contributor_city = models.CharField(max_length=20, null=True)
+    contributor_state = models.CharField(max_length=2, null=True)
+    contributor_zipcode = models.CharField(max_length=5)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    date = models.DateField()
+
+    """
+    Fields it would be nice to have to bring this into more compliance with the general contributions data model
+    """
+    """
+    import_reference = models.ForeignKey(Import)
+
+    # cycle and basic transaction fields
+    cycle = models.IntegerField()
+    transaction_namespace = models.CharField(max_length=64)
+
+    # maybe rename payment_type to this?
+    transaction_type = models.CharField(max_length=32, choices=TRANSACTION_TYPES)
+
+    # maybe populate a download date? how do we keep a running tally of this stuff
+    # and add new data if we don't know when we last downloaded it?
+    filing_id = models.CharField(max_length=128, blank=True)
+
+    # recipient fields
+    recipient_name = models.CharField(max_length=255, blank=True)
+    recipient_ext_id = models.CharField(max_length=128, blank=True)
+    recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True)
+    recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True)
+    recipient_state = USStateField(blank=True)
+
+    # ward
+    district = models.CharField(max_length=8, blank=True)
+
+    # would be great to have an indication of this!!
+    seat = models.CharField(max_length=64, choices=SEATS, blank=True)
+
+    # these, too... incumbent/challenger/open, Win/Lose
+    seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True)
+    seat_result = models.CharField(max_length=1, choices=SEAT_RESULTS, blank=True)
+    """
 
 
 class Bundle(models.Model):
