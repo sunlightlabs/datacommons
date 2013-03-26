@@ -166,7 +166,7 @@ create table contributions_all_relevant as select * from contributions_even_cycl
 create table contributions_all_relevant__crp ( check ( transaction_namespace = 'urn:fec:transaction' ) ) inherits (contributions_all_relevant);
 create table contributions_all_relevant__nimsp ( check ( transaction_namespace = 'urn:nimsp:transaction' ) ) inherits (contributions_all_relevant);
 
-insert into contributions_all_relevant_crp
+insert into contributions_all_relevant__crp
     select * from (
         table contributions_individual
         union all
@@ -178,7 +178,7 @@ insert into contributions_all_relevant_crp
     ) x
     where transaction_namespace = 'urn:fec:transaction'
 ;
-insert into contributions_all_relevant_nimsp
+insert into contributions_all_relevant__nimsp
     select * from (
         table contributions_individual
         union all
