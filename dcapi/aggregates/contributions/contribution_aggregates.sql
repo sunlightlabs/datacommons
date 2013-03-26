@@ -155,27 +155,44 @@ select date_trunc('second', now()) || ' -- create index contributions_org_to_pac
 create index contributions_org_to_pac_transaction_id on contributions_org_to_pac (transaction_id);
 
 
-
--- All contributions that we can aggregate
-
+-- All contributions that we can aggregate. Partitioned by transaction_namespace.
 
 select date_trunc('second', now()) || ' -- drop table if exists contributions_all_relevant';
 drop table if exists contributions_all_relevant cascade;
 
 select date_trunc('second', now()) || ' -- create table contributions_all_relevant';
-create table contributions_all_relevant as
-    table contributions_individual
-    union all
-    table contributions_individual_to_organization
-    union all
-    table contributions_organization
-    union all
-    table contributions_org_to_pac
+create table contributions_all_relevant as select * from contributions_even_cycles limit 0;
+
+create table contributions_all_relevant__crp ( check ( transaction_namespace = 'urn:fec:transaction' ) ) inherits (contributions_all_relevant);
+create table contributions_all_relevant__nimsp ( check ( transaction_namespace = 'urn:nimsp:transaction' ) ) inherits (contributions_all_relevant);
+
+insert into contributions_all_relevant_crp
+    select * from (
+        table contributions_individual
+        union all
+        table contributions_individual_to_organization
+        union all
+        table contributions_organization
+        union all
+        table contributions_org_to_pac
+    ) x
+    where transaction_namespace = 'urn:fec:transaction'
+;
+insert into contributions_all_relevant_nimsp
+    select * from (
+        table contributions_individual
+        union all
+        table contributions_individual_to_organization
+        union all
+        table contributions_organization
+        union all
+        table contributions_org_to_pac
+    ) x
+    where transaction_namespace = 'urn:nimsp:transaction'
 ;
 
 select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
-create index contributions_all_relevant__transaction_namespace__idx on contributions_all_relevant (transaction_namespace);
 create index contributions_all_relevant__contributor_type__idx on contributions_all_relevant (contributor_type);
 
 
@@ -187,7 +204,7 @@ drop table if exists tmp_assoc_indiv_id cascade;
 select date_trunc('second', now()) || ' -- create table tmp_assoc_indiv_id';
 create table tmp_assoc_indiv_id as
     select entity_id, transaction_id
-        from (select * from contributions_all_relevant where transaction_namespace = 'urn:fec:transaction' and contributor_type = 'I') c
+        from (select * from contributions_all_relevant__crp where contributor_type = 'I') c
         inner join matchbox_entityattribute a
             on a.value ~* (c.contributor_ext_id || '0?')
         inner join matchbox_entity e
@@ -200,7 +217,7 @@ create table tmp_assoc_indiv_id as
     union all
 
     select entity_id, transaction_id
-        from (select * from contributions_all_relevant where transaction_namespace = 'urn:nimsp:transaction' and (contributor_type is null or contributor_type != 'C')) c
+        from (select * from contributions_all_relevant__nimsp where contributor_type is null or contributor_type != 'C') c
         inner join matchbox_entityattribute a
             on a.value = c.contributor_ext_id
         inner join matchbox_entity e
