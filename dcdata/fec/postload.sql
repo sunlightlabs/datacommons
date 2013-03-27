@@ -285,33 +285,34 @@ delete from agg_fec_candidate_rankings where to_cycle(election_year) in (select 
 insert into agg_fec_candidate_rankings
 
 -- primary winners only (vs. primary winners)
-with counts_by_office_primary_year as (
+with counts_by_office_primary_cycle as (
     -- count of general election candidates
-    select count(*) as num_candidates_in_field, office, 'W' as primary_election_status, election_year
+    select count(distinct candidate_id) as num_candidates_in_field, office, 'W' as primary_election_status, to_cycle(max(election_year)) as cycle
     from fec_candidates c
         inner join fec_out_of_date_cycles using (cycle)
-        inner join fec_candidate_summaries s using (candidate_id)
+        inner join fec_candidate_summaries s using (candidate_id, cycle)
     where candidate_status = 'C' and s.primary_election_status = 'W'
-    group by office, election_year
+    group by office, cycle
 
     union all
 
     -- count of primary field
-    select count(*) as num_candidates_in_field, office, null as primary_election_status, election_year
+    select count(distinct candidate_id) as num_candidates_in_field, office, null as primary_election_status, to_cycle(max(election_year)) as cycle
     from fec_candidates c
         inner join fec_out_of_date_cycles using (cycle)
-        inner join fec_candidate_summaries s using (candidate_id)
+        inner join fec_candidate_summaries s using (candidate_id, cycle)
     where candidate_status = 'C'
-    group by office, election_year
+    group by office, cycle
 )
 -- general election rankings
-select candidate_id, office, election_year, primary_election_status, num_candidates_in_field,
-    rank() over (partition by office, election_year order by total_receipts desc) as total_receipts_rank,
-    rank() over (partition by office, election_year order by ending_cash desc) as cash_on_hand_rank,
-    rank() over (partition by office, election_year order by total_disbursements desc) as total_disbursements_rank
+select candidate_id, office, cycle, primary_election_status, num_candidates_in_field,
+    rank() over (partition by office, cycle order by total_receipts desc) as total_receipts_rank,
+    rank() over (partition by office, cycle order by ending_cash desc) as cash_on_hand_rank,
+    rank() over (partition by office, cycle order by total_disbursements desc) as total_disbursements_rank
 from fec_candidates c
+    inner join fec_out_of_date_cycles using (cycle)
     inner join fec_candidate_summaries s using (candidate_id, cycle)
-    inner join counts_by_office_primary_year ct using (office, election_year, primary_election_status)
+    inner join counts_by_office_primary_cycle ct using (office, cycle, primary_election_status)
 where
     candidate_status = 'C'
     and s.primary_election_status = 'W'
@@ -319,21 +320,21 @@ where
 union all
 
 -- primary candidates (vs. everybody)
-select candidate_id, x.office, x.election_year, x.primary_election_status, num_candidates_in_field, total_receipts_rank, cash_on_hand_rank, total_disbursements_rank
+select candidate_id, x.office, x.cycle, x.primary_election_status, num_candidates_in_field, total_receipts_rank, cash_on_hand_rank, total_disbursements_rank
 from (
-    select candidate_id, office, election_year, s.primary_election_status,
-        rank() over (partition by office, election_year order by total_receipts desc) as total_receipts_rank,
-        rank() over (partition by office, election_year order by ending_cash desc) as cash_on_hand_rank,
-        rank() over (partition by office, election_year order by total_disbursements desc) as total_disbursements_rank
+    select candidate_id, office, cycle, s.primary_election_status,
+        rank() over (partition by office, cycle order by total_receipts desc) as total_receipts_rank,
+        rank() over (partition by office, cycle order by ending_cash desc) as cash_on_hand_rank,
+        rank() over (partition by office, cycle order by total_disbursements desc) as total_disbursements_rank
     from fec_candidates c
         inner join fec_out_of_date_cycles using (cycle)
-        inner join fec_candidate_summaries s using (candidate_id)
+        inner join fec_candidate_summaries s using (candidate_id, cycle)
     where candidate_status = 'C'
 )x
-inner join counts_by_office_primary_year ct
+inner join counts_by_office_primary_cycle ct
     on x.office = ct.office
-    and x.election_year = ct.election_year
-where x.primary_election_status is null
+    and x.cycle = ct.cycle
+where x.primary_election_status is null or x.primary_election_status = 'L'
 ;
 
 delete from agg_fec_candidate_timeline where cycle in (select cycle from fec_out_of_date_cycles);
