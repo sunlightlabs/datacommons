@@ -200,31 +200,39 @@ create index contributions_all_relevant__transaction_id__idx on contributions_al
 select date_trunc('second', now()) || ' -- drop table if exists tmp_assoc_indiv_id';
 drop table if exists tmp_assoc_indiv_id cascade;
 
-select date_trunc('second', now()) || ' -- create table tmp_assoc_indiv_id';
+select date_trunc('second', now()) || ' -- create table tmp_assoc_indiv_id (with crp transactions)';
 create table tmp_assoc_indiv_id as
+    -- Not sure the CTE is totally necessary here, but it does have the effect of pushing the nested loop farther down the explain tree,
+    -- and away from the very top, where it was before. The estimated cost was a little bit higher, but execution time seemed to be far quicker.
+    -- It may have helped Postgres make better estimates and a better plan.
+    with indiv_c as (select transaction_id, contributor_ext_id from contributions_all_relevant__crp where contributor_type = 'I')
     select entity_id, transaction_id
-        from (select * from contributions_all_relevant__crp where contributor_type = 'I') c
-        inner join matchbox_entityattribute a
-            on a.value ~* (c.contributor_ext_id || '0?')
-        inner join matchbox_entity e
-            on e.id = a.entity_id
-        where
-            e.type = 'individual'
-            and a.value != ''
-            and a.namespace = 'urn:crp:individual'
+    from indiv_c c
+    inner join matchbox_entityattribute a
+        on (a.value = c.contributor_ext_id
+                    -- a 12th digit of '0' can be ignored
+                    or (length(a.value) = 12 and substring(a.value from 12 for 1) = '0' and substring(a.value for 11) = c.contributor_ext_id))
+    inner join matchbox_entity e
+        on e.id = a.entity_id
+    where
+        e.type = 'individual'
+        and a.value != ''
+        and a.namespace = 'urn:crp:individual'
+;
 
-    union all
-
+select date_trunc('second', now()) || ' -- insert into tmp_assoc_indiv_id (nimsp transactions)';
+insert into tmp_assoc_indiv_id (entity_id, transaction_id)
+    with indiv_c as (select transaction_id, contributor_ext_id from contributions_all_relevant__nimsp where contributor_type is null or contributor_type != 'C')
     select entity_id, transaction_id
-        from (select * from contributions_all_relevant__nimsp where contributor_type is null or contributor_type != 'C') c
-        inner join matchbox_entityattribute a
-            on a.value = c.contributor_ext_id
-        inner join matchbox_entity e
-            on e.id = a.entity_id
-        where
-            e.type = 'individual'
-            and a.value != ''
-            and a.namespace = 'urn:nimsp:individual'
+    from indiv_c c
+    inner join matchbox_entityattribute a
+        on a.value = c.contributor_ext_id
+    inner join matchbox_entity e
+        on e.id = a.entity_id
+    where
+        e.type = 'individual'
+        and a.value != ''
+        and a.namespace = 'urn:nimsp:individual'
 ;
 create index tmp_assoc_indiv_id_entity on tmp_assoc_indiv_id (entity_id);
 create index tmp_assoc_indiv_id_transaction on tmp_assoc_indiv_id (transaction_id);
