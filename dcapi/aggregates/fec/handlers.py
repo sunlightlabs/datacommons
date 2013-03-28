@@ -1,6 +1,6 @@
 from piston.handler import BaseHandler
 
-from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, TopListHandler, execute_top, execute_one, EntityTopListHandler
+from dcapi.aggregates.handlers import EntitySingletonHandler, PieHandler, execute_top, execute_one, EntityTopListHandler
 
 
 class CandidateSummaryHandler(EntitySingletonHandler):
@@ -67,7 +67,7 @@ class CommitteeSummaryHandler(EntitySingletonHandler):
 
 class CandidateStateHandler(PieHandler):
 
-    args = ['entity_id']
+    args = ['entity_id', 'cycle']
 
     stmt = """
         select
@@ -219,4 +219,3 @@ class ElectionSummaryHandler(BaseHandler):
     def read(self, request):
         result = execute_one(self.stmt)
         return dict(zip(self.fields, result))
-
