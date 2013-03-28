@@ -1,5 +1,7 @@
 *.db
 *.pyc
+*.swf
+*.swg
 *.swh
 *.swi
 *.swp
