@@ -15,6 +15,7 @@ from (values
     ('barak obama, ', 'P80003338'), 
     ('bonamici, suzanne', 'H2OR01133'),
     ('boucher, rick', 'H2VA09010'),
+    ('buerkle, ann marie', 'H0NY25078'),
     ('canseco, francisco raul quico', 'H4TX28046'),
     ('cornilles, robert', 'H0OR01095'),
     ('corwin, jane', 'H2NY00044'),
@@ -105,56 +106,72 @@ where
 drop view if exists agg_fec_indexp_candidates;
 drop view if exists agg_fec_indexp_committees;
 
-drop table if exists fec_indexp;
-create table fec_indexp as
-select candidate_id, candidate_name, spender_id, spender_name, election_type, candidate_state,
+delete from fec_indexp where cycle in (select cycle from fec_indexp_out_of_date_cycles);
+insert into fec_indexp 
+    (cycle, candidate_id, candidate_name, spender_id, spender_name, election_type, candidate_state,
+    candidate_district, candidate_office, candidate_party, amount, aggregate_amount,
+    support_oppose, date, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date)
+select 
+    cycle,
+    candidate_id, 
+    candidate_name, 
+    spender_id, 
+    spender_name, 
+    election_type, 
+    candidate_state,
     case when candidate_office = 'House' then candidate_district else '' end as candidate_district,
-    candidate_office, candidate_party, 
+    candidate_office,
+    candidate_party, 
     regexp_replace(amount, ',|\$', '', 'g')::numeric as amount,
     regexp_replace(aggregate_amount, ',|\$', '', 'g')::numeric as aggregate_amount,
-    support_oppose, date, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date
+    support_oppose, 
+    date, 
+    purpose, 
+    payee, 
+    filing_number, 
+    amendment, 
+    transaction_id, 
+    image_number, 
+    received_date
 from fec_indexp_import i
 where
     not exists (select * from fec_indexp_import a where i.spender_id = a.spender_id and i.filing_number = a.prev_file_num);
 
--- just here to trigger errors if something is wrong with the data
-alter table fec_indexp add constraint fec_indexp_transactions unique (spender_id, filing_number, transaction_id);
--- is there some way to add a constraint that for each lower(candidate_name) there should be only a single candidate_id?
 
-
-create view agg_fec_indexp_candidates as
-select distinct entity_id, spender_id, filing_number, transaction_id
+create or replace view agg_fec_indexp_candidates as
+select distinct entity_id, cycle, spender_id, filing_number, transaction_id
 from fec_indexp
 inner join matchbox_entityattribute on candidate_id = value and namespace = 'urn:fec:candidate';
 
-create view agg_fec_indexp_committees as
-select distinct entity_id, spender_id
+create or replace view agg_fec_indexp_committees as
+select distinct entity_id, cycle, spender_id
 from fec_indexp
 inner join matchbox_entityattribute on spender_id = value and namespace = 'urn:fec:committee';
 
-drop table if exists agg_fec_indexp;
-create table agg_fec_indexp as
-select cand.id as candidate_entity, coalesce(cand.name, candidate_name) as candidate_name,
+
+delete from agg_fec_indexp where cycle in (select cycle from fec_indexp_out_of_date_cycles);
+insert into agg_fec_indexp (cycle, candidate_entity, candidate_name, committee_entity, committee_name, support_oppose, amount)
+select i.cycle, cand.id as candidate_entity, coalesce(cand.name, candidate_name) as candidate_name,
     committee.id as committee_entity, coalesce(committee.name, spender_name) as committee_name,
     support_oppose, sum(amount) as amount
 from fec_indexp i
+inner join fec_indexp_out_of_date_cycles using (cycle)
 left join agg_fec_indexp_candidates cand_assoc using (spender_id, filing_number, transaction_id)
 left join matchbox_entity cand on cand_assoc.entity_id = cand.id
 left join agg_fec_indexp_committees committee_assoc using (spender_id)
 left join matchbox_entity committee on committee_assoc.entity_id = committee.id
-group by candidate_entity, coalesce(cand.name, candidate_name), committee_entity, coalesce(committee.name, spender_name), support_oppose;
+group by i.cycle, candidate_entity, coalesce(cand.name, candidate_name), committee_entity, coalesce(committee.name, spender_name), support_oppose
+;
 
 
-drop table if exists agg_fec_indexp_totals;
-create table agg_fec_indexp_totals as
+delete from agg_fec_indexp_totals where cycle in (select cycle from fec_indexp_out_of_date_cycles);
+insert into agg_fec_indexp_totals (cycle, entity_id, spending_amount)
 select cycle, committee_entity as entity_id, sum(amount) as spending_amount
 from agg_fec_indexp
-cross join (values (-1), (2012)) as cycles (cycle)
+inner join fec_indexp_out_of_date_cycles using (cycle)
 where committee_entity is not null
-group by entity_id, cycle;
-
-create index agg_fec_indexp_totals__entity_id on agg_fec_indexp_totals (entity_id);
-create index agg_fec_indexp_totals__cycle on agg_fec_indexp_totals (cycle);
+group by entity_id, cycle
+;
 
 
 

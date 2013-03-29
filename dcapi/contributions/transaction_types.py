@@ -1,5 +1,6 @@
 transaction_type_descriptions = {
-    '10': "Non-Federal Receipt from Persons - Levin Account (L-1A)",
+    '10': "Non-Federal Receipt from Persons",
+    '10j': "Memo Receipt from JF Super PAC",
     '11': "Tribal Contribution",
     '12': "Non-Federal Other Receipt - Levin Account (L-2)",
     '13': "Inaugural Donation Accepted",
@@ -42,6 +43,7 @@ transaction_type_descriptions = {
     '20g': "Loan Repayments Made to Individual",
     '20r': "Loan Repayments Made to Registered Filer",
     '20v': "Non-Federal Disbursement - Levin Account (L-4C) Get Out The Vote",
+    '20y': "Non-Federal Refund",
     '22g': "Loan to Individual",
     '22h': "Loan to Candidate or Committee",
     '22j': "Loan Repayment to Individual",

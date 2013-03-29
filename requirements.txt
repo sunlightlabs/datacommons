@@ -1,7 +1,7 @@
 django
 django-debug-toolbar
 django-piston==0.2.2.1
--e git://github.com/sunlightlabs/django-locksmith.git#egg=locksmith
+-e git://github.com/sunlightlabs/django-locksmith.git@07cfe1755e0#egg=django_locksmith-dev
 xlwt
 psycopg2==2.4.1
 python-memcached
