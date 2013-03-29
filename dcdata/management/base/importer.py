@@ -57,6 +57,9 @@ class BaseImporter(BaseCommand):
 
         self.dry_run = options['dry_run']
 
+        if not self.dry_run:
+            self.do_first()
+
         file_func = self.dry_run_for_file if self.dry_run else self.do_for_file
 
         self.main_loop(file_func)
