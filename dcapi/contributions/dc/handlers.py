@@ -4,10 +4,6 @@ from dcapi.schema import Schema, FunctionField
 from dcdata.contribution.models import ContributionDC
 from dcdata.utils.sql import parse_date
 
-"""
-TODO: save this file and repurpose it for DC campaign finance!!!
-"""
-
 def _contributor_state_in_generator(query, *states):
     return query.filter(contributor_state__in=[state.upper() for state in states])
 
