@@ -193,6 +193,8 @@ insert into contributions_all_relevant__nimsp
 
 select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
+create index contributions_all_relevant__transaction_namespace__idx on contributions_all_relevant (transaction_namespace);
+create index contributions_all_relevant__contributor_type__idx on contributions_all_relevant (contributor_type);
 
 
 -- Contributor Associations
