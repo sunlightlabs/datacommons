@@ -43,7 +43,7 @@ def filter_contributions(request):
 
 
 CONTRIBUTION_FIELDS = [
-    'transaction_id', 'committee_name', 'contributor_name', 'contributor_entity', 'contributor_type', 
+    'committee_name', 'contributor_name', 'contributor_entity', 'contributor_type', 
     'contributor_type_internal', 'payment_type', 'contributor_address', 'contributor_city', 'contributor_state',
     'contributor_zipcode', 'amount', 'date'
     ]
