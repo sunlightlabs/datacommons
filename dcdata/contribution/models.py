@@ -180,6 +180,7 @@ class Contribution(models.Model):
 
 class ContributionDC(models.Model):
     transaction_id = UUIDField(primary_key=True, auto=True, default=uuid.uuid4().hex)
+    recipient_name = models.CharField(max_length=32)
     committee_name = models.CharField(max_length=100)
     contributor_name = models.CharField(max_length=100)
     contributor_entity = UUIDField(null=True)
@@ -211,7 +212,6 @@ class ContributionDC(models.Model):
     filing_id = models.CharField(max_length=128, blank=True)
 
     # recipient fields
-    recipient_name = models.CharField(max_length=255, blank=True)
     recipient_ext_id = models.CharField(max_length=128, blank=True)
     recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True)
     recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True)
