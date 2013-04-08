@@ -23,6 +23,7 @@ def _recipient_state_in_generator(query, *states):
 CONTRIBUTION_SCHEMA = Schema(
     FulltextField('committee_ft', ['committee_name']),                                                        
     FulltextField('contributor_ft', ['contributor_name']),
+    FulltextField('recipient_ft', ['recipient_name']),
     FunctionField('contributor_state', _contributor_state_in_generator),
     InclusionField('contributor_type'),
     InclusionField('contributor_zipcode'),
@@ -33,7 +34,6 @@ CONTRIBUTION_SCHEMA = Schema(
     #InclusionField('seat'),
     #InclusionField('transaction_namespace'),
     #InclusionField('committee_ext_id'),
-    #FulltextField('recipient_ft', ['recipient_name']),
 )
 
 def filter_contributions(request):
@@ -43,7 +43,7 @@ def filter_contributions(request):
 
 
 CONTRIBUTION_FIELDS = [
-    'committee_name', 'contributor_name', 'contributor_entity', 'contributor_type', 
+    'recipient_name', 'committee_name', 'contributor_name', 'contributor_entity', 'contributor_type', 
     'contributor_type_internal', 'payment_type', 'contributor_address', 'contributor_city', 'contributor_state',
     'contributor_zipcode', 'amount', 'date'
     ]
