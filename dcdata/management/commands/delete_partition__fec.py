@@ -40,8 +40,8 @@ class Command(BaseCommand):
         a fresh data load.)
         """
 
-        all_tables = kwargs['all_tables']
-        base_table = kwargs['table']
+        all_tables = kwargs.get('all_tables')
+        base_table = kwargs.get('table')
         cycle = kwargs['cycle']
 
         if cycle is None:
