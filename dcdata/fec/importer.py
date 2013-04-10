@@ -12,7 +12,7 @@ F = namedtuple('F', ['url', 'filename', 'sql_table'])
 
 SQL_PRELOAD_FILE = os.path.join(os.path.dirname(__file__), 'preload.sql')
 SQL_POSTLOAD_FILE = os.path.join(os.path.dirname(__file__), 'postload.sql')
-CYCLES = range(1996, 2014, 2)
+CYCLES = range(1996, 2016, 2)
 
 
 class FECImporter():
