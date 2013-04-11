@@ -133,7 +133,7 @@ class CandidateTimelineHandler(EntityTopListHandler):
 
 class CandidateItemizedDownloadHandler(EntityTopListHandler):
 
-    args = ['entity_id', 'cycle']
+    args = ['cycle', 'entity_id']
 
     fields = "contributor_name date amount contributor_type transaction_type organization occupation city state zipcode candidate_name party race status".split()
 
@@ -141,17 +141,16 @@ class CandidateItemizedDownloadHandler(EntityTopListHandler):
         select contributor_name, date, amount, contributor_type, transaction_type,
             employer, occupation, city, state, zipcode,
             candidate_name, party, race, status
-        from fec_candidate_itemized i
+        from (select * from fec_candidate_itemized where cycle = %s) i
         inner join matchbox_entityattribute a on i.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
         where
             a.entity_id = %s
-            and i.cycle = %s
         order by amount desc
     """
 
 class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 
-    args = ['entity_id', 'cycle']
+    args = ['cycle', 'entity_id']
     fields = "contributor_name date amount contributor_type contributor_committee_id transaction_type \
                 organization occupation city state zipcode \
                 committee_name committee_id committee_designation committee_type committee_party interest_group connected_org".split()
@@ -160,27 +159,29 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
         select contributor_name, date, amount, contributor_type, contributor_committee_id, transaction_type,
                     employer, occupation, city, state, zipcode,
                     committee_name, committee_id, committee_designation, committee_type, committee_party, interest_group, connected_org
-        from fec_committee_itemized i
+        from (select * from fec_committee_itemized where cycle = %s) i
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
             a.entity_id = %s
-            and i.cycle = %s
         order by amount desc
     """
 
 class CommitteeTopContribsHandler(EntityTopListHandler):
 
-    args = ['entity_id', 'cycle', 'limit']
+    args = ['cycle', 'entity_id', 'limit']
     fields = "contributor_name transaction_type count amount".split()
 
     stmt = """
         select contributor_name, transaction_type, count(*), sum(amount)
-        from fec_committee_itemized i
+        from (
+            select committee_id, contributor_name, transaction_type, amout from fec_committee_itemized
+            where
+                transaction_type in ('10', '11', '15', '15e', '15j', '22y')
+                and i.cycle = %s
+        ) i
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
             a.entity_id = %s
-            and i.cycle = %s
-            and transaction_type in ('10', '11', '15', '15e', '15j', '22y')
         group by contributor_name, transaction_type
         order by sum(amount) desc
         limit %s
