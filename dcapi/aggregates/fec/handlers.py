@@ -174,7 +174,7 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
     stmt = """
         select contributor_name, transaction_type, count(*), sum(amount)
         from (
-            select committee_id, contributor_name, transaction_type, amout from fec_committee_itemized
+            select committee_id, contributor_name, transaction_type, amount from fec_committee_itemized
             where
                 transaction_type in ('10', '11', '15', '15e', '15j', '22y')
                 and i.cycle = %s
