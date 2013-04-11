@@ -177,7 +177,7 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
             select committee_id, contributor_name, transaction_type, amount from fec_committee_itemized
             where
                 transaction_type in ('10', '11', '15', '15e', '15j', '22y')
-                and i.cycle = %s
+                and cycle = %s
         ) i
         inner join matchbox_entityattribute a on i.committee_id = a.value and a.namespace = 'urn:fec:committee'
         where
