@@ -24,6 +24,7 @@ CONTRIBUTION_SCHEMA = Schema(
     FulltextField('committee_ft', ['committee_name']),                                                        
     FulltextField('contributor_ft', ['contributor_name']),
     FulltextField('recipient_ft', ['recipient_name']),
+    FulltextField('office_ft', ['seat']),
     FunctionField('contributor_state', _contributor_state_in_generator),
     InclusionField('contributor_type'),
     InclusionField('contributor_zipcode'),
