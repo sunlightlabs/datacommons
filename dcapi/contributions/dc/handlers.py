@@ -43,9 +43,11 @@ def filter_contributions(request):
 
 
 CONTRIBUTION_FIELDS = [
-    'recipient_name', 'committee_name', 'contributor_name', 'contributor_entity', 'contributor_type', 
-    'contributor_type_internal', 'payment_type', 'contributor_address', 'contributor_city', 'contributor_state',
-    'contributor_zipcode', 'amount', 'date'
+    'transaction_namespace', 'recipient_name', 'committee_name', 
+    'contributor_name', 'contributor_entity', 'contributor_type', 'contributor_type_internal', 
+    'payment_type', 'contributor_address', 'contributor_city', 'contributor_state',
+    'contributor_zipcode', 'amount', 'date', 'recipient_party', 'recipient_state',
+    'seat', 'ward'
     ]
 
 

@@ -60,6 +60,7 @@ PARTIES = (
     ('U','Unkown'),
 )
 
+
 SEAT_STATUSES = (
     ('C','Challenger'),
     ('I','Incumbent'),
@@ -180,6 +181,7 @@ class Contribution(models.Model):
 
 class ContributionDC(models.Model):
     transaction_id = UUIDField(primary_key=True, auto=True, default=uuid.uuid4().hex)
+    transaction_namespace = models.CharField(max_length=64)
     recipient_name = models.CharField(max_length=32)
     committee_name = models.CharField(max_length=100)
     contributor_name = models.CharField(max_length=100)
@@ -193,40 +195,14 @@ class ContributionDC(models.Model):
     contributor_zipcode = models.CharField(max_length=5)
     amount = models.DecimalField(max_digits=15, decimal_places=2)
     date = models.DateField()
-
-    """
-    Fields it would be nice to have to bring this into more compliance with the general contributions data model
-    """
-    """
-    import_reference = models.ForeignKey(Import)
-
-    # cycle and basic transaction fields
-    cycle = models.IntegerField()
-    transaction_namespace = models.CharField(max_length=64)
-
-    # maybe rename payment_type to this?
-    transaction_type = models.CharField(max_length=32, choices=TRANSACTION_TYPES)
-
-    # maybe populate a download date? how do we keep a running tally of this stuff
-    # and add new data if we don't know when we last downloaded it?
-    filing_id = models.CharField(max_length=128, blank=True)
-
-    # recipient fields
-    recipient_ext_id = models.CharField(max_length=128, blank=True)
-    recipient_party = models.CharField(max_length=64, choices=PARTIES, blank=True)
-    recipient_type = models.CharField(max_length=1, choices=RECIPIENT_TYPES, blank=True)
-    recipient_state = USStateField(blank=True)
-
-    # ward
-    district = models.CharField(max_length=8, blank=True)
-
-    # would be great to have an indication of this!!
+    recipient_party = models.CharField(max_length=3)
+    recipient_state = models.CharField(max_length=3)
     seat = models.CharField(max_length=64, choices=SEATS, blank=True)
+    ward = models.IntegerField()
 
-    # these, too... incumbent/challenger/open, Win/Lose
-    seat_status = models.CharField(max_length=1, choices=SEAT_STATUSES, blank=True)
-    seat_result = models.CharField(max_length=1, choices=SEAT_RESULTS, blank=True)
-    """
+    class Meta:
+        db_table = 'contribution_dc'
+        managed = False
 
 
 class Bundle(models.Model):
