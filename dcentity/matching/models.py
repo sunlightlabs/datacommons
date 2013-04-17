@@ -165,4 +165,19 @@ class SuperPACDonor(models.Model):
         db_table = 'research__superpac_donors'
 
 
+class DCCandidate(models.Model):
+    committee = models.CharField(max_length=68)
+    candidate = models.CharField(max_length=27)
+    
+    class Meta:
+        db_table = 'dc_committee_candidate'
 
+
+class DCCandidateMetadataUnmatched(models.Model):
+    candidate_name = models.CharField(max_length=27)
+    office = models.CharField(max_length=53)
+    party = models.CharField(max_length=3)
+    ward = models.IntegerField()
+    
+    class Meta:
+        db_table = 'dc_candidate_metadata_unmatched'
