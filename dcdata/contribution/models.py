@@ -1,10 +1,13 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
 from dcdata.models import Import
+from common.db.fields.uuid_field import UUIDField
+import uuid
 
 
 NIMSP_TRANSACTION_NAMESPACE = 'urn:nimsp:transaction'
 CRP_TRANSACTION_NAMESPACE = 'urn:fec:transaction'
+DC_TRANSACTION_NAMESPACE = 'urn:dc:transaction'
 UNITTEST_TRANSACTION_NAMESPACE = 'urn:unittest:transaction'
 
 
@@ -56,6 +59,7 @@ PARTIES = (
     ('R','Republican'),
     ('U','Unkown'),
 )
+
 
 SEAT_STATUSES = (
     ('C','Challenger'),
@@ -174,6 +178,31 @@ class Contribution(models.Model):
         # save if all checks passed
         super(Contribution, self).save(**kwargs)
 
+
+class ContributionDC(models.Model):
+    transaction_id = UUIDField(primary_key=True, auto=True, default=uuid.uuid4().hex)
+    transaction_namespace = models.CharField(max_length=64)
+    recipient_name = models.CharField(max_length=32)
+    committee_name = models.CharField(max_length=100)
+    contributor_name = models.CharField(max_length=100)
+    contributor_entity = UUIDField(null=True)
+    contributor_type = models.CharField(max_length=24)
+    contributor_type_internal = models.CharField(max_length=12)
+    payment_type = models.CharField(max_length=42, null=True)
+    contributor_address = models.CharField(max_length=40, null=True)
+    contributor_city = models.CharField(max_length=20, null=True)
+    contributor_state = models.CharField(max_length=2, null=True)
+    contributor_zipcode = models.CharField(max_length=5)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    date = models.DateField()
+    recipient_party = models.CharField(max_length=3)
+    recipient_state = models.CharField(max_length=3)
+    seat = models.CharField(max_length=64, choices=SEATS, blank=True)
+    ward = models.IntegerField()
+
+    class Meta:
+        db_table = 'contribution_dc'
+        managed = False
 
 
 class Bundle(models.Model):
