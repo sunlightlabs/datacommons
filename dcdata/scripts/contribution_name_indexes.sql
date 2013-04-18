@@ -80,7 +80,7 @@ create index contribution_contribution_cycle on contribution_contribution (cycle
 
 -- default sort order from API
 
-drop index if exists contribution_contribution_defaultsort
+drop index if exists contribution_contribution_defaultsort;
 create index contribution_contribution_defaultsort on contribution_contribution (cycle desc, amount desc);
 
 
