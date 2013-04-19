@@ -1,5 +1,3 @@
-# Influence Explorer API
-
 Programmatic access tracking the influence of money in politics, brought
 to you by  
 the [Sunlight Foundation](http://sunlightfoundation.com).
