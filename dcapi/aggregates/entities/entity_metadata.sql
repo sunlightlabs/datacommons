@@ -204,8 +204,8 @@ analyze matchbox_politicianmetadata;
 commit;
 
 begin;
-drop table politician_metadata_latest_cycle_view;
-create table if exists politician_metadata_latest_cycle_view as
+drop table if exists politician_metadata_latest_cycle_view;
+create table politician_metadata_latest_cycle_view as
     select distinct on (entity_id)
         entity_id,
         cycle,
