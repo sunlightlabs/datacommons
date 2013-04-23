@@ -1,4 +1,4 @@
-import re
+import re, math
 
 from dcapi.aggregates.handlers import execute_top
 from dcentity.models import Entity, EntityAttribute, BioguideInfo
@@ -217,6 +217,92 @@ class EntitySearchHandler(BaseHandler):
         raw_result = execute_top(stmt, *query_params)
 
         return [dict(zip(self.fields, row)) for row in raw_result]
+
+
+# GIANT HACK - mangle get_totals_stmt, above, to also do something useful for search
+search_totals_stmt = get_totals_stmt
+for subselect in re.findall(r"\(\s*select[^\)]*\)[\s_a-z]*using \(cycle\)", search_totals_stmt, flags=re.DOTALL):
+    if "org_id" in subselect:
+        nsub = subselect.replace("select cycle", "select org_id").replace("using (cycle)", "on entity_id = org_id")
+    elif "recipient_entity" in subselect:
+        nsub = subselect.replace("select cycle", "select recipient_entity").replace("using (cycle)", "on entity_id = recipient_entity")
+    else:
+        nsub = subselect.replace("select cycle", "select entity_id").replace("using (cycle)", "using (entity_id)")
+    search_totals_stmt = search_totals_stmt.replace(subselect, nsub)
+search_totals_stmt = search_totals_stmt.replace("select cycle", "select entity_id").replace("= %s", "in (%s) and cycle = -1")
+
+
+class EntityAdvSearchHandler(BaseHandler):
+    allowed_methods = ('GET',)
+
+    fields = ['id', 'name', 'type', 'score']
+
+    stmt = """
+        select e.id, e.name, e.type,
+            case e.type
+                when 'politician' then
+                    2 * coalesce(ae.recipient_amount, 0) / 715550915
+                when 'individual' then
+                    coalesce(ae.contributor_amount, 0) / 73301345.75 +
+                    coalesce(al.count, 0) / 8882
+                when 'organization' then
+                    coalesce(ae.contributor_amount, 0) / 364255258.20 +
+                    coalesce(al.non_firm_spending, 0) / 969305680.0 +
+                    coalesce(al.firm_income, 0) / 560548185.0
+                when 'industry' then
+                    coalesce(ae.contributor_amount, 0) / 3648608028.38 +
+                    coalesce(al.non_firm_spending, 0) / 5757475979.0 +
+                    coalesce(al.firm_income, 0) / 2225030909.0
+                else 0
+            end score
+        from matchbox_entity e
+        inner join (
+            select distinct entity_id
+                from matchbox_entityalias ea
+                where to_tsvector('datacommons', ea.alias) @@ to_tsquery('datacommons', quote_literal(%s))
+        ) ft_match on e.id = ft_match.entity_id
+        left join agg_entities ae on e.id = ae.entity_id and ae.cycle = -1
+        left join agg_lobbying_by_cycle_rolled_up al on e.id = al.entity_id and al.cycle = -1
+        order by score desc
+    """
+
+    def read(self, request):
+        query = request.GET.get('search')
+        if not query:
+            error_response = rc.BAD_REQUEST
+            error_response.write("Must include a query in the 'search' parameter.")
+            return error_response
+
+        stmt = self.stmt
+
+        per_page = min(int(request.GET.get('per_page', 10)), 25)
+        page = max(int(request.GET.get('page', 1)), 1)
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
+        query_params = (parsed_query,)
+        raw_result = execute_top(stmt, *query_params)
+
+        total = len(raw_result)
+        results = [dict(zip(self.fields, row)) for row in raw_result[start:end]]
+
+        ids = ','.join(["'%s'" % row['id'] for row in results])
+
+        totals = dict()
+        for row in execute_top(search_totals_stmt.replace("%s", ids)):
+            totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
+
+        for row in results:
+            row['metadata'] = totals.get(row['id'], None)
+
+        return {
+            'results': results,
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'pages': math.ceil(float(total) / per_page)
+        }
 
 
 class EntitySimpleHandler(BaseHandler):
