@@ -13,6 +13,6 @@ class TopContractorMisconductHandler(EntityTopListHandler):
         where
             contractor_entity = %s
             and cycle = %s
-        order by cycle desc, penalty_amount desc
+        order by penalty_amount desc, year desc
     """.format(', '.join(fields))
 

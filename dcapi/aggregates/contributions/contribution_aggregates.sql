@@ -849,6 +849,7 @@ create table agg_cands_from_org as
             inner join (table organization_associations union table parent_organization_associations union all table industry_associations) ca using (transaction_id)
             left join recipient_associations ra using (transaction_id)
             left join matchbox_entity re on re.id = ra.entity_id
+            where coalesce(re.name, c.recipient_name) != ''
             group by ca.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
         ) top_direct
         full outer join (

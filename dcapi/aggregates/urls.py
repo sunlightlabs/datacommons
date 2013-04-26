@@ -32,7 +32,7 @@ from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, \
     CommitteeSummaryHandler, CandidateStateHandler, \
     CandidateTimelineHandler, CandidateItemizedDownloadHandler, \
     CommitteeItemizedDownloadHandler, CommitteeTopContribsHandler, \
-    LargestDonationsInLastMonthHandler, ElectionSummaryHandler
+    LargestRecentDonationsHandler, ElectionSummaryHandler
 from dcapi.aggregates.independentexpenditures.handlers import \
     CandidateIndExpHandler, CommitteeIndExpHandler, \
     CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
@@ -317,8 +317,8 @@ urlpatterns = patterns('',
     # --------- multi-entity ----------
 
     # largest donations in last month (offers PAC, candidate, and individual)
-    url(r'^fec/last_month/largest_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
-        Resource(LargestDonationsInLastMonthHandler, **ad)),
+    url(r'^fec/recent/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(LargestRecentDonationsHandler, **ad)),
 
     # --------- election summary ----------
     url(r'^election/2012/summary\.(?P<emitter_format>.+)$',

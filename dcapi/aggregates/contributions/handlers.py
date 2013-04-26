@@ -209,7 +209,7 @@ class TopPoliticiansByReceiptsHandler(TopListHandler):
 
 
 class TopPoliticiansByReceiptsByOfficeHandler(TopListHandler):
-    args = 'office office office limit office limit'.split()
+    args = 'office limit office limit'.split()
     fields = 'name entity_id office amount'.split()
 
     stmt = """
@@ -222,17 +222,20 @@ class TopPoliticiansByReceiptsByOfficeHandler(TopListHandler):
             select
                 entity_id,
                 s.candidate_name,
-                substring(race from 1 for 1) as office,
+                c.office,
                 total_receipts,
-                rank() over (partition by substring(race from 1 for 1) order by total_receipts desc)
+                rank() over (partition by office order by total_receipts desc)
             from
                 fec_candidate_summaries s
-                inner join fec_candidates c using (candidate_id)
+                inner join fec_candidates c using (candidate_id, cycle)
                 inner join matchbox_entityattribute a on s.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
-                inner join politician_metadata_latest_cycle_view pm using (entity_id)
+                inner join politician_metadata_latest_cycle_view pm using (entity_id, cycle)
+            where 
+                c.candidate_status = 'C' and 
+                c.incumbent_challenger_open is not null
         ) x
         where
-            case when %s = 'house' then office = 'H' when %s = 'senate' then office = 'S' when %s = 'president' then office = 'P' else 'f' end
+            office = upper(substring(%s from 1 for 1))
             and rank <= %s
 
         union all
@@ -245,10 +248,9 @@ class TopPoliticiansByReceiptsByOfficeHandler(TopListHandler):
         from
             agg_entities ae
             inner join matchbox_entity me on ae.entity_id = me.id
-            inner join politician_metadata_latest_cycle_view pm using (entity_id)
+            inner join politician_metadata_latest_cycle_view pm using (entity_id, cycle)
         where
             (%s = 'governor' and seat = 'state:governor')
-            and ae.cycle = 2012
         order by total_receipts desc
         limit %s
     """
