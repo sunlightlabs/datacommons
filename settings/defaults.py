@@ -51,7 +51,13 @@ MIDDLEWARE_CLASSES = (
 LATEST_CYCLE = 2014 
 
 ROOT_URLCONF = 'urls'
-SYSTEM_API_KEY = open(os.path.expanduser('~/.api-key-ie')).read().strip()
+
+try:
+    SYSTEM_API_KEY = open(os.path.expanduser('~/.api-key-ie')).read().strip()
+except IOError:
+    # default to datacommons user
+    SYSTEM_API_KEY = open('/home/datacommons/.api-key-ie').read().strip()
+
 
 INSTALLED_APPS = (
     'django.contrib.admin',
