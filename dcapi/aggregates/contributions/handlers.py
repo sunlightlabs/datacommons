@@ -30,6 +30,19 @@ class OrgLevelBreakdownHandler(PieHandler):
             and cycle = %s
     """
 
+class OrgOfficeTypeBreakdownHandler(PieHandler):
+
+    categories = [ 'state:judicial', 'state:upper', 'state:lower', 'federal:president', 'federal:house', 'state:governor', 'federal:senate', 'state:office' ]
+    category_map = dict(zip(categories, categories))
+
+    stmt = """
+         select seat, count, amount
+         from agg_office_type_from_org
+         where
+            organization_entity = %s
+            and cycle = %s
+    """
+
 class PolLocalBreakdownHandler(PieHandler):
 
     category_map = {'out-of-state': 'Out-of-State', 'in-state': 'In-State'}
