@@ -12,7 +12,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
-    OrgPartySummaryHandler
+    OrgPartySummaryHandler, OrgStateFedSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -328,7 +328,58 @@ urlpatterns = patterns('',
     # --------- election summary ----------
     url(r'^election/2012/summary\.(?P<emitter_format>.+)$',
         Resource(ElectionSummaryHandler, **ad)),
+
+    #########################################################
+    # ---------- Summaries for Entity Landing Pages --------
+    # Separating these because the mappings are nav-specific and don't fit well
+    # into the patterns above
+
+    # ---------- GROUPS >> Organizations: Contributions -------------
+    # summary of orgs to party
+    url(r'^summary/organizations/party.(?P<emitter_format>.+)$',
+        Resource(OrgPartySummaryHandler, **ad)),
+
+    # TODO: summary of orgs to state/fed
+    url(r'^summary/organizations/state_fed.(?P<emitter_format>.+)$',
+        Resource(OrgStateFedSummaryHandler, **ad)),
+
+    # TODO: summary of orgs to pol_groups
+    url(r'^summary/organization/pol_group.(?P<emitter_format>.+)$',
+        Resource(OrgPolGroupSummaryHandler, **ad)),
+
+    # TODO: summary of orgs to office_types
+    url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
+        Resource(OrgOfficeTypeSummaryHandler, **ad)),
+
+    # ----------- GROUPS >> Organizations: Lobbying -------------
+    # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
+    url(r'^summary/organization/issue.(?P<emitter_format>.+)$',
+        Resource(OrgIssueSummaryHandler, **ad)),
+
+    # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
+    #url(r'^summary/organization/bill.(?P<emitter_format>.+)$',
+    #    Resource(OrgBillSummaryHandler, **ad)),
+
+    # ----------- GROUPS >> Organizations: Regulations -------------
+    # TODO: handler for top 10 commented dockets for all orgs, each with top 10 orgs listed
+
+    # TODO: handler for top 10 orgs mentioned in dockets
+ 
+    # ----------- GROUPS >> Organizations: Earmarks -------------
+    # TODO: design summary stats for earmarks
+    #url(r'^summary/organization/earmark.(?P<emitter_format>.+)$',
+    #    Resource(OrgEarmarkSummaryHandler, **ad)),
+
+    # ----------- GROUPS >> Organizations: Federal Spending --------------
+    # TODO: design summary stats for federal spending
+
+    # ----------- GROUPS >> Organizations: Contractor Misconduct ---------
+    # TODO: design summary stats for contractor misconduct
+
+    # ----------- GROUPS >> Organizations: EPA Violations ----------------
+    # TODO: design summary stats for epa violations
+
+    # ----------- GROUPS >> Organizations: Advisory Committees -----------
+    # TODO: design summary stats for advisory committees (FACA)
+
 )
-
-
-

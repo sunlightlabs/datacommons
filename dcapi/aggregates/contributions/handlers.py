@@ -644,3 +644,39 @@ class OrgPartySummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+class OrgStateFedTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'urn:fec:transaction':'Federal', 
+                    'urn:nimsp:transaction':'State'}
+    default_key = 'Other'
+
+    stmt = """
+        select transaction_namespace, sum(count) as count, sum(amount) as amount from
+        tmp_bl_summary_namespace_from_biggest_org 
+        where cycle = %s
+        group by transaction_namespace;
+    """
+
+class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'transaction_namespace', 'amount']
+
+    stmt = """
+        select me.name, id, transaction_namespace, amount
+          from tmp_bl_summary_namespace_from_biggest_org 
+         inner join matchbox_entity me
+            on organization_entity = me.id
+         where cycle = %s and rank <= %s;
+    """
+
+class OrgStateFedSummaryHandler(SummaryHandler):
+    rollup = OrgStateFedTotalsHandler()
+    breakout = OrgStateFedTopBiggestOrgsByContributionsHandler()
+    def key_function(self,x):
+        transaction_namespace = x['transaction_namespace']
+        if transaction_namespace in self.rollup.category_map:
+            return self.rollup.category_map[transaction_namespace]
+        else:
+            return self.rollup.default_key
