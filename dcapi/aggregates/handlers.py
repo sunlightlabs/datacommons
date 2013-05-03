@@ -27,6 +27,11 @@ def execute_pie(stmt, *args):
     execute(cursor, stmt, args)
     return dict([(category, (count, amount)) for (category, count, amount) in cursor])
 
+def execute_rollup(stmt, *args):
+    cursor = connection.cursor()
+    execute(cursor, stmt, args)
+    return [(category, count, amount) for (category,count,amount) in cursor]
+
 def execute_one(stmt, *args):
     cursor = connection.cursor()
     execute(cursor, stmt, args)
@@ -141,4 +146,88 @@ class PieHandler(BaseHandler):
 
         return check_empty(labeled_result, kwargs['entity_id'])
 
+class SummaryHandler(BaseHandler):
 
+    rollup = None
+    breakout = None
+    key_function = None
+
+    def read(self, request, **kwargs):
+        parents = self.rollup.read(request,**kwargs)
+        children = self.breakout.read(request,**kwargs)
+        try:
+            if self.rollup.default_key:
+                other_children = []
+                for child in children:
+                    k = self.key_function(child)
+                    if k in parents:
+                        parents[k]['children'].append(child)
+                    else:
+                        other_children.append(child)
+                other_children.extend(parents[self.rollup.default_key].pop('children'))
+                parents[self.rollup.default_key]['children'] = sorted(other_children,
+                        reverse=True, key= lambda x: x['amount'])[0:10]
+        except:
+            print sys.exc_info()
+
+        result = []
+
+        for k,v in parents.iteritems():
+            v['name'] = k
+            result.append(v)
+
+        return result
+
+class SummaryRollupHandler(BaseHandler):
+    
+    args = ['cycle']
+    category_map = {}
+    default_key = 'Other'
+    stmt = None
+
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', DEFAULT_CYCLE)})
+
+        raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
+        if self.default_key:
+            labeled_result = dict([(self.category_map[key], 
+                                  {'count':count,'amount': amount, 'children' : []}) 
+                                  for (key, (count, amount)) in raw_result.items() 
+                                  if key in self.category_map])
+
+            extra_keys = [k for k in raw_result.keys() if k not in self.category_map.keys()]
+            if extra_keys:
+                labeled_result[self.default_key] = {
+                                    'count':  sum([count for 
+                                               (key, (count, amount)) in raw_result.items() 
+                                               if key in extra_keys]), 
+                                    'amount': sum([amount for 
+                                               (key, (count, amount)) in raw_result.items() 
+                                               if key in extra_keys]),
+                                    'children' : []}
+        else:
+            labeled_result = dict([(self.category_map[key], 
+                                    {'count':count, 'amount': amount, 'children' : []}) 
+                                    if key in self.category_map 
+                                    else (key, {'count': count, 'amount': amount, 'children': []}) 
+                                    for (key, count, amount) in raw_result.items() ])
+        return labeled_result
+
+class SummaryBreakoutHandler(BaseHandler):
+    args = ['cycle','limit']
+    stmt = None
+
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', DEFAULT_CYCLE)})
+        kwargs.update({'limit': request.GET.get('limit', DEFAULT_LIMIT)})
+
+        raw_results = execute_all(self.stmt, *[kwargs[param] for param in
+            self.args])
+
+        labeled_results = [dict(zip(self.fields,result)) for result in
+                raw_results]
+
+        #for i,e in enumerate(labeled_results):
+        #    print i,'\t',e
+
+        return labeled_results

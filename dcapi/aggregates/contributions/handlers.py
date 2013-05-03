@@ -1,6 +1,7 @@
 from dcapi.aggregates.handlers import EntityTopListHandler, \
-    EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, \
-    execute_top, check_empty, execute_all
+    EntitySingletonHandler, TopListHandler, PieHandler, SummaryHandler, \
+    SummaryRollupHandler, SummaryBreakoutHandler, \
+    ALL_CYCLES, execute_one, execute_top, check_empty, execute_all
 from django.core.cache import cache
 from piston.handler import BaseHandler
 
@@ -606,3 +607,40 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
             labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
 
         return labeled_result
+
+class OrgPartyTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'R':'Republican', 'D':'Democrat'}
+    default_key = 'Other'
+
+    stmt = """
+        select recipient_party, sum(count) as count, sum(amount) as amount from
+        tmp_bl_summary_party_from_biggest_org 
+        where cycle = %s
+        group by recipient_party;
+    """
+
+class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_party', 'amount']
+
+    stmt = """
+        select me.name, id, recipient_party, amount
+          from tmp_bl_summary_party_from_biggest_org 
+         inner join matchbox_entity me
+            on organization_entity = me.id
+         where cycle = %s and rank <= %s;
+    """
+
+class OrgPartySummaryHandler(SummaryHandler):
+    rollup = OrgPartyTotalsHandler()
+    breakout = OrgPartyTopBiggestOrgsByContributionsHandler()
+    def key_function(self,x):
+        recipient_party = x['recipient_party']
+        if recipient_party in self.rollup.category_map:
+            return self.rollup.category_map[recipient_party]
+        else:
+            return self.rollup.default_key
+

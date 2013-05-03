@@ -11,7 +11,8 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopLobbyistBundlersHandler, TopPoliticiansByReceiptsByOfficeHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
-    SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler
+    SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
+    OrgPartySummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
