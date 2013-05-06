@@ -14,9 +14,9 @@ class EntityReconciliationHandler(BaseHandler):
                             "url": "http://influenceexplorer.com/entity/{{id}}"
                             },
                         "preview": {
-                            "url": "http://influenceexplorer.com/entity/{{id}}",
-                            "width": 430,
-                            "height": 300
+                            "url": "http://influenceexplorer.com/entity/{{id}}/preview",
+                            "width": 600,
+                            "height": 400
                             },
                         "defaultTypes": []
                     }

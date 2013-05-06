@@ -51,7 +51,13 @@ MIDDLEWARE_CLASSES = (
 LATEST_CYCLE = 2014 
 
 ROOT_URLCONF = 'urls'
-SYSTEM_API_KEY = open(os.path.expanduser('~/.api-key-ie')).read().strip()
+
+try:
+    SYSTEM_API_KEY = open(os.path.expanduser('~/.api-key-ie')).read().strip()
+except IOError:
+    # default to datacommons user
+    SYSTEM_API_KEY = open('/home/datacommons/.api-key-ie').read().strip()
+
 
 INSTALLED_APPS = (
     'django.contrib.admin',
@@ -86,7 +92,7 @@ PISTON_DISPLAY_ERRORS = True
 PISTON_EMAIL_ERRORS = False
 PISTON_STREAM_OUTPUT = True
 
-LOCKSMITH_HUB_URL = "http://services.sunlightlabs.com/analytics/"
+LOCKSMITH_HUB_URL = "http://sunlightfoundation.com/api/analytics/"
 LOCKSMITH_HTTP_HEADER = None
 LOCKSMITH_LOG_PATH = '/var/log/nginx/dc_web_access.log'
 
