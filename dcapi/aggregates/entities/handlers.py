@@ -307,8 +307,15 @@ class EntityAdvSearchHandler(BaseHandler):
         for row in execute_top(search_totals_stmt.replace("%s", ids)):
             totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
 
+        # grab the metadata
+        entities = {e.id: e for e in Entity.objects.select_related().filter(id__in=[row['id'] for row in results])}
+
         for row in results:
             row['totals'] = totals.get(row['id'], None)
+
+            # match metadata, but strip out year keys
+            meta = entities[row['id']].metadata if row['id'] in entities else None
+            row['metadata'] = {k: v for k, v in meta.items() if not (type(k) == int or k.isdigit())} if meta else None
 
         return {
             'results': results,
