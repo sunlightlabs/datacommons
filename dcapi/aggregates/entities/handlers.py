@@ -263,7 +263,8 @@ class EntityAdvSearchHandler(BaseHandler):
         ) ft_match on e.id = ft_match.entity_id
         left join agg_entities ae on e.id = ae.entity_id and ae.cycle = -1
         left join agg_lobbying_by_cycle_rolled_up al on e.id = al.entity_id and al.cycle = -1
-        order by score desc
+        WHERE
+        order by score desc, e.id asc
     """
 
     def read(self, request):
@@ -281,8 +282,21 @@ class EntityAdvSearchHandler(BaseHandler):
         end = start + per_page
 
         parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
+        where_filters = []
+        filters = {}
+
+        etype_raw = request.GET.get('type', None)
+        if etype_raw:
+            allowed_types = set(('organization', 'industry', 'individual', 'politician'))
+            entity_type = [etype for etype in etype_raw.split(',') if etype in allowed_types]
+            if entity_type:
+                where_filters.append("e.type in (%s)" % ','.join(["'%s'" % etype for etype in entity_type]))
+                filters['type'] = entity_type
+
+        where_clause = "where %s" % (" and ".join(where_filters)) if where_filters else ""
+
         query_params = (parsed_query,)
-        raw_result = execute_top(stmt, *query_params)
+        raw_result = execute_top(stmt.replace("WHERE", where_clause), *query_params)
 
         total = len(raw_result)
         results = [dict(zip(self.fields, row)) for row in raw_result[start:end]]
@@ -294,14 +308,15 @@ class EntityAdvSearchHandler(BaseHandler):
             totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
 
         for row in results:
-            row['metadata'] = totals.get(row['id'], None)
+            row['totals'] = totals.get(row['id'], None)
 
         return {
             'results': results,
             'page': page,
             'per_page': per_page,
             'total': total,
-            'pages': math.ceil(float(total) / per_page)
+            'pages': math.ceil(float(total) / per_page),
+            'filters': filters
         }
 
 
