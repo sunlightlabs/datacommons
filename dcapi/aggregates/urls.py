@@ -348,8 +348,8 @@ urlpatterns = patterns('',
         Resource(OrgToPolGroupSummaryHandler, **ad)),
 
     # TODO: summary of orgs to office_types
-    url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
-        Resource(OrgOfficeTypeSummaryHandler, **ad)),
+    #url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
+    #    Resource(OrgOfficeTypeSummaryHandler, **ad)),
 
     # ----------- GROUPS >> Organizations: Lobbying -------------
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
