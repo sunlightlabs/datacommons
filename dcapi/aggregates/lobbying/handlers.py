@@ -242,10 +242,13 @@ class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
         order by sum(amount) desc
         limit 10)
 
-       select client_name as name, client_entity as id, issue, s.amount
+       select name, id, issue, amount
+        from
+        (select client_name as name, client_entity as id, issue, s.amount,
+        rank() over(partition by issue order by rank_by_amount) as rank
         from tmp_bl_summary_lobbying_issues_for_biggest_org s
-        join top_issues t on s.issue =  t.category and s.cycle = t.cycle
-        where rank_by_amount <= %s;
+        join top_issues t on s.issue =  t.category and s.cycle = t.cycle) sub
+        where rank <= %s;
     """
 
 class OrgIssuesSummaryHandler(SummaryHandler):
