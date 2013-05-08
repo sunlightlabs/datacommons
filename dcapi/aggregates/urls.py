@@ -20,7 +20,7 @@ from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
     RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
     RegistrantLobbyistsHandler, TopFirmsByIncomeHandler, \
-    TopOrgsLobbyingHandler
+    TopOrgsLobbyingHandler, OrgIssuesSummaryHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
@@ -353,8 +353,8 @@ urlpatterns = patterns('',
 
     # ----------- GROUPS >> Organizations: Lobbying -------------
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
-    url(r'^summary/organization/issue.(?P<emitter_format>.+)$',
-        Resource(OrgIssueSummaryHandler, **ad)),
+    url(r'^summary/organizations/issues.(?P<emitter_format>.+)$',
+        Resource(OrgIssuesSummaryHandler, **ad)),
 
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
     #url(r'^summary/organization/bill.(?P<emitter_format>.+)$',

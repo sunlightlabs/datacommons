@@ -1,6 +1,7 @@
 from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
 from dcapi.aggregates.handlers import TopListHandler
-
+from dcapi.aggregates.handlers import SummaryHandler, SummaryRollupHandler, \
+                                      SummaryBreakoutHandler
 
 class OrgRegistrantsHandler(EntityTopListHandler):
     fields = ['registrant_name', 'registrant_entity', 'count', 'amount']
@@ -214,5 +215,48 @@ class TopIndustriesLobbyingHandler(TopListHandler):
         order by non_firm_spending desc
         limit %s
     """
+
+class OrgIssuesTotalsHandler(SummaryRollupHandler):
+
+    stmt = """
+        select issue as category, sum(count) as count, sum(amount) as amount
+        from tmp_bl_summary_lobbying_issues_for_biggest_org
+        where cycle = %s
+        group by issue
+        order by sum(amount) desc
+        limit 10;
+    """
+
+class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'issue', 'amount']
+
+    stmt = """
+       with top_issues as
+        (select issue as category, cycle, sum(count) as count, sum(amount) as amount
+        from tmp_bl_summary_lobbying_issues_for_biggest_org
+        where cycle = %s
+        group by issue, cycle
+        order by sum(amount) desc
+        limit 10)
+
+       select client_name as name, client_entity as id, issue, s.amount
+        from tmp_bl_summary_lobbying_issues_for_biggest_org s
+        join top_issues t on s.issue =  t.category and s.cycle = t.cycle
+        where rank_by_amount <= %s;
+    """
+
+class OrgIssuesSummaryHandler(SummaryHandler):
+    rollup = OrgIssuesTotalsHandler()
+    breakout = OrgIssuesBiggestOrgsByAmountHandler()
+    def key_function(self,x):
+        return x['issue']
+        # issue = x['issue']
+        # if direct_or_indiv in self.rollup.category_map:
+        #     return self.rollup.category_map
+        # else:
+        #     return self.rollup.default_key
 
 
