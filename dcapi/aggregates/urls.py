@@ -12,7 +12,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
-    OrgPartySummaryHandler, OrgStateFedSummaryHandler
+    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -344,8 +344,8 @@ urlpatterns = patterns('',
         Resource(OrgStateFedSummaryHandler, **ad)),
 
     # TODO: summary of orgs to pol_groups
-    url(r'^summary/organization/pol_group.(?P<emitter_format>.+)$',
-        Resource(OrgPolGroupSummaryHandler, **ad)),
+    url(r'^summary/organizations/pol_group.(?P<emitter_format>.+)$',
+        Resource(OrgToPolGroupSummaryHandler, **ad)),
 
     # TODO: summary of orgs to office_types
     url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',

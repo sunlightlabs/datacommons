@@ -680,3 +680,56 @@ class OrgStateFedSummaryHandler(SummaryHandler):
             return self.rollup.category_map[transaction_namespace]
         else:
             return self.rollup.default_key
+
+class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
+    category_map = {'direct':'Direct',
+                    'indivs':'Associated Individuals'}
+    #default_key = 'Other'
+
+    stmt = """
+        select category, count, amount
+        from
+        (select category, count, amount, cycle from
+        (select 'direct' as category, cycle, sum(direct_count) as count, sum(direct_amount) as amount from
+        tmp_bl_summary_pol_groups_from_biggest_org
+        group by category, cycle
+
+        union all
+
+        select 'indivs' as category, cycle, sum(indivs_count) as count, sum(indivs_amount) as amount from
+        tmp_bl_summary_pol_groups_from_biggest_org
+        group by category, cycle) d_and_i
+        where cycle = %s) a
+    """
+
+class OrgToPolGroupTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
+
+    stmt = """
+        select name, id, direct_or_indiv, amount, cycle, rank from
+        (select me.name, id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
+          from tmp_bl_summary_pol_groups_from_biggest_org
+         inner join matchbox_entity me
+            on organization_entity = me.id
+
+         union all
+
+        select me.name, id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
+          from tmp_bl_summary_pol_groups_from_biggest_org
+         inner join matchbox_entity me
+            on organization_entity = me.id) d_and_i
+         where cycle = %s and rank <= %s
+    """
+
+class OrgToPolGroupSummaryHandler(SummaryHandler):
+    rollup = OrgToPolGroupTotalsHandler()
+    breakout = OrgToPolGroupTopBiggestOrgsByContributionsHandler()
+    def key_function(self,x):
+        direct_or_indiv = x['direct_or_indiv']
+        if direct_or_indiv in self.rollup.category_map:
+            return self.rollup.category_map[direct_or_indiv]
+        else:
+            return self.rollup.default_key
