@@ -263,3 +263,50 @@ class OrgIssuesSummaryHandler(SummaryHandler):
         #     return self.rollup.default_key
 
 
+class OrgBillsTotalsHandler(SummaryRollupHandler):
+
+    stmt = """
+        select bill_name as category, sum(count) as count, sum(amount) as amount
+        from tmp_bl_summary_lobbying_bills_for_biggest_org
+        where cycle = 2012
+        group by bill_id, bill_name
+        order by sum(amount) desc
+        limit 10;
+    """
+
+class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'bill_name', 'amount']
+
+    stmt = """
+       with top_bills as
+        (
+        select bill_id, bill_name as category, cycle, sum(count) as count, sum(amount) as amount
+        from tmp_bl_summary_lobbying_bills_for_biggest_org
+        where cycle = %s
+        group by bill_id, bill_name, cycle
+        order by sum(amount) desc
+        limit 10
+        )
+
+       select name, id, bill_name, amount
+        from
+        (select client_name as name, client_entity as id, s.bill_id, s.bill_name, s.amount,
+        rank() over(partition by s.bill_id order by rank_by_amount) as rank
+        from tmp_bl_summary_lobbying_bills_for_biggest_org s
+        join top_bills t on s.bill_id = t.bill_id and s.cycle = t.cycle) sub
+        where rank <= %s;
+    """
+
+class OrgBillsSummaryHandler(SummaryHandler):
+    rollup = OrgBillsTotalsHandler()
+    breakout = OrgBillsBiggestOrgsByAmountHandler()
+    def key_function(self,x):
+        return x['bill_name']
+        # issue = x['issue']
+        # if direct_or_indiv in self.rollup.category_map:
+        #     return self.rollup.category_map
+        # else:
+        #     return self.rollup.default_key

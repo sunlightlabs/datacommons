@@ -20,7 +20,7 @@ from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
     RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
     RegistrantLobbyistsHandler, TopFirmsByIncomeHandler, \
-    TopOrgsLobbyingHandler, OrgIssuesSummaryHandler
+    TopOrgsLobbyingHandler, OrgIssuesSummaryHandler, OrgBillsSummaryHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
@@ -357,8 +357,8 @@ urlpatterns = patterns('',
         Resource(OrgIssuesSummaryHandler, **ad)),
 
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
-    #url(r'^summary/organization/bill.(?P<emitter_format>.+)$',
-    #    Resource(OrgBillSummaryHandler, **ad)),
+    url(r'^summary/organizations/bills.(?P<emitter_format>.+)$',
+        Resource(OrgBillsSummaryHandler, **ad)),
 
     # ----------- GROUPS >> Organizations: Regulations -------------
     # TODO: handler for top 10 commented dockets for all orgs, each with top 10 orgs listed
