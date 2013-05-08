@@ -61,6 +61,24 @@ create index assoc_lobbying_client_parent_entity_id on assoc_lobbying_client_par
 select date_trunc('second', now()) || ' -- create index assoc_lobbying_client_parent_transaction_id on assoc_lobbying_client_parent (transaction_id)';
 create index assoc_lobbying_client_parent_transaction_id on assoc_lobbying_client_parent (transaction_id);
 
+-- Lobbying "Biggest" Client Associations
+-- preferences parent org when present, otherwise org
+
+select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_biggest_client_associations';
+drop table if exists assoc_lobbying_biggest_client_associations cascade;
+
+select date_trunc('second', now()) || ' -- create table assoc_lobbying_biggest_client_associations';
+create table assoc_lobbying_biggest_client_associations as
+    select coalesce(alc.entity_id, alcp.entity_id) as entity_id, transaction_id
+    from assoc_lobbying_client alc
+    full outer join assoc_lobbying_client_parent alcp using (transaction_id);
+
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_biggest_client_association_entity_id on assoc_lobbying_biggest_client_associations (entity_id)';
+create index assoc_lobbying_biggest_client_associations_entity_id on assoc_lobbying_biggest_client_associations (entity_id);
+select date_trunc('second', now()) || ' -- create index assoc_lobbying_biggest_client_associations_transaction_id on assoc_lobbying_biggest_client_associations (transaction_id)';
+create index assoc_lobbying_biggest_client_associations_transaction_id on assoc_lobbying_biggest_client_associations (transaction_id);
+
+
 -- Lobbying Client Industry Associations
 
 select date_trunc('second', now()) || ' -- drop table if exists assoc_lobbying_client_industry';
