@@ -164,9 +164,10 @@ class SummaryHandler(BaseHandler):
                         parents[k]['children'].append(child)
                     else:
                         other_children.append(child)
-                other_children.extend(parents[self.rollup.default_key].pop('children'))
-                parents[self.rollup.default_key]['children'] = sorted(other_children,
-                        reverse=True, key= lambda x: x['amount'])[0:10]
+                if other_children and self.rollup.default_key:
+                    other_children.extend(parents[self.rollup.default_key].pop('children'))
+                    parents[self.rollup.default_key]['children'] = sorted(other_children,
+                            reverse=True, key= lambda x: x['amount'])[0:10]
         except:
             print sys.exc_info()
 
@@ -189,7 +190,13 @@ class SummaryRollupHandler(BaseHandler):
         kwargs.update({'cycle': request.GET.get('cycle', DEFAULT_CYCLE)})
 
         raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
-        if self.default_key:
+
+        if not self.category_map:
+            labeled_result = dict([(key,
+                                  {'count': count, 'amount': amount, 'children' : []})
+                                  for (key, (count, amount)) in raw_result.items() ])
+
+        elif self.default_key:
             labeled_result = dict([(self.category_map[key], 
                                   {'count':count,'amount': amount, 'children' : []}) 
                                   for (key, (count, amount)) in raw_result.items() 
@@ -210,7 +217,7 @@ class SummaryRollupHandler(BaseHandler):
                                     {'count':count, 'amount': amount, 'children' : []}) 
                                     if key in self.category_map 
                                     else (key, {'count': count, 'amount': amount, 'children': []}) 
-                                    for (key, count, amount) in raw_result.items() ])
+                                    for (key, (count, amount)) in raw_result.items() ])
         return labeled_result
 
 class SummaryBreakoutHandler(BaseHandler):
