@@ -14,6 +14,8 @@ DEFAULT_CYCLE = ALL_CYCLES
 class SQLBindingError(Exception):
     pass
 
+def cast_values(row,type_list):
+    return [c(s) for s,c in zip(row,type_list)]
 
 def execute_top(stmt, *args):
     cursor = connection.cursor()
@@ -179,49 +181,53 @@ class SummaryHandler(BaseHandler):
         return result
 
 class SummaryRollupHandler(BaseHandler):
-    
+
     args = ['cycle']
     category_map = {}
     default_key = 'Other'
     stmt = None
+    type_list = [int,float]
 
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', DEFAULT_CYCLE)})
 
         raw_result = execute_pie(self.stmt, *[kwargs[param] for param in self.args])
 
+        typed_result = dict((key,tuple(cast_values(vals,self.type_list))) for (key,vals) in raw_result.iteritems())
+
         if not self.category_map:
             labeled_result = dict([(key,
                                   {'count': count, 'amount': amount, 'children' : []})
-                                  for (key, (count, amount)) in raw_result.items() ])
+                                  for (key, (count, amount)) in typed_result.items() ])
 
         elif self.default_key:
-            labeled_result = dict([(self.category_map[key], 
-                                  {'count':count,'amount': amount, 'children' : []}) 
-                                  for (key, (count, amount)) in raw_result.items() 
+            labeled_result = dict([(self.category_map[key],
+                                  {'count':count,'amount': amount, 'children' : []})
+                                  for (key, (count, amount)) in typed_result.items()
                                   if key in self.category_map])
 
-            extra_keys = [k for k in raw_result.keys() if k not in self.category_map.keys()]
+            extra_keys = [k for k in typed_result.keys() if k not in self.category_map.keys()]
             if extra_keys:
                 labeled_result[self.default_key] = {
-                                    'count':  sum([count for 
-                                               (key, (count, amount)) in raw_result.items() 
-                                               if key in extra_keys]), 
-                                    'amount': sum([amount for 
-                                               (key, (count, amount)) in raw_result.items() 
+                                    'count':  sum([count for
+                                               (key, (count, amount)) in typed_result.items()
+                                               if key in extra_keys]),
+                                    'amount': sum([amount for
+                                               (key, (count, amount)) in typed_result.items()
                                                if key in extra_keys]),
                                     'children' : []}
         else:
-            labeled_result = dict([(self.category_map[key], 
-                                    {'count':count, 'amount': amount, 'children' : []}) 
-                                    if key in self.category_map 
-                                    else (key, {'count': count, 'amount': amount, 'children': []}) 
-                                    for (key, (count, amount)) in raw_result.items() ])
+            labeled_result = dict([(self.category_map[key],
+                                    {'count':count, 'amount': amount, 'children' : []})
+                                    if key in self.category_map
+                                    else (key, {'count': count, 'amount': amount, 'children': []})
+                                    for (key, (count, amount)) in typed_result.items() ])
         return labeled_result
 
 class SummaryBreakoutHandler(BaseHandler):
     args = ['cycle','limit']
     stmt = None
+    type_list = [str,str,str,float,int,int]
 
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', DEFAULT_CYCLE)})
@@ -230,10 +236,8 @@ class SummaryBreakoutHandler(BaseHandler):
         raw_results = execute_all(self.stmt, *[kwargs[param] for param in
             self.args])
 
-        labeled_results = [dict(zip(self.fields,result)) for result in
-                raw_results]
+        typed_results = [tuple(cast_values(result,self.type_list)) for result in raw_results]
 
-        #for i,e in enumerate(labeled_results):
-        #    print i,'\t',e
+        labeled_results = [dict(zip(self.fields,result)) for result in typed_results]
 
         return labeled_results
