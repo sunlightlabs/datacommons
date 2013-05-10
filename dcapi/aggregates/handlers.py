@@ -165,10 +165,14 @@ class SummaryHandler(BaseHandler):
                         parents[k]['children'].append(child)
                     else:
                         other_children.append(child)
-                if other_children and self.rollup.default_key:
-                    other_children.extend(parents[self.rollup.default_key].pop('children'))
-                    parents[self.rollup.default_key]['children'] = sorted(other_children,
+                other_children.extend(parents[self.rollup.default_key].pop('children'))
+                parents[self.rollup.default_key]['children'] = sorted(other_children,
                             reverse=True, key= lambda x: x['amount'])[0:10]
+            else:
+                for child in children:
+                    k = self.key_function(child)
+                    parents[k]['children'].append(child)
+
         except:
             print sys.exc_info()
 
