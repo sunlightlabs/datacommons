@@ -534,12 +534,12 @@ class SubIndustryTotalsHandler(BaseHandler):
             total_contributions
         from
             agg_subindustry_totals st
-        where 
+        where
             not exists (select 1 from agg_suppressed_catcodes sc where column1 = subindustry_id)
              %s
         order by sector_id,industry_id,subindustry_id
     """
-    
+
     def read(self, request):
         cycle = request.GET.get('cycle', ALL_CYCLES)
 
@@ -615,7 +615,7 @@ class OrgPartyTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select recipient_party, sum(count) as count, sum(amount) as amount from
-        tmp_bl_summary_party_from_biggest_org 
+        tmp_bl_summary_party_from_biggest_org
         where cycle = %s
         group by recipient_party;
     """
@@ -628,7 +628,7 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     stmt = """
         select me.name, id, recipient_party, amount
-          from tmp_bl_summary_party_from_biggest_org 
+          from tmp_bl_summary_party_from_biggest_org
          inner join matchbox_entity me
             on organization_entity = me.id
          where cycle = %s and rank <= %s;
@@ -646,13 +646,13 @@ class OrgPartySummaryHandler(SummaryHandler):
 
 class OrgStateFedTotalsHandler(SummaryRollupHandler):
 
-    category_map = {'urn:fec:transaction':'Federal', 
+    category_map = {'urn:fec:transaction':'Federal',
                     'urn:nimsp:transaction':'State'}
     default_key = None
 
     stmt = """
         select transaction_namespace, sum(count) as count, sum(amount) as amount from
-        tmp_bl_summary_namespace_from_biggest_org 
+        tmp_bl_summary_namespace_from_biggest_org
         where cycle = %s
         group by transaction_namespace;
     """
@@ -665,7 +665,7 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     stmt = """
         select me.name, id, transaction_namespace, amount
-          from tmp_bl_summary_namespace_from_biggest_org 
+          from tmp_bl_summary_namespace_from_biggest_org
          inner join matchbox_entity me
             on organization_entity = me.id
          where cycle = %s and rank <= %s;

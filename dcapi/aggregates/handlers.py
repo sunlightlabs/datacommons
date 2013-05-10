@@ -72,7 +72,6 @@ def check_empty(result, *entity_ids):
 
     return result
 
-
 class TopListHandler(BaseHandler):
 
     args = ['cycle', 'limit']
