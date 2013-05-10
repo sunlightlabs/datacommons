@@ -336,15 +336,15 @@ urlpatterns = patterns('',
 
     # ---------- GROUPS >> Organizations: Contributions -------------
     # summary of orgs to party
-    url(r'^summary/organizations/party.(?P<emitter_format>.+)$',
+    url(r'^summary/org/party.(?P<emitter_format>.+)$',
         Resource(OrgPartySummaryHandler, **ad)),
 
     # TODO: summary of orgs to state/fed
-    url(r'^summary/organizations/state_fed.(?P<emitter_format>.+)$',
+    url(r'^summary/org/state_fed.(?P<emitter_format>.+)$',
         Resource(OrgStateFedSummaryHandler, **ad)),
 
     # TODO: summary of orgs to pol_groups
-    url(r'^summary/organizations/pol_group.(?P<emitter_format>.+)$',
+    url(r'^summary/org/pol_group.(?P<emitter_format>.+)$',
         Resource(OrgToPolGroupSummaryHandler, **ad)),
 
     # TODO: summary of orgs to office_types
@@ -353,11 +353,11 @@ urlpatterns = patterns('',
 
     # ----------- GROUPS >> Organizations: Lobbying -------------
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
-    url(r'^summary/organizations/issues.(?P<emitter_format>.+)$',
+    url(r'^summary/org/issues.(?P<emitter_format>.+)$',
         Resource(OrgIssuesSummaryHandler, **ad)),
 
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
-    url(r'^summary/organizations/bills.(?P<emitter_format>.+)$',
+    url(r'^summary/org/bills.(?P<emitter_format>.+)$',
         Resource(OrgBillsSummaryHandler, **ad)),
 
     # ----------- GROUPS >> Organizations: Regulations -------------

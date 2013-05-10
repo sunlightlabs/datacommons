@@ -610,7 +610,7 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
 
 class OrgPartyTotalsHandler(SummaryRollupHandler):
 
-    category_map = {'R':'Republican', 'D':'Democrat'}
+    category_map = {'R':'Republicans', 'D':'Democrats'}
     default_key = 'Other'
 
     stmt = """
@@ -624,7 +624,7 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'recipient_party', 'amount']
+    fields = ['name', 'ie_id', 'recipient_party', 'amount']
 
     stmt = """
         select me.name, id, recipient_party, amount
@@ -648,7 +648,7 @@ class OrgStateFedTotalsHandler(SummaryRollupHandler):
 
     category_map = {'urn:fec:transaction':'Federal', 
                     'urn:nimsp:transaction':'State'}
-    default_key = 'Other'
+    default_key = None
 
     stmt = """
         select transaction_namespace, sum(count) as count, sum(amount) as amount from
@@ -684,7 +684,7 @@ class OrgStateFedSummaryHandler(SummaryHandler):
 class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Direct',
                     'indivs':'Associated Individuals'}
-    #default_key = 'Other'
+    default_key = None
 
     stmt = """
         select category, count, amount
