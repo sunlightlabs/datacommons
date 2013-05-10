@@ -648,7 +648,6 @@ class OrgStateFedTotalsHandler(SummaryRollupHandler):
 
     category_map = {'urn:fec:transaction':'Federal',
                     'urn:nimsp:transaction':'State'}
-    default_key = None
 
     stmt = """
         select transaction_namespace, sum(count) as count, sum(amount) as amount from
@@ -684,7 +683,6 @@ class OrgStateFedSummaryHandler(SummaryHandler):
 class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Direct',
                     'indivs':'Associated Individuals'}
-    default_key = None
 
     stmt = """
         select category, count, amount

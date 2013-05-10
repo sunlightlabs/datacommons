@@ -172,6 +172,9 @@ class SummaryHandler(BaseHandler):
                 for child in children:
                     k = self.key_function(child)
                     parents[k]['children'].append(child)
+                for p in parents:
+                    parents[p]['children'] = sorted(parents[p]['children'],
+                            reverse=True, key= lambda x: x['amount'])
 
         except:
             print sys.exc_info()
@@ -188,7 +191,7 @@ class SummaryRollupHandler(BaseHandler):
 
     args = ['cycle']
     category_map = {}
-    default_key = 'Other'
+    default_key = None
     stmt = None
     type_list = [int,float]
 
