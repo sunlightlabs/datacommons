@@ -265,13 +265,17 @@ class OrgIssuesSummaryHandler(SummaryHandler):
 
 class OrgBillsTotalsHandler(SummaryRollupHandler):
 
+    default_key = None
+
     stmt = """
-        select bill_name as category, sum(count) as count, sum(amount) as amount
+        select category, count, amount
+        from
+        (select bill_id, bill_name as category, cycle, sum(count) as count, sum(amount) as amount
         from tmp_bl_summary_lobbying_bills_for_biggest_org
-        where cycle = 2012
-        group by bill_id, bill_name
+        where cycle = %s
+        group by bill_id, bill_name, cycle
         order by sum(amount) desc
-        limit 10;
+        limit 10) x;
     """
 
 class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
