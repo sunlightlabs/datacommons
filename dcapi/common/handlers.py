@@ -1,9 +1,10 @@
 from urllib import unquote_plus
 from piston.handler import BaseHandler
+from django.core.paginator import Paginator
 
 RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
 DEFAULT_PER_PAGE = 1000
-MAX_PER_PAGE = 100000
+MAX_PER_PAGE = 1000000
 
 
 class FilterHandler(BaseHandler):
@@ -40,17 +41,22 @@ class FilterHandler(BaseHandler):
     def read(self, request):
         params = request.GET.copy()
 
-        per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
-        page = int(params.get('page', 1)) - 1
-        
-        offset = page * per_page
-        limit = offset + per_page
+        print params['per_page']
+        per_page = int(params.get('per_page', DEFAULT_PER_PAGE))
+        print per_page
+        per_page = min(per_page, MAX_PER_PAGE)
+        print per_page
+
+        page = int(params.get('page', 1))
         
         for param in RESERVED_PARAMS:
             if param in params:
                 del params[param]
                         
-        return self.queryset(params).order_by(*self.ordering)[offset:limit]
+        qs = self.queryset(params).order_by(*self.ordering)
+        print per_page
+        pg = Paginator(qs.all(), per_page)
+        return pg.page(page)
 
 
 class DenormalizingFilterHandler(FilterHandler):
