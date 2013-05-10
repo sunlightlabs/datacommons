@@ -615,7 +615,7 @@ class OrgPartyTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select recipient_party, sum(count) as count, sum(amount) as amount from
-        tmp_bl_summary_party_from_biggest_org
+        summary_party_from_biggest_org
         where cycle = %s
         group by recipient_party;
     """
@@ -628,7 +628,7 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     stmt = """
         select me.name, id, recipient_party, amount
-          from tmp_bl_summary_party_from_biggest_org
+          from summary_party_from_biggest_org
          inner join matchbox_entity me
             on organization_entity = me.id
          where cycle = %s and rank <= %s;
@@ -652,7 +652,7 @@ class OrgStateFedTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select transaction_namespace, sum(count) as count, sum(amount) as amount from
-        tmp_bl_summary_namespace_from_biggest_org
+        summary_namespace_from_biggest_org
         where cycle = %s
         group by transaction_namespace;
     """
@@ -665,7 +665,7 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     stmt = """
         select me.name, id, transaction_namespace, amount
-          from tmp_bl_summary_namespace_from_biggest_org
+          from summary_namespace_from_biggest_org
          inner join matchbox_entity me
             on organization_entity = me.id
          where cycle = %s and rank <= %s;
@@ -691,13 +691,13 @@ class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
         from
         (select category, count, amount, cycle from
         (select 'direct' as category, cycle, sum(direct_count) as count, sum(direct_amount) as amount from
-        tmp_bl_summary_pol_groups_from_biggest_org
+        summary_pol_groups_from_biggest_org
         group by category, cycle
 
         union all
 
         select 'indivs' as category, cycle, sum(indivs_count) as count, sum(indivs_amount) as amount from
-        tmp_bl_summary_pol_groups_from_biggest_org
+        summary_pol_groups_from_biggest_org
         group by category, cycle) d_and_i
         where cycle = %s) a
     """
@@ -711,14 +711,14 @@ class OrgToPolGroupTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     stmt = """
         select name, id, direct_or_indiv, amount, cycle, rank from
         (select me.name, id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
-          from tmp_bl_summary_pol_groups_from_biggest_org
+          from summary_pol_groups_from_biggest_org
          inner join matchbox_entity me
             on organization_entity = me.id
 
          union all
 
         select me.name, id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
-          from tmp_bl_summary_pol_groups_from_biggest_org
+          from summary_pol_groups_from_biggest_org
          inner join matchbox_entity me
             on organization_entity = me.id) d_and_i
          where cycle = %s and rank <= %s

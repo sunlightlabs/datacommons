@@ -220,7 +220,7 @@ class OrgIssuesTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select issue as category, sum(count) as count, sum(amount) as amount
-        from tmp_bl_summary_lobbying_issues_for_biggest_org
+        from summary_lobbying_issues_for_biggest_org
         where cycle = %s
         group by issue
         order by sum(amount) desc
@@ -236,7 +236,7 @@ class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
     stmt = """
        with top_issues as
         (select issue as category, cycle, sum(count) as count, sum(amount) as amount
-        from tmp_bl_summary_lobbying_issues_for_biggest_org
+        from summary_lobbying_issues_for_biggest_org
         where cycle = %s
         group by issue, cycle
         order by sum(amount) desc
@@ -246,7 +246,7 @@ class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
         from
         (select client_name as name, client_entity as id, issue, s.amount,
         rank() over(partition by issue order by rank_by_amount) as rank
-        from tmp_bl_summary_lobbying_issues_for_biggest_org s
+        from summary_lobbying_issues_for_biggest_org s
         join top_issues t on s.issue =  t.category and s.cycle = t.cycle) sub
         where rank <= %s;
     """
@@ -271,7 +271,7 @@ class OrgBillsTotalsHandler(SummaryRollupHandler):
         select category, count, amount
         from
         (select bill_id, bill_name as category, cycle, sum(count) as count, sum(amount) as amount
-        from tmp_bl_summary_lobbying_bills_for_biggest_org
+        from summary_lobbying_bills_for_biggest_org
         where cycle = %s
         group by bill_id, bill_name, cycle
         order by sum(amount) desc
@@ -288,7 +288,7 @@ class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
        with top_bills as
         (
         select bill_id, bill_name as category, cycle, sum(count) as count, sum(amount) as amount
-        from tmp_bl_summary_lobbying_bills_for_biggest_org
+        from summary_lobbying_bills_for_biggest_org
         where cycle = %s
         group by bill_id, bill_name, cycle
         order by sum(amount) desc
@@ -299,7 +299,7 @@ class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
         from
         (select client_name as name, client_entity as id, s.bill_id, s.bill_name, s.amount,
         rank() over(partition by s.bill_id order by rank_by_amount) as rank
-        from tmp_bl_summary_lobbying_bills_for_biggest_org s
+        from summary_lobbying_bills_for_biggest_org s
         join top_bills t on s.bill_id = t.bill_id and s.cycle = t.cycle) sub
         where rank <= %s;
     """
