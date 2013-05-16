@@ -238,7 +238,8 @@ class EntityAdvSearchHandler(BaseHandler):
     fields = ['id', 'name', 'type', 'score']
 
     stmt = """
-        select e.id, e.name, e.type,
+        select
+            e.id, e.name, e.type,
             case e.type
                 when 'politician' then
                     2 * coalesce(ae.recipient_amount, 0) / 715550915
@@ -263,6 +264,7 @@ class EntityAdvSearchHandler(BaseHandler):
         ) ft_match on e.id = ft_match.entity_id
         left join agg_entities ae on e.id = ae.entity_id and ae.cycle = -1
         left join agg_lobbying_by_cycle_rolled_up al on e.id = al.entity_id and al.cycle = -1
+        JOINS
         WHERE
         order by score desc, e.id asc
     """
@@ -283,20 +285,49 @@ class EntityAdvSearchHandler(BaseHandler):
 
         parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
         where_filters = []
+        extra_joins = []
         filters = {}
 
-        etype_raw = request.GET.get('type', None)
-        if etype_raw:
-            allowed_types = set(('organization', 'industry', 'individual', 'politician'))
-            entity_type = [etype for etype in etype_raw.split(',') if etype in allowed_types]
-            if entity_type:
-                where_filters.append("e.type in (%s)" % ','.join(["'%s'" % etype for etype in entity_type]))
-                filters['type'] = entity_type
+        subtype_raw = request.GET.get('subtype', None)
+        subtype = subtype_raw if subtype_raw in set(('contributors', 'lobbyists', 'politicians', 'industries', 'lobbying_firms', 'political_groups', 'other_orgs')) else None
+        if subtype:
+            if subtype == 'contributors':
+                #where_filters.append("e.type = 'individual' and mbim.is_contributor = 't'")
+                #extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
+                where_filters.append("e.type = 'individual' and coalesce(ae.contributor_count, 0) > 0")
+            elif subtype == 'lobbyists':
+                #where_filters.append("e.type = 'individual' and mbim.is_lobbyist = 't'")
+                #extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
+                where_filters.append("e.type = 'individual' and coalesce(al.count, 0) > 0")
+            elif subtype == 'politicians':
+                where_filters.append("e.type = 'politician'")
+            elif subtype == 'industries':
+                where_filters.append("e.type = 'industry'")
+            elif subtype == 'lobbying_firms':
+                where_filters.append("e.type = 'organization' and mbom.lobbying_firm = 't'")
+                extra_joins.append("left join (select distinct on (entity_id) * from matchbox_organizationmetadata order by entity_id, cycle desc) mbom on e.id = mbom.entity_id")
+            elif subtype == 'political_groups':
+                where_filters.append("e.type = 'organization'")
+                extra_joins.append("inner join (select distinct on (entity_id) * from matchbox_entityattribute where namespace = 'urn:fec:committee') mbea on e.id = mbea.entity_id")
+            elif subtype == 'other_orgs':
+                where_filters.append("e.type = 'organization' and mbom.lobbying_firm = 'f'")
+                where_filters.append("e.id not in (select distinct entity_id from matchbox_entityattribute where namespace = 'urn:fec:committee')")
+                extra_joins.append("left join (select distinct on (entity_id) * from matchbox_organizationmetadata order by entity_id, cycle desc) mbom on e.id = mbom.entity_id")
+        else:
+            # subtype implies type, so only use explicit type if there's not a subtype
+            etype_raw = request.GET.get('type', None)
+            if etype_raw:
+                allowed_types = set(('organization', 'industry', 'individual', 'politician'))
+                entity_type = [etype for etype in etype_raw.split(',') if etype in allowed_types]
+                if entity_type:
+                    where_filters.append("e.type in (%s)" % ','.join(["'%s'" % etype for etype in entity_type]))
+                    filters['type'] = entity_type
 
         where_clause = "where %s" % (" and ".join(where_filters)) if where_filters else ""
+        join_clause = " ".join(extra_joins)
 
         query_params = (parsed_query,)
-        raw_result = execute_top(stmt.replace("WHERE", where_clause), *query_params)
+        raw_result = execute_top(stmt.replace("WHERE", where_clause).replace("JOINS", join_clause), *query_params)
 
         total = len(raw_result)
         results = [dict(zip(self.fields, row)) for row in raw_result[start:end]]
