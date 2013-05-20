@@ -190,37 +190,6 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
     """
 
 
-class LargestRecentDonationsHandler(TopListHandler):
-    args = ['limit']
-    fields = 'contributor_name committee_name committee_entity candidate_name candidate_entity amount date'.split()
-
-    stmt = """
-        select
-            contributor_name,
-            committee_name,
-            committee.entity_id as committee_entity,
-            candidate_name,
-            candidate.entity_id,
-            amount,
-            date
-        from fec_committee_itemized i
-        inner join matchbox_entityattribute committee
-            on i.committee_id = committee.value
-            and committee.namespace = 'urn:fec:committee'
-        left join fec_candidates using (candidate_id, cycle)
-        left join matchbox_entityattribute candidate
-            on i.candidate_id = candidate.value
-            and candidate.namespace = 'urn:fec:candidate'
-        where
-            date >= now() - '3 months'::interval
-            and fec_candidates.candidate_status = 'C' 
-            and fec_candidates.incumbent_challenger_open is not null
-            --and candidate_id is not null
-        order by amount desc
-        limit %s
-    """
-
-
 class ElectionSummaryHandler(BaseHandler):
     """Used on SunlightFoundation site, not in brisket."""
 
