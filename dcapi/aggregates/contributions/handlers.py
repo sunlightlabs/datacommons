@@ -1,5 +1,7 @@
-
-from dcapi.aggregates.handlers import EntityTopListHandler, EntitySingletonHandler, TopListHandler, PieHandler, ALL_CYCLES, execute_one, execute_top, check_empty
+from dcapi.aggregates.handlers import EntityTopListHandler, \
+    EntitySingletonHandler, TopListHandler, PieHandler, SummaryHandler, \
+    SummaryRollupHandler, SummaryBreakoutHandler, \
+    ALL_CYCLES, execute_one, execute_top, check_empty, execute_all
 from django.core.cache import cache
 from piston.handler import BaseHandler
 
@@ -25,6 +27,19 @@ class OrgLevelBreakdownHandler(PieHandler):
         select transaction_namespace, count, amount
         from agg_namespace_from_org
         where
+            organization_entity = %s
+            and cycle = %s
+    """
+
+class OrgOfficeTypeBreakdownHandler(PieHandler):
+
+    categories = [ 'state:judicial', 'state:upper', 'state:lower', 'federal:president', 'federal:house', 'state:governor', 'federal:senate', 'state:office' ]
+    category_map = dict(zip(categories, categories))
+
+    stmt = """
+         select seat, count, amount
+         from agg_office_type_from_org
+         where
             organization_entity = %s
             and cycle = %s
     """
@@ -207,6 +222,54 @@ class TopPoliticiansByReceiptsHandler(TopListHandler):
     """
 
 
+class TopPoliticiansByReceiptsByOfficeHandler(TopListHandler):
+    args = 'office limit office limit'.split()
+    fields = 'name entity_id office amount'.split()
+
+    stmt = """
+        select
+            candidate_name,
+            entity_id,
+            office,
+            total_receipts
+        from(
+            select
+                entity_id,
+                s.candidate_name,
+                c.office,
+                total_receipts,
+                rank() over (partition by office order by total_receipts desc)
+            from
+                fec_candidate_summaries s
+                inner join fec_candidates c using (candidate_id, cycle)
+                inner join matchbox_entityattribute a on s.candidate_id = a.value and a.namespace = 'urn:fec:candidate'
+                inner join politician_metadata_latest_cycle_view pm using (entity_id, cycle)
+            where 
+                c.candidate_status = 'C' and 
+                c.incumbent_challenger_open is not null
+        ) x
+        where
+            office = upper(substring(%s from 1 for 1))
+            and rank <= %s
+
+        union all
+
+        select
+            name as candidate_name,
+            entity_id,
+            seat as office,
+            recipient_amount as total_receipts
+        from
+            agg_entities ae
+            inner join matchbox_entity me on ae.entity_id = me.id
+            inner join politician_metadata_latest_cycle_view pm using (entity_id, cycle)
+        where
+            (%s = 'governor' and seat = 'state:governor')
+        order by total_receipts desc
+        limit %s
+    """
+
+
 class TopOrganizationsByContributionsHandler(TopListHandler):
 
     args = ['cycle', 'limit']
@@ -329,3 +392,342 @@ class ContributionAmountHandler(BaseHandler):
     def get_cache_key(self, query_name, recipient_entity, contributor_entity, cycle):
         return "_".join([query_name, recipient_entity, contributor_entity, str(cycle)])
 
+
+class TopIndividualContributorsToPartyHandler(TopListHandler):
+    args = ['party', 'limit', 'cycle']
+    fields = ['entity_id', 'name', 'party', 'cycle', 'count', 'amount', 'rank']
+
+    stmt = """
+        select * from (
+            select
+                contributor_entity,
+                name,
+                recipient_party,
+                cycle,
+                count,
+                amount,
+                rank() over (partition by cycle, recipient_party order by amount desc, count desc) as rank
+            from agg_party_from_indiv
+            inner join matchbox_entity me on me.id = contributor_entity
+            where type = 'individual'
+        ) x
+        where
+            upper(recipient_party) = %s
+            and rank <= %s
+            and cycle = %s
+        ;
+    """
+
+class TopIndividualContributorsByAreaHandler(TopListHandler):
+    args = ['area', 'limit', 'cycle']
+    fields = ['entity_id', 'name', 'area', 'cycle', 'count', 'amount', 'rank']
+
+    stmt = """
+        select * from (
+            select
+                contributor_entity,
+                name,
+                namespace,
+                cycle,
+                count,
+                amount,
+                rank() over (partition by cycle, namespace order by amount desc, count desc) as rank
+            from agg_indivs_by_namespace
+            inner join matchbox_entity me on me.id = contributor_entity
+            where type = 'individual'
+        ) x
+        where
+            namespace = case when %s = 'state' then 'urn:nimsp:transaction' else 'urn:fec:transaction' end
+            and rank <= %s
+            and cycle = %s
+        ;
+    """
+
+class TopLobbyistBundlersHandler(TopListHandler):
+    args = ['cycle', 'limit']
+    fields = 'entity_id name count amount'.split()
+
+    stmt = """
+        select
+            lobbyist_id,
+            me.name,
+            count(*),
+            sum(amount)
+        from
+            agg_bundling ab
+            inner join matchbox_entity me on me.id = ab.lobbyist_id
+        where
+            cycle = %s
+        group by
+            lobbyist_id,
+            me.name
+        order by
+            sum(amount) desc,
+            count(*) desc
+        limit %s;
+    """
+
+
+class TopIndustryContributorsToPartyHandler(TopListHandler):
+    args = ['party', 'limit', 'cycle']
+    fields = ['entity_id', 'name', 'party', 'cycle', 'count', 'amount', 'rank']
+
+    stmt = """
+        select * from (
+            select
+                organization_entity,
+                name,
+                recipient_party,
+                cycle,
+                count,
+                amount,
+                rank() over (partition by cycle, recipient_party order by amount desc, count desc) as rank
+            from agg_party_from_org
+            inner join matchbox_entity me on me.id = organization_entity
+            inner join matchbox_entityattribute mea on me.id = mea.entity_id and mea.namespace = 'urn:crp:industry'
+            where type = 'industry'
+                and name not ilike '%%unknown%%' 
+                and name not ilike '%%retired%%' 
+                and name not ilike '%%self%%' 
+                and name not ilike '%%own campaign%%'
+        ) x
+        where
+            upper(recipient_party) = %s
+            and rank <= %s
+            and cycle = %s
+        ;
+    """
+
+
+class TopOrgContributorsByAreaContributorTypeHandler(TopListHandler):
+    args = 'area pac_or_employee cycle limit'.split()
+    fields = 'entity_id name count amount'.split()
+
+    stmt = """
+        select
+            organization_entity,
+            e.name,
+            count,
+            amount
+        from
+            agg_from_org_by_namespace_contributor_type a
+            inner join matchbox_entity e on e.id = a.organization_entity
+        where
+            transaction_namespace = case when %s = 'state' then 'urn:nimsp:transaction' else 'urn:fec:transaction' end
+            and contributor_type = case when %s = 'employee' then 'I' else 'C' end
+            and cycle = %s
+        order by
+            amount desc, count desc
+        limit %s
+    """
+
+
+class SubIndustryTotalsHandler(BaseHandler):
+    args = ['cycle']
+    fields =  ['subindustry_id', 'industry_id', 'sector_id', 'total_contributions']
+
+    stmt = """
+        select
+            subindustry_id,
+            industry_id,
+            sector_id,
+            total_contributions
+        from
+            agg_subindustry_totals st
+        where
+            not exists (select 1 from agg_suppressed_catcodes sc where column1 = subindustry_id)
+             %s
+        order by sector_id,industry_id,subindustry_id
+    """
+
+    def read(self, request):
+        cycle = request.GET.get('cycle', ALL_CYCLES)
+
+        if cycle == ALL_CYCLES:
+            cycle_where = 'and cycle = -1'
+        else:
+            cycle_where = 'and cycle = %d' % int(cycle)
+
+        result = execute_all(self.stmt % cycle_where,[cycle])
+
+        if result:
+            result = [dict(zip(self.fields, row)) for row in result]
+
+        return result
+
+class TopIndustriesTimeSeriesHandler(BaseHandler):
+    args = ['limit', 'cycle']
+    fields = ['industry_id', 'industry', 'cycle', 'contributions_to_democrats',
+              'contributions_to_republicans', 'total_contributions']
+
+    stmt = """
+            select
+                aitp.industry_id,aitp.industry,
+                cycle,
+                sum(contributions_to_democrats) as contributions_to_democrats,
+                sum(contributions_to_republicans) as contributions_to_republicans,
+                sum(total_contributions) as total_contributions
+            from
+                tmp_bl_agg_industry_to_party aitp
+            join
+                (   select
+                        industry_id
+                    from
+                        (   select
+                                industry_id,
+                                cycle,
+                                sum(total_contributions),
+                                rank() over (partition by cycle order by sum(total_contributions) desc) as rank
+                            from
+                                tmp_bl_agg_industry_to_party
+                            where
+                                subindustry_id not in ('Y0000','Y4000','Y2000','Y1200','Y1000','X1200')
+                            group by
+                                industry_id,cycle) as x
+                    where
+                        rank <= %s
+                        and
+                        cycle = %s ) topn on aitp.industry_id = topn.industry_id
+            where
+                cycle > 0
+            group by
+                aitp.industry_id,aitp.industry,cycle
+            order by
+                aitp.industry, aitp.cycle;
+    """
+
+    def read(self, request, **kwargs):
+        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
+        limit = request.GET.get('limit')
+        print request.GET
+
+        raw_result = execute_all(self.stmt, *[kwargs[param] for param in self.args])
+
+        if raw_result:
+            labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
+
+        return labeled_result
+
+class OrgPartyTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'R':'Republicans', 'D':'Democrats'}
+    default_key = 'Other'
+
+    stmt = """
+        select recipient_party, sum(count) as count, sum(amount) as amount from
+        summary_party_from_biggest_org
+        where cycle = %s
+        group by recipient_party;
+    """
+
+class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'ie_id', 'recipient_party', 'amount']
+
+    stmt = """
+        select me.name, id, recipient_party, amount
+          from summary_party_from_biggest_org
+         inner join matchbox_entity me
+            on organization_entity = me.id
+         where cycle = %s and rank <= %s;
+    """
+
+class OrgPartySummaryHandler(SummaryHandler):
+    rollup = OrgPartyTotalsHandler()
+    breakout = OrgPartyTopBiggestOrgsByContributionsHandler()
+    def key_function(self,x):
+        recipient_party = x['recipient_party']
+        if recipient_party in self.rollup.category_map:
+            return self.rollup.category_map[recipient_party]
+        else:
+            return self.rollup.default_key
+
+class OrgStateFedTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'urn:fec:transaction':'Federal',
+                    'urn:nimsp:transaction':'State'}
+
+    stmt = """
+        select transaction_namespace, sum(count) as count, sum(amount) as amount from
+        summary_namespace_from_biggest_org
+        where cycle = %s
+        group by transaction_namespace;
+    """
+
+class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'transaction_namespace', 'amount']
+
+    stmt = """
+        select me.name, id, transaction_namespace, amount
+          from summary_namespace_from_biggest_org
+         inner join matchbox_entity me
+            on organization_entity = me.id
+         where cycle = %s and rank <= %s;
+    """
+
+class OrgStateFedSummaryHandler(SummaryHandler):
+    rollup = OrgStateFedTotalsHandler()
+    breakout = OrgStateFedTopBiggestOrgsByContributionsHandler()
+    def key_function(self,x):
+        transaction_namespace = x['transaction_namespace']
+        if transaction_namespace in self.rollup.category_map:
+            return self.rollup.category_map[transaction_namespace]
+        else:
+            return self.rollup.default_key
+
+class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
+    category_map = {'direct':'Direct',
+                    'indivs':'Associated Individuals'}
+
+    stmt = """
+        select category, count, amount
+        from
+        (select category, count, amount, cycle from
+        (select 'direct' as category, cycle, sum(direct_count) as count, sum(direct_amount) as amount from
+        summary_pol_groups_from_biggest_org
+        group by category, cycle
+
+        union all
+
+        select 'indivs' as category, cycle, sum(indivs_count) as count, sum(indivs_amount) as amount from
+        summary_pol_groups_from_biggest_org
+        group by category, cycle) d_and_i
+        where cycle = %s) a
+    """
+
+class OrgToPolGroupTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
+
+    stmt = """
+        select name, id, direct_or_indiv, amount, cycle, rank from
+        (select me.name, id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
+          from summary_pol_groups_from_biggest_org
+         inner join matchbox_entity me
+            on organization_entity = me.id
+
+         union all
+
+        select me.name, id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
+          from summary_pol_groups_from_biggest_org
+         inner join matchbox_entity me
+            on organization_entity = me.id) d_and_i
+         where cycle = %s and rank <= %s
+    """
+
+class OrgToPolGroupSummaryHandler(SummaryHandler):
+    rollup = OrgToPolGroupTotalsHandler()
+    breakout = OrgToPolGroupTopBiggestOrgsByContributionsHandler()
+    def key_function(self,x):
+        direct_or_indiv = x['direct_or_indiv']
+        if direct_or_indiv in self.rollup.category_map:
+            return self.rollup.category_map[direct_or_indiv]
+        else:
+            return self.rollup.default_key

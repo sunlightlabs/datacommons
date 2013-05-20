@@ -464,6 +464,47 @@ select date_trunc('second', now()) || ' -- create index recipient_associations_t
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
 
+-- Flattened contributions with all associations included. Not aggregated. (save for industries)
+select date_trunc('second', now()) || ' -- drop table if exists contributions_flat';
+drop table if exists contributions_flat;
+select date_trunc('second', now()) || ' -- create table contributions_flat';
+create table contributions_flat as
+    select
+        transaction_id,
+        transaction_namespace,
+
+        contributor_name,
+        ca.entity_id as contributor_entity,
+        contributor_type,
+
+        organization_name,
+        oa.entity_id as organization_entity,
+
+        parent_organization_name,
+        poa.entity_id as parent_organization_entity,
+
+        recipient_name,
+        ra.entity_id as recipient_entity,
+        recipient_type,
+        recipient_party as party,
+        seat,
+
+        cycle,
+        amount
+    from contributions_all_relevant
+    left join contributor_associations ca using (transaction_id)
+    left join organization_associations oa using (transaction_id)
+    left join parent_organization_associations poa using (transaction_id)
+    left join recipient_associations ra using (transaction_id)
+;
+
+select date_trunc('second', now()) || ' -- create index contributions_flat__contributor_type_idx';
+create index contributions_flat__contributor_type_idx on contributions_flat (contributor_type);
+select date_trunc('second', now()) || ' -- create index contributions_flat__recipient_type_idx';
+create index contributions_flat__recipient_type_idx on contributions_flat (recipient_type);
+select date_trunc('second', now()) || ' -- create index contributions_flat__cycle_idx';
+create index contributions_flat__cycle_idx on contributions_flat (cycle);
+
 
 -- Entity Aggregates (Contribution Totals)
 
@@ -675,6 +716,40 @@ create table agg_cands_from_indiv as
 
 select date_trunc('second', now()) || ' -- create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle)';
 create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle);
+
+
+-- Individuals: Top Donors by Namespace (state/federal)
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_indivs_by_namespace';
+drop table if exists agg_indivs_by_namespace cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_indivs_by_namespace';
+create table agg_indivs_by_namespace as
+    with individual_contributions_by_cycle as (
+        select transaction_namespace as namespace, contributor_entity,
+            cycle, count(*) as count, sum(amount) as amount,
+            rank() over (partition by transaction_namespace, contributor_entity, cycle order by sum(amount) desc) as rank
+        from contributions_flat c
+        group by transaction_namespace, contributor_entity, cycle
+    )
+
+    select contributor_entity, namespace, cycle, count, amount
+    from individual_contributions_by_cycle
+    where rank <= :agg_top_n
+
+    union all
+
+    select contributor_entity, namespace, -1, count, amount
+    from (
+        select contributor_entity, namespace, sum(count) as count, sum(amount) as amount,
+            rank() over (partition by contributor_entity order by sum(amount) desc) as rank
+        from individual_contributions_by_cycle
+        group by contributor_entity, namespace
+    ) x
+    where rank <= :agg_top_n;
+
+select date_trunc('second', now()) || ' -- create index agg_indivs_by_namespace_idx on agg_indivs_by_namespace (contributor_entity, cycle)';
+create index agg_indivs_by_namespace_idx on agg_indivs_by_namespace (contributor_entity, cycle);
 
 
 -- Individuals: Top Organization Recipients
@@ -973,6 +1048,40 @@ select date_trunc('second', now()) || ' -- create index agg_party_from_org_idx o
 create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle);
 
 
+-- State/Fed from Organization-Affiliated Indiv/PAC
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_from_org_by_namespace_contributor_type';
+drop table if exists agg_from_org_by_namespace_contributor_type cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_from_org_by_namespace_contributor_type';
+create table agg_from_org_by_namespace_contributor_type as
+    with contribs_by_cycle as (
+        select
+            organization_entity,
+            contributor_type,
+            transaction_namespace,
+            cycle,
+            count(*),
+            sum(amount) as amount
+        from contributions_flat c
+        group by organization_entity, contributor_type, transaction_namespace, cycle
+    )
+
+    select organization_entity, contributor_type, transaction_namespace, cycle, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select organization_entity, contributor_type, transaction_namespace, -1, sum(count) as count, sum(amount) as amount
+    from contribs_by_cycle
+    group by organization_entity, contributor_type, transaction_namespace
+;
+
+select date_trunc('second', now()) || ' -- create index agg_from_org_by_namespace_contributor_type__entity_cycle on agg_from_org_by_namespace_contributor_type (organization_entity, cycle)';
+create index agg_from_org_by_namespace_contributor_type__entity_cycle on agg_from_org_by_namespace_contributor_type (organization_entity, cycle);
+
+
+
 
 -- State/Fed from Organization
 
@@ -1002,7 +1111,32 @@ create table agg_namespace_from_org as
 select date_trunc('second', now()) || ' -- create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle)';
 create index agg_namespace_from_org_idx on agg_namespace_from_org (organization_entity, cycle);
 
+-- Office Type from Organization
 
+select date_trunc('second', now()) || ' -- drop table if exists agg_office_type_from_org';
+drop table if exists agg_office_type_from_org cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_office_type_from_org';
+create table agg_office_type_from_org as
+ with contribs_by_cycle as (
+    select organization_entity, cycle, seat, count(), sum(amount) as amount
+    from contributions_flat
+    where recipient_type = 'P'
+    group by organization_entity, cycle, seat
+    )
+
+ select organization_entity, cycle, seat, count, amount
+ from contribs_by_cycle
+
+ union all
+
+ select organization_entity, -1, seat, sum(count) as count, sum(amount) as amount
+ from contribs_by_cycle
+ group by organization_entity, seat
+;
+
+select date_trunc('second', now()) || ' -- create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)';
+create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)
 
 -- In-state/Out-of-state to Politician
 
@@ -1147,7 +1281,55 @@ create table agg_top_orgs_by_industry as
 select date_trunc('second', now()) || ' -- create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (recipient_entity, cycle)';
 create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (industry_entity, cycle);
 
+create table agg_top_contributors_by_party
+    select entity_id as contributor_id, max(contributor_name) as contributor_name, cycle, count(*), sum(amount)
+    from contributions_individual inner join contributor_associations using (transaction_id)
+    where recipient_party = 'D'
+    group by entity_id, cycle
+    order by sum(amount) desc, count(*) desc
+    limit :agg_top_n;
+
 
 select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
 
 
+-- Sub Industry Contribution Totals (with industry and sector mapping)
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_subindustry_totals';
+drop table if exists agg_subindustry_totals;
+
+select date_trunc('second', now()) || ' -- create table agg_subindustry_totals';
+create table agg_subindustry_totals as (
+    select 
+        mea.value as subindustry_id,
+        meap.value as industry_id,
+        left(meap.value,1) as sector_id, 
+        me.name as subindustry,
+        mep.name as industry,
+        p.cycle,
+        p.D as contributions_to_democrats,
+        p.R as contributions_to_republicans,
+        p.D + p.R as total_contributions
+    from 
+        matchbox_entity me 
+        inner join matchbox_entityattribute mea on me.id = mea.entity_id and mea.namespace = 'urn:crp:subindustry' 
+        inner join matchbox_industrymetadata mim on mim.entity_id = me.id 
+        inner join matchbox_entity mep on mep.id = mim.parent_industry_id 
+        inner join matchbox_entityattribute meap on meap.entity_id = mim.parent_industry_id 
+        left outer join (
+            select 
+                 organization_entity, 
+                 cycle, 
+                 sum(D) as D, 
+                 sum(R) as R 
+            from    
+                (select
+                    organization_entity, 
+                    cycle, 
+                    case when recipient_party = 'D' then amount else 0 end as D, 
+                    case when recipient_party = 'R' then amount else 0 end as R 
+                from 
+                    agg_party_from_org) as i 
+            group by 
+                organization_entity,cycle) as p on p.organization_entity = me.id
+);

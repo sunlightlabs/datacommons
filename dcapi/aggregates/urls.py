@@ -1,4 +1,3 @@
-
 from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolContributorsHandler, IndivOrgRecipientsHandler, IndivPolRecipientsHandler, \
     SectorsHandler, IndustriesHandler, UnknownIndustriesHandler, PolLocalBreakdownHandler, \
@@ -6,14 +5,22 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     OrgPartyBreakdownHandler, IndivPartyBreakdownHandler, TopPoliticiansByReceiptsHandler,  \
     TopIndividualsByContributionsHandler, TopOrganizationsByContributionsHandler, \
     TopIndustriesByContributionsHandler, IndustryOrgHandler, \
-    ContributionAmountHandler, OrgPACRecipientsHandler
+    ContributionAmountHandler, OrgPACRecipientsHandler, \
+    TopIndividualContributorsToPartyHandler, \
+    TopIndividualContributorsByAreaHandler, \
+    TopLobbyistBundlersHandler, TopPoliticiansByReceiptsByOfficeHandler, \
+    TopIndustryContributorsToPartyHandler, \
+    TopOrgContributorsByAreaContributorTypeHandler, \
+    SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
+    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
     OrgIssuesHandler, OrgBillsHandler, OrgLobbyistsHandler, \
     IndivRegistrantsHandler, IndivIssuesHandler, IndivClientsHandler, \
     RegistrantIssuesHandler, RegistrantBillsHandler, RegistrantClientsHandler, \
-    RegistrantLobbyistsHandler
+    RegistrantLobbyistsHandler, TopFirmsByIncomeHandler, \
+    TopOrgsLobbyingHandler, OrgIssuesSummaryHandler, OrgBillsSummaryHandler
 from dcapi.aggregates.spending.handlers import OrgFedSpendingHandler
 from dcapi.aggregates.earmarks.handlers import TopEarmarksHandler,\
     LocalEarmarksHandler
@@ -21,12 +28,16 @@ from dcapi.aggregates.pogo.handlers import TopContractorMisconductHandler
 from dcapi.aggregates.epa.handlers import TopViolationActionsHandler
 from dcapi.aggregates.regulations.handlers import RegulationsTextHandler, \
     RegulationsSubmitterHandler, RegulationsDocketTextHandler, \
-    RegulationsDocketSubmitterHandler
-from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, CommitteeSummaryHandler, CandidateStateHandler, \
-    CandidateTimelineHandler, CandidateItemizedDownloadHandler, CommitteeItemizedDownloadHandler, \
-    CommitteeTopContribsHandler, ElectionSummaryHandler
-from dcapi.aggregates.independentexpenditures.handlers import CandidateIndExpHandler, CommitteeIndExpHandler, \
-    CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler
+    RegulationsDocketSubmitterHandler, TopRegsSubmittersHandler
+from dcapi.aggregates.fec.handlers import CandidateSummaryHandler, \
+    CommitteeSummaryHandler, CandidateStateHandler, \
+    CandidateTimelineHandler, CandidateItemizedDownloadHandler, \
+    CommitteeItemizedDownloadHandler, CommitteeTopContribsHandler, \
+    LargestRecentDonationsHandler, ElectionSummaryHandler
+from dcapi.aggregates.independentexpenditures.handlers import \
+    CandidateIndExpHandler, CommitteeIndExpHandler, \
+    CandidateIndExpDownloadHandler, CommitteeIndExpDownloadHandler, \
+    TopPACsByIndExpsHandler, TopCandidatesAffectedByIndExpHandler
 
 from django.conf.urls.defaults import patterns, url
 from locksmith.auth.authentication import PistonKeyAuthentication
@@ -106,10 +117,6 @@ urlpatterns = patterns('',
     url(r'indiv/(?P<entity_id>[a-f0-9]{32})/clients\.(?P<emitter_format>.+)$',
         Resource(IndivClientsHandler, **ad)),
 
-    # top N individuals by contributions for a cycle
-    url(r'^indivs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
-        Resource(TopIndividualsByContributionsHandler, **ad)),
-
     # recipients from a single org//pac
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients\.(?P<emitter_format>.+)$',
         Resource(OrgRecipientsHandler, **ad)),
@@ -124,6 +131,10 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients/level_breakdown\.(?P<emitter_format>.+)$',
         Resource(OrgLevelBreakdownHandler, **ad)),
+
+    #url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients/office_type_breakdown\.(?P<emitter_format>.+)$',
+
+    #    Resource(OrgOfficeTypeBreakdownHandler, **ad)),
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/registrants\.(?P<emitter_format>.+)$',
         Resource(OrgRegistrantsHandler, **ad)),
@@ -207,7 +218,8 @@ urlpatterns = patterns('',
     
     url(r'^lobbyist_bundling/transactions\.(?P<emitter_format>.+)$',
         Resource(DetailExplorerHandler, **ad)),
-    
+
+    # fec
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
         Resource(CandidateSummaryHandler, **ad)),
         
@@ -223,6 +235,7 @@ urlpatterns = patterns('',
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_itemized\.(?P<emitter_format>.+)$',
         Resource(CandidateItemizedDownloadHandler, **ad)),
 
+    # independent expenditures
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_indexp\.(?P<emitter_format>.+)$',
         Resource(CandidateIndExpHandler, **ad)),
 
@@ -237,13 +250,136 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_itemized\.(?P<emitter_format>.+)$',
         Resource(CommitteeItemizedDownloadHandler, **ad)),
-        
-    url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_indexp_itemized\.(?P<emitter_format>.+)$',
-        Resource(CommitteeIndExpDownloadHandler, **ad)),      
 
+    url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_indexp_itemized\.(?P<emitter_format>.+)$',
+        Resource(CommitteeIndExpDownloadHandler, **ad)),
+
+    # -- entity type top lists --
+    # ---------------------------
+    # ------- individuals -------
+    # top N individuals by contributions for a cycle
+    url(r'^indivs/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndividualsByContributionsHandler, **ad)),
+
+    # top N individuals by contributions to party for a cycle
+    url(r'^indivs/party/(?P<party>[RD])/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndividualContributorsToPartyHandler, **ad)),
+
+    # top lobbyists
+    #url(r'^indivs/lobbyists/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+    #    Resource(TopLobbyistsHandler, **ad)),
+
+    # top lobbyist bundlers
+    url(r'^indivs/lobbyist_bundlers/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopLobbyistBundlersHandler, **ad)),
+
+    # top indiv contributors at state or federal level
+    url(r'^indivs/(?P<area>state|federal)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndividualContributorsByAreaHandler, **ad)),
+
+    # ------ organizations ------
+    # top PACs by independent expenditures
+    url(r'^orgs/indexp/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopPACsByIndExpsHandler, **ad)),
+
+    # top lobbying firms by income
+    url(r'^orgs/lobbying_firms/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopFirmsByIncomeHandler, **ad)),
+
+    # top orgs by regulation submissions
+    url(r'^orgs/regulations/submitters/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopRegsSubmittersHandler, **ad)),
+
+    # top org contributors by pac/employee at state or federal level
+    url(r'^orgs/(?P<area>state|federal)/(?P<pac_or_employee>pac|employee)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopOrgContributorsByAreaContributorTypeHandler, **ad)),
+
+    # --------- industries -------
+    # top N industry donors to party
+    url(r'^industries/party/(?P<party>[RD])/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopIndustryContributorsToPartyHandler, **ad)),
+
+    # top lobbying clients by spending
+    url(r'^(?P<entity_type>industries|orgs)/lobbying/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopOrgsLobbyingHandler, **ad)),
+
+    url(r'^industries/subindustry_totals\.(?P<emitter_format>.+)$',
+        Resource(SubIndustryTotalsHandler, **ad)),
+
+    url(r'^industries/top_(?P<limit>[0-9]+)_industries_time_series\.(?P<emitter_format>.+)$',
+        Resource(TopIndustriesTimeSeriesHandler, **ad)),
+
+    # -------- politicians -------
+    # top political fundraisers by office
+    url(r'^pols/(?P<office>president|senate|house|governor)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopPoliticiansByReceiptsByOfficeHandler, **ad)),
+
+    # top candidates targeted by independent expenditures
+    url(r'^pols/indexp/(?P<office>president|senate|house)/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(TopCandidatesAffectedByIndExpHandler, **ad)),
+
+
+    # --------- multi-entity ----------
+
+    # largest donations in last month (offers PAC, candidate, and individual)
+    url(r'^fec/recent/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
+        Resource(LargestRecentDonationsHandler, **ad)),
+
+    # --------- election summary ----------
     url(r'^election/2012/summary\.(?P<emitter_format>.+)$',
         Resource(ElectionSummaryHandler, **ad)),
+
+    #########################################################
+    # ---------- Summaries for Entity Landing Pages --------
+    # Separating these because the mappings are nav-specific and don't fit well
+    # into the patterns above
+
+    # ---------- GROUPS >> Organizations: Contributions -------------
+    # summary of orgs to party
+    url(r'^summary/org/party.(?P<emitter_format>.+)$',
+        Resource(OrgPartySummaryHandler, **ad)),
+
+    # TODO: summary of orgs to state/fed
+    url(r'^summary/org/state_fed.(?P<emitter_format>.+)$',
+        Resource(OrgStateFedSummaryHandler, **ad)),
+
+    # TODO: summary of orgs to pol_groups
+    url(r'^summary/org/pol_group.(?P<emitter_format>.+)$',
+        Resource(OrgToPolGroupSummaryHandler, **ad)),
+
+    # TODO: summary of orgs to office_types
+    #url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
+    #    Resource(OrgOfficeTypeSummaryHandler, **ad)),
+
+    # ----------- GROUPS >> Organizations: Lobbying -------------
+    # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
+    url(r'^summary/org/issues.(?P<emitter_format>.+)$',
+        Resource(OrgIssuesSummaryHandler, **ad)),
+
+    # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
+    url(r'^summary/org/bills.(?P<emitter_format>.+)$',
+        Resource(OrgBillsSummaryHandler, **ad)),
+
+    # ----------- GROUPS >> Organizations: Regulations -------------
+    # TODO: handler for top 10 commented dockets for all orgs, each with top 10 orgs listed
+
+    # TODO: handler for top 10 orgs mentioned in dockets
+ 
+    # ----------- GROUPS >> Organizations: Earmarks -------------
+    # TODO: design summary stats for earmarks
+    #url(r'^summary/organization/earmark.(?P<emitter_format>.+)$',
+    #    Resource(OrgEarmarkSummaryHandler, **ad)),
+
+    # ----------- GROUPS >> Organizations: Federal Spending --------------
+    # TODO: design summary stats for federal spending
+
+    # ----------- GROUPS >> Organizations: Contractor Misconduct ---------
+    # TODO: design summary stats for contractor misconduct
+
+    # ----------- GROUPS >> Organizations: EPA Violations ----------------
+    # TODO: design summary stats for epa violations
+
+    # ----------- GROUPS >> Organizations: Advisory Committees -----------
+    # TODO: design summary stats for advisory committees (FACA)
+
 )
-
-
-

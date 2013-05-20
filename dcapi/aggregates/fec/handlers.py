@@ -148,6 +148,7 @@ class CandidateItemizedDownloadHandler(EntityTopListHandler):
         order by amount desc
     """
 
+
 class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 
     args = ['cycle', 'entity_id']
@@ -165,6 +166,7 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
             a.entity_id = %s
         order by amount desc
     """
+
 
 class CommitteeTopContribsHandler(EntityTopListHandler):
 
@@ -184,6 +186,37 @@ class CommitteeTopContribsHandler(EntityTopListHandler):
             a.entity_id = %s
         group by contributor_name, transaction_type
         order by sum(amount) desc
+        limit %s
+    """
+
+
+class LargestRecentDonationsHandler(TopListHandler):
+    args = ['limit']
+    fields = 'contributor_name committee_name committee_entity candidate_name candidate_entity amount date'.split()
+
+    stmt = """
+        select
+            contributor_name,
+            committee_name,
+            committee.entity_id as committee_entity,
+            candidate_name,
+            candidate.entity_id,
+            amount,
+            date
+        from fec_committee_itemized i
+        inner join matchbox_entityattribute committee
+            on i.committee_id = committee.value
+            and committee.namespace = 'urn:fec:committee'
+        left join fec_candidates using (candidate_id, cycle)
+        left join matchbox_entityattribute candidate
+            on i.candidate_id = candidate.value
+            and candidate.namespace = 'urn:fec:candidate'
+        where
+            date >= now() - '3 months'::interval
+            and fec_candidates.candidate_status = 'C' 
+            and fec_candidates.incumbent_challenger_open is not null
+            --and candidate_id is not null
+        order by amount desc
         limit %s
     """
 
