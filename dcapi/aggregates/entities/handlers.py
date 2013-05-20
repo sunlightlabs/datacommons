@@ -292,13 +292,11 @@ class EntityAdvSearchHandler(BaseHandler):
         subtype = subtype_raw if subtype_raw in set(('contributors', 'lobbyists', 'politicians', 'industries', 'lobbying_firms', 'political_groups', 'other_orgs')) else None
         if subtype:
             if subtype == 'contributors':
-                #where_filters.append("e.type = 'individual' and mbim.is_contributor = 't'")
-                #extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
-                where_filters.append("e.type = 'individual' and coalesce(ae.contributor_count, 0) > 0")
+                where_filters.append("e.type = 'individual' and mbim.is_contributor = 't'")
+                extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
             elif subtype == 'lobbyists':
-                #where_filters.append("e.type = 'individual' and mbim.is_lobbyist = 't'")
-                #extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
-                where_filters.append("e.type = 'individual' and coalesce(al.count, 0) > 0")
+                where_filters.append("e.type = 'individual' and mbim.is_lobbyist = 't'")
+                extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
             elif subtype == 'politicians':
                 where_filters.append("e.type = 'politician'")
             elif subtype == 'industries':
