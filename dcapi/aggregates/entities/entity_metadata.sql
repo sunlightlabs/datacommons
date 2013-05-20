@@ -223,6 +223,31 @@ create table politician_metadata_latest_cycle_view as
 ;
 commit;
 
+-- Individual Metadata
+
+begin;
+create temp table tmp_matchbox_individualmetadata as select * from matchbox_individualmetadata limit 0;
+
+insert into tmp_matchbox_individualmetadata (entity_id, is_contributor, is_lobbyist)
+    select id, 'f', 'f' from matchbox_entity where type = 'individual';
+
+update tmp_matchbox_individualmetadata
+set is_contributor = 't'
+where entity_id in (select entity_id from contributor_associations);
+
+update tmp_matchbox_individualmetadata
+set is_lobbyist = 't'
+where entity_id in (select entity_id from assoc_lobbying_lobbyist);
+
+delete from matchbox_individualmetadata;
+
+insert into matchbox_individualmetadata (entity_id, is_contributor, is_lobbyist)
+    select entity_id, is_contributor, is_lobbyist from tmp_matchbox_individualmetadata;
+commit;
+
+begin;
+analyze matchbox_individualmetadata;
+commit;
 
 -- Indiv/Org Affiliations
 
