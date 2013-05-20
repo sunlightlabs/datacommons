@@ -231,6 +231,10 @@ for subselect in re.findall(r"\(\s*select[^\)]*\)[\s_a-z]*using \(cycle\)", sear
     search_totals_stmt = search_totals_stmt.replace(subselect, nsub)
 search_totals_stmt = search_totals_stmt.replace("select cycle", "select entity_id").replace("= %s", "in (%s) and cycle = -1")
 
+valid_seats = set(['federal:house', 'federal:president', 'federal:senate', 'state:governor', 'state:judicial', 'state:lower', 'state:office', 'state:upper'])
+valid_states = set(['AK', 'AL', 'AR', 'AS', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA', 'GU', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME', 'MI', 'MN', 'MO',\
+    'MP', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'PR', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VA', 'VI', 'VT', 'WA', 'WI', 'WV', 'WY'])
+valid_parties = set(['D', 'R', 'O'])
 
 class EntityAdvSearchHandler(BaseHandler):
     allowed_methods = ('GET',)
@@ -299,6 +303,26 @@ class EntityAdvSearchHandler(BaseHandler):
                 extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
             elif subtype == 'politicians':
                 where_filters.append("e.type = 'politician'")
+                
+                # check for seat and state
+                seat = request.GET.get('seat', None)
+                seat = seat if seat in valid_seats else None
+
+                state = request.GET.get('state', None)
+                state = state if state in valid_states else None
+
+                party = request.GET.get('party', None)
+                party = party if party in valid_parties else None
+
+                if state or seat or party:
+                    pol_filters = ["state = '%s'" % state if state else None, "seat = '%s'" % seat if seat else None]
+                    if party:
+                        if party in ('R', 'D'):
+                            pol_filters.append("party = '%s'" % party)
+                        else:
+                            pol_filters.append("party not in ('R', 'D')")
+                    pol_where = " and ".join(filter(lambda x:x, pol_filters))
+                    extra_joins.append("inner join (select distinct on (entity_id) * from matchbox_politicianmetadata where %s order by entity_id, cycle desc) mbpm on e.id = mbpm.entity_id" % pol_where)
             elif subtype == 'industries':
                 where_filters.append("e.type = 'industry'")
             elif subtype == 'lobbying_firms':
