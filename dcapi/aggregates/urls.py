@@ -144,16 +144,16 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/contractor_misconduct\.(?P<emitter_format>.+)$',
         Resource(TopContractorMisconductHandler, **ad)),
-        
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_text\.(?P<emitter_format>.+)$',
         Resource(RegulationsTextHandler, **ad)),
-    
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_text_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
         Resource(RegulationsDocketTextHandler, **ad)),
-    
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_submitter\.(?P<emitter_format>.+)$',
         Resource(RegulationsSubmitterHandler, **ad)),
-    
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_submitter_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
         Resource(RegulationsDocketSubmitterHandler, **ad)),
 
@@ -209,26 +209,26 @@ urlpatterns = patterns('',
     # bundling
     url(r'^(org|indiv|pol)/(?P<entity_id>[a-f0-9]{32})/bundles\.(?P<emitter_format>.+)$',
             Resource(BundleHandler, **ad)),
-            
+
     url(r'^lobbyist_bundling/recipients\.(?P<emitter_format>.+)$',
         Resource(RecipientExplorerHandler, **ad)),
-        
+
     url(r'^lobbyist_bundling/firms\.(?P<emitter_format>.+)$',
         Resource(FirmExplorerHandler, **ad)),
-    
+
     url(r'^lobbyist_bundling/transactions\.(?P<emitter_format>.+)$',
         Resource(DetailExplorerHandler, **ad)),
 
     # fec
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
         Resource(CandidateSummaryHandler, **ad)),
-        
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
         Resource(CommitteeSummaryHandler, **ad)),
-        
+
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_local_breakdown\.(?P<emitter_format>.+)$',
         Resource(CandidateStateHandler, **ad)),
-        
+
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_timeline\.(?P<emitter_format>.+)$',
         Resource(CandidateTimelineHandler, **ad)),
 
@@ -363,7 +363,7 @@ urlpatterns = patterns('',
     # TODO: handler for top 10 commented dockets for all orgs, each with top 10 orgs listed
 
     # TODO: handler for top 10 orgs mentioned in dockets
- 
+
     # ----------- GROUPS >> Organizations: Earmarks -------------
     # TODO: design summary stats for earmarks
     #url(r'^summary/organization/earmark.(?P<emitter_format>.+)$',
