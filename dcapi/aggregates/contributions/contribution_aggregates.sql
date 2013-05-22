@@ -1013,6 +1013,34 @@ create table agg_party_from_org as
 select date_trunc('second', now()) || ' -- create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle)';
 create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle);
 
+-- State/Fed from Indiv
+
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_namespace_from_indiv';
+drop table if exists agg_namespace_from_indiv cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_namespace_from_indiv';
+create table agg_namespace_from_indiv as
+    with contribs_by_cycle as (
+        select ca.entity_id as contributor_entity, c.cycle, c.transaction_namespace, count(*), sum(c.amount) as amount
+        from (table contributions_individual union all table contributions_individual_to_organization) c
+        inner join contributor_associations ca using (transaction_id)
+        where transaction_namespace != ''
+        group by ca.entity_id, c.cycle, c.transaction_namespace
+    )
+
+    select contributor_entity, cycle, transaction_namespace, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select contributor_entity, -1, transaction_namespace, sum(count) as count, sum(amount) as amount
+    from contribs_by_cycle
+    group by contributor_entity, transaction_namespace;
+
+select date_trunc('second', now()) || ' -- create index agg_namespace_from_indiv_idx on agg_namespace_from_indiv (contributor_entity, cycle)';
+create index agg_namespace_from_indiv_idx on agg_namespace_from_indiv (contributor_entity, cycle);
+
 
 -- State/Fed from Organization-Affiliated Indiv/PAC
 
@@ -1103,6 +1131,31 @@ create table agg_office_type_from_org as
 
 select date_trunc('second', now()) || ' -- create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)';
 create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)
+
+-- Office Type from Individual
+
+select date_trunc('second', now()) || ' -- create table agg_office_type_from_indiv';
+create table agg_office_type_from_indiv as
+    with contribs_by_cycle as (
+        select ca.entity_id as contributor_entity, c.cycle, c.seat, count(*), sum(c.amount) as amount
+        from (table contributions_individual union all table contributions_individual_to_organization) c
+        inner join contributor_associations ca using (transaction_id)
+        where recipient_type = 'P'
+        group by ca.entity_id, c.cycle, c.seat
+    )
+
+    select contributor_entity, cycle, seat, count, amount
+    from contribs_by_cycle
+
+    union all
+
+    select contributor_entity, -1, seat, sum(count) as count, sum(amount) as amount
+    from contribs_by_cycle
+    group by contributor_entity, seat;
+
+select date_trunc('second', now()) || ' -- create index agg_office_type_from_indiv_idx on agg_office_type_from_indiv (contributor_entity, cycle)';
+create index agg_office_type_from_indiv_idx on agg_office_type_from_indiv (contributor_entity, cycle);
+
 
 -- In-state/Out-of-state to Politician
 
