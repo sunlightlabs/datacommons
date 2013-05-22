@@ -1087,7 +1087,7 @@ create table agg_office_type_from_org as
  with contribs_by_cycle as (
     select organization_entity, cycle, seat, count(), sum(amount) as amount
     from contributions_flat
-    where recipient_type = 'P'
+    where recipient_type = 'P' and organization_entity is not null
     group by organization_entity, cycle, seat
     )
 
