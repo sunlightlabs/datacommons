@@ -17,7 +17,7 @@ create table agg_suppressed_catcodes as values
     ('Z2100'), ('Z2200'), ('Z2300'), ('Z2400'),
     ('Z4100'), ('Z4200'), ('Z4300'),
     ('Z5000'), ('Z5100'), ('Z5200'), ('Z5300'),
-    ('Z7777'), 
+    ('Z7777'),
     ('Z8888'),
     ('Z9100'), ('Z9500'), ('Z9600'), ('Z9700'), ('Z9800'), ('Z9999');
 
@@ -780,7 +780,7 @@ create table agg_orgs_to_cand as
                 left join biggest_organization_associations ca using (transaction_id)
                 left join matchbox_entity oe on oe.id = ca.entity_id
                 where
-                    lower(organization_name) not in (select * from agg_suppressed_orgnames)    
+                    lower(organization_name) not in (select * from agg_suppressed_orgnames)
                 group by ra.entity_id, coalesce(oe.name, c.contributor_name), ca.entity_id, cycle
             ) top_pacs
             full outer join (
@@ -790,7 +790,7 @@ create table agg_orgs_to_cand as
                 inner join recipient_associations ra using (transaction_id)
                 left join biggest_organization_associations oa using (transaction_id)
                 left join matchbox_entity oe on oe.id = oa.entity_id
-                where 
+                where
                     lower(case when organization_name != '' then c.organization_name else contributor_name end) not in (select * from agg_suppressed_orgnames)
                 group by ra.entity_id, coalesce(oe.name, case when organization_name != '' then c.organization_name else contributor_name end), oa.entity_id, cycle
             ) top_indivs
@@ -1114,14 +1114,14 @@ select date_trunc('second', now()) || ' -- create table agg_local_to_politician'
 create table agg_local_to_politician as
     with contribs_by_cycle as (
         select ra.entity_id as recipient_entity, c.cycle,
-            case    when c.contributor_state = c.recipient_state then 'in-state' 
+            case    when c.contributor_state = c.recipient_state then 'in-state'
                     when c.contributor_state = '' then ''
                     else 'out-of-state' end as local,
             count(*), sum(amount) as amount
         from contributions_individual c
         inner join recipient_associations ra using (transaction_id)
-        group by ra.entity_id, c.cycle, 
-            case    when c.contributor_state = c.recipient_state then 'in-state' 
+        group by ra.entity_id, c.cycle,
+            case    when c.contributor_state = c.recipient_state then 'in-state'
                     when c.contributor_state = '' then ''
                     else 'out-of-state' end
     )
@@ -1266,36 +1266,36 @@ drop table if exists agg_subindustry_totals;
 
 select date_trunc('second', now()) || ' -- create table agg_subindustry_totals';
 create table agg_subindustry_totals as (
-    select 
+    select
         mea.value as subindustry_id,
         meap.value as industry_id,
-        left(meap.value,1) as sector_id, 
+        left(meap.value,1) as sector_id,
         me.name as subindustry,
         mep.name as industry,
         p.cycle,
         p.D as contributions_to_democrats,
         p.R as contributions_to_republicans,
         p.D + p.R as total_contributions
-    from 
-        matchbox_entity me 
-        inner join matchbox_entityattribute mea on me.id = mea.entity_id and mea.namespace = 'urn:crp:subindustry' 
-        inner join matchbox_industrymetadata mim on mim.entity_id = me.id 
-        inner join matchbox_entity mep on mep.id = mim.parent_industry_id 
-        inner join matchbox_entityattribute meap on meap.entity_id = mim.parent_industry_id 
+    from
+        matchbox_entity me
+        inner join matchbox_entityattribute mea on me.id = mea.entity_id and mea.namespace = 'urn:crp:subindustry'
+        inner join matchbox_industrymetadata mim on mim.entity_id = me.id
+        inner join matchbox_entity mep on mep.id = mim.parent_industry_id
+        inner join matchbox_entityattribute meap on meap.entity_id = mim.parent_industry_id
         left outer join (
-            select 
-                 organization_entity, 
-                 cycle, 
-                 sum(D) as D, 
-                 sum(R) as R 
-            from    
+            select
+                 organization_entity,
+                 cycle,
+                 sum(D) as D,
+                 sum(R) as R
+            from
                 (select
-                    organization_entity, 
-                    cycle, 
-                    case when recipient_party = 'D' then amount else 0 end as D, 
-                    case when recipient_party = 'R' then amount else 0 end as R 
-                from 
-                    agg_party_from_org) as i 
-            group by 
+                    organization_entity,
+                    cycle,
+                    case when recipient_party = 'D' then amount else 0 end as D,
+                    case when recipient_party = 'R' then amount else 0 end as R
+                from
+                    agg_party_from_org) as i
+            group by
                 organization_entity,cycle) as p on p.organization_entity = me.id
 );

@@ -1,6 +1,7 @@
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY PARTY
 
+
 select date_trunc('second', now()) || ' -- drop table if exists summary_party_from_biggest_org';
 drop table if exists summary_party_from_biggest_org;
 
@@ -27,28 +28,26 @@ create index summary_party_from_biggest_org_idx on summary_party_from_biggest_or
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY FEDERAL/STATE
 
-
-
 select date_trunc('second', now()) || ' -- drop table if exists summary_namespace_from_biggest_org';
 drop table if exists summary_namespace_from_biggest_org;
 
 select date_trunc('second', now()) || ' -- create table summary_namespace_from_biggest_org';
 create table summary_namespace_from_biggest_org as
-        select 
-            organization_entity, 
-            me.name, 
+        select
+            organization_entity,
+            me.name,
             transaction_namespace,
-            cycle, 
+            cycle,
             count,
-            amount, 
-            rank() over(partition by transaction_namespace,cycle order by amount desc) as rank 
-        from 
-                matchbox_entity me 
-            inner join 
-                agg_namespace_from_org apfo on me.id = apfo.organization_entity 
-        where 
+            amount,
+            rank() over(partition by transaction_namespace,cycle order by amount desc) as rank
+        from
+                matchbox_entity me
+            inner join
+                agg_namespace_from_org apfo on me.id = apfo.organization_entity
+        where
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
-   
+
 select date_trunc('second', now()) || ' -- create index summary_namespace_from_biggest_org_idx on summary_namespace_from_biggest_org_org (organization_entity, cycle)';
 create index summary_namespace_from_biggest_org_idx on summary_namespace_from_biggest_org (organization_entity, namespace, cycle);
 
