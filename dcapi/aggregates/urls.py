@@ -339,15 +339,14 @@ urlpatterns = patterns('',
     url(r'^summary/org/party.(?P<emitter_format>.+)$',
         Resource(OrgPartySummaryHandler, **ad)),
 
-    # TODO: summary of orgs to state/fed
+    # summary of orgs to state/fed candidates
     url(r'^summary/org/state_fed.(?P<emitter_format>.+)$',
         Resource(OrgStateFedSummaryHandler, **ad)),
 
-    # TODO: summary of orgs to pol_groups
+    # summary of orgs' group vs individual contributions
     url(r'^summary/org/pol_group.(?P<emitter_format>.+)$',
         Resource(OrgToPolGroupSummaryHandler, **ad)),
 
-    # TODO: summary of orgs to office_types
     #url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
     #    Resource(OrgOfficeTypeSummaryHandler, **ad)),
 
