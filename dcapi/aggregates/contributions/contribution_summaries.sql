@@ -65,20 +65,20 @@ drop table if exists summary_office_type_from_biggest_org;
 
 select date_trunc('second', now()) || ' -- create table summary_office_type_from_biggest_org';
 create table summary_office_type_from_biggest_org as
-        select 
-            organization_entity, 
-            me.name, 
+        select
+            organization_entity,
+            me.name,
             seat,
-            cycle, 
+            cycle,
             count,
-            amount, 
-            rank() over(partition by seat,cycle order by amount desc) as rank 
-        from 
-                matchbox_entity me 
-            inner join 
-                agg_office_type_from_org apfo on me.id = apfo.organization_entity 
-        where 
+            amount,
+            rank() over(partition by seat,cycle order by amount desc) as rank
+        from
+                matchbox_entity me
+            inner join
+                agg_office_type_from_org apfo on me.id = apfo.organization_entity
+        where
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
-   
+
 select date_trunc('second', now()) || ' -- create index summary_office_type_from_biggest_org_idx on summary_office_type_from_biggest_org_org (organization_entity, cycle)';
 create index summary_office_type_from_biggest_org_idx on summary_office_type_from_biggest_org (organization_entity, seat, cycle);
