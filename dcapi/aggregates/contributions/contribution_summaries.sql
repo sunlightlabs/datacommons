@@ -56,7 +56,7 @@ create table summary_namespace_from_biggest_org as
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 
 select date_trunc('second', now()) || ' -- create index summary_namespace_from_biggest_org_idx on summary_namespace_from_biggest_org_org (organization_entity, cycle)';
-create index summary_namespace_from_biggest_org_idx on summary_namespace_from_biggest_org (organization_entity, namespace, cycle);
+create index summary_namespace_from_biggest_org_idx on summary_namespace_from_biggest_org (organization_entity, transaction_namespace, cycle);
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY SEAT
 
