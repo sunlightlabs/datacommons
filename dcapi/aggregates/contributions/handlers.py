@@ -568,7 +568,7 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
                 sum(contributions_to_republicans) as contributions_to_republicans,
                 sum(total_contributions) as total_contributions
             from
-                tmp_bl_agg_industry_to_party aitp
+                agg_industry_to_party aitp
             join
                 (   select
                         industry_id
@@ -579,7 +579,7 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
                                 sum(total_contributions),
                                 rank() over (partition by cycle order by sum(total_contributions) desc) as rank
                             from
-                                tmp_bl_agg_industry_to_party
+                                agg_industry_to_party
                             where
                                 subindustry_id not in ('Y0000','Y4000','Y2000','Y1200','Y1000','X1200')
                             group by
@@ -624,7 +624,7 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'ie_id', 'recipient_party', 'amount']
+    fields = ['name', 'id', 'recipient_party', 'amount']
 
     stmt = """
         select me.name, id, recipient_party, amount
