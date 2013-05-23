@@ -209,7 +209,7 @@ class EntitySearchHandler(BaseHandler):
         stmt = self.stmt
 
         if entity_type:
-            stmt += '\n        where e.type = %s'
+            stmt += '\n        and e.type = %s'
 
         parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
         query_params = (parsed_query)
