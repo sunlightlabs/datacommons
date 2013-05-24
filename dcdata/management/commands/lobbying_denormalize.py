@@ -5,7 +5,7 @@ from dcdata.utils.dryrub import CSVFieldVerifier, FieldCountValidator, \
 from saucebrush.sources import CSVSource
 from saucebrush.filters import FieldMerger, FieldRemover, FieldRenamer, \
     FieldAdder, UnicodeFilter
-from saucebrush.emitters import CSVEmitter
+from saucebrush.emitters import CSVEmitter, DebugEmitter
 from saucebrush import run_recipe
 
 import os
@@ -92,17 +92,6 @@ def agency_handler(inpath, outpath, infields, outfields):
 
 
 def issue_handler(inpath, outpath, infields, outfields):
-
-    """
-    This file comes in with fields containing \n, while the overall file has \r\n for linebreaks.
-    Since python will always interpret \n as a line ending, we need to eradicate those before
-    opening the file in Python.
-    """
-    subprocess.call(['cat {0} | tr "\r" "\a" > {0}.new'.format(inpath)], shell=True)
-    subprocess.call(['cat {0}.new | tr "\n" " " > {0}.new2'.format(inpath)], shell=True)
-    subprocess.call(['cat {0}.new2 | tr "\a" "\n" > {0}'.format(inpath)], shell=True)
-    subprocess.call(['rm {0}.new {0}.new2'.format(inpath)], shell=True)
-    subprocess.call(['sed -i \'s/ | / \\\\| /g\' {}'.format(inpath)], shell=True)
 
     run_recipe(
         VerifiedCSVSource(open(inpath, 'r'), fieldnames=infields, quotechar='|'),
