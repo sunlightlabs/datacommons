@@ -12,7 +12,9 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
-    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler
+    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler, \
+    ContributorPartySummaryHandler, ContributorStateFedSummaryHandler, \
+    ContributorRecipientTypeSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -380,5 +382,18 @@ urlpatterns = patterns('',
 
     # ----------- GROUPS >> Organizations: Advisory Committees -----------
     # TODO: design summary stats for advisory committees (FACA)
+
+    # ----------- PEOPLE >> Contributors: Contributions -----------
+    # summary of contributors to party
+    url(r'^summary/contributor/party.(?P<emitter_format>.+)$',
+        Resource(ContributorPartySummaryHandler, **ad)),
+
+    # summary of contributors to state/fed candidates
+    url(r'^summary/contributor/state_fed.(?P<emitter_format>.+)$',
+        Resource(ContributorStateFedSummaryHandler, **ad)),
+
+    # summary of contributors to groups vs politicians
+    url(r'^summary/contributor/recipient_type.(?P<emitter_format>.+)$',
+        Resource(ContributorRecipientTypeSummaryHandler, **ad)),
 
 )
