@@ -627,10 +627,8 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'recipient_party', 'amount']
 
     stmt = """
-        select me.name, id, recipient_party, amount
+        select name, organization_entity as id, recipient_party, amount
           from summary_party_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id
          where cycle = %s and rank <= %s;
     """
 
@@ -663,10 +661,8 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'transaction_namespace', 'amount']
 
     stmt = """
-        select me.name, id, transaction_namespace, amount
+        select name, organization_entity as id, transaction_namespace, amount
           from summary_namespace_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id
          where cycle = %s and rank <= %s;
     """
 
@@ -708,17 +704,13 @@ class OrgToPolGroupTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     stmt = """
         select name, id, direct_or_indiv, amount, cycle, rank from
-        (select me.name, id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
+        (select name, organization_entity as id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
           from summary_pol_groups_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id
 
          union all
 
-        select me.name, id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
-          from summary_pol_groups_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id) d_and_i
+        select name, organization_entity as id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
+          from summary_pol_groups_from_biggest_org) d_and_i
          where cycle = %s and rank <= %s
     """
 
