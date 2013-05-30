@@ -101,6 +101,53 @@ where
 ;
 
 
+-- update interest group type from FEC data
+-- will mark a type as true if any committee associated with the org
+-- during a given cycle has the group type
+update matchbox_organizationmetadata meta set
+    is_corporation = i.is_corporation,
+    is_labor_org = i.is_labor_org,
+    is_membership_org = i.is_membership_org,
+    is_trade_assoc = i.is_trade_assoc,
+    is_cooperative = i.is_cooperative,
+    is_corp_w_o_capital_stock = i.is_corp_w_o_capital_stock
+from (
+    select 
+        entity_id,
+        committee_id,
+        cycle,
+        bool_or(is_corporation) as is_corporation,
+        bool_or(is_labor_org) as is_labor_org,
+        bool_or(is_membership_org) as is_membership_org,
+        bool_or(is_trade_assoc) as is_trade_assoc,
+        bool_or(is_cooperative) as is_cooperative,
+        bool_or(is_corp_w_o_capital_stock) as is_corp_w_o_capital_stock
+    from (
+        select
+            entity_id,
+            committee_id,
+            om.cycle,
+            case when interest_group = 'C' then 't'::boolean else 'f'::boolean end as is_corporation,
+            case when interest_group = 'L' then 't'::boolean else 'f'::boolean end as is_labor_org,
+            case when interest_group = 'M' then 't'::boolean else 'f'::boolean end as is_membership_org,
+            case when interest_group = 'T' then 't'::boolean else 'f'::boolean end as is_trade_assoc,
+            case when interest_group = 'V' then 't'::boolean else 'f'::boolean end as is_cooperative,
+            case when interest_group = 'W' then 't'::boolean else 'f'::boolean end as is_corp_w_o_capital_stock
+        from
+            matchbox_organizationmetadata om
+            inner join matchbox_entityattribute ea using (entity_id)
+            inner join fec_committees fec on ea.value = committee_id and om.cycle = fec.cycle
+        where
+            ea.namespace = 'urn:fec:committee'
+    ) x
+    group by entity_id, committee_id, cycle
+) i
+where
+    meta.entity_id = i.entity_id
+    and meta.cycle = i.cycle
+;
+
+
 update
     tmp_matchbox_organizationmetadata as om
 set
@@ -164,6 +211,7 @@ create table organization_metadata_latest_cycle_view as
     from matchbox_organizationmetadata
     order by entity_id, cycle desc
 ;
+create index organization_metadata_latest_cycle_view__entity_id__idx on organization_metadata_latest_cycle_view (entity_id);
 commit;
 
 -- Politician Metadata

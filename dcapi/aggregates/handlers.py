@@ -233,7 +233,7 @@ class SummaryRollupHandler(BaseHandler):
 class SummaryBreakoutHandler(BaseHandler):
     args = ['cycle','limit']
     stmt = None
-    type_list = [str,str,str,float,int,int]
+    type_list = [str,str,str,float]
 
     def read(self, request, **kwargs):
         kwargs.update({'cycle': request.GET.get('cycle', DEFAULT_CYCLE)})

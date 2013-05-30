@@ -12,7 +12,11 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
-    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler
+    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler, \
+    ContributorPartySummaryHandler, ContributorStateFedSummaryHandler, \
+    ContributorRecipientTypeSummaryHandler, \
+    LobbyistPartySummaryHandler, LobbyistStateFedSummaryHandler, \
+    LobbyistRecipientTypeSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -144,16 +148,16 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/contractor_misconduct\.(?P<emitter_format>.+)$',
         Resource(TopContractorMisconductHandler, **ad)),
-        
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_text\.(?P<emitter_format>.+)$',
         Resource(RegulationsTextHandler, **ad)),
-    
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_text_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
         Resource(RegulationsDocketTextHandler, **ad)),
-    
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_submitter\.(?P<emitter_format>.+)$',
         Resource(RegulationsSubmitterHandler, **ad)),
-    
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/regulations_submitter_by_docket/(?P<docket_id>[-_A-Z0-9]+)\.(?P<emitter_format>.+)$',
         Resource(RegulationsDocketSubmitterHandler, **ad)),
 
@@ -209,26 +213,26 @@ urlpatterns = patterns('',
     # bundling
     url(r'^(org|indiv|pol)/(?P<entity_id>[a-f0-9]{32})/bundles\.(?P<emitter_format>.+)$',
             Resource(BundleHandler, **ad)),
-            
+
     url(r'^lobbyist_bundling/recipients\.(?P<emitter_format>.+)$',
         Resource(RecipientExplorerHandler, **ad)),
-        
+
     url(r'^lobbyist_bundling/firms\.(?P<emitter_format>.+)$',
         Resource(FirmExplorerHandler, **ad)),
-    
+
     url(r'^lobbyist_bundling/transactions\.(?P<emitter_format>.+)$',
         Resource(DetailExplorerHandler, **ad)),
 
     # fec
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
         Resource(CandidateSummaryHandler, **ad)),
-        
+
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/fec_summary\.(?P<emitter_format>.+)$',
         Resource(CommitteeSummaryHandler, **ad)),
-        
+
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_local_breakdown\.(?P<emitter_format>.+)$',
         Resource(CandidateStateHandler, **ad)),
-        
+
     url(r'^pol/(?P<entity_id>[a-f0-9]{32})/fec_timeline\.(?P<emitter_format>.+)$',
         Resource(CandidateTimelineHandler, **ad)),
 
@@ -332,15 +336,14 @@ urlpatterns = patterns('',
     url(r'^summary/org/party.(?P<emitter_format>.+)$',
         Resource(OrgPartySummaryHandler, **ad)),
 
-    # TODO: summary of orgs to state/fed
+    # summary of orgs to state/fed candidates
     url(r'^summary/org/state_fed.(?P<emitter_format>.+)$',
         Resource(OrgStateFedSummaryHandler, **ad)),
 
-    # TODO: summary of orgs to pol_groups
+    # summary of orgs' group vs individual contributions
     url(r'^summary/org/pol_group.(?P<emitter_format>.+)$',
         Resource(OrgToPolGroupSummaryHandler, **ad)),
 
-    # TODO: summary of orgs to office_types
     #url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
     #    Resource(OrgOfficeTypeSummaryHandler, **ad)),
 
@@ -357,7 +360,7 @@ urlpatterns = patterns('',
     # TODO: handler for top 10 commented dockets for all orgs, each with top 10 orgs listed
 
     # TODO: handler for top 10 orgs mentioned in dockets
- 
+
     # ----------- GROUPS >> Organizations: Earmarks -------------
     # TODO: design summary stats for earmarks
     #url(r'^summary/organization/earmark.(?P<emitter_format>.+)$',
@@ -374,5 +377,31 @@ urlpatterns = patterns('',
 
     # ----------- GROUPS >> Organizations: Advisory Committees -----------
     # TODO: design summary stats for advisory committees (FACA)
+
+    # ----------- PEOPLE >> Contributors: Contributions -----------
+    # summary of contributors to party
+    url(r'^summary/contributor/party.(?P<emitter_format>.+)$',
+        Resource(ContributorPartySummaryHandler, **ad)),
+
+    # summary of contributors to state/fed candidates
+    url(r'^summary/contributor/state_fed.(?P<emitter_format>.+)$',
+        Resource(ContributorStateFedSummaryHandler, **ad)),
+
+    # summary of contributors to groups vs politicians
+    url(r'^summary/contributor/recipient_type.(?P<emitter_format>.+)$',
+        Resource(ContributorRecipientTypeSummaryHandler, **ad)),
+
+    # ----------- PEOPLE >> Lobbyists: Contributions -----------
+    # summary of lobbyists to party
+    url(r'^summary/lobbyist/party.(?P<emitter_format>.+)$',
+        Resource(LobbyistPartySummaryHandler, **ad)),
+
+    # summary of lobbyists to state/fed candidates
+    url(r'^summary/lobbyist/state_fed.(?P<emitter_format>.+)$',
+        Resource(LobbyistStateFedSummaryHandler, **ad)),
+
+    # summary of lobbyists to groups vs politicians
+    url(r'^summary/lobbyist/recipient_type.(?P<emitter_format>.+)$',
+        Resource(LobbyistRecipientTypeSummaryHandler, **ad)),
 
 )

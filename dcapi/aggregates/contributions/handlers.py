@@ -568,7 +568,7 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
                 sum(contributions_to_republicans) as contributions_to_republicans,
                 sum(total_contributions) as total_contributions
             from
-                tmp_bl_agg_industry_to_party aitp
+                agg_industry_to_party aitp
             join
                 (   select
                         industry_id
@@ -579,7 +579,7 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
                                 sum(total_contributions),
                                 rank() over (partition by cycle order by sum(total_contributions) desc) as rank
                             from
-                                tmp_bl_agg_industry_to_party
+                                agg_industry_to_party
                             where
                                 subindustry_id not in ('Y0000','Y4000','Y2000','Y1200','Y1000','X1200')
                             group by
@@ -608,6 +608,8 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
 
         return labeled_result
 
+### ORGANIZATIONS
+
 class OrgPartyTotalsHandler(SummaryRollupHandler):
 
     category_map = {'R':'Republicans', 'D':'Democrats'}
@@ -624,13 +626,11 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'ie_id', 'recipient_party', 'amount']
+    fields = ['name', 'id', 'recipient_party', 'amount']
 
     stmt = """
-        select me.name, id, recipient_party, amount
+        select name, organization_entity as id, recipient_party, amount
           from summary_party_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id
          where cycle = %s and rank <= %s;
     """
 
@@ -663,10 +663,8 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'transaction_namespace', 'amount']
 
     stmt = """
-        select me.name, id, transaction_namespace, amount
+        select name, organization_entity as id, transaction_namespace, amount
           from summary_namespace_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id
          where cycle = %s and rank <= %s;
     """
 
@@ -708,17 +706,13 @@ class OrgToPolGroupTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     stmt = """
         select name, id, direct_or_indiv, amount, cycle, rank from
-        (select me.name, id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
+        (select name, organization_entity as id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
           from summary_pol_groups_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id
 
          union all
 
-        select me.name, id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
-          from summary_pol_groups_from_biggest_org
-         inner join matchbox_entity me
-            on organization_entity = me.id) d_and_i
+        select name, organization_entity as id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
+          from summary_pol_groups_from_biggest_org) d_and_i
          where cycle = %s and rank <= %s
     """
 
@@ -729,5 +723,213 @@ class OrgToPolGroupSummaryHandler(SummaryHandler):
         direct_or_indiv = x['direct_or_indiv']
         if direct_or_indiv in self.rollup.category_map:
             return self.rollup.category_map[direct_or_indiv]
+        else:
+            return self.rollup.default_key
+
+### CONTRIBUTORS
+
+class ContributorPartyTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'R':'Republicans', 'D':'Democrats'}
+    default_key = 'Other'
+
+    stmt = """
+        select recipient_party, sum(count) as count, sum(amount) as amount from
+        summary_party_from_contrib
+        where cycle = %s
+        group by recipient_party;
+    """
+
+class ContributorPartyTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_party', 'amount']
+
+    stmt = """
+        select name, contributor_entity as id, recipient_party, amount
+          from summary_party_from_contrib
+         where cycle = %s and rank <= %s;
+    """
+
+class ContributorPartySummaryHandler(SummaryHandler):
+    rollup = ContributorPartyTotalsHandler()
+    breakout = ContributorPartyTopContributorsByContributionsHandler()
+    def key_function(self,x):
+        recipient_party = x['recipient_party']
+        if recipient_party in self.rollup.category_map:
+            return self.rollup.category_map[recipient_party]
+        else:
+            return self.rollup.default_key
+
+class ContributorStateFedTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'urn:fec:transaction':'Federal',
+                    'urn:nimsp:transaction':'State'}
+
+    stmt = """
+        select transaction_namespace, sum(count) as count, sum(amount) as amount from
+        summary_namespace_from_contrib
+        where cycle = %s
+        group by transaction_namespace;
+    """
+
+class ContributorStateFedTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'transaction_namespace', 'amount']
+
+    stmt = """
+        select name, contributor_entity as id, transaction_namespace, amount
+          from summary_namespace_from_contrib
+         where cycle = %s and rank <= %s;
+    """
+
+class ContributorStateFedSummaryHandler(SummaryHandler):
+    rollup = ContributorStateFedTotalsHandler()
+    breakout = ContributorStateFedTopContributorsByContributionsHandler()
+    def key_function(self,x):
+        transaction_namespace = x['transaction_namespace']
+        if transaction_namespace in self.rollup.category_map:
+            return self.rollup.category_map[transaction_namespace]
+        else:
+            return self.rollup.default_key
+
+class ContributorRecipientTypeTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'P':'Policitian',
+                    'C':'Committee'}
+
+    stmt = """
+        select recipient_type, sum(count) as count, sum(amount) as amount from
+        summary_recipient_type_from_contrib
+        where cycle = %s
+        group by recipient_type;
+    """
+
+class ContributorRecipientTypeTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_type', 'amount']
+
+    stmt = """
+        select name, contributor_entity as id, recipient_type, amount
+          from summary_recipient_type_from_contrib
+         where cycle = %s and rank <= %s;
+    """
+
+class ContributorRecipientTypeSummaryHandler(SummaryHandler):
+    rollup = ContributorRecipientTypeTotalsHandler()
+    breakout = ContributorRecipientTypeTopContributorsByContributionsHandler()
+    def key_function(self,x):
+        recipient_type = x['recipient_type']
+        if recipient_type in self.rollup.category_map:
+            return self.rollup.category_map[recipient_type]
+        else:
+            return self.rollup.default_key
+
+### LOBBYIST HANDLERS
+
+class LobbyistPartyTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'R':'Republicans', 'D':'Democrats'}
+    default_key = 'Other'
+
+    stmt = """
+        select recipient_party, sum(count) as count, sum(amount) as amount from
+        summary_party_from_lobbyist
+        where cycle = %s
+        group by recipient_party;
+    """
+
+class LobbyistPartyTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_party', 'amount']
+
+    stmt = """
+        select name, contributor_entity as id, recipient_party, amount
+          from summary_party_from_lobbyist
+         where cycle = %s and rank <= %s;
+    """
+
+class LobbyistPartySummaryHandler(SummaryHandler):
+    rollup = LobbyistPartyTotalsHandler()
+    breakout = LobbyistPartyTopLobbyistsByContributionsHandler()
+    def key_function(self,x):
+        recipient_party = x['recipient_party']
+        if recipient_party in self.rollup.category_map:
+            return self.rollup.category_map[recipient_party]
+        else:
+            return self.rollup.default_key
+
+class LobbyistStateFedTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'urn:fec:transaction':'Federal',
+                    'urn:nimsp:transaction':'State'}
+
+    stmt = """
+        select transaction_namespace, sum(count) as count, sum(amount) as amount from
+        summary_namespace_from_lobbyist
+        where cycle = %s
+        group by transaction_namespace;
+    """
+
+class LobbyistStateFedTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'transaction_namespace', 'amount']
+
+    stmt = """
+        select name, contributor_entity as id, transaction_namespace, amount
+          from summary_namespace_from_lobbyist
+         where cycle = %s and rank <= %s;
+    """
+
+class LobbyistStateFedSummaryHandler(SummaryHandler):
+    rollup = LobbyistStateFedTotalsHandler()
+    breakout = LobbyistStateFedTopLobbyistsByContributionsHandler()
+    def key_function(self,x):
+        transaction_namespace = x['transaction_namespace']
+        if transaction_namespace in self.rollup.category_map:
+            return self.rollup.category_map[transaction_namespace]
+        else:
+            return self.rollup.default_key
+
+class LobbyistRecipientTypeTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'P':'Policitian',
+                    'C':'Committee'}
+
+    stmt = """
+        select recipient_type, sum(count) as count, sum(amount) as amount from
+        summary_recipient_type_from_lobbyist
+        where cycle = %s
+        group by recipient_type;
+    """
+
+class LobbyistRecipientTypeTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_type', 'amount']
+
+    stmt = """
+        select name, contributor_entity as id, recipient_type, amount
+          from summary_recipient_type_from_lobbyist
+         where cycle = %s and rank <= %s;
+    """
+
+class LobbyistRecipientTypeSummaryHandler(SummaryHandler):
+    rollup = LobbyistRecipientTypeTotalsHandler()
+    breakout = LobbyistRecipientTypeTopLobbyistsByContributionsHandler()
+    def key_function(self,x):
+        recipient_type = x['recipient_type']
+        if recipient_type in self.rollup.category_map:
+            return self.rollup.category_map[recipient_type]
         else:
             return self.rollup.default_key
