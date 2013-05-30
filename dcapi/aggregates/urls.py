@@ -14,7 +14,9 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
     OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler, \
     ContributorPartySummaryHandler, ContributorStateFedSummaryHandler, \
-    ContributorRecipientTypeSummaryHandler
+    ContributorRecipientTypeSummaryHandler, \
+    LobbyistPartySummaryHandler, LobbyistStateFedSummaryHandler, \
+    LobbyistRecipientTypeSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -395,5 +397,18 @@ urlpatterns = patterns('',
     # summary of contributors to groups vs politicians
     url(r'^summary/contributor/recipient_type.(?P<emitter_format>.+)$',
         Resource(ContributorRecipientTypeSummaryHandler, **ad)),
+
+    # ----------- PEOPLE >> Lobbyists: Contributions -----------
+    # summary of lobbyists to party
+    url(r'^summary/lobbyist/party.(?P<emitter_format>.+)$',
+        Resource(LobbyistPartySummaryHandler, **ad)),
+
+    # summary of lobbyists to state/fed candidates
+    url(r'^summary/lobbyist/state_fed.(?P<emitter_format>.+)$',
+        Resource(LobbyistStateFedSummaryHandler, **ad)),
+
+    # summary of lobbyists to groups vs politicians
+    url(r'^summary/lobbyist/recipient_type.(?P<emitter_format>.+)$',
+        Resource(LobbyistRecipientTypeSummaryHandler, **ad)),
 
 )
