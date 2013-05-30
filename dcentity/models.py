@@ -224,17 +224,17 @@ class OrganizationMetadata(ExtensibleModel):
 
     cycle = models.PositiveSmallIntegerField(db_index=True)
 
-    lobbying_firm         = models.BooleanField(default=False)
-    parent_entity         = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True, db_index=True)
-    industry_entity       = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True, db_index=True)
-    subindustry_entity    = models.ForeignKey(Entity, related_name='subindustry_entity_for_cycle', null=True, db_index=True)
-    is_superpac           = models.BooleanField(default=False)
-    is_corporation        = models.BooleanField(default=False)
-    is_labor_org          = models.BooleanField(default=False)
-    is_membership_org     = models.BooleanField(default=False)
-    is_trade_assoc        = models.BooleanField(default=False)
-    is_cooperative        = models.BooleanField(default=False)
-    is_corp_w_o_cap_stock = models.BooleanField(default=False)
+    lobbying_firm             = models.BooleanField(default=False)
+    parent_entity             = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True, db_index=True)
+    industry_entity           = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True, db_index=True)
+    subindustry_entity        = models.ForeignKey(Entity, related_name='subindustry_entity_for_cycle', null=True, db_index=True)
+    is_superpac               = models.BooleanField(default=False)
+    is_corporation            = models.BooleanField(default=False)
+    is_labor_org              = models.BooleanField(default=False)
+    is_membership_org         = models.BooleanField(default=False)
+    is_trade_assoc            = models.BooleanField(default=False)
+    is_cooperative            = models.BooleanField(default=False)
+    is_corp_w_o_capital_stock = models.BooleanField(default=False)
 
     @property
     def child_entities(self):
@@ -252,16 +252,16 @@ class OrganizationMetadataLatest(ExtensibleModel):
 
     cycle = models.PositiveSmallIntegerField()
 
-    lobbying_firm         = models.BooleanField(default=False)
-    parent_entity         = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
-    industry_entity       = models.ForeignKey(Entity, related_name='industry_entity', null=True)
-    is_superpac           = models.BooleanField(default=False)
-    is_corporation        = models.BooleanField(default=False)
-    is_labor_org          = models.BooleanField(default=False)
-    is_membership_org     = models.BooleanField(default=False)
-    is_trade_assoc        = models.BooleanField(default=False)
-    is_cooperative        = models.BooleanField(default=False)
-    is_corp_w_o_cap_stock = models.BooleanField(default=False)
+    lobbying_firm             = models.BooleanField(default=False)
+    parent_entity             = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
+    industry_entity           = models.ForeignKey(Entity, related_name='industry_entity', null=True)
+    is_superpac               = models.BooleanField(default=False)
+    is_corporation            = models.BooleanField(default=False)
+    is_labor_org              = models.BooleanField(default=False)
+    is_membership_org         = models.BooleanField(default=False)
+    is_trade_assoc            = models.BooleanField(default=False)
+    is_cooperative            = models.BooleanField(default=False)
+    is_corp_w_o_capital_stock = models.BooleanField(default=False)
 
     @property
     def child_entities(self):
