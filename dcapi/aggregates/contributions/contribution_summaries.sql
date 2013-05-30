@@ -314,3 +314,106 @@ create index summary_party_from_contrib_idx on summary_party_from_contrib (contr
   create index summary_recipient_type_from_contrib_idx on summary_recipient_type_from_contrib (contributor_entity, cycle);
 
 
+-- CONTRIBUTIONS FROM LOBBYISTS BY PARTY
+
+select date_trunc('second', now()) || ' -- drop table if exists summary_party_from_lobbyist';
+drop table if exists summary_party_from_lobbyist;
+
+select date_trunc('second', now()) || ' -- create table summary_party_from_lobbyist';
+create table summary_party_from_lobbyist as
+
+        select
+            contributor_entity,
+            name,
+            recipient_party,
+            cycle,
+            count,
+            amount,
+            rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank
+        from
+            summary_party_from_indiv s
+            inner join
+            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
+            where im.is_contributor = 't' and im.is_lobbyist = 't'
+        group by contributor_entity, name, recipient_party, cycle, count, amount
+        ;
+
+select date_trunc('second', now()) || ' -- create index summary_party_from_lobbyist_idx on summary_party_from_lobbyist (contributor_entity, cycle)';
+create index summary_party_from_lobbyist_idx on summary_party_from_lobbyist (contributor_entity, recipient_party, cycle);
+
+-- CONTRIBUTIONS FROM LOBBYISTS BY FEDERAL/STATE
+
+ select date_trunc('second', now()) || ' -- drop table if exists summary_namespace_from_lobbyist';
+ drop table if exists summary_namespace_from_lobbyist;
+
+ select date_trunc('second', now()) || ' -- create table summary_namespace_from_lobbyist';
+ create table summary_namespace_from_lobbyist as
+         select
+             contributor_entity,
+             name,
+             transaction_namespace,
+             cycle,
+             count,
+             amount,
+             rank() over(partition by transaction_namespace,cycle order by amount desc) as rank
+         from
+            summary_namespace_from_indiv s
+            inner join
+            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
+            where im.is_contributor = 't' and im.is_lobbyist = 't'
+            group by contributor_entity, name, transaction_namespace, cycle, count, amount
+   ;
+
+ select date_trunc('second', now()) || ' -- create index summary_namespace_from_lobbyist_idx on summary_namespace_from_lobbyist_org (contributor_entity, cycle)';
+ create index summary_namespace_from_lobbyist_idx on summary_namespace_from_lobbyist (contributor_entity, transaction_namespace, cycle);
+
+ -- CONTRIBUTIONS FROM LOBBYISTS BY SEAT
+
+ select date_trunc('second', now()) || ' -- drop table if exists summary_office_type_from_lobbyist';
+ drop table if exists summary_office_type_from_lobbyist;
+ create table summary_office_type_from_lobbyist as
+         select
+             contributor_entity,
+             name,
+             seat,
+             cycle,
+             count,
+             amount,
+             rank() over(partition by seat,cycle order by amount desc) as rank
+         from
+            summary_office_type_from_indiv s
+            inner join
+            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
+            where im.is_contributor = 't' and im.is_lobbyist = 't'
+            group by contributor_entity, name, seat, cycle, count, amount
+   ;
+
+ select date_trunc('second', now()) || ' -- create index summary_office_type_from_lobbyist_idx on summary_office_type_from_lobbyist (contributor_entity, cycle)';
+ create index summary_office_type_from_lobbyist_idx on summary_office_type_from_lobbyist (contributor_entity, seat, cycle);
+
+ -- CONTRIBUTIONS FROM LOBBYISTS BY GROUP/POLITICIAN
+
+ select date_trunc('second', now()) || ' -- drop table if exists summary_recipient_type_from_lobbyist';
+ drop table if exists summary_recipient_type_from_lobbyist;
+
+ select date_trunc('second', now()) || ' -- create table summary_recipient_type_from_lobbyist';
+ create table summary_recipient_type_from_lobbyist as
+
+      select
+         contributor_entity,
+         name,
+         recipient_type,
+         cycle,
+         count,
+         amount,
+         rank() over (partition by recipient_type, cycle order by sum(amount) desc) as rank
+      from
+        summary_recipient_type_from_indiv s
+        inner join
+        matchbox_individualmetadata im on s.contributor_entity = im.entity_id
+        where im.is_contributor = 't' and im.is_lobbyist = 't'
+        group by contributor_entity,name, recipient_type, cycle, count, amount
+;
+
+  select date_trunc('second', now()) || ' -- create index agg_cands_from_lobbyist_idx on agg_cands_from_lobbyist (contributor_entity, cycle)';
+  create index summary_recipient_type_from_lobbyist_idx on summary_recipient_type_from_lobbyist (contributor_entity, cycle);
