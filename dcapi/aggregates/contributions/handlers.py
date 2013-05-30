@@ -608,6 +608,8 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
 
         return labeled_result
 
+### ORGANIZATIONS
+
 class OrgPartyTotalsHandler(SummaryRollupHandler):
 
     category_map = {'R':'Republicans', 'D':'Democrats'}
@@ -724,6 +726,8 @@ class OrgToPolGroupSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+### CONTRIBUTORS
+
 class ContributorPartyTotalsHandler(SummaryRollupHandler):
 
     category_map = {'R':'Republicans', 'D':'Democrats'}
@@ -731,7 +735,7 @@ class ContributorPartyTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select recipient_party, sum(count) as count, sum(amount) as amount from
-        summary_party_from_indiv
+        summary_party_from_contrib
         where cycle = %s
         group by recipient_party;
     """
@@ -744,7 +748,7 @@ class ContributorPartyTopContributorsByContributionsHandler(SummaryBreakoutHandl
 
     stmt = """
         select name, contributor_entity as id, recipient_party, amount
-          from summary_party_from_indiv
+          from summary_party_from_contrib
          where cycle = %s and rank <= %s;
     """
 
@@ -765,7 +769,7 @@ class ContributorStateFedTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select transaction_namespace, sum(count) as count, sum(amount) as amount from
-        summary_namespace_from_indiv
+        summary_namespace_from_contrib
         where cycle = %s
         group by transaction_namespace;
     """
@@ -778,7 +782,7 @@ class ContributorStateFedTopContributorsByContributionsHandler(SummaryBreakoutHa
 
     stmt = """
         select name, contributor_entity as id, transaction_namespace, amount
-          from summary_namespace_from_indiv
+          from summary_namespace_from_contrib
          where cycle = %s and rank <= %s;
     """
 
@@ -799,7 +803,7 @@ class ContributorRecipientTypeTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select recipient_type, sum(count) as count, sum(amount) as amount from
-        summary_recipient_type_from_indiv
+        summary_recipient_type_from_contrib
         where cycle = %s
         group by recipient_type;
     """
@@ -812,7 +816,7 @@ class ContributorRecipientTypeTopContributorsByContributionsHandler(SummaryBreak
 
     stmt = """
         select name, contributor_entity as id, recipient_type, amount
-          from summary_recipient_type_from_indiv
+          from summary_recipient_type_from_contrib
          where cycle = %s and rank <= %s;
     """
 
