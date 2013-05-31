@@ -96,7 +96,7 @@ from matchbox_entityattribute a
 inner join fec_committees c on (c.committee_id = a.value and a.namespace = 'urn:fec:committee')
 where
     tmp_matchbox_organizationmetadata.entity_id = a.entity_id
-    and tmp_matchbox_organizationmetadata.cycle = 2012
+    and tmp_matchbox_organizationmetadata.cycle = c.cycle
     and c.committee_type = 'O'
 ;
 
