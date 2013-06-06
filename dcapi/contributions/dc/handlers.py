@@ -40,7 +40,6 @@ CONTRIBUTION_SCHEMA = Schema(
 
 def filter_contributions(request):
     query = CONTRIBUTION_SCHEMA.build_filter(ContributionDC.objects, request).order_by()
-    print query.query
     return query
 
 

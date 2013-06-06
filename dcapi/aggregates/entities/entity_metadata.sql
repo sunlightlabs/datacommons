@@ -106,8 +106,55 @@ from matchbox_entityattribute a
 inner join fec_committees c on (c.committee_id = a.value and a.namespace = 'urn:fec:committee')
 where
     tmp_matchbox_organizationmetadata.entity_id = a.entity_id
-    and tmp_matchbox_organizationmetadata.cycle = 2012
+    and tmp_matchbox_organizationmetadata.cycle = c.cycle
     and c.committee_type = 'O'
+;
+
+
+-- update interest group type from FEC data
+-- will mark a type as true if any committee associated with the org
+-- during a given cycle has the group type
+update matchbox_organizationmetadata meta set
+    is_corporation = i.is_corporation,
+    is_labor_org = i.is_labor_org,
+    is_membership_org = i.is_membership_org,
+    is_trade_assoc = i.is_trade_assoc,
+    is_cooperative = i.is_cooperative,
+    is_corp_w_o_capital_stock = i.is_corp_w_o_capital_stock
+from (
+    select 
+        entity_id,
+        committee_id,
+        cycle,
+        bool_or(is_corporation) as is_corporation,
+        bool_or(is_labor_org) as is_labor_org,
+        bool_or(is_membership_org) as is_membership_org,
+        bool_or(is_trade_assoc) as is_trade_assoc,
+        bool_or(is_cooperative) as is_cooperative,
+        bool_or(is_corp_w_o_capital_stock) as is_corp_w_o_capital_stock
+    from (
+        select
+            entity_id,
+            committee_id,
+            om.cycle,
+            case when interest_group = 'C' then 't'::boolean else 'f'::boolean end as is_corporation,
+            case when interest_group = 'L' then 't'::boolean else 'f'::boolean end as is_labor_org,
+            case when interest_group = 'M' then 't'::boolean else 'f'::boolean end as is_membership_org,
+            case when interest_group = 'T' then 't'::boolean else 'f'::boolean end as is_trade_assoc,
+            case when interest_group = 'V' then 't'::boolean else 'f'::boolean end as is_cooperative,
+            case when interest_group = 'W' then 't'::boolean else 'f'::boolean end as is_corp_w_o_capital_stock
+        from
+            matchbox_organizationmetadata om
+            inner join matchbox_entityattribute ea using (entity_id)
+            inner join fec_committees fec on ea.value = committee_id and om.cycle = fec.cycle
+        where
+            ea.namespace = 'urn:fec:committee'
+    ) x
+    group by entity_id, committee_id, cycle
+) i
+where
+    meta.entity_id = i.entity_id
+    and meta.cycle = i.cycle
 ;
 
 
@@ -174,6 +221,7 @@ create table organization_metadata_latest_cycle_view as
     from matchbox_organizationmetadata
     order by entity_id, cycle desc
 ;
+create index organization_metadata_latest_cycle_view__entity_id__idx on organization_metadata_latest_cycle_view (entity_id);
 commit;
 
 -- Politician Metadata
@@ -214,8 +262,8 @@ analyze matchbox_politicianmetadata;
 commit;
 
 begin;
-drop table politician_metadata_latest_cycle_view;
-create table if exists politician_metadata_latest_cycle_view as
+drop table if exists politician_metadata_latest_cycle_view;
+create table politician_metadata_latest_cycle_view as
     select distinct on (entity_id)
         entity_id,
         cycle,
@@ -233,6 +281,31 @@ create table if exists politician_metadata_latest_cycle_view as
 ;
 commit;
 
+-- Individual Metadata
+
+begin;
+create temp table tmp_matchbox_individualmetadata as select * from matchbox_individualmetadata limit 0;
+
+insert into tmp_matchbox_individualmetadata (entity_id, is_contributor, is_lobbyist)
+    select id, 'f', 'f' from matchbox_entity where type = 'individual';
+
+update tmp_matchbox_individualmetadata
+set is_contributor = 't'
+where entity_id in (select entity_id from contributor_associations);
+
+update tmp_matchbox_individualmetadata
+set is_lobbyist = 't'
+where entity_id in (select entity_id from assoc_lobbying_lobbyist);
+
+delete from matchbox_individualmetadata;
+
+insert into matchbox_individualmetadata (entity_id, is_contributor, is_lobbyist)
+    select entity_id, is_contributor, is_lobbyist from tmp_matchbox_individualmetadata;
+commit;
+
+begin;
+analyze matchbox_individualmetadata;
+commit;
 
 -- Indiv/Org Affiliations
 

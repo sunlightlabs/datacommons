@@ -33,7 +33,7 @@ class Contract(models.Model):
     contractfinancing = models.CharField(max_length=1, blank=True)
     costorpricingdata = models.CharField(max_length=1, blank=True)
     costaccountingstandardsclause = models.CharField(max_length=1, blank=True)
-    descriptionofcontractrequirement = models.TextField(blank=True)
+    descriptionofcontractrequirement = models.TextField(blank=True, null=True)
     purchasecardaspaymentmethod = models.NullBooleanField()
     numberofactions = models.IntegerField(null=True)
     nationalinterestactioncode = models.CharField(max_length=64, blank=True)
