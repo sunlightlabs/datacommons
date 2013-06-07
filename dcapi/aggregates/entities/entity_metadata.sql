@@ -207,7 +207,13 @@ create table organization_metadata_latest_cycle_view as
         parent_entity_id,
         industry_entity_id,
         subindustry_entity_id,
-        is_superpac
+        is_superpac,
+        is_corporation,
+        is_labor_org,
+        is_membership_org,
+        is_trade_assoc,
+        is_cooperative,
+        is_corp_w_o_capital_stock
     from matchbox_organizationmetadata
     order by entity_id, cycle desc
 ;
