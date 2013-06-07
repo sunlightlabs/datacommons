@@ -138,12 +138,13 @@ class Entity(models.Model):
                 metadata['affiliated_superpacs'] = [ x.superpac_entity.public_representation() for x in self.affiliated_superpacs.all() ]
 
         elif self.type == 'individual':
-            # in the future, individuals should probably have their own metadata table,
-            # just like the other entity types, but since it would essentially be a
-            # dummy table and we only have one attribute (on its own table), leaving it out for now
             metadata.update({'affiliated_organizations': [ x.organization_entity.public_representation() for x in self.affiliated_organizations.all()]})
+
             if hasattr(self, 'political_activity'):
                 metadata['revolving_door_entity'] = self.political_activity.politician_entity.public_representation()
+
+            if hasattr(self, 'individual_metadata'):
+                metadata.update(model_to_dict(self.individual_metadata))
 
         elif self.type == 'industry' and hasattr(self, 'industry_metadata'):
             metadata.update(self.industry_metadata.to_dict())
@@ -223,12 +224,17 @@ class OrganizationMetadata(ExtensibleModel):
 
     cycle = models.PositiveSmallIntegerField(db_index=True)
 
-    lobbying_firm   = models.BooleanField(default=False)
-    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True, db_index=True)
-    industry_entity = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True, db_index=True)
-    subindustry_entity = models.ForeignKey(Entity, related_name='subindustry_entity_for_cycle', null=True, db_index=True)
-    is_superpac     = models.BooleanField(default=False)
-
+    lobbying_firm             = models.BooleanField(default=False)
+    parent_entity             = models.ForeignKey(Entity, related_name='child_entity_set_for_cycle', null=True, db_index=True)
+    industry_entity           = models.ForeignKey(Entity, related_name='industry_entity_for_cycle', null=True, db_index=True)
+    subindustry_entity        = models.ForeignKey(Entity, related_name='subindustry_entity_for_cycle', null=True, db_index=True)
+    is_superpac               = models.BooleanField(default=False)
+    is_corporation            = models.BooleanField(default=False)
+    is_labor_org              = models.BooleanField(default=False)
+    is_membership_org         = models.BooleanField(default=False)
+    is_trade_assoc            = models.BooleanField(default=False)
+    is_cooperative            = models.BooleanField(default=False)
+    is_corp_w_o_capital_stock = models.BooleanField(default=False)
 
     @property
     def child_entities(self):
@@ -246,10 +252,16 @@ class OrganizationMetadataLatest(ExtensibleModel):
 
     cycle = models.PositiveSmallIntegerField()
 
-    lobbying_firm   = models.BooleanField(default=False)
-    parent_entity   = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
-    industry_entity = models.ForeignKey(Entity, related_name='industry_entity', null=True)
-    is_superpac     = models.BooleanField(default=False)
+    lobbying_firm             = models.BooleanField(default=False)
+    parent_entity             = models.ForeignKey(Entity, related_name='child_entity_set', null=True)
+    industry_entity           = models.ForeignKey(Entity, related_name='industry_entity', null=True)
+    is_superpac               = models.BooleanField(default=False)
+    is_corporation            = models.BooleanField(default=False)
+    is_labor_org              = models.BooleanField(default=False)
+    is_membership_org         = models.BooleanField(default=False)
+    is_trade_assoc            = models.BooleanField(default=False)
+    is_cooperative            = models.BooleanField(default=False)
+    is_corp_w_o_capital_stock = models.BooleanField(default=False)
 
     @property
     def child_entities(self):
@@ -311,6 +323,16 @@ class IndustryMetadata(ExtensibleModel):
 
     class Meta:
         db_table = 'matchbox_industrymetadata'
+
+
+class IndividualMetadata(models.Model):
+    entity = models.OneToOneField(Entity, related_name='individual_metadata', null=False)
+    is_contributor = models.BooleanField(default=True)
+    is_lobbyist = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'matchbox_individualmetadata'
+
 
 class IndivOrgAffiliations(models.Model):
     individual_entity = models.ForeignKey(Entity, null=False, related_name="affiliated_organizations")

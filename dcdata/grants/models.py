@@ -1,6 +1,5 @@
 from django.contrib.localflavor.us.models import USStateField
 from django.db import models
-from dcdata.models import Import
 
 RECORD_TYPES = (
     ('1', "County aggregate reporting"),
