@@ -114,7 +114,8 @@ where
 -- update interest group type from FEC data
 -- will mark a type as true if any committee associated with the org
 -- during a given cycle has the group type
-update matchbox_organizationmetadata meta set
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (types are true if any committee assoc w/ org has that type)';
+update tmp_matchbox_organizationmetadata meta set
     is_corporation = i.is_corporation,
     is_labor_org = i.is_labor_org,
     is_membership_org = i.is_membership_org,
