@@ -5,7 +5,10 @@
 
 
 begin;
+select date_trunc('second', now()) || ' -- drop table tmp_matchbox_organizationmetadata';
 drop table if exists tmp_matchbox_organizationmetadata;
+
+select date_trunc('second', now()) || ' -- create table tmp_matchbox_organizationmetadata';
 create table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
 insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
@@ -32,9 +35,11 @@ where
     and tmp.cycle = x.cycle
 ;
 
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (lobbying_firm = f where null';
 update tmp_matchbox_organizationmetadata set lobbying_firm = 'f' where lobbying_firm is null;
 
 -- populate parent company from contributions
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (populate parent company from contributions)';
 update
     tmp_matchbox_organizationmetadata as tmp
 set
@@ -61,6 +66,7 @@ where
 ;
 
 -- populate parent company from lobbying
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (populate parent company from lobbying)';
 update
     tmp_matchbox_organizationmetadata as tmp
 set
@@ -90,6 +96,7 @@ where
 
 
 -- update is_superpac from FEC data
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (update is_superpac from FEC data)';
 update tmp_matchbox_organizationmetadata
 set is_superpac = true
 from matchbox_entityattribute a
@@ -148,6 +155,7 @@ where
 ;
 
 
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (industry and subindustry ids)';
 update
     tmp_matchbox_organizationmetadata as om
 set
