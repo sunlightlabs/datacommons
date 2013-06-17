@@ -192,8 +192,36 @@ commit;
 begin;
 delete from matchbox_organizationmetadata;
 
-insert into matchbox_organizationmetadata (entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id)
-    select entity_id, cycle, lobbying_firm, parent_entity_id, industry_entity_id, subindustry_entity_id from tmp_matchbox_organizationmetadata
+insert into matchbox_organizationmetadata (
+    entity_id, 
+    cycle, 
+    lobbying_firm, 
+    parent_entity_id, 
+    industry_entity_id, 
+    subindustry_entity_id,
+    is_superpac,
+    is_corporation,
+    is_labor_org,
+    is_membership_org,
+    is_trade_assoc,
+    is_cooperative,
+    is_corp_w_o_capital_stock
+)
+    select 
+    entity_id, 
+    cycle, 
+    lobbying_firm, 
+    parent_entity_id, 
+    industry_entity_id, 
+    subindustry_entity_id,
+    is_superpac,
+    is_corporation,
+    is_labor_org,
+    is_membership_org,
+    is_trade_assoc,
+    is_cooperative,
+    is_corp_w_o_capital_stock
+    from tmp_matchbox_organizationmetadata
     where entity_id in (select id from matchbox_entity)
         and (parent_entity_id is null or parent_entity_id in (select id from matchbox_entity))
     ;
@@ -210,13 +238,19 @@ begin;
 drop table if exists organization_metadata_latest_cycle_view;
 create table organization_metadata_latest_cycle_view as
     select distinct on (entity_id)
-        entity_id,
-        cycle,
-        lobbying_firm,
-        parent_entity_id,
-        industry_entity_id,
-        subindustry_entity_id,
-        is_superpac
+    entity_id, 
+    cycle, 
+    lobbying_firm, 
+    parent_entity_id, 
+    industry_entity_id, 
+    subindustry_entity_id 
+    is_superpac,
+    is_corporation,
+    is_labor_org,
+    is_membership_org,
+    is_trade_assoc,
+    is_cooperative,
+    is_corp_w_o_capital_stock
     from matchbox_organizationmetadata
     order by entity_id, cycle desc
 ;
