@@ -333,7 +333,8 @@ class EntityAdvSearchHandler(BaseHandler):
                 extra_joins.append("inner join (select distinct on (entity_id) * from matchbox_entityattribute where namespace = 'urn:fec:committee') mbea on e.id = mbea.entity_id")
             elif subtype == 'other_orgs':
                 where_filters.append("e.type = 'organization' and mbom.lobbying_firm = 'f'")
-                where_filters.append("e.id not in (select distinct entity_id from matchbox_entityattribute where namespace = 'urn:fec:committee')")
+                where_filters.append("(coalesce(mbea.value, '') = '' or mbom.is_corporation = 't' or mbom.is_cooperative = 't' or mbom.is_corp_w_o_capital_stock = 't')")
+                extra_joins.append("left join (select distinct on (entity_id) * from matchbox_entityattribute where namespace = 'urn:fec:committee') mbea on e.id = mbea.entity_id")
                 extra_joins.append("left join (select distinct on (entity_id) * from matchbox_organizationmetadata order by entity_id, cycle desc) mbom on e.id = mbom.entity_id")
         else:
             # subtype implies type, so only use explicit type if there's not a subtype
@@ -354,6 +355,8 @@ class EntityAdvSearchHandler(BaseHandler):
         total = len(raw_result)
         results = [dict(zip(self.fields, row)) for row in raw_result[start:end]]
 
+        print raw_result, results
+
         if total:
             ids = ','.join(["'%s'" % row['id'] for row in results])
 
@@ -370,6 +373,7 @@ class EntityAdvSearchHandler(BaseHandler):
                 # match metadata, but strip out year keys
                 meta = entities[row['id']].metadata if row['id'] in entities else None
                 row['metadata'] = {k: v for k, v in meta.items() if not (type(k) == int or k.isdigit())} if meta else None
+                row['external_ids'] = [{'namespace': attr.namespace, 'id': attr.value} for attr in entities[row['id']].attributes.all()] if row['id'] in entities else None
 
         return {
             'results': results,
