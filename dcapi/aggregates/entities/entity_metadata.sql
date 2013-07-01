@@ -170,12 +170,12 @@ from (
        entity_id,
        committee_id,
        -1                                   as cycle,
-       greatest(is_corporation)             as is_corporation,
-       greatest(is_labor_org)               as is_labor_org,
-       greatest(is_membership_org)          as is_membership_org,
-       greatest(is_trade_assoc)             as is_trade_assoc,
-       greatest(is_cooperative)             as is_cooperative,
-       greatest(is_corp_w_o_capital_stock)  as is_corp_w_o_capital_stock
+       bool_or(is_corporation)             as is_corporation,
+       bool_or(is_labor_org)               as is_labor_org,
+       bool_or(is_membership_org)          as is_membership_org,
+       bool_or(is_trade_assoc)             as is_trade_assoc,
+       bool_or(is_cooperative)             as is_cooperative,
+       bool_or(is_corp_w_o_capital_stock)  as is_corp_w_o_capital_stock
     from attributes_by_cycle
     group by entity_id,committee_id
 
@@ -185,6 +185,15 @@ where
     meta.entity_id = i.entity_id
     and meta.cycle = i.cycle
 ;
+
+
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (is_org and is_pol_group)';
+update
+    tmp_matchbox_organizationmetadata as om
+set
+    is_org = true
+where 
+    boolom.
 
 
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (industry and subindustry ids)';
