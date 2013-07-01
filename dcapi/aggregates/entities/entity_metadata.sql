@@ -246,7 +246,9 @@ delete from matchbox_organizationmetadata;
 insert into matchbox_organizationmetadata (
     entity_id, 
     cycle, 
-    lobbying_firm, 
+    lobbying_firm,
+    is_org,
+    is_pol_group,
     parent_entity_id, 
     industry_entity_id, 
     subindustry_entity_id,
@@ -261,7 +263,9 @@ insert into matchbox_organizationmetadata (
     select 
     entity_id, 
     cycle, 
-    lobbying_firm, 
+    lobbying_firm,
+    is_org,
+    is_pol_group,
     parent_entity_id, 
     industry_entity_id, 
     subindustry_entity_id,
@@ -291,7 +295,9 @@ create table organization_metadata_latest_cycle_view as
     select distinct on (entity_id)
     entity_id, 
     cycle, 
-    lobbying_firm, 
+    lobbying_firm,
+    is_org,
+    is_pol_group,
     parent_entity_id, 
     industry_entity_id, 
     subindustry_entity_id 
