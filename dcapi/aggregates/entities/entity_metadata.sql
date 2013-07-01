@@ -113,6 +113,7 @@ where
 -- during a given cycle has the group type
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (types are true if any committee assoc w/ org has that type)';
 update tmp_matchbox_organizationmetadata meta set
+    is_pol_group = i.is_pol_group,
     is_corporation = i.is_corporation,
     is_labor_org = i.is_labor_org,
     is_membership_org = i.is_membership_org,
@@ -125,6 +126,7 @@ from (
             entity_id,
             committee_id,
             cycle,
+            is_pol_group,
             bool_or(is_corporation) as is_corporation,
             bool_or(is_labor_org) as is_labor_org,
             bool_or(is_membership_org) as is_membership_org,
@@ -136,6 +138,7 @@ from (
                 entity_id,
                 committee_id,
                 om.cycle,
+                true as is_pol_group,  -- all orgs with FEC ids are pol groups
                 case when interest_group = 'C' then 't'::boolean else 'f'::boolean end as is_corporation,
                 case when interest_group = 'L' then 't'::boolean else 'f'::boolean end as is_labor_org,
                 case when interest_group = 'M' then 't'::boolean else 'f'::boolean end as is_membership_org,
@@ -156,6 +159,7 @@ from (
        entity_id,
        committee_id,
        cycle,
+       is_pol_group,
        is_corporation,
        is_labor_org,
        is_membership_org,
@@ -170,6 +174,7 @@ from (
        entity_id,
        committee_id,
        -1                                   as cycle,
+       bool_or(is_pol_group)                as is_pol_group,
        bool_or(is_corporation)             as is_corporation,
        bool_or(is_labor_org)               as is_labor_org,
        bool_or(is_membership_org)          as is_membership_org,
@@ -186,14 +191,20 @@ where
     and meta.cycle = i.cycle
 ;
 
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (is_org)';
 
-select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (is_org and is_pol_group)';
 update
     tmp_matchbox_organizationmetadata as om
 set
     is_org = true
 where 
-    boolom.
+   (is_corporation 
+        OR 
+    is_cooperative 
+        OR
+    is_corp_w_o_capital_stock
+        OR
+    ( NOT is_pol_group));
 
 
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (industry and subindustry ids)';
