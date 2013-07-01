@@ -12,13 +12,13 @@ select date_trunc('second', now()) || ' -- create table tmp_matchbox_organizatio
 create table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
 insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
-    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id) where cycle != -1
+    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_registrant using (transaction_id)
     union
-    select distinct entity_id, cycle from agg_entities agg inner join matchbox_entity e on e.id = agg.entity_id where type = 'organization' and cycle != -1
+    select distinct entity_id, cycle from agg_entities agg inner join matchbox_entity e on e.id = agg.entity_id where type = 'organization'
     union
-    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_client using (transaction_id) where cycle != -1
+    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_client using (transaction_id)
     union
-    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_client_parent using (transaction_id) where cycle != -1
+    select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_client_parent using (transaction_id)
 ;
 
 update
@@ -120,36 +120,67 @@ update tmp_matchbox_organizationmetadata meta set
     is_cooperative = i.is_cooperative,
     is_corp_w_o_capital_stock = i.is_corp_w_o_capital_stock
 from (
-    select 
-        entity_id,
-        committee_id,
-        cycle,
-        bool_or(is_corporation) as is_corporation,
-        bool_or(is_labor_org) as is_labor_org,
-        bool_or(is_membership_org) as is_membership_org,
-        bool_or(is_trade_assoc) as is_trade_assoc,
-        bool_or(is_cooperative) as is_cooperative,
-        bool_or(is_corp_w_o_capital_stock) as is_corp_w_o_capital_stock
-    from (
-        select
+    with attributes_by_cycle as 
+        (select 
             entity_id,
             committee_id,
-            om.cycle,
-            case when interest_group = 'C' then 't'::boolean else 'f'::boolean end as is_corporation,
-            case when interest_group = 'L' then 't'::boolean else 'f'::boolean end as is_labor_org,
-            case when interest_group = 'M' then 't'::boolean else 'f'::boolean end as is_membership_org,
-            case when interest_group = 'T' then 't'::boolean else 'f'::boolean end as is_trade_assoc,
-            case when interest_group = 'V' then 't'::boolean else 'f'::boolean end as is_cooperative,
-            case when interest_group = 'W' then 't'::boolean else 'f'::boolean end as is_corp_w_o_capital_stock
-        from
-            matchbox_organizationmetadata om
-            inner join matchbox_entityattribute ea using (entity_id)
-            inner join fec_committees fec on ea.value = committee_id and om.cycle = fec.cycle
-        where
-            ea.namespace = 'urn:fec:committee'
-    ) x
-    group by entity_id, committee_id, cycle
+            cycle,
+            bool_or(is_corporation) as is_corporation,
+            bool_or(is_labor_org) as is_labor_org,
+            bool_or(is_membership_org) as is_membership_org,
+            bool_or(is_trade_assoc) as is_trade_assoc,
+            bool_or(is_cooperative) as is_cooperative,
+            bool_or(is_corp_w_o_capital_stock) as is_corp_w_o_capital_stock
+        from (
+            select
+                entity_id,
+                committee_id,
+                om.cycle,
+                case when interest_group = 'C' then 't'::boolean else 'f'::boolean end as is_corporation,
+                case when interest_group = 'L' then 't'::boolean else 'f'::boolean end as is_labor_org,
+                case when interest_group = 'M' then 't'::boolean else 'f'::boolean end as is_membership_org,
+                case when interest_group = 'T' then 't'::boolean else 'f'::boolean end as is_trade_assoc,
+                case when interest_group = 'V' then 't'::boolean else 'f'::boolean end as is_cooperative,
+                case when interest_group = 'W' then 't'::boolean else 'f'::boolean end as is_corp_w_o_capital_stock
+            from
+                matchbox_organizationmetadata om
+                inner join matchbox_entityattribute ea using (entity_id)
+                inner join fec_committees fec on ea.value = committee_id and om.cycle = fec.cycle
+            where
+                ea.namespace = 'urn:fec:committee'
+        ) x
+
+        group by entity_id, committee_id, cycle)
+
+    select 
+       entity_id,
+       committee_id,
+       cycle,
+       is_corporation,
+       is_labor_org,
+       is_membership_org,
+       is_trade_assoc,
+       is_cooperative,
+       is_corp_w_o_capital_stock
+    from attributes_by_cycle
+
+    union all
+
+    select
+       entity_id,
+       committee_id,
+       -1                                   as cycle,
+       greatest(is_corporation)             as is_corporation,
+       greatest(is_labor_org)               as is_labor_org,
+       greatest(is_membership_org)          as is_membership_org,
+       greatest(is_trade_assoc)             as is_trade_assoc,
+       greatest(is_cooperative)             as is_cooperative,
+       greatest(is_corp_w_o_capital_stock)  as is_corp_w_o_capital_stock
+    from attributes_by_cycle
+    group by entity_id,committee_id
+
 ) i
+
 where
     meta.entity_id = i.entity_id
     and meta.cycle = i.cycle
