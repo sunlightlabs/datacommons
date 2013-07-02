@@ -126,7 +126,7 @@ from (
             entity_id,
             committee_id,
             cycle,
-            is_pol_group,
+            bool_or(is_pol_group) as is_pol_group,
             bool_or(is_corporation) as is_corporation,
             bool_or(is_labor_org) as is_labor_org,
             bool_or(is_membership_org) as is_membership_org,
