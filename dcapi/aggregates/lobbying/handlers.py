@@ -385,6 +385,7 @@ class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
 class OrgBillsSummaryHandler(SummaryHandler):
     rollup = OrgBillsTotalsHandler()
     breakout = OrgBillsBiggestOrgsByAmountHandler()
+
     def key_function(self,x):
         return x['bill_id']
         # issue = x['issue']

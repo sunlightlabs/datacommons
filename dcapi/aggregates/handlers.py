@@ -5,6 +5,7 @@ from piston.handler import BaseHandler
 from piston.utils import rc
 if settings.DEBUG:
     import sys
+    import json
 
 # at the database level -1 is used to indicate summation over all cycles
 ALL_CYCLES = '-1'
@@ -55,7 +56,7 @@ def execute(cursor, stmt, args):
         cursor.execute('explain ' + stmt, args)
         for x in cursor.fetchall():
             print x[0]
-        
+
     try:
         # Just gonna leave this here...
         # print cursor.mogrify(stmt, args)
