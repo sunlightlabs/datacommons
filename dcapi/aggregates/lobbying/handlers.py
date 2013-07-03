@@ -1,7 +1,73 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
+
 from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
 from dcapi.aggregates.handlers import TopListHandler
 from dcapi.aggregates.handlers import SummaryHandler, SummaryRollupHandler, \
                                       SummaryBreakoutHandler
+
+from dcdata.lobbying.models import Bill, BillTitle, Issue
+
+import requests
+
+def obtain_bill_title(bill):
+    try:
+        bt = BillTitle.objects.get(bill_no=bill.bill_no, bill_type=bill.bill_type, congress_no=bill.congress_no)
+        return bt.title
+    except:
+        return '(Title Unknown)'
+
+def congress_metadata(bill):
+    metadata = bill.__dict__.copy()
+
+    metadata['bill_title'] = obtain_bill_title(bill)
+    metadata['bill_issue'] = bill.issue.general_issue if bill.issue else None
+
+    if metadata['congress_no'] >= 111:
+        type_map = { 'h'     : 'hr'     ,
+                     'hr'    : 'hres'   ,
+                     'hj'    : 'hjres'  ,
+                     'hc'    : 'hconres',
+                     's'     : 's'      ,
+                     'sr'    : 'sres'   ,
+                     'sj'    : 'sjres'  ,
+                     'sc'    : 'sconres',
+                     'hamdt' : 'hamdt'  ,
+                     'samdt' : 'samdt'  }
+
+        bill_type = type_map.get(metadata['bill_type'] if metadata['bill_type'] else
+                              metadata['bill_type_raw'].lower(), None)
+
+        if bill_type:
+            params = {  'bill_type' : bill_type,
+                        'congress'  : bill.congress_no,
+                        'number'    : bill.bill_no,
+                        'apikey'    : settings.SYSTEM_API_KEY}
+
+            params.update({ 'fields'  : ','.join([  'official_title',
+                                                    'short_title',
+                                                    'title',
+                                                    'popular_title',
+                                                    'nicknames',
+                                                    'last_action',
+                                                    'summary',
+                                                    'summary_short',
+                                                    'urls.govtrack'])})
+
+            congress_url = 'http://congress.api.sunlightfoundation.com/bills'
+
+            r = requests.get(congress_url, params=params)
+            res = r.json
+            if r.ok and res['count'] == 1:
+                tmp = metadata.pop('bill_title',None)
+                metadata['congress_metadata'] = res['results'][0]
+            else:
+                print "something went wrong"
+                print r.url
+                print "status was {code} {reason}".format(code=r.status_code, reason=r.reason)
+                print "json was \n {j}".format(j=r.json)
+
+    return metadata
 
 class OrgRegistrantsHandler(EntityTopListHandler):
     fields = ['registrant_name', 'registrant_entity', 'count', 'amount']
@@ -326,3 +392,17 @@ class OrgBillsSummaryHandler(SummaryHandler):
         #     return self.rollup.category_map
         # else:
         #     return self.rollup.default_key
+
+    def read(self, request, **kwargs):
+        labeled_results = super(OrgBillsSummaryHandler, self).read(request)
+        for lr in labeled_results:
+            try:
+                bill = Bill.objects.get(bill_id=lr['name'])
+            except ObjectDoesNotExist:
+                import json
+                print 'bill_id {bid} does not exist?!'.format(bid=lr['name'])
+                print 'labeled_result:\n{d}'.format(d=json.dumps(lr,indent=2))
+            bill_metadata = congress_metadata(bill)
+            lr['metadata'] = bill_metadata
+            lr['name'] = bill.bill_name + ' (' + str(bill.congress_no) +')'
+        return labeled_results
