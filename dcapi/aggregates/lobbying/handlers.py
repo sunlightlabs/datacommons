@@ -270,7 +270,7 @@ class OrgBillsTotalsHandler(SummaryRollupHandler):
     stmt = """
         select category, count, amount
         from
-        (select bill_id, bill_name || ' (' || congress_no::varchar || ')' as category, sum(count) as count, sum(amount) as amount
+        (select bill_id as category, bill_name, sum(count) as count, sum(amount) as amount
         from summary_lobbying_bills_for_biggest_org
         where cycle = %s
         group by bill_id, bill_name, congress_no
@@ -282,25 +282,37 @@ class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'bill_name', 'amount']
+    fields = ['name', 'id', 'bill_id', 'amount']
+
+    type_list = [str,str,int,float]
 
     stmt = """
        with top_bills as
         (
-        select bill_id, bill_name || ' (' || congress_no::varchar || ')' as category, congress_no, sum(count) as count, sum(amount) as amount
+        select
+            bill_id,
+            bill_name,
+            congress_no,
+            cycle,
+            sum(count) as count,
+            sum(amount) as amount
         from summary_lobbying_bills_for_biggest_org
         where cycle = %s
-        group by bill_id, bill_name, congress_no
+        group by bill_id, bill_name, congress_no, cycle
         order by sum(amount) desc
         limit 10
         )
 
-       select name, id, bill_name, amount
+       select
+            name,
+            id,
+            bill_id,
+            amount
         from
-        (select client_name as name, client_entity as id, s.bill_id, s.bill_name || ' (' || s.congress_no::varchar || ')' as bill_name, s.congress_no, s.amount,
+        (select client_name as name, client_entity as id, s.bill_id, s.bill_name, s.congress_no, s.amount,
         rank() over(partition by s.bill_id order by rank_by_amount) as rank
         from summary_lobbying_bills_for_biggest_org s
-        join top_bills t on s.bill_id = t.bill_id and s.congress_no = t.congress_no) sub
+        join top_bills t on s.bill_id = t.bill_id and s.congress_no = t.congress_no and s.cycle = t.cycle) sub
         where rank <= %s;
     """
 
@@ -308,7 +320,7 @@ class OrgBillsSummaryHandler(SummaryHandler):
     rollup = OrgBillsTotalsHandler()
     breakout = OrgBillsBiggestOrgsByAmountHandler()
     def key_function(self,x):
-        return x['bill_name']
+        return x['bill_id']
         # issue = x['issue']
         # if direct_or_indiv in self.rollup.category_map:
         #     return self.rollup.category_map
