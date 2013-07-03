@@ -270,10 +270,10 @@ class OrgBillsTotalsHandler(SummaryRollupHandler):
     stmt = """
         select category, count, amount
         from
-        (select bill_id, bill_name as category, cycle, sum(count) as count, sum(amount) as amount
+        (select bill_id, bill_name || ' (' || congress_no::varchar || ')' as category, sum(count) as count, sum(amount) as amount
         from summary_lobbying_bills_for_biggest_org
         where cycle = %s
-        group by bill_id, bill_name, cycle
+        group by bill_id, bill_name, congress_no
         order by sum(amount) desc
         limit 10) x;
     """
@@ -287,20 +287,20 @@ class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
     stmt = """
        with top_bills as
         (
-        select bill_id, bill_name as category, cycle, sum(count) as count, sum(amount) as amount
+        select bill_id, bill_name || ' (' || congress_no::varchar || ')' as category, congress_no, sum(count) as count, sum(amount) as amount
         from summary_lobbying_bills_for_biggest_org
         where cycle = %s
-        group by bill_id, bill_name, cycle
+        group by bill_id, bill_name, congress_no
         order by sum(amount) desc
         limit 10
         )
 
        select name, id, bill_name, amount
         from
-        (select client_name as name, client_entity as id, s.bill_id, s.bill_name, s.amount,
+        (select client_name as name, client_entity as id, s.bill_id, s.bill_name || ' (' || s.congress_no::varchar || ')' as bill_name, s.congress_no, s.amount,
         rank() over(partition by s.bill_id order by rank_by_amount) as rank
         from summary_lobbying_bills_for_biggest_org s
-        join top_bills t on s.bill_id = t.bill_id and s.cycle = t.cycle) sub
+        join top_bills t on s.bill_id = t.bill_id and s.congress_no = t.congress_no) sub
         where rank <= %s;
     """
 
