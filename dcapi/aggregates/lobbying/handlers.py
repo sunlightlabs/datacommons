@@ -84,6 +84,18 @@ def gather_bill_metadata(bill):
 
     return metadata
 
+def gather_issue_metadata(issue):
+    metadata = issue.__dict__.copy()
+    del metadata['_state']
+    del metadata['id']
+    del metadata['transaction_id']
+    del metadata['year']
+    del metadata['specific_issue']
+
+    #metadata['top_bills'] perhaps a call to a new handler, here
+    
+    return metadata
+
 class OrgRegistrantsHandler(EntityTopListHandler):
     fields = ['registrant_name', 'registrant_entity', 'count', 'amount']
 
@@ -342,7 +354,21 @@ class OrgIssuesSummaryHandler(SummaryHandler):
         #     return self.rollup.category_map
         # else:
         #     return self.rollup.default_key
+    
+    def read(self, request, **kwargs):
+        labeled_results = super(OrgIssuesSummaryHandler, self).read(request)
 
+        for lr in labeled_results:
+            #try:
+            issue = Issue.objects.filter(general_issue=lr['name'])[0]
+            #except ObjectDoesNotExist:
+            #    import json
+            #    print 'bill_id {bid} does not exist?!'.format(bid=lr['name'])
+            #    print 'labeled_result:\n{d}'.format(d=json.dumps(lr,indent=2))
+            issue_metadata = gather_issue_metadata(issue)
+            lr['metadata'] = issue_metadata
+
+        return labeled_results
 
 class OrgBillsTotalsHandler(SummaryRollupHandler):
 
