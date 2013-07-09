@@ -83,7 +83,7 @@
   ;
   
   select date_trunc('second', now()) || ' -- create index summary_lobbying_issues_for_biggest_org_idx on summary_lobbying_issues_for_biggest_org (client_entity, cycle)';
-  create index summary_lobbying_issues_for_biggest_org_idx on summary_lobbying_top_biggest_orgs_for_issue (issue, client_entity, cycle);
+  create index summary_lobbying_top_biggest_orgs_for_issue_idx on summary_lobbying_top_biggest_orgs_for_issue (issue, client_entity, cycle);
 
 
  
