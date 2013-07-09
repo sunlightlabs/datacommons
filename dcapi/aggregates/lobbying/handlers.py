@@ -13,12 +13,14 @@ import requests
 def obtain_bill_title(bill):
     try:
         bt = BillTitle.objects.get(bill_no=bill.bill_no, bill_type=bill.bill_type, congress_no=bill.congress_no)
+        print bt.title
         return bt.title
     except:
         return '(Title Unknown)'
 
-def congress_metadata(bill):
+def gather_bill_metadata(bill):
     metadata = bill.__dict__.copy()
+    del metadata['_state']
 
     metadata['bill_title'] = obtain_bill_title(bill)
     metadata['bill_issue'] = bill.issue.general_issue if bill.issue else None
@@ -59,8 +61,21 @@ def congress_metadata(bill):
             r = requests.get(congress_url, params=params)
             res = r.json
             if r.ok and res['count'] == 1:
-                tmp = metadata.pop('bill_title',None)
-                metadata['congress_metadata'] = res['results'][0]
+                #tmp = metadata.pop('bill_title',None)
+                cm = res['results'][0]
+                metadata['display_title'] = cm.get('popular_title', None)       or \
+                                            cm.get('short_title', None)         or \
+                                            cm.get('official_title', None)      or \
+                                            metadata.get('bill_title', None)    or \
+                                            metadata['bill_name']
+                nicknames = cm.get('nicknames', None) 
+                metadata['display_subtitle'] = metadata['bill_name']
+                metadata['display_nicknames'] = ', '.join(['"'+n+'"' for n in nicknames]) if nicknames else None
+                metadata['url'] = cm['urls'].get('govtrack', None) if cm.get('urls', None) else None
+                metadata['last_action'] = cm.get('last_action', None)
+                metadata['display_summary'] = cm.get('summary_short', None)     or \
+                                              cm.get('summary', None)           or \
+                                              "Sorry, no summary is available."
             else:
                 print "something went wrong"
                 print r.url
@@ -398,12 +413,13 @@ class OrgBillsSummaryHandler(SummaryHandler):
         labeled_results = super(OrgBillsSummaryHandler, self).read(request)
         for lr in labeled_results:
             try:
-                bill = Bill.objects.get(bill_id=lr['name'])
+                bill = Bill.objects.filter(bill_id=lr['name'])[0]
             except ObjectDoesNotExist:
                 import json
                 print 'bill_id {bid} does not exist?!'.format(bid=lr['name'])
                 print 'labeled_result:\n{d}'.format(d=json.dumps(lr,indent=2))
-            bill_metadata = congress_metadata(bill)
+            bill_metadata = gather_bill_metadata(bill)
             lr['metadata'] = bill_metadata
             lr['name'] = bill.bill_name + ' (' + str(bill.congress_no) +')'
+
         return labeled_results
