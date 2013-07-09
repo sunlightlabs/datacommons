@@ -22,12 +22,12 @@
          group by issue, cycle, count, amount
       )
   
-      select issue, count, cycle, amount, rank_by_amount, rank_by_count
+      select issue, cycle, count, amount, rank_by_amount, rank_by_count
       from lobbying_by_cycle
 
       union all
   
-      select issue, count, cycle, amount, 
+      select issue, -1, count, amount, 
               rank() over (partition by issue order by amount desc) as rank_by_amount,
               rank() over (partition by issue order by count desc) as rank_by_count
       from (
