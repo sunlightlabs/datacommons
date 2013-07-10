@@ -312,11 +312,9 @@ class TopIndustriesLobbyingHandler(TopListHandler):
 class OrgIssuesTotalsHandler(SummaryRollupHandler):
 
     stmt = """
-        (
-        select issue as category, cycle, count, amount
+        select issue as category, count, amount
         from summary_lobbying_issues_for_biggest_org
-        where cycle = %s and rank <= 10
-        )
+        where cycle = %s and rank_by_amount <= 10;
     """
 
 class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
@@ -325,20 +323,26 @@ class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
 
     fields = ['name', 'id', 'issue', 'amount']
 
-    stmt = """
-       with top_issues as
-        (select issue as category, cycle, count, amount
-        from summary_lobbying_issues_for_biggest_org
-        where cycle = %s and rank <= 10)
+    #stmt = """
+    #   with top_issues as
+    #    (select issue as category, cycle, count, amount
+    #    from summary_lobbying_issues_for_biggest_org
+    #    where cycle = %s and rank_by_amount <= 10)
 
-       select name, id, issue, amount
-        from
-        (select client_name as name, client_entity as id, issue, s.amount,
-        rank() over(partition by issue order by rank_by_amount) as rank
-        from summary_lobbying_issues_for_biggest_org s
-        join top_issues t on s.issue =  t.category and s.cycle = t.cycle) sub
-        where rank <= %s;
-    """
+    #   select name, id, issue, amount
+    #    from
+    #    (select client_name as name, client_entity as id, issue, s.amount,
+    #    rank() over(partition by issue order by rank_by_amount) as rank
+    #    from summary_lobbying_issues_for_biggest_org s
+    #    join top_issues t on s.issue =  t.category and s.cycle = t.cycle) sub
+    #    where rank <= %s;
+    #"""
+
+    stmt = """
+        select client_name as name, client_entity as id, issue, amount
+          from summary_lobbying_top_biggest_orgs_for_issue
+          where cycle = %s and rank_by_amount <= %s;
+          """
 
 class OrgIssuesSummaryHandler(SummaryHandler):
     rollup = OrgIssuesTotalsHandler()
