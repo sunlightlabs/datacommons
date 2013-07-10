@@ -313,7 +313,7 @@ class OrgIssuesTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select issue as category, count, amount
-        from summary_lobbying_issues_for_biggest_org
+        from summary_lobbying_top_issues_for_biggest_orgs
         where cycle = %s and rank_by_amount <= 10;
     """
 
