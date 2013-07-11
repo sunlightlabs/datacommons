@@ -68,7 +68,7 @@ def gather_bill_metadata(bill):
                                             cm.get('official_title', None)      or \
                                             metadata.get('bill_title', None)    or \
                                             metadata['bill_name']
-                nicknames = cm.get('nicknames', None) 
+                nicknames = cm.get('nicknames', None)
                 metadata['display_subtitle'] = metadata['bill_name']
                 metadata['display_nicknames'] = ', '.join(['"'+n+'"' for n in nicknames]) if nicknames else None
                 metadata['url'] = cm['urls'].get('govtrack', None) if cm.get('urls', None) else None
@@ -84,16 +84,17 @@ def gather_bill_metadata(bill):
 
     return metadata
 
-def gather_issue_metadata(issue):
-    metadata = issue.__dict__.copy()
-    del metadata['_state']
-    del metadata['id']
-    del metadata['transaction_id']
-    del metadata['year']
-    del metadata['specific_issue']
+def gather_issue_metadata(lr):
+    metadata = {'general_issue': lr['name']}
+    #metadata = issue.__dict__.copy()
+    #del metadata['_state']
+    #del metadata['id']
+    #del metadata['transaction_id']
+    #del metadata['year']
+    #del metadata['specific_issue']
 
     #metadata['top_bills'] perhaps a call to a new handler, here
-    
+
     return metadata
 
 class OrgRegistrantsHandler(EntityTopListHandler):
@@ -347,6 +348,7 @@ class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
 class OrgIssuesSummaryHandler(SummaryHandler):
     rollup = OrgIssuesTotalsHandler()
     breakout = OrgIssuesBiggestOrgsByAmountHandler()
+
     def key_function(self,x):
         return x['issue']
         # issue = x['issue']
@@ -354,18 +356,19 @@ class OrgIssuesSummaryHandler(SummaryHandler):
         #     return self.rollup.category_map
         # else:
         #     return self.rollup.default_key
-    
+
     def read(self, request, **kwargs):
         labeled_results = super(OrgIssuesSummaryHandler, self).read(request)
 
         for lr in labeled_results:
+            #THIS TAKES ENTIRELY TOO LONG. NORMALIZE OR DROP
             #try:
-            issue = Issue.objects.filter(general_issue=lr['name'])[0]
+            #issue = Issue.objects.filter(general_issue=lr['name'])[0]
             #except ObjectDoesNotExist:
             #    import json
             #    print 'bill_id {bid} does not exist?!'.format(bid=lr['name'])
             #    print 'labeled_result:\n{d}'.format(d=json.dumps(lr,indent=2))
-            issue_metadata = gather_issue_metadata(issue)
+            issue_metadata = gather_issue_metadata(lr)
             lr['metadata'] = issue_metadata
 
         return labeled_results
