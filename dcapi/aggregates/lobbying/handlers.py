@@ -22,7 +22,7 @@ def gather_bill_metadata(bill):
     metadata = bill.__dict__.copy()
     del metadata['_state']
 
-    metadata['bill_title'] = obtain_bill_title(bill)
+    metadata['bill_title'] = '(Title Unknown)'
     metadata['bill_issue'] = bill.issue.general_issue if bill.issue else None
 
     if metadata['congress_no'] >= 111:
@@ -81,6 +81,8 @@ def gather_bill_metadata(bill):
                 print r.url
                 print "status was {code} {reason}".format(code=r.status_code, reason=r.reason)
                 print "json was \n {j}".format(j=r.json)
+    else:
+        metadata['bill_title'] = obtain_bill_title(bill)
 
     return metadata
 
