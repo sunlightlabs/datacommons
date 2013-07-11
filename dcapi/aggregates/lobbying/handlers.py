@@ -312,9 +312,9 @@ class TopIndustriesLobbyingHandler(TopListHandler):
 class OrgIssuesTotalsHandler(SummaryRollupHandler):
 
     stmt = """
-        select issue as category, count, amount
-        from summary_lobbying_top_issues_for_biggest_orgs
-        where cycle = %s and rank_by_amount <= 10;
+        select distinct issue, issue_total_count as count, issue_total_amount as amount
+        from summary_lobbying_top_biggest_orgs_for_top_issues
+        where cycle = %s and issue_rank_by_amount <= 10;
     """
 
 class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
@@ -339,9 +339,9 @@ class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
     #"""
 
     stmt = """
-        select client_name as name, client_entity as id, issue, amount
-          from summary_lobbying_top_biggest_orgs_for_issue
-          where cycle = %s and rank_by_amount <= %s;
+        select name, id, issue, client_amount
+          from summary_lobbying_top_biggest_orgs_for_top_issues
+          where cycle = %s and client_rank_by_amount <= %s;
           """
 
 class OrgIssuesSummaryHandler(SummaryHandler):
