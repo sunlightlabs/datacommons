@@ -780,4 +780,75 @@ create table agg_lobbying_lobbyists_for_registrant as
 select date_trunc('second', now()) || ' -- create index agg_lobbying_lobbyists_for_registrant_idx on agg_lobbying_lobbyists_for_registrant (lobbyist_entity, cycle)';
 create index agg_lobbying_lobbyists_for_registrant_idx on agg_lobbying_lobbyists_for_registrant (lobbyist_entity, cycle);
 
+-- Lobbying Issues Across all Biggest Orgs (parentmost)
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_issues_across_biggest_orgs';
+drop table if exists agg_lobbying_issues_across_biggest_orgs;
+
+select date_trunc('second', now()) || ' -- create table agg_lobbying_issues_across_biggest_orgs';
+create table agg_lobbying_issues_across_biggest_orgs as
+    with lobbying_by_cycle as (
+        select r.cycle, i.general_issue, count(*) as count, sum(amount) as amount,
+              rank() over (partition by cycle order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by cycle order by count(*) desc) as rank_by_count
+            from lobbying_report r
+            inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+            inner join lobbying_issue i using (transaction_id)
+            group by i.general_issue, r.cycle
+        )
+
+    select cycle, general_issue, count, amount, rank_by_amount, rank_by_count
+    from lobbying_by_cycle
+
+    union all
+
+    select -1 as cycle, general_issue, count, amount, rank_by_amount, rank_by_count
+    from (
+      select general_issue, sum(count) as count, sum(amount) as amount,
+          rank() over (order by sum(amount) desc) as rank_by_amount,
+          rank() over (order by sum(count) desc) as rank_by_count
+      from lobbying_by_cycle
+      group by general_issue
+    ) z
+;
+
+select date_trunc('second', now()) || ' -- create index agg_lobbying_issues_across_biggest_orgs on agg_lobbying_issues_across_biggest_orgs (cycle, issue)';
+create index agg_lobbying_issues_across_biggest_orgs_idx on agg_lobbying_issues_across_biggest_orgs (cycle, general_issue);
+
+-- Lobbying Biggest Orgs (parentmost) for Issues
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_biggest_orgs_for_issues';
+drop table if exists agg_lobbying_biggest_orgs_for_issues;
+
+select date_trunc('second', now()) || ' -- create table agg_lobbying_biggest_orgs_for_issues';
+create table agg_lobbying_biggest_orgs_for_issues as
+    with lobbying_by_cycle as ( 
+        select r.cycle, i.general_issue, ca.entity_id as client_entity, count(*) as count, sum(amount) as amount,
+              rank() over (partition by r.cycle, i.general_issue order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by cycle, i.general_issue order by count(*) desc) as rank_by_count
+            from lobbying_report r 
+            inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+            inner join lobbying_issue i using (transaction_id)
+            group by r.cycle, i.general_issue, ca.entity_id
+        ) 
+    
+      select cycle, general_issue, client_entity, count, amount, rank_by_amount, rank_by_count
+      from lobbying_by_cycle
+  
+      union all
+  
+      select -1 as cycle, general_issue, client_entity, count, amount, rank_by_amount, rank_by_count 
+      from (
+          select general_issue, client_entity, sum(count) as count, sum(amount) as amount,
+              rank() over (partition by general_issue order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by general_issue order by sum(count) desc) as rank_by_count
+          from lobbying_by_cycle
+          group by general_issue, client_entity
+      ) x
+    
+    ;
+
+select date_trunc('second', now()) || ' -- create index agg_lobbying_biggest_orgs_for_issues_idx on agg_lobbying_biggest_orgs_for_issues (client_entity, cycle, issue)';
+create index agg_lobbying_biggest_orgs_for_issues_idx on agg_lobbying_biggest_orgs_for_issues (client_entity, cycle, general_issue);
+
 select date_trunc('second', now()) || ' -- Done computing lobbying aggregates.';
