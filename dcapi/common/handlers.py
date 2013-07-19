@@ -1,7 +1,7 @@
 from urllib import unquote_plus
 from piston.handler import BaseHandler
 
-RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities')
+RESERVED_PARAMS = ('apikey','callback','limit','format','page','per_page','return_entities','_')
 DEFAULT_PER_PAGE = 1000
 MAX_PER_PAGE = 100000
 
