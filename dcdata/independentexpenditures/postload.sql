@@ -158,7 +158,7 @@ from fec_indexp i
 inner join fec_indexp_out_of_date_cycles using (cycle)
 left join agg_fec_indexp_candidates cand_assoc using (spender_id, filing_number, transaction_id)
 left join matchbox_entity cand on cand_assoc.entity_id = cand.id
-left join agg_fec_indexp_committees committee_assoc using on committee_assoc.spender_id = i.spender_id and committee_assoc.cycle = i.cycle
+left join agg_fec_indexp_committees committee_assoc on committee_assoc.spender_id = i.spender_id and committee_assoc.cycle = i.cycle
 left join matchbox_entity committee on committee_assoc.entity_id = committee.id
 group by i.cycle, candidate_entity, coalesce(cand.name, candidate_name), committee_entity, coalesce(committee.name, spender_name), support_oppose
 ;
