@@ -69,7 +69,13 @@ create view contributions_even_cycles as
         recipient_name, recipient_ext_id, recipient_type, recipient_party, recipient_state, recipient_category, seat
     from contribution_contribution;
 
+-- To allow for case where current year is odd-year, add next year to agg_cycles
 
+insert into agg_cycles (cycle) 
+    select distinct(cycle) 
+    from contributions_even_cycles e 
+    where not exists 
+        (select 1 from agg_cycles a where a.cycle = e.cycle);
 
 -- Only contributions that should be included in totals from individuals to politicians
 
