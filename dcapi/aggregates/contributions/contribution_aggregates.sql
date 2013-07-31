@@ -1,5 +1,10 @@
 select date_trunc('second', now()) || ' -- Starting contribution aggregate computation...';
 
+-- Top N: the number of rows to generate for each aggregate
+
+\set agg_top_n 10
+
+
 -- Entity Aggregates (Contribution Totals)
 
 

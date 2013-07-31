@@ -50,10 +50,6 @@ create table agg_suppressed_orgnames as values
     ('economist'), ('');
 
 
--- Top N: the number of rows to generate for each aggregate
-
-\set agg_top_n 10
-
 
 -- Adjust the odd-year cycles upward
 
