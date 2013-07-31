@@ -4,6 +4,7 @@ http://docs.python.org/library/csv.html
 """
 
 import csv, codecs, cStringIO
+import unicodedata
 
 class UTF8Recoder:
     """
@@ -80,3 +81,68 @@ class UnicodeWriter:
     def writerows(self, rows):
         for row in rows:
             self.writerow(row)
+
+class UnicodeDictWriter(object):
+    """
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+    """
+ 
+    def __init__(self, f, fieldnames, dialect=csv.excel, encoding="utf-8", **kwds):
+        # Redirect output to a queue
+        self.fieldnames = fieldnames
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+        self.stream = f
+        self.encoding = encoding
+        self.encoder = codecs.getincrementalencoder(self.encoding)()
+        
+    def writeheader(self):
+        self.writer.writerow(self.fieldnames)
+
+    def mask_row(self,row):
+        return row
+
+    def writerow(self, row):
+        self.writer.writerow(self.mask_row(row))
+        # Fetch UTF-8 output from the queue ...
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        # ... and reencode it into the target encoding
+        data = self.encoder.encode(data)
+        # write to the target stream
+        self.stream.write(data)
+        # empty queue
+        self.queue.truncate(0)
+ 
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)
+    
+ 
+class AsciiIgnoreDictWriter(UnicodeDictWriter):
+    """
+    A CSV writer which will write rows to CSV file "f",
+    where the source data is in the encoding
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs['encoding'] = 'ascii'
+        super(AsciiIgnoreDictWriter, self).__init__(*args,**kwargs)
+    
+    def mask_row(self,row):
+        return [row[x].encode("utf-8").decode('utf-8').encode('ascii','ignore') if (isinstance(row[x],str) or isinstance(row[x],unicode)) else row[x] for x in self.fieldnames]
+ 
+class AsciiNormalizedDictWriter(UnicodeDictWriter):
+    """
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+    """
+ 
+    def __init__(self, *args, **kwargs):
+        kwargs['encoding'] = 'ascii'
+        super(AsciiNormalizedDictWriter, self).__init__(*args,**kwargs)
+    
+    def mask_row(self,row):
+        return [unicodedata.normalize('NFKD', row[x].encode("utf-8").decode('utf-8')).encode('ascii','ignore') if (isinstance(row[x],str) or isinstance(row[x],unicode)) else row[x] for x in self.fieldnames]
+ 

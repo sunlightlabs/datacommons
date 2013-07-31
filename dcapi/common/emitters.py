@@ -6,6 +6,7 @@ from piston.emitters import Emitter
 from django.forms.models import model_to_dict
 from piston.utils import HttpStatusCode
 from dcapi.validate_jsonp import is_valid_jsonp_callback_value
+from dcdata.utils.ucsv import UnicodeDictWriter, AsciiIgnoreDictWriter, AsciiNormalizedDictWriter
 import csv
 import cStringIO
 import datetime
@@ -98,13 +99,20 @@ class StreamingCSVEmitter(StreamingEmitter):
 
     def stream(self, request, stats):
         f = AmnesiacFile()
-        writer = csv.DictWriter(f, fieldnames=self.fields)
+        # IF WE WANT TO PROVIDE UNICODE:
+        #writer = UnicodeDictWriter(f, fieldnames=self.fields)
+
+        # IF WE WANT TO IGNORE UNICODE:
+        #writer = AsciiIgnoreDictWriter(f, fieldnames=self.fields)
+
+        # IF WE WANT TO NORMALIZE UNICODE TO CORRESPONDING ASCII:
+        writer = AsciiNormalizedDictWriter(f, fieldnames=self.fields)
+
         yield ",".join(self.fields) + "\n"
         for record in self.data:
             stats.log(record)
             writer.writerow(self.construct_record(record))
             yield f.read()
-
 
 class ExcelEmitter(StreamingEmitter):
 
