@@ -671,7 +671,7 @@ drop table if exists agg_office_type_from_org cascade;
 select date_trunc('second', now()) || ' -- create table agg_office_type_from_org';
 create table agg_office_type_from_org as
  with contribs_by_cycle as (
-    select organization_entity, cycle, seat, count(), sum(amount) as amount
+    select organization_entity, cycle, seat, count(*), sum(amount) as amount
     from contributions_flat
     where recipient_type = 'P' and organization_entity is not null
     group by organization_entity, cycle, seat
@@ -688,7 +688,7 @@ create table agg_office_type_from_org as
 ;
 
 select date_trunc('second', now()) || ' -- create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)';
-create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle)
+create index agg_office_type_from_org_idx on agg_office_type_from_org (organization_entity, cycle);
 
 
 -- In-state/Out-of-state to Politician
@@ -834,18 +834,6 @@ create table agg_top_orgs_by_industry as
 select date_trunc('second', now()) || ' -- create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (recipient_entity, cycle)';
 create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (industry_entity, cycle);
 
-create table agg_top_contributors_by_party
-    select entity_id as contributor_id, max(contributor_name) as contributor_name, cycle, count(*), sum(amount)
-    from contributions_individual inner join contributor_associations using (transaction_id)
-    where recipient_party = 'D'
-    group by entity_id, cycle
-    order by sum(amount) desc, count(*) desc
-    limit :agg_top_n;
-
-
-select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
-
-
 -- Sub Industry Contribution Totals (with industry and sector mapping)
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_subindustry_totals';
@@ -886,3 +874,17 @@ create table agg_subindustry_totals as (
             group by
                 organization_entity,cycle) as p on p.organization_entity = me.id
 );
+
+-- create table agg_top_contributors_by_party
+--     select entity_id as contributor_id, max(contributor_name) as contributor_name, cycle, count(*), sum(amount)
+--     from contributions_individual inner join contributor_associations using (transaction_id)
+--     where recipient_party = 'D'
+--     group by entity_id, cycle
+--     order by sum(amount) desc, count(*) desc
+--     limit :agg_top_n;
+
+
+
+
+
+select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
