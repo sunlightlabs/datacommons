@@ -315,7 +315,7 @@ class TopIndustriesLobbyingHandler(TopListHandler):
 class OrgIssuesTotalsHandler(SummaryRollupHandler):
 
     stmt = """
-        select distinct issue, issue_total_count as count, issue_total_amount as amount
+        select issue, issue_total_count as count, issue_total_amount as amount
         from summary_lobbying_top_biggest_orgs_for_top_issues
         where cycle = %s and issue_rank_by_amount <= 10;
     """
@@ -340,7 +340,6 @@ class OrgIssuesBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
     #    join top_issues t on s.issue =  t.category and s.cycle = t.cycle) sub
     #    where rank <= %s;
     #"""
-
     stmt = """
         select name, id, issue, client_amount
           from summary_lobbying_top_biggest_orgs_for_top_issues
@@ -377,63 +376,39 @@ class OrgIssuesSummaryHandler(SummaryHandler):
 
 class OrgBillsTotalsHandler(SummaryRollupHandler):
 
-    default_key = None
-
     stmt = """
-        select category, count, amount
-        from
-        (select bill_id as category, bill_name, sum(count) as count, sum(amount) as amount
-        from summary_lobbying_bills_for_biggest_org
-        where cycle = %s
-        group by bill_id, bill_name, congress_no
-        order by sum(amount) desc
-        limit 10) x;
+        select 
+            congress_no || ':' || bill_type || ':' || bill_no as bill,
+            bill_total_count as count, 
+            bill_total_amount as amount
+        from summary_lobbying_top_biggest_orgs_for_top_bills
+        where cycle = %s;
     """
 
 class OrgBillsBiggestOrgsByAmountHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'bill_id', 'amount']
+    fields = ['name', 'id', 'bill', 'amount']
 
-    type_list = [str,str,int,float]
+    type_list = [str,str,str,float]
 
     stmt = """
-       with top_bills as
-        (
-        select
-            bill_id,
-            bill_name,
-            congress_no,
-            cycle,
-            sum(count) as count,
-            sum(amount) as amount
-        from summary_lobbying_bills_for_biggest_org
-        where cycle = %s
-        group by bill_id, bill_name, congress_no, cycle
-        order by sum(amount) desc
-        limit 10
-        )
-
-       select
-            name,
-            id,
-            bill_id,
-            amount
-        from
-        (select client_name as name, client_entity as id, s.bill_id, s.bill_name, s.congress_no, s.amount,
-        rank() over(partition by s.bill_id order by rank_by_amount) as rank
-        from summary_lobbying_bills_for_biggest_org s
-        join top_bills t on s.bill_id = t.bill_id and s.congress_no = t.congress_no and s.cycle = t.cycle) sub
-        where rank <= %s;
-    """
+        select 
+            name, 
+            id, 
+            congress_no || ':' || bill_type || ':' || bill_no as bill, 
+            client_amount
+          from summary_lobbying_top_biggest_orgs_for_top_bills
+          where cycle = %s and client_rank_by_amount <= %s;
+          """
 
 class OrgBillsSummaryHandler(SummaryHandler):
     rollup = OrgBillsTotalsHandler()
     breakout = OrgBillsBiggestOrgsByAmountHandler()
 
     def key_function(self,x):
-        return x['bill_id']
+        return x['bill']
         # issue = x['issue']
         # if direct_or_indiv in self.rollup.category_map:
         #     return self.rollup.category_map
@@ -443,8 +418,10 @@ class OrgBillsSummaryHandler(SummaryHandler):
     def read(self, request, **kwargs):
         labeled_results = super(OrgBillsSummaryHandler, self).read(request)
         for lr in labeled_results:
+            _congress_no,_bill_type,_bill_no = lr['name'].split(':')
             try:
-                bill = Bill.objects.filter(bill_id=lr['name'])[0]
+                bill = Bill.objects.filter(congress_no=_congress_no, 
+                        bill_type=_bill_type, bill_no=_bill_no)[0]
             except ObjectDoesNotExist:
                 import json
                 print 'bill_id {bid} does not exist?!'.format(bid=lr['name'])
