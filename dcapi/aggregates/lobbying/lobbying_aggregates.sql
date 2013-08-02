@@ -69,7 +69,7 @@ drop table if exists assoc_lobbying_biggest_client_associations cascade;
 
 select date_trunc('second', now()) || ' -- create table assoc_lobbying_biggest_client_associations';
 create table assoc_lobbying_biggest_client_associations as
-    select coalesce(alc.entity_id, alcp.entity_id) as entity_id, transaction_id
+    select coalesce(alcp.entity_id, alc.entity_id) as entity_id, transaction_id
     from assoc_lobbying_client alc
     full outer join assoc_lobbying_client_parent alcp using (transaction_id);
 
@@ -788,12 +788,15 @@ drop table if exists agg_lobbying_issues_across_biggest_orgs;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_issues_across_biggest_orgs';
 create table agg_lobbying_issues_across_biggest_orgs as
     with lobbying_by_cycle as (
-        select r.cycle, i.general_issue, count(*) as count, sum(amount) as amount,
+        select cycle, general_issue, count(*) as count, sum(amount) as amount,
               rank() over (partition by cycle order by sum(amount) desc) as rank_by_amount,
               rank() over (partition by cycle order by count(*) desc) as rank_by_count
-            from lobbying_report r
-            inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
-            inner join lobbying_issue i using (transaction_id)
+            from
+            ( select distinct r.transaction_id, i.general_issue, r.cycle, amount
+                from
+                lobbying_report r 
+                inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+                inner join lobbying_issue i using (transaction_id)) d
             group by i.general_issue, r.cycle
         )
 
@@ -823,12 +826,15 @@ drop table if exists agg_lobbying_biggest_orgs_for_issues;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_biggest_orgs_for_issues';
 create table agg_lobbying_biggest_orgs_for_issues as
     with lobbying_by_cycle as ( 
-        select r.cycle, i.general_issue, ca.entity_id as client_entity, count(*) as count, sum(amount) as amount,
-              rank() over (partition by r.cycle, i.general_issue order by sum(amount) desc) as rank_by_amount,
-              rank() over (partition by cycle, i.general_issue order by count(*) desc) as rank_by_count
-            from lobbying_report r 
-            inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
-            inner join lobbying_issue i using (transaction_id)
+        select cycle, general_issue, entity_id as client_entity, count(*) as count, sum(amount) as amount,
+              rank() over (partition by cycle, general_issue order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by cycle, general_issue order by count(*) desc) as rank_by_count
+            from
+            ( select distinct r.transaction_id, i.general_issue, ca.entity_id, r.cycle,  amount
+                from
+                lobbying_report r 
+                inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+                inner join lobbying_issue i using (transaction_id)) d
             group by r.cycle, i.general_issue, ca.entity_id
         ) 
     
@@ -859,13 +865,15 @@ drop table if exists agg_lobbying_bills_across_biggest_orgs;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_bills_across_biggest_orgs';
 create table agg_lobbying_bills_across_biggest_orgs as
     with lobbying_by_cycle as (
-         select b.congress_no, b.bill_type, b.bill_no, r.cycle, count(*)::integer as count,sum(amount) as amount,
+         select congress_no, bill_type, bill_no, cycle, count(*)::integer as count,sum(amount) as amount,
               rank() over (partition by cycle order by sum(amount) desc) as rank_by_amount,
               rank() over (partition by cycle order by count(*) desc) as rank_by_count
-         from lobbying_report r
-         inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
-         inner join lobbying_issue i using (transaction_id)
-         inner join lobbying_bill b on b.issue_id = i.id
+         from 
+            (select distinct r.transaction_id, b.congress_no, b.bill_type, b.bill_no, r.cycle, amount
+                from lobbying_report r
+                inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+                inner join lobbying_issue i using (transaction_id)
+                inner join lobbying_bill b on b.issue_id = i.id) d
          group by congress_no, bill_type, bill_no, cycle
         )
 
@@ -896,14 +904,16 @@ drop table if exists agg_lobbying_biggest_orgs_for_bills;
 select date_trunc('second', now()) || ' -- create table agg_lobbying_biggest_orgs_for_bills';
 create table agg_lobbying_biggest_orgs_for_bills as
     with lobbying_by_cycle as ( 
-        select r.cycle, congress_no, bill_type, bill_no, ca.entity_id as client_entity, count(*) as count, sum(amount) as amount,
-              rank() over (partition by r.cycle, congress_no, bill_type, bill_no order by sum(amount) desc) as rank_by_amount,
-              rank() over (partition by r.cycle, congress_no, bill_type, bill_no order by count(*) desc) as rank_by_count
-            from lobbying_report r 
-            inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
-            inner join lobbying_issue i using (transaction_id)
-            inner join lobbying_bill b on b.issue_id = i.id
-            group by r.cycle, congress_no, bill_type, bill_no, ca.entity_id
+        select cycle, congress_no, bill_type, bill_no, entity_id as client_entity, count(*) as count, sum(amount) as amount,
+              rank() over (partition by cycle, congress_no, bill_type, bill_no order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by cycle, congress_no, bill_type, bill_no order by count(*) desc) as rank_by_count
+            from 
+            (select distinct r.transaction_id, ca.entity_id, b.congress_no, b.bill_type, b.bill_no, r.cycle, amount
+                from lobbying_report r
+                inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+                inner join lobbying_issue i using (transaction_id)
+                inner join lobbying_bill b on b.issue_id = i.id) d
+            group by cycle, congress_no, bill_type, bill_no, entity_id
         ) 
     
       select cycle, congress_no, bill_type, bill_no, client_entity, count, amount, rank_by_amount, rank_by_count
