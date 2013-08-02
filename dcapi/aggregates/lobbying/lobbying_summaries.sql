@@ -15,65 +15,36 @@
         where bo.rank_by_amount <= 10 and li.rank_by_amount <= 10
         order by cycle, issue_rank_by_amount, client_rank_by_amount;
 
-  select date_trunc('second', now()) || ' -- create index summary_lobbying_top_biggest_orgs_for_top_issues_idx on summary_lobbying_top_biggest_orgs_for_top_issues (cycle, rank_by_amount)';
-  create index summary_lobbying_top_biggest_orgs_for_top_issues_idx on summary_lobbying_top_biggest_orgs_for_top_issues (issue, cycle);
+  select date_trunc('second', now()) || ' -- create index summary_lobbying_top_biggest_orgs_for_top_issues_idx on summary_lobbying_top_biggest_orgs_for_top_issues (cycle, issue_rank_by_amount)';
+  create index summary_lobbying_top_biggest_orgs_for_top_issues_cycle_issue_rank_idx on summary_lobbying_top_biggest_orgs_for_top_issues (cycle, issue_rank_by_amount);
 
---  Ranking Biggest Client Lobbyied Bills by Amount and Count
- 
- select date_trunc('second', now()) || ' -- drop table if exists summary_lobbying_bills_for_biggest_org';
- drop table if exists summary_lobbying_bills_for_biggest_org;
- 
- select date_trunc('second', now()) || ' -- create table summary_lobbying_bills_for_biggest_org as';
- create table summary_lobbying_bills_for_biggest_org as
-     with lobbying_by_cycle as (
-        select client_name, client_entity, congress_no, bill_id, bill_name, bill_type, bill_no, cycle, count, amount,
-             rank() over (partition by congress_no, bill_id order by amount desc) as rank_by_amount,
-             rank() over (partition by congress_no, bill_id order by count desc) as rank_by_count
+  select date_trunc('second', now()) || ' -- create index summary_lobbying_top_biggest_orgs_for_top_issues_idx on summary_lobbying_top_biggest_orgs_for_top_issues (cycle, client_rank_by_amount)';
+  create index summary_lobbying_top_biggest_orgs_for_top_issues_cycle_client_rank_idx on summary_lobbying_top_biggest_orgs_for_top_issues (cycle, client_rank_by_amount);
+
+-- Top 10 Parentmost Clients for Top 10 Lobbied Bills by Amount
+
+  select date_trunc('second', now()) || ' -- drop table if exists summary_lobbying_top_biggest_orgs_for_top_bills';
+  drop table if exists summary_lobbying_top_biggest_orgs_for_top_bills;
+  
+  select date_trunc('second', now()) || ' -- create table summary_lobbying_top_biggest_orgs_for_top_bills';
+  create table summary_lobbying_top_biggest_orgs_for_top_bills as
+       select lb.cycle, lb.congress_no, lb.bill_type, lb.bill_no, me.name, bo.client_entity as id, bo.count as client_count, bo.rank_by_count as client_rank_by_count, bo.amount as client_amount, bo.rank_by_amount as client_rank_by_amount, lb.count as bill_total_count, lb.rank_by_count as bill_rank_by_count, lb.amount as bill_total_amount, lb.rank_by_amount as bill_rank_by_amount
         from 
-         (select
-             ce.name as client_name,
-             ca.entity_id as client_entity,
-             b.bill_id,
-             b.bill_name,
-             b.bill_type,
-             b.bill_no,
-             b.congress_no,
-             r.cycle,
-             count(*)::integer as count,
-             sum(amount) as amount
-         from lobbying_report r
-         inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
-         inner join lobbying_issue i using (transaction_id)
-         inner join lobbying_bill b on b.issue_id = i.id
-         inner join matchbox_entity ce on ce.id = ca.entity_id
-         group by ce.name, ca.entity_id, congress_no, bill_id, bill_name, bill_type, bill_no, cycle) ct_amt
-        group by client_name, client_entity, congress_no, bill_id, bill_name, bill_type, bill_no, cycle, count, amount
-     )
- 
-     select client_name, client_entity, congress_no, bill_id, bill_name, bill_type, bill_no, cycle, 
-        -- title as bill_title, 
-        count, amount, rank_by_amount, rank_by_count
-    from
-(
-     select client_name, client_entity, congress_no, bill_id, bill_name, bill_type, bill_no, cycle,  count, amount, rank_by_amount, rank_by_count
-     from lobbying_by_cycle lbc
- 
-     union 
- 
-     select client_name, client_entity, congress_no, bill_id, bill_name, bill_type, bill_no, -1, count, amount, 
-             rank() over (partition by bill_id order by amount desc) as rank_by_amount,
-             rank() over (partition by bill_id order by count desc) as rank_by_count
-     from (
-         select client_name, client_entity, congress_no, bill_id, bill_name, bill_type, bill_no, sum(count) as count, sum(amount) as amount
-         from lobbying_by_cycle
-         group by client_name, client_entity, congress_no, bill_id, bill_name, bill_type, bill_no
-        ) x
-    ) a   
---    left join 
---    lobbying_billtitle lbt using (bill_type, bill_no, congress_no)
-;
- 
- select date_trunc('second', now()) || ' -- create index summary_lobbying_bills_for_biggest_org_idx on summary_lobbying_bills_for_biggest_org (client_entity, cycle)';
- create index summary_lobbying_bills_for_biggest_org_idx on summary_lobbying_bills_for_biggest_org (client_entity, cycle);
+            agg_lobbying_bills_across_biggest_orgs lb
+          inner join
+            agg_lobbying_biggest_orgs_for_bills bo on 
+                    bo.congress_no =  lb.congress_no
+                and bo.bill_type = lb.bill_type
+                and bo.bill_no = lb.bill_no
+                and bo.cycle = lb.cycle
+          inner join
+            matchbox_entity me on me.id = bo.client_entity
+        where bo.rank_by_amount <= 10 and lb.rank_by_amount <= 10
+        order by cycle, bill_rank_by_amount, client_rank_by_amount;
 
+  select date_trunc('second', now()) || ' -- create index summary_lobbying_top_biggest_orgs_for_top_bills_idx on summary_lobbying_top_biggest_orgs_for_top_bills (cycle, bill_rank_by_amount)';
+  create index summary_lobbying_top_biggest_orgs_for_top_bills_cycle_bill_rank_idx on summary_lobbying_top_biggest_orgs_for_top_bills (cycle, bill_rank_by_amount);
+
+  select date_trunc('second', now()) || ' -- create index summary_lobbying_top_biggest_orgs_for_top_bills_idx on summary_lobbying_top_biggest_orgs_for_top_bills (cycle, client_rank_by_amount)';
+  create index summary_lobbying_top_biggest_orgs_for_top_bills_cycle_client_rank_idx on summary_lobbying_top_biggest_orgs_for_top_bills (cycle, client_rank_by_amount);
 

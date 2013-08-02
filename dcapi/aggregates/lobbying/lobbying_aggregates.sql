@@ -851,4 +851,78 @@ create table agg_lobbying_biggest_orgs_for_issues as
 select date_trunc('second', now()) || ' -- create index agg_lobbying_biggest_orgs_for_issues_idx on agg_lobbying_biggest_orgs_for_issues (client_entity, cycle, issue)';
 create index agg_lobbying_biggest_orgs_for_issues_idx on agg_lobbying_biggest_orgs_for_issues (client_entity, cycle, general_issue);
 
+-- Lobbying Bills Across all Biggest Orgs (parentmost)
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_bills_across_biggest_orgs';
+drop table if exists agg_lobbying_bills_across_biggest_orgs;
+
+select date_trunc('second', now()) || ' -- create table agg_lobbying_bills_across_biggest_orgs';
+create table agg_lobbying_bills_across_biggest_orgs as
+    with lobbying_by_cycle as (
+         select b.congress_no, b.bill_type, b.bill_no, r.cycle, count(*)::integer as count,sum(amount) as amount,
+              rank() over (partition by cycle order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by cycle order by count(*) desc) as rank_by_count
+         from lobbying_report r
+         inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+         inner join lobbying_issue i using (transaction_id)
+         inner join lobbying_bill b on b.issue_id = i.id
+         group by congress_no, bill_type, bill_no, cycle
+        )
+
+    select cycle, congress_no, bill_type, bill_no, count, amount, rank_by_amount, rank_by_count
+    from lobbying_by_cycle
+
+    union all
+
+    select -1 as cycle, congress_no, bill_type, bill_no, count, amount, rank_by_amount, rank_by_count
+    from (
+      select congress_no, bill_type, bill_no, sum(count) as count, sum(amount) as amount,
+          rank() over (order by sum(amount) desc) as rank_by_amount,
+          rank() over (order by sum(count) desc) as rank_by_count
+      from lobbying_by_cycle
+      group by congress_no, bill_type, bill_no
+    ) all_cycles
+;
+
+select date_trunc('second', now()) || ' -- create index agg_lobbying_bills_across_biggest_orgs_idx on agg_lobbying_bills_across_biggest_orgs (cycle, congress_no, bill_type, bill_no)';
+create index agg_lobbying_bills_across_biggest_orgs_idx on agg_lobbying_bills_across_biggest_orgs (cycle, congress_no, bill_type, bill_no);
+
+
+-- Lobbying Biggest Orgs (parentmost) for Bills
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_lobbying_biggest_orgs_for_bills';
+drop table if exists agg_lobbying_biggest_orgs_for_bills;
+
+select date_trunc('second', now()) || ' -- create table agg_lobbying_biggest_orgs_for_bills';
+create table agg_lobbying_biggest_orgs_for_bills as
+    with lobbying_by_cycle as ( 
+        select r.cycle, congress_no, bill_type, bill_no, ca.entity_id as client_entity, count(*) as count, sum(amount) as amount,
+              rank() over (partition by r.cycle, congress_no, bill_type, bill_no order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by r.cycle, congress_no, bill_type, bill_no order by count(*) desc) as rank_by_count
+            from lobbying_report r 
+            inner join assoc_lobbying_biggest_client_associations ca using (transaction_id)
+            inner join lobbying_issue i using (transaction_id)
+            inner join lobbying_bill b on b.issue_id = i.id
+            group by r.cycle, congress_no, bill_type, bill_no, ca.entity_id
+        ) 
+    
+      select cycle, congress_no, bill_type, bill_no, client_entity, count, amount, rank_by_amount, rank_by_count
+      from lobbying_by_cycle
+  
+      union all
+  
+      select -1 as cycle, congress_no, bill_type, bill_no, client_entity, count, amount, rank_by_amount, rank_by_count 
+      from (
+          select  congress_no, bill_type, bill_no, client_entity, sum(count) as count, sum(amount) as amount,
+              rank() over (partition by congress_no, bill_type, bill_no order by sum(amount) desc) as rank_by_amount,
+              rank() over (partition by congress_no, bill_type, bill_no order by sum(count) desc) as rank_by_count
+          from lobbying_by_cycle
+          group by congress_no, bill_type, bill_no, client_entity
+      ) x
+    
+    ;
+
+select date_trunc('second', now()) || ' -- create index agg_lobbying_biggest_orgs_for_bills_idx on agg_lobbying_biggest_orgs_for_bills (cycle, congress_no, bill_type, bill_no)';
+create index agg_lobbying_biggest_orgs_for_bills_idx on agg_lobbying_biggest_orgs_for_bills (cycle, congress_no, bill_type, bill_no);
+
 select date_trunc('second', now()) || ' -- Done computing lobbying aggregates.';
