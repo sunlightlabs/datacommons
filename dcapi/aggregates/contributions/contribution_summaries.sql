@@ -30,8 +30,9 @@ create table summary_party_from_biggest_org as
             ) three_party
         group by organization_entity, name, recipient_party, cycle;
 
-select date_trunc('second', now()) || ' -- Vcreate index summary_party_from_biggest_org_idx on summary_party_from_biggest_org (organization_entity, cycle)';
-create index summary_party_from_biggest_org_idx on summary_party_from_biggest_org (organization_entity, recipient_party, cycle);
+select date_trunc('second', now()) || ' -- Vcreate index summary_party_from_biggest_org_cycle_rank_idx on summary_party_from_biggest_org (cycle, rank)';
+create index summary_party_from_biggest_org_cycle_rank_idx on summary_party_from_biggest_org (cycle, rank);
+
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY FEDERAL/STATE
 
@@ -55,8 +56,9 @@ create table summary_namespace_from_biggest_org as
         where
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 
-select date_trunc('second', now()) || ' -- create index summary_namespace_from_biggest_org_idx on summary_namespace_from_biggest_org_org (organization_entity, cycle)';
-create index summary_namespace_from_biggest_org_idx on summary_namespace_from_biggest_org (organization_entity, transaction_namespace, cycle);
+select date_trunc('second', now()) || ' -- create index summary_namespace_from_biggest_org_cycle_rank_idx on summary_namespace_from_biggest_org_org (cycle, rank)';
+create index summary_namespace_from_biggest_org_cycle_rank_idx on summary_namespace_from_biggest_org (cycle, rank);
+
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY SEAT
 
@@ -80,8 +82,8 @@ create table summary_office_type_from_biggest_org as
         where
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 
-select date_trunc('second', now()) || ' -- create index summary_office_type_from_biggest_org_idx on summary_office_type_from_biggest_org_org (organization_entity, cycle)';
-create index summary_office_type_from_biggest_org_idx on summary_office_type_from_biggest_org (organization_entity, seat, cycle);
+select date_trunc('second', now()) || ' -- create index summary_office_type_from_biggest_org_cycle_rank_idx on summary_office_type_from_biggest_org_org (cycle, rank)';
+create index summary_office_type_from_biggest_org_cycle_rank_idx on summary_office_type_from_biggest_org (cycle, rank);
 
 
 
