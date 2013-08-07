@@ -679,8 +679,8 @@ class OrgStateFedSummaryHandler(SummaryHandler):
             return self.rollup.default_key
 
 class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
-    category_map = {'direct':'Direct',
-                    'indivs':'Associated Individuals'}
+    category_map = {'direct':'Org PAC',
+                    'indivs':'Individuals'}
 
     stmt = """
         select category, count, amount

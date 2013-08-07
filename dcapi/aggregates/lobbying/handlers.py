@@ -61,7 +61,6 @@ def gather_bill_metadata(bill):
             r = requests.get(congress_url, params=params)
             res = r.json
             if r.ok and res['count'] == 1:
-                #tmp = metadata.pop('bill_title',None)
                 cm = res['results'][0]
                 metadata['display_title'] = cm.get('popular_title', None)       or \
                                             cm.get('short_title', None)         or \
