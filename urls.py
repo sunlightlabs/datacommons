@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.defaults import *
 from django.contrib import admin
-from django.views.generic import TemplateView, RedirectView
+from django.views.generic.simple import direct_to_template, redirect_to
 
 DATA_BASE_URL = getattr(settings, "DATA_BASE_URL", "http://data.influenceexplorer.com/")
 
@@ -12,7 +12,7 @@ urlpatterns = patterns('',
     url(r'^api/1.0/', include('dcapi.urls')),
     url(r'^api/locksmith/', include('locksmith.auth.urls')),
     url(r'^data/', include('public.urls')),
-    url(r'^(?P<old_url>.*)$', RedirectView.as_view(url=DATA_BASE_URL + '%(old_url)s?r', query_string=True)),
+    url(r'^(?P<old_url>.*)$', redirect_to, {'url': DATA_BASE_URL + '%(old_url)s?r', 'query_string': True}),
 )
 
 if (settings.DEBUG):  
