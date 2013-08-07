@@ -830,6 +830,39 @@ class ContributorRecipientTypeSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+class ContributorInStateOutOfStateTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'in-state':'In-State',
+                    'out-of-state':'Out-Of-State'}
+
+    stmt = """
+        select distinct local, count, amount from
+        summary_local_from_indiv
+        where cycle = %s
+    """
+
+class ContributorInStateOutOfStateTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'local', 'amount']
+
+    stmt = """
+        select contributor_name as name, contributor_entity as id, local, amount
+          from summary_local_from_indiv
+         where cycle = %s and rank_by_amount <= %s;
+    """
+
+class ContributorInStateOutOfStateSummaryHandler(SummaryHandler):
+    rollup = ContributorInStateOutOfStateTotalsHandler()
+    breakout = ContributorInStateOutOfStateTopContributorsByContributionsHandler()
+    def key_function(self,x):
+        local = x['local']
+        if local in self.rollup.category_map:
+            return self.rollup.category_map[local]
+        else:
+            return self.rollup.default_key
+
 ### LOBBYIST HANDLERS
 
 class LobbyistPartyTotalsHandler(SummaryRollupHandler):

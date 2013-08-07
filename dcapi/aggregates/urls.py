@@ -14,7 +14,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
     OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler, \
     ContributorPartySummaryHandler, ContributorStateFedSummaryHandler, \
-    ContributorRecipientTypeSummaryHandler, \
+    ContributorRecipientTypeSummaryHandler, ContributorInStateOutOfStateSummaryHandler, \
     LobbyistPartySummaryHandler, LobbyistStateFedSummaryHandler, \
     LobbyistRecipientTypeSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
@@ -390,6 +390,10 @@ urlpatterns = patterns('',
     # summary of contributors to groups vs politicians
     url(r'^summary/contributor/recipient_type.(?P<emitter_format>.+)$',
         Resource(ContributorRecipientTypeSummaryHandler, **ad)),
+    
+    # summary of contributors to in-state vs out-of-state politicians
+    url(r'^summary/contributor/in_state_out_of_state.(?P<emitter_format>.+)$',
+        Resource(ContributorInStateOutOfStateSummaryHandler, **ad)),
 
     # ----------- PEOPLE >> Lobbyists: Contributions -----------
     # summary of lobbyists to party
