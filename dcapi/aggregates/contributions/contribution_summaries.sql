@@ -210,6 +210,52 @@ create index summary_party_from_indiv_idx on summary_party_from_indiv (contribut
   select date_trunc('second', now()) || ' -- create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle)';
   create index summary_recipient_type_from_indiv_idx on summary_recipient_type_from_indiv (contributor_entity, cycle);
 
+ -- CONTRIBUTIONS FROM INDIVIDUALS BY GROUP/POLITICIAN
+
+ select date_trunc('second', now()) || ' -- drop table if exists summary_local_from_indiv';
+ drop table if exists summary_local_from_indiv;
+
+ select date_trunc('second', now()) || ' -- create table summary_local_from_indiv';
+ create table summary_local_from_indiv as
+    select cycle, local, count, amount, rank_by_count, rank_by_amount
+        from
+    agg_local_from_indiv alfi
+        where local in ('in-state','out-of-state') and rank_by_amount <= 10;
+
+  select date_trunc('second', now()) || ' -- create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle)';
+  create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle);
+ 
+-- CONTRIBUTIONS FROM INDIVIDUALS BY IN-STATE/OUT-OF-STATE
+
+ select date_trunc('second', now()) || ' -- drop table if exists summary_local_from_indiv';
+ drop table if exists summary_local_from_indiv;
+
+ select date_trunc('second', now()) || ' -- create table summary_local_from_indiv';
+ create table summary_local_from_indiv as
+        with top_contribs as (
+                select 
+                    cycle, 
+                    local, 
+                    contributor_entity, 
+                    me.name as contributor_name, 
+                    count, 
+                    amount, 
+                    rank_by_count, 
+                    rank_by_amount
+                    from
+                agg_local_from_indiv alfi
+                    inner join
+                matchbox_entity me on me.id = alfi.contributor_entity
+                    where local in ('in-state','out-of-state') and rank_by_amount <= 10)
+        select tc.*, l.total_local_amount, l.total_local_count
+            from 
+            top_contribs tc
+            inner join
+            (select local, cycle, sum(amount) as total_local_amount, sum(count) as total_local_count from agg_local_from_indiv alfi where local in ('in-state','out-of-state') group by local,cycle) l on tc.local = l.local and tc.cycle = l.cycle; 
+
+  select date_trunc('second', now()) || ' -- create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle)';
+  create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle);
+
 
 -- CONTRIBUTIONS FROM CONTRIBUTORS BY PARTY
 

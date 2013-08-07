@@ -724,6 +724,41 @@ create table agg_local_to_politician as
 select date_trunc('second', now()) || ' -- create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle)';
 create index agg_local_to_politician_idx on agg_local_to_politician (recipient_entity, cycle);
 
+-- In-state/Out-of-state from individual
+
+select date_trunc('second', now()) || ' -- drop table if exists agg_local_from_indiv';
+drop table if exists agg_local_from_indiv cascade;
+
+select date_trunc('second', now()) || ' -- create table agg_local_from_indiv';
+create table agg_local_from_indiv as
+    with contribs_by_cycle as (
+        select ca.entity_id as contributor_entity, c.cycle,
+            case    when c.contributor_state = c.recipient_state then 'in-state'
+                    when c.contributor_state = '' then ''
+                    else 'out-of-state' end as local,
+            count(*) as count, sum(amount) as amount
+        from contributions_individual c
+        inner join contributor_associations ca using (transaction_id)
+        group by ca.entity_id, c.cycle,
+            case    when c.contributor_state = c.recipient_state then 'in-state'
+                    when c.contributor_state = '' then ''
+                    else 'out-of-state' end
+    )
+    select contributor_entity, cycle, local, count, amount, 
+            rank() over(partition by cycle, local order by count desc) as rank_by_count, 
+            rank() over(partition by cycle, local order by amount desc) as rank_by_amount
+    from contribs_by_cycle
+
+    union all
+
+    select contributor_entity, -1, local, sum(count) as count, sum(amount) amount,
+            rank() over(partition by local order by sum(count) desc) as rank_by_count, 
+            rank() over(partition by local order by sum(amount) desc) as rank_by_amount
+        from contribs_by_cycle
+    group by contributor_entity, local;
+
+select date_trunc('second', now()) || ' -- create index agg_local_from_indiv_idx on agg_local_from_indiv (contributor_entity, cycle)';
+create index agg_local_from_indiv_idx on agg_local_from_indiv (contributor_entity, cycle);
 
 
 -- Indiv/PAC to Politician
