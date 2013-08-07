@@ -186,6 +186,8 @@ class SummaryHandler(BaseHandler):
             v['name'] = k
             result.append(v)
 
+        result = sorted(result, key=lambda x: x['amount'], reverse=True)
+
         return result
 
 class SummaryRollupHandler(BaseHandler):
