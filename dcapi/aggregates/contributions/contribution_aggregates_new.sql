@@ -1,7 +1,7 @@
 -- Contributions to candidates from organizations and parent organizations 
 -- (from agg_cand_from_org, changes indicated in comments)
 -- difference: doesn't cut off at top 10, doesn't include industries or individuals
--- test: join with agg_cand_from_org using (organization_entity, cycle, recipient_enity), check rank, counts, and amounts
+-- test: join with agg_cands_from_org using (organization_entity, cycle, recipient_enity), check rank, counts, and amounts
 select date_trunc('second', now()) || ' -- drop table if exists aggregate_candidates_from_organization';
 drop table if exists aggreggate_candidates_from_organization cascade;
 
