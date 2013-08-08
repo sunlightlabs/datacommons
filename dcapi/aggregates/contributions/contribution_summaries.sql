@@ -85,6 +85,26 @@ create table summary_office_type_from_biggest_org as
 select date_trunc('second', now()) || ' -- create index summary_office_type_from_biggest_org_cycle_rank_idx on summary_office_type_from_biggest_org_org (cycle, rank)';
 create index summary_office_type_from_biggest_org_cycle_rank_idx on summary_office_type_from_biggest_org (cycle, rank);
 
+-- CONTRIBTUIONS FROM BIGGEST ORGS, BROKEN OUT BY SOURCE (ASSOC'D INDIVS OR PACS)
+
+select date_trunc('second', now()) || ' -- drop table if exists summary_biggest_org_by_indiv_pac';
+drop table if exists summary_biggest_org_by_indiv_pac;
+
+select date_trunc('second', now()) || ' -- create table summary_biggest_org_by_indiv_pac';
+create table summary_biggest_org_by_indiv_pac as
+    select
+        name, organization_entity, cycle, direct_or_indiv, count, amount,
+        rank() over(partition by direct_or_indiv, cycle order by count desc) as rank_by_count,
+        rank() over(partition by direct_or_indiv, cycle order by amount desc) as rank_by_amount
+        from
+            aggregate_organizations_by_indiv_pac aoip
+            where exists (select 1
+                            from
+                                biggest_organization_associations boa
+                            where boa.entity_id = aoip.organization_entity);
+
+select date_trunc('second', now()) || ' -- create index summary_biggest_org_by_indiv_pac_cycle_rank_by_amount_idx on summary_biggest_org_by_indiv_pac (cycle, rank_by_amount)';
+create index summary_biggest_org_by_indiv_pac_cycle_rank_by_amount_idx on summary_biggest_org_by_indiv_pac (cycle, rank_by_amount);
 
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY PARTY

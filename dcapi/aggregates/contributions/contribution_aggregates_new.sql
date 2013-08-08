@@ -231,3 +231,74 @@ create table aggregate_pacs_from_organization as
 
 select date_trunc('second', now()) || ' -- create index aggregate_pacs_from_organization_idx on aggregate_pacs_from_organization (organization_entity, cycle)';
 create index aggregate_pacs_from_organization_idx on aggregate_pacs_from_organization (organization_entity, cycle);
+
+
+
+-- CONTRIBUTIONS FROM ORGS BY ASSOCIATED INDIV/PAC
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_organizations_by_indiv_pac';
+drop table if exists aggregate_organizations_by_indiv_pac;
+
+select date_trunc('second', now()) || ' -- create table aggregate_organizations_by_indiv_pac';
+create table aggregate_organizations_by_indiv_pac as
+    with contributions_by_cycle as 
+        (select 
+            organization_entity,
+            cycle,
+            sum(pacs_count) as pacs_count,
+            sum(pacs_amount) as pacs_amount,
+            sum(indivs_count) as indivs_count,
+            sum(indivs_amount) as indivs_amount
+            from
+                (table aggregate_candidates_from_organization
+                 union table aggregate_pacs_from_organization) as aggs
+        group by organization_entity, cycle),
+    pivoted_direct_indiv as 
+        (select
+            organization_entity,
+            cycle,
+            direct_or_indiv,
+            count, 
+            amount
+            from
+            (select
+                organization_entity,
+                cycle,
+                'direct' as direct_or_indiv,
+                pacs_count as count, 
+                pacs_amount as amount
+                from
+                    contributions_by_cycle cbc
+                        inner join
+                    matchbox_entity me on me.id = cbc.organization_entity
+            
+            union
+
+            select 
+                organization_entity,
+                cycle,
+                'indiv' as direct_or_indiv,
+                indivs_count as count, 
+                indivs_amount as amount
+                from
+                    contributions_by_cycle cbc
+                        inner join
+                    matchbox_entity me on me.id = cbc.organization_entity) x)
+           
+        select me.name, organization_entity, cycle, direct_or_indiv, count, amount 
+            from
+                pivoted_direct_indiv pdi
+                    inner join
+                matchbox_entity me on me.id = pdi.organization_entity
+
+        union
+
+        select me.name, organization_entity, -1 as cycle, direct_or_indiv, sum(count) as count, sum(amount) as amount
+            from
+                pivoted_direct_indiv pdi
+                    inner join
+                matchbox_entity me on me.id = pdi.organization_entity
+            group by organization_entity, direct_or_indiv, me.name;
+                
+
+select date_trunc('second', now()) || ' -- create index aggregate_biggest_org_by_indiv_pac_cycle_rank_idx on aggregate_biggest_org_by_indiv_pac (cycle, organization_entity)';
+create index aggregate_organizations_by_indiv_pac_cycle_rank_by_amount_idx on aggregate_organizations_by_indiv_pac (cycle, organization_entity);
