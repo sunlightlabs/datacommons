@@ -680,22 +680,13 @@ class OrgStateFedSummaryHandler(SummaryHandler):
 
 class OrgFromPacIndivTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Org PAC',
-                    'indivs':'Individuals'}
+                    'indiv':'Individuals'}
 
     stmt = """
-        select category, count, amount
-        from
-        (select category, count, amount, cycle from
-        (select 'direct' as category, cycle, sum(direct_count) as count, sum(direct_amount) as amount from
-        summary_pol_groups_from_biggest_org
-        group by category, cycle
-
-        union all
-
-        select 'indivs' as category, cycle, sum(indivs_count) as count, sum(indivs_amount) as amount from
-        summary_pol_groups_from_biggest_org
-        group by category, cycle) d_and_i
-        where cycle = %s) a
+        select direct_or_indiv as category, sum(count) as count, sum(amount) as amount
+            from summary_biggest_org_by_indiv_pac
+        where cycle = %s
+        group by direct_or_indiv;
     """
 
 class OrgFromPacIndivTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
@@ -705,15 +696,9 @@ class OrgFromPacIndivTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler
     fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
 
     stmt = """
-        select name, id, direct_or_indiv, amount, cycle, rank from
-        (select name, organization_entity as id, 'direct' as direct_or_indiv, direct_amount as amount, cycle, direct_rank as rank
-          from summary_pol_groups_from_biggest_org
-
-         union all
-
-        select name, organization_entity as id, 'indivs' as direct_or_indiv, indivs_amount as amount, cycle, indivs_rank as rank
-          from summary_pol_groups_from_biggest_org) d_and_i
-         where cycle = %s and rank <= %s
+        select name, organization_entity as id, direct_or_indiv, amount, cycle, rank_by_amount as rank
+            from summary_biggest_org_by_indiv_pac
+         where cycle = %s and rank_by_amount <= %s;
     """
 
 class OrgFromPacIndivSummaryHandler(SummaryHandler):
