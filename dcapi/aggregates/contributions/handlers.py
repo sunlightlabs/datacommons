@@ -678,7 +678,7 @@ class OrgStateFedSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
-class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
+class OrgFromPacIndivTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Org PAC',
                     'indivs':'Individuals'}
 
@@ -698,7 +698,7 @@ class OrgToPolGroupTotalsHandler(SummaryRollupHandler):
         where cycle = %s) a
     """
 
-class OrgToPolGroupTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+class OrgFromPacIndivTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
@@ -716,9 +716,9 @@ class OrgToPolGroupTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
          where cycle = %s and rank <= %s
     """
 
-class OrgToPolGroupSummaryHandler(SummaryHandler):
-    rollup = OrgToPolGroupTotalsHandler()
-    breakout = OrgToPolGroupTopBiggestOrgsByContributionsHandler()
+class OrgFromPacIndivSummaryHandler(SummaryHandler):
+    rollup = OrgFromPacIndivTotalsHandler()
+    breakout = OrgFromPacIndivTopBiggestOrgsByContributionsHandler()
     def key_function(self,x):
         direct_or_indiv = x['direct_or_indiv']
         if direct_or_indiv in self.rollup.category_map:

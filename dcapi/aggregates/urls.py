@@ -12,7 +12,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
-    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgToPolGroupSummaryHandler, \
+    OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgFromPacIndivSummaryHandler, \
     ContributorPartySummaryHandler, ContributorStateFedSummaryHandler, \
     ContributorRecipientTypeSummaryHandler, ContributorInStateOutOfStateSummaryHandler, \
     LobbyistPartySummaryHandler, LobbyistStateFedSummaryHandler, \
@@ -341,8 +341,8 @@ urlpatterns = patterns('',
         Resource(OrgStateFedSummaryHandler, **ad)),
 
     # summary of orgs' group vs individual contributions
-    url(r'^summary/org/pol_group.(?P<emitter_format>.+)$',
-        Resource(OrgToPolGroupSummaryHandler, **ad)),
+    url(r'^summary/org/pac_indiv.(?P<emitter_format>.+)$',
+        Resource(OrgFromPacIndivSummaryHandler, **ad)),
 
     #url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
     #    Resource(OrgOfficeTypeSummaryHandler, **ad)),
