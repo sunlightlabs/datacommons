@@ -15,17 +15,21 @@ create table summary_party_from_biggest_org as
             rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank
         from
         (select
-            organization_entity,
+            apfo.organization_entity,
             me.name,
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
-            cycle,
+            apfo.cycle,
             count,
             amount
         from
                 matchbox_entity me
             inner join
-                agg_party_from_org apfo on me.id = apfo.organization_entity
+                aggregate_party_from_org apfo on me.id = apfo.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
         where
+            om.is_org 
+            and 
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
             ) three_party
         group by organization_entity, name, recipient_party, cycle;
@@ -53,7 +57,11 @@ create table summary_namespace_from_biggest_org as
                 matchbox_entity me
             inner join
                 agg_namespace_from_org apfo on me.id = apfo.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
         where
+            om.is_org 
+            and 
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 
 select date_trunc('second', now()) || ' -- create index summary_namespace_from_biggest_org_cycle_rank_idx on summary_namespace_from_biggest_org_org (cycle, rank)';
@@ -79,7 +87,11 @@ create table summary_office_type_from_biggest_org as
                 matchbox_entity me
             inner join
                 agg_office_type_from_org apfo on me.id = apfo.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
         where
+            om.is_org 
+            and 
             exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 
 select date_trunc('second', now()) || ' -- create index summary_office_type_from_biggest_org_cycle_rank_idx on summary_office_type_from_biggest_org_org (cycle, rank)';
@@ -93,12 +105,19 @@ drop table if exists summary_biggest_org_by_indiv_pac;
 select date_trunc('second', now()) || ' -- create table summary_biggest_org_by_indiv_pac';
 create table summary_biggest_org_by_indiv_pac as
     select
-        name, organization_entity, cycle, direct_or_indiv, count, amount,
+        me.name, organization_entity, cycle, direct_or_indiv, count, amount,
         rank() over(partition by direct_or_indiv, cycle order by count desc) as rank_by_count,
         rank() over(partition by direct_or_indiv, cycle order by amount desc) as rank_by_amount
         from
             aggregate_organizations_by_indiv_pac aoip
-            where exists (select 1
+                inner join
+            matchbox_entity me on me.id = aoip.organization_entity
+                inner join 
+            matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
+        where
+            om.is_org 
+            and 
+            exists (select 1
                             from
                                 biggest_organization_associations boa
                             where boa.entity_id = aoip.organization_entity);
