@@ -204,7 +204,7 @@ where
         OR
     is_corp_w_o_capital_stock
         OR
-    ( NOT is_pol_group));
+    ( (NOT is_pol_group) OR (is_pol_group is null)));
 
 
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (industry and subindustry ids)';
