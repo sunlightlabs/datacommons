@@ -517,17 +517,15 @@ create index agg_party_from_indiv_idx on agg_party_from_indiv (contributor_entit
 
 -- Party from Organization
 
-
 select date_trunc('second', now()) || ' -- drop table if exists agg_party_from_org';
 drop table if exists agg_party_from_org cascade;
 
 select date_trunc('second', now()) || ' -- create table agg_party_from_org';
 create table agg_party_from_org as
    with contribs_by_cycle as (
-        select oa.entity_id as organization_entity, c.cycle, c.recipient_party, count(*), sum(amount) as amount
+    select oa.entity_id as organization_entity, c.cycle, case when c.recipient_party != '' then c.recipient_party else 'None' end as recipient_party, count(*), sum(amount) as amount
         from contributions_all_relevant c
         inner join (table contributor_associations union table organization_associations union table parent_organization_associations union all table industry_associations) oa using (transaction_id)
-        where recipient_party != ''
         group by oa.entity_id, c.cycle, c.recipient_party
     )
 
@@ -545,7 +543,6 @@ select date_trunc('second', now()) || ' -- create index agg_party_from_org_idx o
 create index agg_party_from_org_idx on agg_party_from_org (organization_entity, cycle);
 
 -- State/Fed from Indiv
-
 
 select date_trunc('second', now()) || ' -- drop table if exists agg_namespace_from_indiv';
 drop table if exists agg_namespace_from_indiv cascade;
