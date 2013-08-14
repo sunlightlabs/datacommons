@@ -300,7 +300,7 @@ create index aggregate_organizations_by_indiv_pac_cycle_rank_by_amount_idx on ag
 -- difference: doesn't cut off at top 10, doesn't include industries or individuals, includes pacs and cands
 -- test: join with agg_party_from_org using (organization_entity, cycle, recipient_party), check 
 select date_trunc('second', now()) || ' -- drop table if exists aggregate_parties_from_organization';
-drop table if exists aggreggate_parties_from_organization cascade;
+drop table if exists aggregate_parties_from_organization cascade;
 
 select date_trunc('second', now()) || ' -- create table aggregate_parties_from_organization';
 create table aggregate_parties_from_organization as 
@@ -362,7 +362,7 @@ create table aggregate_parties_from_organization as
             rank_by_amount
     from 
         org_contributions_by_cycle
-    
+
     union all
 
     select  organization_entity, 
@@ -396,7 +396,7 @@ create index aggregate_parties_from_organization_party_cycle_idx on aggregate_pa
 -- difference: doesn't cut off at top 10, doesn't include industries or individuals, includes pacs and cands
 -- test: join with agg_party_from_org using (organization_entity, cycle, transaction_namespace), check 
 select date_trunc('second', now()) || ' -- drop table if exists aggregate_state_fed_from_organization';
-drop table if exists aggreggate_state_fed_from_organization cascade;
+drop table if exists aggregate_state_fed_from_organization cascade;
 
 select date_trunc('second', now()) || ' -- create table aggregate_state_fed_from_organization';
 create table aggregate_state_fed_from_organization as 
@@ -411,8 +411,8 @@ create table aggregate_state_fed_from_organization as
             from 
             
                ( select ca.entity_id as organization_entity, 
-                       case when co.transaction_namespace = 'urn:fec:transaction' then 'federal', 
-                            when co.transaction_namespace = 'urn:nimsp:transaction' then 'state',
+                       case when co.transaction_namespace = 'urn:fec:transaction' then 'federal' 
+                            when co.transaction_namespace = 'urn:nimsp:transaction' then 'state'
                             else 'other' end as state_or_federal,
                        -- ci.transaction_namespace,
                        cycle, 
@@ -491,20 +491,20 @@ select date_trunc('second', now()) || ' -- create index aggregate_state_fed_from
 create index aggregate_state_fed_from_organization_idx on aggregate_state_fed_from_organization (organization_entity, cycle);
 
 select date_trunc('second', now()) || ' -- create index aggregate_state_fed_from_organization_party_cycle_idx on aggregate_state_fed_from_organization (transaction_namespace, cycle)';
-create index aggregate_state_fed_from_organization_party_cycle_idx on aggregate_s
+create index aggregate_state_fed_from_organization_state_or_federal_cycle_idx on aggregate_state_fed_from_organization (state_or_federal,cycle);
 
 -- Contributions to state and federal races from organizations and parent organizations 
 -- (to replace agg_namespace_from_org, total departure, based on aggregate_organizations_by...)
 -- difference: doesn't cut off at top 10, doesn't include industries or individuals, includes pacs and cands
 -- test: join with agg_party_from_org using (organization_entity, cycle, transaction_namespace), check 
-select date_trunc('second', now()) || ' -- drop table if exists aggregate_state_fed_from_organization';
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_seat_from_organization';
 drop table if exists aggreggate_seat_from_organization cascade;
 
-select date_trunc('second', now()) || ' -- create table aggregate_state_fed_from_organization';
+select date_trunc('second', now()) || ' -- create table aggregate_seat_from_organization';
 create table aggregate_seat_from_organization as 
     with org_contributions_by_cycle as
         (select organization_entity, 
-                transaction_namespace,  
+                seat,  
                 cycle,
                 sum(count) as count,
                 sum(amount) as amount,
@@ -513,7 +513,7 @@ create table aggregate_seat_from_organization as
             from 
             
                ( select ca.entity_id as organization_entity, 
-                       co.transaction_namespace,
+                       co.seat,
                        cycle, 
                        count(*) as count, 
                        sum(co.amount) as amount
@@ -527,12 +527,12 @@ create table aggregate_seat_from_organization as
                     recipient_associations ra using (transaction_id)
                         left join 
                     matchbox_entity re on re.id = ra.entity_id
-                group by ca.entity_id, co.transaction_namespace, cycle
+                group by ca.entity_id, co.seat, cycle
 
             union all
 
                 select oa.entity_id as organization_entity, 
-                       ci.transaction_namespace,
+                       ci.seat,
                        cycle, 
                        count(*) as count, 
                        sum(ci.amount) as amount
@@ -546,13 +546,13 @@ create table aggregate_seat_from_organization as
                     recipient_associations ra using (transaction_id)
                         left join 
                     matchbox_entity re on re.id = ra.entity_id
-                group by oa.entity_id, ci.transaction_namespace, cycle) x
+                group by oa.entity_id, ci.seat, cycle) x
 
-            group by organization_entity, transaction_namespace, cycle
+            group by organization_entity, seat, cycle
         )
     
     select  organization_entity, 
-            transaction_namespace,  
+            seat,  
             cycle,
             count,
             amount,
@@ -564,7 +564,7 @@ create table aggregate_seat_from_organization as
     union all
 
     select  organization_entity, 
-            transaction_namespace,  
+            seat,  
             -1 as cycle,
             count,
             amount,
@@ -572,7 +572,7 @@ create table aggregate_seat_from_organization as
             rank_by_amount
     from 
         (select organization_entity, 
-                transaction_namespace,  
+                seat,  
                 sum(count) as count,
                 sum(amount) as amount,
                 rank() over(partition by organization_entity order by sum(count) desc) as rank_by_count,
@@ -583,11 +583,11 @@ create table aggregate_seat_from_organization as
         ) all_cycle_rollup 
 ;
 
-select date_trunc('second', now()) || ' -- create index aggregate_state_fed_from_organization_entity_cycle_idx on aggregate_state_fed_from_organization (organization_entity, cycle)';
-create index aggregate_state_fed_from_organization_idx on aggregate_state_fed_from_organization (organization_entity, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_seat_from_organization_entity_cycle_idx on aggregate_seat_from_organization (organization_entity, cycle)';
+create index aggregate_seat_from_organization_idx on aggregate_seat_from_organization (organization_entity, cycle);
 
-select date_trunc('second', now()) || ' -- create index aggregate_state_fed_from_organization_party_cycle_idx on aggregate_state_fed_from_organization (transaction_namespace, cycle)';
-create index aggregate_state_fed_from_organization_party_cycle_idx on aggregate_state_fed_from_organization (transaction_namespace, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_seat_from_organization_seat_cycle_idx on aggregate_seat_from_organization (seat, cycle)';
+create index aggregate_seat_from_organization_seat_cycle_idx on aggregate_seat_from_organization (seat, cycle);
 
 ---- INDIVIDUALS
 
@@ -605,7 +605,7 @@ create table aggregate_state_fed_from_individual as
                        ci.transaction_namespace,
                        cycle, 
                        count(*) as count, 
-                       sum(co.amount) as amount,
+                       sum(ci.amount) as amount,
                         rank() over (partition by individual_entity, cycle order by sum(count) desc) as rank_by_count,
                         rank() over (partition by individual_entity, cycle order by sum(amount) desc) as rank_by_amount
                 from 
@@ -661,10 +661,10 @@ create index aggregate_state_fed_from_individual_state_fed_cycle_idx on aggregat
 -- to replace agg_party_from_indiv
 -- difference: doesn't cut off at top 10, doesn't filter for recip party, contributor type or namespace explicity, includes pacs and cands
 -- test: join with agg_party_from_indiv using (individual_entity, cycle, transaction_namespace), check 
-select date_trunc('second', now()) || ' -- drop table if exists aggregate_state_fed_from_individual';
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_party_from_individual';
 drop table if exists aggreggate_party_from_individual cascade;
 
-select date_trunc('second', now()) || ' -- create table aggregate_state_fed_from_individual';
+select date_trunc('second', now()) || ' -- create table aggregate_party_from_individual';
 create table aggregate_party_from_individual as 
     with contributions_by_cycle as
         (select ca.entity_id as individual_entity, 
@@ -720,7 +720,7 @@ create table aggregate_party_from_individual as
 select date_trunc('second', now()) || ' -- create index aggregate_recipient_party_from_individual_entity_cycle_idx on aggregate_recipient_party_from_individual (individual_entity, cycle)';
 create index aggregate_recipient_party_from_individual_idx on aggregate_recipient_party_from_individual (individual_entity, cycle);
 
-select date_trunc('second', now()) || ' -- create index aggregate_state_fed_from_individual_party_cycle_idx on aggregate_state_fed_from_individual (transaction_namespace, cycle)';
+select date_trunc('second', now()) || ' -- create index aggregate_recipient_party_from_individual_party_cycle_idx on aggregate_state_fed_from_individual (transaction_namespace, cycle)';
 create index aggregate_recipient_party_from_individual_party_cycle_idx on aggregate_recipient_party_from_individual (recipient_party, cycle);
 
 -- Contributions to in state and out of state policitians from individuals 
@@ -755,7 +755,7 @@ create table aggregate_in_state_out_of_state_from_individual as
                                 recipient_associations ra using (transaction_id)
                                     left join 
                                 matchbox_entity re on re.id = ra.entity_id
-                    )
+                    ) x
                 group by ca.entity_id, in_state_out_of_state, cycle)
     
     select  individual_entity, 
@@ -820,7 +820,7 @@ create table aggregate_candidates_from_industry as
             from 
                 (
                 select ia.entity_id as industry_entity, 
-                       coalesce(re.name, c.recipient_name) as recipient_name, 
+                       coalesce(re.name, co.recipient_name) as recipient_name, 
                        ra.entity_id as recipient_entity,
                        cycle, 
                        count(*), 
@@ -832,25 +832,25 @@ create table aggregate_candidates_from_industry as
                     recipient_associations ra using (transaction_id)
                         left join 
                     matchbox_entity re on re.id = ra.entity_id
-                group by ia.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
+                group by ia.entity_id, coalesce(re.name, co.recipient_name), ra.entity_id, cycle
                 )  direct
             full outer join 
                 (
                 select  ia.entity_id as industry_entity, 
-                        coalesce(re.name, c.recipient_name) as recipient_name, 
+                        coalesce(re.name, ci.recipient_name) as recipient_name, 
                         ra.entity_id as recipient_entity,
                         cycle, 
                         count(*), 
                         sum(amount) as amount
                 from 
-                    contributions_individual c
+                    contributions_individual ci
                         inner join 
                     industry_associations ia using (transaction_id)
                         left join 
                     recipient_associations ra using (transaction_id)
                         left join 
                     matchbox_entity re on re.id = ra.entity_id
-                group by ia.entity_id, coalesce(re.name, c.recipient_name), ra.entity_id, cycle
+                group by ia.entity_id, coalesce(re.name, ci.recipient_name), ra.entity_id, cycle
                 ) indivs 
         using (industry_entity, recipient_name, recipient_entity, cycle)
     )
@@ -1086,7 +1086,7 @@ create table aggregate_parties_from_industry as
                 rank() over (partition by industry_entity, cycle order by sum(amount) desc) as rank_by_amount
             from 
             
-               ( select ia.entity_id as industry_entity, 
+               ( select co.entity_id as industry_entity, 
                        co.recipient_party,
                        cycle, 
                        count(*) as count, 
@@ -1100,11 +1100,11 @@ create table aggregate_parties_from_industry as
                     recipient_associations ra using (transaction_id)
                         left join 
                     matchbox_entity re on re.id = ra.entity_id
-                group by ca.entity_id, co.recipient_party, cycle
+                group by co.entity_id, co.recipient_party, cycle
 
             union all
 
-                select ia.entity_id as industry_entity, 
+                select ci.entity_id as industry_entity, 
                        ci.recipient_party,
                        cycle, 
                        count(*) as count, 
@@ -1118,7 +1118,7 @@ create table aggregate_parties_from_industry as
                     recipient_associations ra using (transaction_id)
                         left join 
                     matchbox_entity re on re.id = ra.entity_id
-                group by oa.entity_id, ci.recipient_party, cycle) x
+                group by ci.entity_id, ci.recipient_party, cycle) x
 
             group by organization_entity, recipient_party, cycle
         )
@@ -1180,8 +1180,8 @@ create table aggregate_state_fed_from_industry as
             from 
             (
                 select ia.entity_id as industry_entity, 
-                           case when co.transaction_namespace = 'urn:fec:transaction' then 'federal', 
-                                when co.transaction_namespace = 'urn:nimsp:transaction' then 'state',
+                           case when co.transaction_namespace = 'urn:fec:transaction' then 'federal' 
+                                when co.transaction_namespace = 'urn:nimsp:transaction' then 'state'
                                 else 'other' end as state_or_federal,
                            cycle,  
                            co.amount
