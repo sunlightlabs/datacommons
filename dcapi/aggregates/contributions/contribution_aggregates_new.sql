@@ -433,8 +433,8 @@ create table aggregate_state_fed_from_organization as
             union all
 
                 select oa.entity_id as organization_entity, 
-                       case when co.transaction_namespace = 'urn:fec:transaction' then 'federal', 
-                            when co.transaction_namespace = 'urn:nimsp:transaction' then 'state',
+                       case when co.transaction_namespace = 'urn:fec:transaction' then 'federal' 
+                            when co.transaction_namespace = 'urn:nimsp:transaction' then 'state'
                             else 'other' end as state_or_federal,
                        -- ci.transaction_namespace,
                        cycle, 
@@ -579,7 +579,7 @@ create table aggregate_seat_from_organization as
                 rank() over(partition by organization_entity order by sum(amount) desc) as rank_by_amount
         from 
             org_contributions_by_cycle
-        group by organization_entity, transaction_namespace
+        group by organization_entity, seat
         ) all_cycle_rollup 
 ;
 
@@ -606,7 +606,7 @@ create table aggregate_state_fed_from_individual as
                        cycle, 
                        count(*) as count, 
                        sum(ci.amount) as amount,
-                        rank() over (partition by individual_entity, cycle order by sum(count) desc) as rank_by_count,
+                        rank() over (partition by individual_entity, cycle order by count(*) desc) as rank_by_count,
                         rank() over (partition by individual_entity, cycle order by sum(amount) desc) as rank_by_amount
                 from 
                     (table contributions_individual   
@@ -671,9 +671,9 @@ create table aggregate_party_from_individual as
                        ci.recipient_party,
                        cycle, 
                        count(*) as count, 
-                       sum(co.amount) as amount,
-                        rank() over (partition by individual_entity, cycle order by sum(count) desc) as rank_by_count,
-                        rank() over (partition by individual_entity, cycle order by sum(amount) desc) as rank_by_amount
+                       sum(ci.amount) as amount,
+                        rank() over (partition by individual_entity, cycle order by count(*) desc) as rank_by_count,
+                        rank() over (partition by individual_entity, cycle order by sum(ci.amount) desc) as rank_by_amount
                 from 
                     (table contributions_individual   
                      union table contributions_individual_to_organization ) ci
@@ -737,8 +737,8 @@ create table aggregate_in_state_out_of_state_from_individual as
                 in_state_out_of_state,
                 cycle,
                 count(*) as count, 
-                sum(co.amount) as amount,
-                rank() over (partition by individual_entity, cycle order by sum(count) desc) as rank_by_count,
+                sum(amount) as amount,
+                rank() over (partition by individual_entity, cycle order by count(*) desc) as rank_by_count,
                 rank() over (partition by individual_entity, cycle order by sum(amount) desc) as rank_by_amount
                 from
                     (select ca.entity_id as individual_entity, 
@@ -824,7 +824,7 @@ create table aggregate_candidates_from_industry as
                        ra.entity_id as recipient_entity,
                        cycle, 
                        count(*), 
-                       sum(c.amount) as amount
+                       sum(co.amount) as amount
                 from contributions_organization co
                         inner join 
                     industry_associations ia using (transaction_id)
@@ -1067,7 +1067,7 @@ create table aggregate_industries_by_indiv_pac as
                     inner join
                 matchbox_entity me on me.id = pdi.industry_entity; 
 
-select date_trunc('second', now()) || ' -- create index aggregate_industry_by_indiv_pac_cycle_rank_idx on aggregate_biggest_org_by_indiv_pac (cycle, organization_entity)';
+select date_trunc('second', now()) || ' -- create index aggregate_industry_by_indiv_pac_cycle_rank_idx on aggregate_industry_by_indiv_pac (cycle, organization_entity)';
 create index aggregate_industries_by_indiv_pac_cycle_rank_by_amount_idx on aggregate_industry_by_indiv_pac (cycle, industry_entity);
 
 -- Contributions to parties from industry 
