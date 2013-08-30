@@ -433,8 +433,8 @@ create table aggregate_state_fed_from_organization as
             union all
 
                 select oa.entity_id as organization_entity, 
-                       case when co.transaction_namespace = 'urn:fec:transaction' then 'federal' 
-                            when co.transaction_namespace = 'urn:nimsp:transaction' then 'state'
+                       case when ci.transaction_namespace = 'urn:fec:transaction' then 'federal' 
+                            when ci.transaction_namespace = 'urn:nimsp:transaction' then 'state'
                             else 'other' end as state_or_federal,
                        -- ci.transaction_namespace,
                        cycle, 
@@ -498,7 +498,7 @@ create index aggregate_state_fed_from_organization_state_or_federal_cycle_idx on
 -- difference: doesn't cut off at top 10, doesn't include industries or individuals, includes pacs and cands
 -- test: join with agg_party_from_org using (organization_entity, cycle, transaction_namespace), check 
 select date_trunc('second', now()) || ' -- drop table if exists aggregate_seat_from_organization';
-drop table if exists aggreggate_seat_from_organization cascade;
+drop table if exists aggregate_seat_from_organization cascade;
 
 select date_trunc('second', now()) || ' -- create table aggregate_seat_from_organization';
 create table aggregate_seat_from_organization as 
@@ -606,8 +606,8 @@ create table aggregate_state_fed_from_individual as
                        cycle, 
                        count(*) as count, 
                        sum(ci.amount) as amount,
-                        rank() over (partition by individual_entity, cycle order by count(*) desc) as rank_by_count,
-                        rank() over (partition by individual_entity, cycle order by sum(amount) desc) as rank_by_amount
+                        rank() over (partition by ca.entity_id, cycle order by count(*) desc) as rank_by_count,
+                        rank() over (partition by ca.entity_id, cycle order by sum(amount) desc) as rank_by_amount
                 from 
                     (table contributions_individual   
                      union table contributions_individual_to_organization ) ci
@@ -672,8 +672,8 @@ create table aggregate_party_from_individual as
                        cycle, 
                        count(*) as count, 
                        sum(ci.amount) as amount,
-                        rank() over (partition by individual_entity, cycle order by count(*) desc) as rank_by_count,
-                        rank() over (partition by individual_entity, cycle order by sum(ci.amount) desc) as rank_by_amount
+                        rank() over (partition by ci.entity, cycle order by count(*) desc) as rank_by_count,
+                        rank() over (partition by ci.entity, cycle order by sum(ci.amount) desc) as rank_by_amount
                 from 
                     (table contributions_individual   
                      union table contributions_individual_to_organization ) ci
@@ -756,7 +756,7 @@ create table aggregate_in_state_out_of_state_from_individual as
                                     left join 
                                 matchbox_entity re on re.id = ra.entity_id
                     ) x
-                group by ca.entity_id, in_state_out_of_state, cycle)
+                group by individual_entity, in_state_out_of_state, cycle)
     
     select  individual_entity, 
             in_state_out_of_state,  
@@ -1012,10 +1012,10 @@ select date_trunc('second', now()) || ' -- create index aggregate_candidates_fro
 create index aggregate_pacs_from_industry_idx on aggregate_pacs_from_industry (industry_entity, cycle);
 
 -- CONTRIBUTIONS FROM ORGS BY ASSOCIATED INDIV/PAC
-select date_trunc('second', now()) || ' -- drop table if exists aggregate_organizations_by_indiv_pac';
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_industries_by_indiv_pac';
 drop table if exists aggregate_industries_by_indiv_pac;
 
-select date_trunc('second', now()) || ' -- create table aggregate_organizations_by_indiv_pac';
+select date_trunc('second', now()) || ' -- create table aggregate_industries_by_indiv_pac';
 create table aggregate_industries_by_indiv_pac as
     with contributions_by_cycle as 
         (select 
@@ -1037,7 +1037,7 @@ create table aggregate_industries_by_indiv_pac as
             count, 
             amount
             from
-            (select
+            (select 
                 industry_entity,
                 cycle,
                 'direct' as direct_or_indiv,
@@ -1067,8 +1067,8 @@ create table aggregate_industries_by_indiv_pac as
                     inner join
                 matchbox_entity me on me.id = pdi.industry_entity; 
 
-select date_trunc('second', now()) || ' -- create index aggregate_industry_by_indiv_pac_cycle_rank_idx on aggregate_industry_by_indiv_pac (cycle, organization_entity)';
-create index aggregate_industries_by_indiv_pac_cycle_rank_by_amount_idx on aggregate_industry_by_indiv_pac (cycle, industry_entity);
+select date_trunc('second', now()) || ' -- create index aggregate_industries_by_indiv_pac_cycle_rank_idx on aggregate_industries_by_indiv_pac (cycle, organization_entity)';
+create index aggregate_industries_by_indiv_pac_cycle_rank_by_amount_idx on aggregate_industries_by_indiv_pac (cycle, industry_entity);
 
 -- Contributions to parties from industry 
 select date_trunc('second', now()) || ' -- drop table if exists aggregate_parties_from_industry';
@@ -1199,8 +1199,8 @@ create table aggregate_state_fed_from_industry as
             union all
 
                 select ia.entity_id as industry_entity, 
-                           case when ci.transaction_namespace = 'urn:fec:transaction' then 'federal', 
-                                when ci.transaction_namespace = 'urn:nimsp:transaction' then 'state',
+                           case when ci.transaction_namespace = 'urn:fec:transaction' then 'federal' 
+                                when ci.transaction_namespace = 'urn:nimsp:transaction' then 'state'
                                 else 'other' end as state_or_federal,
                            cycle,  
                            co.amount
