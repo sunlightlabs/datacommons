@@ -786,7 +786,7 @@ create table aggregate_in_state_out_of_state_from_individual as
                 rank() over(partition by individual_entity order by sum(amount) desc) as rank_by_amount
         from 
             contributions_by_cycle
-        group by individual_entity, transaction_namespace
+        group by individual_entity, in_state_out_of_state
         ) all_cycle_rollup 
 ;
 
