@@ -452,7 +452,7 @@ create table aggregate_state_fed_from_organization as
                     matchbox_entity re on re.id = ra.entity_id
                 group by oa.entity_id, ci.transaction_namespace, cycle) x
 
-            group by organization_entity, transaction_namespace, cycle
+            group by organization_entity, state_or_federal, cycle
         )
     
     select  organization_entity, 
