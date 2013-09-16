@@ -300,7 +300,7 @@ create table organization_metadata_latest_cycle_view as
     is_pol_group,
     parent_entity_id, 
     industry_entity_id, 
-    subindustry_entity_id 
+    subindustry_entity_id, 
     is_superpac,
     is_corporation,
     is_labor_org,
