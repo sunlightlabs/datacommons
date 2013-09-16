@@ -120,7 +120,7 @@ update tmp_matchbox_organizationmetadata meta set
     is_trade_assoc = i.is_trade_assoc,
     is_cooperative = i.is_cooperative,
     is_corp_w_o_capital_stock = i.is_corp_w_o_capital_stock,
-    has_fec_profile = true
+    has_fec_profile = 't'::boolean
 from (
     with attributes_by_cycle as 
         (select 
