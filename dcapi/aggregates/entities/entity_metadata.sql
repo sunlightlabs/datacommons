@@ -119,7 +119,8 @@ update tmp_matchbox_organizationmetadata meta set
     is_membership_org = i.is_membership_org,
     is_trade_assoc = i.is_trade_assoc,
     is_cooperative = i.is_cooperative,
-    is_corp_w_o_capital_stock = i.is_corp_w_o_capital_stock
+    is_corp_w_o_capital_stock = i.is_corp_w_o_capital_stock,
+    has_fec_profile = true
 from (
     with attributes_by_cycle as 
         (select 
@@ -258,7 +259,8 @@ insert into matchbox_organizationmetadata (
     is_membership_org,
     is_trade_assoc,
     is_cooperative,
-    is_corp_w_o_capital_stock
+    is_corp_w_o_capital_stock,
+    has_fec_profile
 )
     select 
     entity_id, 
@@ -275,7 +277,8 @@ insert into matchbox_organizationmetadata (
     is_membership_org,
     is_trade_assoc,
     is_cooperative,
-    is_corp_w_o_capital_stock
+    is_corp_w_o_capital_stock,
+    has_fec_profile
     from tmp_matchbox_organizationmetadata
     where entity_id in (select id from matchbox_entity)
         and (parent_entity_id is null or parent_entity_id in (select id from matchbox_entity))
@@ -307,7 +310,8 @@ create table organization_metadata_latest_cycle_view as
     is_membership_org,
     is_trade_assoc,
     is_cooperative,
-    is_corp_w_o_capital_stock
+    is_corp_w_o_capital_stock,
+    has_fec_profile
     from matchbox_organizationmetadata
     order by entity_id, cycle desc
 ;
@@ -331,7 +335,8 @@ set
     is_membership_org           = lcv.is_membership_org,                       
     is_trade_assoc              = lcv.is_trade_assoc,                                  
     is_cooperative              = lcv.is_cooperative,                                          
-    is_corp_w_o_capital_stock   = lcv.is_corp_w_o_capital_stock
+    is_corp_w_o_capital_stock   = lcv.is_corp_w_o_capital_stock,
+    has_fec_profile             = lcv.has_fec_profile
 from
     organization_metadata_latest_cycle_view lcv
 where
