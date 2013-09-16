@@ -184,7 +184,9 @@ update
     tmp_matchbox_organizationmetadata as om
 set
     is_pol_group = true
-where 
+where
+    has_fec_profile
+    and
    (is_labor_org 
         OR 
     is_membership_org
@@ -199,6 +201,8 @@ update
 set
     is_org = true
 where 
+    has_fec_profile
+    and
    (is_corporation 
         OR 
     is_cooperative 
