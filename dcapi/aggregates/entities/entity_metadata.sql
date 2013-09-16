@@ -138,7 +138,8 @@ from (
                 entity_id,
                 committee_id,
                 om.cycle,
-                true as is_pol_group,  -- all orgs with FEC ids are pol groups
+                -- first pass on is_pol_group: only candidate and party committees, plus indexps, electioneering, comm cost and superpacs
+                case when (committee_type in ('D','H','P','S','X','Y','Z','I','E','O','C') or committee_designation in ('A','D','J','P')) then 't'::boolean else 'f'::boolean end as is_pol_group,
                 case when interest_group = 'C' then 't'::boolean else 'f'::boolean end as is_corporation,
                 case when interest_group = 'L' then 't'::boolean else 'f'::boolean end as is_labor_org,
                 case when interest_group = 'M' then 't'::boolean else 'f'::boolean end as is_membership_org,
@@ -168,22 +169,6 @@ from (
        is_corp_w_o_capital_stock
     from attributes_by_cycle
 
-    union all
-
-    select
-       entity_id,
-       committee_id,
-       -1                                   as cycle,
-       bool_or(is_pol_group)                as is_pol_group,
-       bool_or(is_corporation)             as is_corporation,
-       bool_or(is_labor_org)               as is_labor_org,
-       bool_or(is_membership_org)          as is_membership_org,
-       bool_or(is_trade_assoc)             as is_trade_assoc,
-       bool_or(is_cooperative)             as is_cooperative,
-       bool_or(is_corp_w_o_capital_stock)  as is_corp_w_o_capital_stock
-    from attributes_by_cycle
-    group by entity_id,committee_id
-
 ) i
 
 where
@@ -191,6 +176,21 @@ where
     and meta.cycle = i.cycle
 ;
 
+-- labor, membership and trade considered pol groups
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (is_pol_group)';
+
+update
+    tmp_matchbox_organizationmetadata as om
+set
+    is_pol_group = true
+where 
+   (is_labor_org 
+        OR 
+    is_membership_org
+        OR
+    is_trade_assoc);
+
+-- everything that's not a a lobbying firm, pol_group 
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (is_org)';
 
 update
@@ -313,6 +313,29 @@ create table organization_metadata_latest_cycle_view as
 ;
 create index organization_metadata_latest_cycle_view__entity_id__idx on organization_metadata_latest_cycle_view (entity_id);
 commit;
+
+
+select date_trunc('second', now()) || ' -- update table matchbox_organizationmetadata all-cycle values with latest known values';
+update 
+    matchbox_organizationmetadata as om
+set
+    lobbying_firm               = lcv.lobbying_firm,            
+    is_org                      = lcv.is_org,                   
+    is_pol_group                = lcv.is_pol_group,            
+    parent_entity_id            = lcv.parent_entity_id,                     
+    industry_entity_id          = lcv.industry_entity_id,              
+    subindustry_entity_id       = lcv.subindustry_entity_id,
+    is_superpac                 = lcv.is_superpac,                             
+    is_corporation              = lcv.is_corporation,                                      
+    is_labor_org                = lcv.is_labor_org,                            
+    is_membership_org           = lcv.is_membership_org,                       
+    is_trade_assoc              = lcv.is_trade_assoc,                                  
+    is_cooperative              = lcv.is_cooperative,                                          
+    is_corp_w_o_capital_stock   = lcv.is_corp_w_o_capital_stock
+from
+    organization_metadata_latest_cycle_view lcv
+where
+    om.entity_id = lcv.entity_id and om.cycle = -1;
 
 -- Politician Metadata
 
