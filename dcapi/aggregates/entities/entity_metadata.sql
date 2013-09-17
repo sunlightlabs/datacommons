@@ -21,6 +21,8 @@ insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
     select distinct entity_id, cycle from lobbying_report inner join assoc_lobbying_client_parent using (transaction_id)
 ;
 
+create index tmp_matchbox_organizationmetadata_entity_id_idx on tmp_matchbox_organizationmetadata (entity_id);
+
 update
     tmp_matchbox_organizationmetadata as tmp
 set
@@ -37,6 +39,8 @@ where
 
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (lobbying_firm = f where null';
 update tmp_matchbox_organizationmetadata set lobbying_firm = 'f' where lobbying_firm is null;
+
+
 
 -- populate parent company from contributions
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (populate parent company from contributions)';
@@ -148,7 +152,7 @@ from (
                 case when interest_group = 'V' then 't'::boolean else 'f'::boolean end as is_cooperative,
                 case when interest_group = 'W' then 't'::boolean else 'f'::boolean end as is_corp_w_o_capital_stock
             from
-                matchbox_organizationmetadata om
+                tmp_matchbox_organizationmetadata om
                 inner join matchbox_entityattribute ea using (entity_id)
                 inner join fec_committees fec on ea.value = committee_id and om.cycle = fec.cycle
             where
