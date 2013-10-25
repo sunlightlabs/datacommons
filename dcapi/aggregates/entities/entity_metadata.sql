@@ -5,7 +5,10 @@
 
 
 begin;
+select date_trunc('second', now()) || ' -- drop table tmp_matchbox_organizationmetadata';
 drop table if exists tmp_matchbox_organizationmetadata;
+
+select date_trunc('second', now()) || ' -- create table tmp_matchbox_organizationmetadata';
 create table tmp_matchbox_organizationmetadata as select * from matchbox_organizationmetadata limit 0;
 
 insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
@@ -32,9 +35,11 @@ where
     and tmp.cycle = x.cycle
 ;
 
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (lobbying_firm = f where null';
 update tmp_matchbox_organizationmetadata set lobbying_firm = 'f' where lobbying_firm is null;
 
 -- populate parent company from contributions
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (populate parent company from contributions)';
 update
     tmp_matchbox_organizationmetadata as tmp
 set
@@ -61,6 +66,7 @@ where
 ;
 
 -- populate parent company from lobbying
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (populate parent company from lobbying)';
 update
     tmp_matchbox_organizationmetadata as tmp
 set
@@ -88,8 +94,19 @@ where
     and tmp.parent_entity_id is null
 ;
 
+-- update is_superpac from FEC data
+update matchbox_organizationmetadata
+set is_superpac = true
+from matchbox_entityattribute a
+inner join fec_committees c on (c.committee_id = a.value and a.namespace = 'urn:fec:committee')
+where
+    matchbox_organizationmetadata.entity_id = a.entity_id
+    and matchbox_organizationmetadata.cycle = 2012
+    and c.committee_type = 'O';
+
 
 -- update is_superpac from FEC data
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (update is_superpac from FEC data)';
 update tmp_matchbox_organizationmetadata
 set is_superpac = true
 from matchbox_entityattribute a
@@ -104,7 +121,8 @@ where
 -- update interest group type from FEC data
 -- will mark a type as true if any committee associated with the org
 -- during a given cycle has the group type
-update matchbox_organizationmetadata meta set
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (types are true if any committee assoc w/ org has that type)';
+update tmp_matchbox_organizationmetadata meta set
     is_corporation = i.is_corporation,
     is_labor_org = i.is_labor_org,
     is_membership_org = i.is_membership_org,
@@ -148,6 +166,7 @@ where
 ;
 
 
+select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (industry and subindustry ids)';
 update
     tmp_matchbox_organizationmetadata as om
 set

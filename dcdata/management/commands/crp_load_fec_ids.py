@@ -12,7 +12,7 @@ create_tmp_crp_candidates_stmt = """
     	Cycle char(4) NOT NULL,
     	FECCandID char(9) NOT NULL,
     	CID char(9) NULL,
-    	FirstLastP varchar(40) NULL,
+    	FirstLastP varchar NULL,
     	Party char(1) NULL,
     	DistIDRunFor char(4) NULL,
     	DistIDCurr char(4) NULL,
