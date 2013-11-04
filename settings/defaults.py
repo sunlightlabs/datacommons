@@ -65,6 +65,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'feedinator',
     'mediasync',
     'locksmith.auth',
     'locksmith.logparse',
