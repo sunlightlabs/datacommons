@@ -200,6 +200,12 @@ insert into contributions_all_relevant__nimsp
 select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
 create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id);
 
+select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
+create index contributions_all_relevant__crp__transaction_id__idx on contributions_all_relevant__crp (transaction_id);
+
+select date_trunc('second', now()) || ' -- create index contributions_all_relevant__transaction_id__idx on contributions_all_relevant (transaction_id)';
+create index contributions_all_relevant__nimsp__transaction_id__idx on contributions_all_relevant__nimsp (transaction_id);
+
 
 -- Contributor Associations
 
