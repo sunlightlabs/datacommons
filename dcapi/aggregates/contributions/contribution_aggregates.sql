@@ -373,7 +373,7 @@ select date_trunc('second', now()) || ' -- create table parent_organization_asso
                 e.type = 'organization'
                 and ((a.namespace = '' or a.namespace is null)
                     or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                        or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
+                        or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
     union
         select a.entity_id, c.transaction_id
         from contributions_all_relevant c
@@ -457,7 +457,7 @@ create table recipient_associations as
         e.type = 'organization' -- name matching only for organizations; politicians should all have IDs
         and ((a.namespace = '' or a.namespace is null)
             or ((a.namespace like 'urn:crp:%' and c.transaction_namespace = 'urn:fec:transaction')
-                or (a.namespace like 'run:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
+                or (a.namespace like 'urn:nimsp:%' and c.transaction_namespace = 'urn:nimsp:transaction')))
 union
     select a.entity_id, c.transaction_id
     from contributions_all_relevant c
