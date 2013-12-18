@@ -809,8 +809,76 @@ create table aggregate_individual_by_in_state_out_of_state as
 select date_trunc('second', now()) || ' -- create index aggregate_recipient_in_state_out_of_state_from_individual_entity_cycle_idx on aggregate_recipient_in_state_out_of_state_from_individual (individual_entity, cycle)';
 create index aggregate_recipient_in_state_out_of_state_from_individual_idx on aggregate_recipient_in_state_out_of_state_from_individual (individual_entity, cycle);
 
-select date_trunc('second', now()) || ' -- create index aggregate_in_state_out_of_state_from_individual_in_state_out_of_state_cycle_idx on aggregate_in_state_out_of_state_from_individual (in_state_out_of_state, cycle)';
-create index aggregate_in_state_out_of_state_from_individual_in_state_out_of_state_cycle_idx on aggregate_in_state_out_of_state_from_individual (in_state_out_of_state, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_individual_by_in_state_out_of_state_in_state_out_of_state_cycle_idx on aggregate_individual_by_in_state_out_of_state (in_state_out_of_state, cycle)';
+create index aggregate_individual_by_in_state_out_of_state_in_state_out_of_state_cycle_idx on aggregate_individual_by_in_state_out_of_state (in_state_out_of_state, cycle);
+
+-- Contributions to state and federal races from individuals 
+-- to replace agg_party_from_indiv
+-- difference: doesn't cut off at top 10, doesn't filter for recip party, contributor type or namespace explicity, includes pacs and cands
+-- test: join with agg_party_from_indiv using (individual_entity, cycle, transaction_namespace), check 
+-- debug: pass
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_individual_to_seat';
+drop table if exists aggregate_individual_to_seat cascade;
+
+select date_trunc('second', now()) || ' -- create table aggregate_individual_to_seat';
+create table aggregate_individual_to_seat as 
+    with contributions_by_cycle as
+        (select ca.entity_id as individual_entity, 
+                       ci.seat,
+                       cycle, 
+                       count(*) as count, 
+                       sum(ci.amount) as amount,
+                        rank() over (partition by ca.entity_id, cycle order by count(*) desc) as rank_by_count,
+                        rank() over (partition by ca.entity_id, cycle order by sum(ci.amount) desc) as rank_by_amount
+                from 
+                    (table contributions_individual   
+                     union table contributions_individual_to_organization ) ci
+                        inner join 
+                    contributor_associations ca using (transaction_id)
+                        left join 
+                    recipient_associations ra using (transaction_id)
+                        left join 
+                    matchbox_entity re on re.id = ra.entity_id
+                    group by ca.entity_id, ci.seat, cycle)
+    
+    select  individual_entity, 
+            seat,  
+            cycle,
+            count,
+            amount,
+            rank_by_count,
+            rank_by_amount
+    from 
+        contributions_by_cycle
+
+    union all
+
+    select  individual_entity, 
+            seat,  
+            -1 as cycle,
+            count,
+            amount,
+            rank_by_count,
+            rank_by_amount
+    from 
+        (select individual_entity, 
+                    seat,  
+                sum(count) as count,
+                sum(amount) as amount,
+                rank() over(partition by individual_entity order by sum(count) desc) as rank_by_count,
+                rank() over(partition by individual_entity order by sum(amount) desc) as rank_by_amount
+        from 
+            contributions_by_cycle
+        group by individual_entity, seat
+        ) all_cycle_rollup 
+;
+
+select date_trunc('second', now()) || ' -- create index aggregate_individual_to_seat_entity_cycle_idx on aggregate_individual_to_seat (individual_entity, cycle)';
+create index aggregate_individual_to_seat_idx on aggregate_individual_to_seat (individual_entity, cycle);
+
+select date_trunc('second', now()) || ' -- create index aggregate_individual_to_seat_seat_cycle_idx on aggregate_individual_to_seat (seat, cycle)';
+create index aggregate_individual_to_seat_party_cycle_idx on aggregate_individual_to_seat (seat, cycle);
+
 
 ---- INDUSTRIES
 
