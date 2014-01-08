@@ -23,6 +23,10 @@ insert into tmp_matchbox_organizationmetadata (entity_id, cycle)
 
 create index tmp_matchbox_organizationmetadata_entity_id_idx on tmp_matchbox_organizationmetadata (entity_id);
 
+commit;
+
+begin;
+
 update
     tmp_matchbox_organizationmetadata as tmp
 set
@@ -185,16 +189,21 @@ where
 update tmp_matchbox_organizationmetadata meta set
     is_org = 't'::boolean
 from (
-     select 
-            entity_id,
-            navigation_bin
-        from 
-            tmp_matchbox_organizationmetadata om
-                inner join
-            entity_to_navigation_bin nb using (entity_id)
-        where 
-            navigation_bin in ('a','b','u')
-        ) i
+        select
+            entity_id
+            from
+        ( 
+        select 
+                entity_id,
+                navigation_bin
+            from 
+                tmp_matchbox_organizationmetadata om
+                    inner join
+                entity_to_navigation_bin nb using (entity_id)
+            where 
+                navigation_bin in ('a','b','u')
+        ) j
+    ) i
 where
     meta.entity_id = i.entity_id;
 
