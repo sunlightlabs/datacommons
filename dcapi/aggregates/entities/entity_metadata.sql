@@ -131,7 +131,6 @@ from (
             entity_id,
             committee_id,
             cycle,
-            bool_or(is_pol_group) as is_pol_group,
             bool_or(is_corporation) as is_corporation,
             bool_or(is_labor_org) as is_labor_org,
             bool_or(is_membership_org) as is_membership_org,
@@ -144,7 +143,6 @@ from (
                 committee_id,
                 om.cycle,
                 -- first pass on is_pol_group: only candidate and party committees, plus indexps, electioneering, comm cost and superpacs
-                case when (committee_type in ('D','H','P','S','X','Y','Z','I','E','O','C') or committee_designation in ('A','D','J','P')) then 't'::boolean else 'f'::boolean end as is_pol_group,
                 case when interest_group = 'C' then 't'::boolean else 'f'::boolean end as is_corporation,
                 case when interest_group = 'L' then 't'::boolean else 'f'::boolean end as is_labor_org,
                 case when interest_group = 'M' then 't'::boolean else 'f'::boolean end as is_membership_org,
@@ -181,40 +179,41 @@ where
     and meta.cycle = i.cycle
 ;
 
--- labor, membership and trade considered pol groups
-select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (is_pol_group)';
 
-update
-    tmp_matchbox_organizationmetadata as om
-set
-    is_pol_group = true
+-- NAVIGATION BINS
+-- manually categorized as a, b, u --> org
+update tmp_matchbox_organizationmetadata meta set
+    is_org = 't'::boolean
+from (
+     select 
+            entity_id,
+            navigation_bin
+        from 
+            tmp_matchbox_organizationmetadata om
+                inner join
+            entity_to_navigation_bin nb using (entity_id)
+        where 
+            navigation_bin in ('a','b','u')
+        ) i
 where
-    has_fec_profile
-    and
-   (is_labor_org 
-        OR 
-    is_membership_org
-        OR
-    is_trade_assoc);
+    meta.entity_id = i.entity_id;
 
--- everything that's not a a lobbying firm, pol_group 
-select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (is_org)';
-
-update
-    tmp_matchbox_organizationmetadata as om
-set
-    is_org = true
-where 
-    has_fec_profile
-    and
-   (is_corporation 
-        OR 
-    is_cooperative 
-        OR
-    is_corp_w_o_capital_stock
-        OR
-    ( (NOT is_pol_group) OR (is_pol_group is null)));
-
+-- manually categorized as p --> org
+update tmp_matchbox_organizationmetadata meta set
+    is_pol_group = 't'::boolean
+from (
+     select 
+            entity_id,
+            navigation_bin
+        from 
+            tmp_matchbox_organizationmetadata om
+                inner join
+            entity_to_navigation_bin nb using (entity_id)
+        where 
+            navigation_bin = 'p'
+        ) i
+where
+    meta.entity_id = i.entity_id;
 
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (industry and subindustry ids)';
 update
