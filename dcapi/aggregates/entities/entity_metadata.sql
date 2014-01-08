@@ -123,7 +123,6 @@ where
 -- during a given cycle has the group type
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (types are true if any committee assoc w/ org has that type)';
 update tmp_matchbox_organizationmetadata meta set
-    is_pol_group = i.is_pol_group,
     is_corporation = i.is_corporation,
     is_labor_org = i.is_labor_org,
     is_membership_org = i.is_membership_org,
