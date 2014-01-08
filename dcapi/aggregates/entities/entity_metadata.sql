@@ -101,7 +101,9 @@ where
     and tmp.cycle = x.cycle
     and tmp.parent_entity_id is null
 ;
+commit;
 
+begin;
 
 -- update is_superpac from FEC data
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (update is_superpac from FEC data)';
@@ -167,7 +169,6 @@ from (
        entity_id,
        committee_id,
        cycle,
-       is_pol_group,
        is_corporation,
        is_labor_org,
        is_membership_org,
