@@ -2,505 +2,847 @@
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY PARTY
 
 
-select date_trunc('second', now()) || ' -- drop table if exists summary_party_from_biggest_org';
-drop table if exists summary_party_from_biggest_org;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_party';
+drop table if exists ranked_parentmost_orgs_by_party;
 
-select date_trunc('second', now()) || ' -- create table summary_party_from_biggest_org';
-create table summary_party_from_biggest_org as
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_party';
+create table ranked_parentmost_orgs_by_party as
 
         select
-            organization_entity, name, recipient_party, cycle,
+            recipient_party, 
+            cycle,
+            organization_entity, 
+            organization_name, 
             sum(count) as count,
             sum(amount) as amount,
-            rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank
+            rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
+            rank() over(partition by recipient_party, cycle order by sum(amount) desc) as rank_by_amount
         from
         (select
-            apfo.organization_entity,
-            me.name,
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
-            apfo.cycle,
+            aotp.cycle,
+            aotp.organization_entity,
+            me.name as organization_name,
             count,
             amount
         from
                 matchbox_entity me
             inner join
-                aggregate_party_from_org apfo on me.id = apfo.organization_entity
+                aggregate_organization_to_parties aotp on me.id = aotp.organization_entity
             inner join 
-                matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aotp.cycle 
         where
             om.is_org 
             and 
-            exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
+            om.parent_entity_id is null
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
             ) three_party
-        group by organization_entity, name, recipient_party, cycle;
+        group by recipient_party, cycle, organization_entity, organization_name;
 
-select date_trunc('second', now()) || ' -- Vcreate index summary_party_from_biggest_org_cycle_rank_idx on summary_party_from_biggest_org (cycle, rank)';
-create index summary_party_from_biggest_org_cycle_rank_idx on summary_party_from_biggest_org (cycle, rank);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_party_cycle_rank_idx ranked_parentmost_orgs_by_party (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_party_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_party (cycle, rank_by_count);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_party_cycle_rank_idx ranked_parentmost_orgs_by_party (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_party_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_party (cycle, rank_by_amount);
+
 
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY FEDERAL/STATE
 
-select date_trunc('second', now()) || ' -- drop table if exists summary_namespace_from_biggest_org';
-drop table if exists summary_namespace_from_biggest_org;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_state_fed';
+drop table if exists ranked_parentmost_orgs_by_state_fed;
 
-select date_trunc('second', now()) || ' -- create table summary_namespace_from_biggest_org';
-create table summary_namespace_from_biggest_org as
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_state_fed';
+create table ranked_parentmost_orgs_by_state_fed as
         select
-            organization_entity,
-            me.name,
-            transaction_namespace,
+            state_or_federal,
             cycle,
+            organization_entity,
+            me.name as organization_name,
             count,
             amount,
-            rank() over(partition by transaction_namespace,cycle order by amount desc) as rank
+            rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
-                agg_namespace_from_org apfo on me.id = apfo.organization_entity
+                aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
             inner join 
-                matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = asof.cycle 
         where
             om.is_org 
-            and 
-            exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+            and
+            om.parent_entity_id is null 
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
+;
 
-select date_trunc('second', now()) || ' -- create index summary_namespace_from_biggest_org_cycle_rank_idx on summary_namespace_from_biggest_org_org (cycle, rank)';
-create index summary_namespace_from_biggest_org_cycle_rank_idx on summary_namespace_from_biggest_org (cycle, rank);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_state_fed_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_state_fed (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_state_fed_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_state_fed (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_state_fed_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_state_fed (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_state_fed_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_state_fed (cycle, rank_by_amount);
 
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY SEAT
 
-select date_trunc('second', now()) || ' -- drop table if exists summary_office_type_from_biggest_org';
-drop table if exists summary_office_type_from_biggest_org;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_office_type';
+drop table if exists ranked_parentmost_orgs_by_seat;
 
-select date_trunc('second', now()) || ' -- create table summary_office_type_from_biggest_org';
-create table summary_office_type_from_biggest_org as
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_office_type';
+create table ranked_parentmost_orgs_by_seat as
         select
-            organization_entity,
-            me.name,
             seat,
             cycle,
+            organization_entity,
+            me.name,
             count,
             amount,
-            rank() over(partition by seat,cycle order by amount desc) as rank
+            rank() over(partition by seat, cycle order by count desc) as rank_by_count,
+            rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
-                agg_office_type_from_org apfo on me.id = apfo.organization_entity
+                aggregate_organization_to_seat aots on me.id = aots.organization_entity
             inner join 
-                matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
             om.is_org 
-            and 
-            exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+            and
+            om.parent_id is null 
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
 
-select date_trunc('second', now()) || ' -- create index summary_office_type_from_biggest_org_cycle_rank_idx on summary_office_type_from_biggest_org_org (cycle, rank)';
-create index summary_office_type_from_biggest_org_cycle_rank_idx on summary_office_type_from_biggest_org (cycle, rank);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_office_type_org (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_office_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_office_type_org (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_office_type (cycle, rank_by_amount);
 
 -- CONTRIBTUIONS FROM BIGGEST ORGS, BROKEN OUT BY SOURCE (ASSOC'D INDIVS OR PACS)
 
-select date_trunc('second', now()) || ' -- drop table if exists summary_biggest_org_by_indiv_pac';
-drop table if exists summary_biggest_org_by_indiv_pac;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_indiv_pac';
+drop table if exists ranked_parentmost_orgs_by_indiv_pac;
 
-select date_trunc('second', now()) || ' -- create table summary_biggest_org_by_indiv_pac';
-create table summary_biggest_org_by_indiv_pac as
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_indiv_pac';
+create table ranked_parentmost_orgs_by_indiv_pac as
     select
-        me.name, organization_entity, cycle, direct_or_indiv, count, amount,
-        rank() over(partition by direct_or_indiv, cycle order by count desc) as rank_by_count,
-        rank() over(partition by direct_or_indiv, cycle order by amount desc) as rank_by_amount
+        cycle, 
+        me.name as organization_name,
+        organization_entity, 
+        (pacs_count + indivs_count) as total_count,
+        (pacs_amount + indivs_amount) as total_amount,
+        pacs_count,
+        pacs_amount, 
+        indivs_count, 
+        indivs_amount,
+        rank() over(partition by cycle order by total_count desc)   as total_count,
+        rank() over(partition by cycle order by total_amount desc)  as total_amount,
+        rank() over(partition by cycle order by pacs_count desc)    as rank_by_pacs_count,
+        rank() over(partition by cycle order by pacs_amount desc)   as rank_by_pacs_amount,
+        rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
+        rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
         from
             aggregate_organizations_by_indiv_pac aoip
                 inner join
             matchbox_entity me on me.id = aoip.organization_entity
                 inner join 
-            matchbox_organizationmetadata om on om.entity_id and om.cycle = apfo.cycle 
+            matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aoip.cycle 
         where
             om.is_org 
             and 
-            exists (select 1
-                            from
-                                biggest_organization_associations boa
-                            where boa.entity_id = aoip.organization_entity);
+            om.parent_id is null;
 
-select date_trunc('second', now()) || ' -- create index summary_biggest_org_by_indiv_pac_cycle_rank_by_amount_idx on summary_biggest_org_by_indiv_pac (cycle, rank_by_amount)';
-create index summary_biggest_org_by_indiv_pac_cycle_rank_by_amount_idx on summary_biggest_org_by_indiv_pac (cycle, rank_by_amount);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_amount)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_count)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_amount)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_count)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_amount)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_count)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_count);
 
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY PARTY
 
-select date_trunc('second', now()) || ' -- drop table if exists summary_party_from_indiv';
-drop table if exists summary_party_from_indiv;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_party';
+drop table if exists ranked_individuals_by_party;
 
-select date_trunc('second', now()) || ' -- create table summary_party_from_indiv';
-create table summary_party_from_indiv as
+select date_trunc('second', now()) || ' -- create table ranked_individuals_by_party';
+create table ranked_individuals_by_party as
 
         select
-            contributor_entity, name, recipient_party, cycle,
+            recipient_party, 
+            cycle,
+            individual_entity, 
+            individual_name, 
             sum(count) as count,
             sum(amount) as amount,
-            rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank
+            rank() over(partition by recipient_party,cycle order by sum(count) desc) as rank_by_count,
+            rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank_by_amount
         from
-        (select
-            contributor_entity,
-            me.name,
+        (
+        select
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
             cycle,
+            individual_entity,
+            me.name as individual_name,
             count,
             amount
         from
                 matchbox_entity me
             inner join
-                agg_party_from_indiv apfi on me.id = apfi.contributor_entity
+                aggregate_individual_to_parties aitp on me.id = aitp.individual_entity
+             -- maybe filter out lobbyists
+             -- inner join
+             --  matchbox_individualmetadata mim on mim.entity_id = me.id
+             -- where not mim.is_lobbyist
             ) three_party
-        group by contributor_entity, name, recipient_party, cycle
+        group by recipient_part, cycle, individual_entity, individual_name
         ;
 
-select date_trunc('second', now()) || ' -- Vcreate index summary_party_from_indiv_idx on summary_party_from_indiv (contributor_entity, cycle)';
-create index summary_party_from_indiv_idx on summary_party_from_indiv (contributor_entity, recipient_party, cycle);
+select date_trunc('second', now()) || ' -- create index ranked_individuals_by_party_cycle_rank_by_count_idx on ranked_individuals_by_party (cycle, rank_by_count)';
+create index ranked_individuals_by_party_idx on ranked_individuals_by_party (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_individuals_by_party_cycle_rank_by_amount_idx on ranked_individuals_by_party (cycle, rank_by_amount)';
+create index ranked_individuals_by_party_idx on ranked_individuals_by_party (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY FEDERAL/STATE
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_namespace_from_indiv';
- drop table if exists summary_namespace_from_indiv;
+ select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_state_fed';
+ drop table if exists ranked_individuals_by_state_fed;
 
- select date_trunc('second', now()) || ' -- create table summary_namespace_from_indiv';
- create table summary_namespace_from_indiv as
+ select date_trunc('second', now()) || ' -- create table ranked_individuals_by_state_fed';
+ create table ranked_individuals_by_state_fed as
          select
-             contributor_entity,
-             me.name,
-             transaction_namespace,
+             state_fed,
              cycle,
+             individual_entity,
+             me.name as individual_name,
              count,
              amount,
-             rank() over(partition by transaction_namespace,cycle order by amount desc) as rank
+             rank() over(partition by state_fed, cycle order by count desc) as rank_by_count,
+             rank() over(partition by state_fed, cycle order by amount desc) as rank_by_amount
          from
                  matchbox_entity me
              inner join
-                 agg_namespace_from_indiv anfo on me.id = anfo.contributor_entity
+                 aggregate_individual_to_state_fed aisf on me.id = aisf.individual_entity
+             -- maybe filter out lobbyists
+             -- inner join
+             --  matchbox_individualmetadata mim on mim.entity_id = me.id
+             -- where not mim.is_lobbyist
    ;
 
- select date_trunc('second', now()) || ' -- create index summary_namespace_from_indiv_idx on summary_namespace_from_indiv_org (contributor_entity, cycle)';
- create index summary_namespace_from_indiv_idx on summary_namespace_from_indiv (contributor_entity, transaction_namespace, cycle);
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_state_fed_cycle_rank_by_count_idx on ranked_individuals_by_state_fed (cycle, rank_by_count)';
+ create index ranked_individuals_by_state_fed_cycle_rank_by_count_idx on ranked_individuals_by_state_fed (cycle, rank_by_count);
+
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_state_fed_cycle_rank_by_amount_idx on ranked_individuals_by_state_fed (cycle, rank_by_amount)';
+ create index ranked_individuals_by_state_fed_cycle_rank_by_amount_idx on ranked_individuals_by_state_fed (cycle, rank_by_amount);
 
  -- CONTRIBUTIONS FROM INDIVIDUALS BY SEAT
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_office_type_from_indiv';
- drop table if exists summary_office_type_from_indiv;
+ select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_seat';
+ drop table if exists ranked_individuals_by_seat;
 
- select date_trunc('second', now()) || ' -- create table summary_office_type_from_indiv';
- create table summary_office_type_from_indiv as
+ select date_trunc('second', now()) || ' -- create table ranked_individuals_by_seat';
+ create table ranked_individuals_by_seat as
          select
-             contributor_entity,
-             me.name,
              seat,
              cycle,
+             individual_entity,
+             me.name as individual_name,
              count,
              amount,
-             rank() over(partition by seat,cycle order by amount desc) as rank
+             rank() over(partition by seat, cycle order by count desc) as rank_by_count,
+             rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
          from
                  matchbox_entity me
              inner join
-                 agg_office_type_from_indiv aofi on me.id = aofi.contributor_entity
+                 aggregate_individual_to_seat ais on me.id = ais.individual_entity
+             -- maybe filter out lobbyists
+             -- inner join
+             --  matchbox_individualmetadata mim on mim.entity_id = me.id
+             -- where not mim.is_lobbyist
    ;
 
- select date_trunc('second', now()) || ' -- create index summary_office_type_from_indiv_idx on summary_office_type_from_indiv (contributor_entity, cycle)';
- create index summary_office_type_from_indiv_idx on summary_office_type_from_indiv (contributor_entity, seat, cycle);
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_seat_cycle_rank_by_count_idx on ranked_individuals_by_seat (cycle, rank_by_count)';
+ create index ranked_individuals_by_seat_cycle_rank_by_count_idx on ranked_individuals_by_seat (cycle, rank_by_count);
+
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_seat_cycle_rank_by_amount_idx on ranked_individuals_by_seat (cycle, rank_by_amount)';
+ create index ranked_individuals_by_seat_cycle_rank_by_amount_idx on ranked_individuals_by_seat (cycle, rank_by_amount);
 
  -- CONTRIBUTIONS FROM INDIVIDUALS BY GROUP/POLITICIAN
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_recipient_type_from_indiv';
- drop table if exists summary_recipient_type_from_indiv;
+ select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_recipient_type';
+ drop table if exists ranked_individuals_by_recipient_type;
 
- select date_trunc('second', now()) || ' -- create table summary_recipient_type_from_indiv';
- create table summary_recipient_type_from_indiv as
-       with individual_contributions_by_cycle as (
-         select ca.entity_id as contributor_entity, me.name, recipient_type, cycle, count(*), sum(c.amount) as amount
-         from (table contributions_individual union all table contributions_individual_to_organization) c
-         inner join contributor_associations ca using (transaction_id)
-         inner join matchbox_entity me on me.id = ca.entity_id
-         where c.contributor_ext_id != ''
-         group by ca.entity_id, me.name, recipient_type, cycle
-      )
-
-      (select
-         contributor_entity,
-         name,
-         recipient_type,
-         cycle,
-         count,
-         amount,
-         rank() over (partition by recipient_type, cycle order by sum(amount) desc) as rank
-      from
-         individual_contributions_by_cycle
-     group by contributor_entity, name, recipient_type, cycle, count, amount
-
-     )
-
-      union all
-
-      select contributor_entity, name, recipient_type, -1, count, amount, rank() over (partition by recipient_type order by sum(amount) desc) as rank
-      from (
-          select contributor_entity, name, recipient_type, sum(count) as count, sum(amount) as amount
-          from individual_contributions_by_cycle
-          group by contributor_entity, name, recipient_type
-      ) x
-     group by contributor_entity, name, recipient_type, count, amount;
-
-  select date_trunc('second', now()) || ' -- create index agg_cands_from_indiv_idx on agg_cands_from_indiv (contributor_entity, cycle)';
-  create index summary_recipient_type_from_indiv_idx on summary_recipient_type_from_indiv (contributor_entity, cycle);
-
- -- CONTRIBUTIONS FROM INDIVIDUALS BY GROUP/POLITICIAN
-
- select date_trunc('second', now()) || ' -- drop table if exists summary_local_from_indiv';
- drop table if exists summary_local_from_indiv;
-
- select date_trunc('second', now()) || ' -- create table summary_local_from_indiv';
- create table summary_local_from_indiv as
-    select cycle, local, count, amount, rank_by_count, rank_by_amount
-        from
-    agg_local_from_indiv alfi
-        where local in ('in-state','out-of-state') and rank_by_amount <= 10;
-
-  select date_trunc('second', now()) || ' -- create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle)';
-  create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle);
- 
--- CONTRIBUTIONS FROM INDIVIDUALS BY IN-STATE/OUT-OF-STATE
-
- select date_trunc('second', now()) || ' -- drop table if exists summary_local_from_indiv';
- drop table if exists summary_local_from_indiv;
-
- select date_trunc('second', now()) || ' -- create table summary_local_from_indiv';
- create table summary_local_from_indiv as
-        with top_contribs as (
-                select 
-                    cycle, 
-                    local, 
-                    contributor_entity, 
-                    me.name as contributor_name, 
-                    count, 
-                    amount, 
-                    rank_by_count, 
-                    rank_by_amount
-                    from
-                agg_local_from_indiv alfi
-                    inner join
-                matchbox_entity me on me.id = alfi.contributor_entity
-                    where local in ('in-state','out-of-state') and rank_by_amount <= 10)
-        select tc.*, l.total_local_amount, l.total_local_count
-            from 
-            top_contribs tc
-            inner join
-            (select local, cycle, sum(amount) as total_local_amount, sum(count) as total_local_count from agg_local_from_indiv alfi where local in ('in-state','out-of-state') group by local,cycle) l on tc.local = l.local and tc.cycle = l.cycle; 
-
-  select date_trunc('second', now()) || ' -- create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle)';
-  create index summary_local_from_indiv_idx on summary_local_from_indiv (contributor_entity, cycle);
-
-
--- CONTRIBUTIONS FROM CONTRIBUTORS BY PARTY
-
-select date_trunc('second', now()) || ' -- drop table if exists summary_party_from_contrib';
-drop table if exists summary_party_from_contrib;
-
-select date_trunc('second', now()) || ' -- create table summary_party_from_contrib';
-create table summary_party_from_contrib as
-
-        select
-            contributor_entity,
-            name,
-            recipient_party,
-            cycle,
-            count,
-            amount,
-            rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank
-        from
-            summary_party_from_indiv s
-            inner join
-            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-            where im.is_contributor = 't' and im.is_lobbyist = 'f'
-        group by contributor_entity, name, recipient_party, cycle, count, amount
-        ;
-
-select date_trunc('second', now()) || ' -- Vcreate index summary_party_from_contrib_idx on summary_party_from_contrib (contributor_entity, cycle)';
-create index summary_party_from_contrib_idx on summary_party_from_contrib (contributor_entity, recipient_party, cycle);
-
--- CONTRIBUTIONS FROM CONTRIBUTORS BY FEDERAL/STATE
-
- select date_trunc('second', now()) || ' -- drop table if exists summary_namespace_from_contrib';
- drop table if exists summary_namespace_from_contrib;
-
- select date_trunc('second', now()) || ' -- create table summary_namespace_from_contrib';
- create table summary_namespace_from_contrib as
+ select date_trunc('second', now()) || ' -- create table ranked_individuals_by_recipient_type';
+ create table ranked_individuals_by_recipient_type as
          select
-             contributor_entity,
-             name,
-             transaction_namespace,
+             recipient_type,
              cycle,
+             individual_entity,
+             me.name as individual_name,
              count,
              amount,
-             rank() over(partition by transaction_namespace,cycle order by amount desc) as rank
+             rank() over(partition by recipient_type, cycle order by count desc) as rank_by_count,
+             rank() over(partition by recipient_type, cycle order by amount desc) as rank_by_amount
          from
-            summary_namespace_from_indiv s
-            inner join
-            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-            where im.is_contributor = 't' and im.is_lobbyist = 'f'
-            group by contributor_entity, name, transaction_namespace, cycle, count, amount
+                 matchbox_entity me
+             inner join
+                 aggregate_individual_to_recipient_types airt on me.id = airt.individual_entity
+             -- maybe filter out lobbyists
+             -- inner join
+             --  matchbox_individualmetadata mim on mim.entity_id = me.id
+             -- where not mim.is_lobbyist
    ;
 
- select date_trunc('second', now()) || ' -- create index summary_namespace_from_contrib_idx on summary_namespace_from_contrib_org (contributor_entity, cycle)';
- create index summary_namespace_from_contrib_idx on summary_namespace_from_contrib (contributor_entity, transaction_namespace, cycle);
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_recipient_type_cycle_rank_by_count_idx on ranked_individuals_by_recipient_type (cycle, rank_by_count)';
+ create index ranked_individuals_by_recipient_type_cycle_rank_by_count_idx on ranked_individuals_by_recipient_type (cycle, rank_by_count);
 
- -- CONTRIBUTIONS FROM CONTRIBUTORS BY SEAT
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_recipient_type_cycle_rank_by_amount_idx on ranked_individuals_by_recipient_type (cycle, rank_by_amount)';
+ create index ranked_individuals_by_recipient_type_cycle_rank_by_amount_idx on ranked_individuals_by_recipient_type (cycle, rank_by_amount);
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_office_type_from_contrib';
- drop table if exists summary_office_type_from_contrib;
- create table summary_office_type_from_contrib as
+
+ -- CONTRIBUTIONS FROM INDIVIDUALS BY IN-STATE/OUT-OF-STATE
+
+ select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_in_state_out_of_state';
+ drop table if exists ranked_individuals_by_in_state_out_of_state;
+
+ select date_trunc('second', now()) || ' -- create table ranked_individuals_by_in_state_out_of_state';
+ create table ranked_individuals_by_in_state_out_of_state as
          select
-             contributor_entity,
-             name,
-             seat,
+             in_state_out_of_state,
              cycle,
+             individual_entity,
+             me.name as individual_name,
              count,
              amount,
-             rank() over(partition by seat,cycle order by amount desc) as rank
+             rank() over(partition by in_state_out_of_state, cycle order by count desc) as rank_by_count,
+             rank() over(partition by in_state_out_of_state, cycle order by amount desc) as rank_by_amount
          from
-            summary_office_type_from_indiv s
-            inner join
-            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-            where im.is_contributor = 't' and im.is_lobbyist = 'f'
-            group by contributor_entity, name, seat, cycle, count, amount
+                 matchbox_entity me
+             inner join
+                 aggregate_individual_to_in_state_out_of_state ais on me.id = ais.individual_entity
+             -- maybe filter out lobbyists
+             -- inner join
+             --  matchbox_individualmetadata mim on mim.entity_id = me.id
+             -- where not mim.is_lobbyist
    ;
 
- select date_trunc('second', now()) || ' -- create index summary_office_type_from_contrib_idx on summary_office_type_from_contrib (contributor_entity, cycle)';
- create index summary_office_type_from_contrib_idx on summary_office_type_from_contrib (contributor_entity, seat, cycle);
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_in_state_out_of_state_cycle_rank_by_count_idx on ranked_individuals_by_in_state_out_of_state (cycle, rank_by_count)';
+ create index ranked_individuals_by_in_state_out_of_state_cycle_rank_by_count_idx on ranked_individuals_by_in_state_out_of_state (cycle, rank_by_count);
 
- -- CONTRIBUTIONS FROM CONTRIBUTORS BY GROUP/POLITICIAN
+ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_in_state_out_of_state_cycle_rank_by_amount_idx on ranked_individuals_by_in_state_out_of_state (cycle, rank_by_amount)';
+ create index ranked_individuals_by_in_state_out_of_state_cycle_rank_by_amount_idx on ranked_individuals_by_in_state_out_of_state (cycle, rank_by_amount);
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_recipient_type_from_contrib';
- drop table if exists summary_recipient_type_from_contrib;
-
- select date_trunc('second', now()) || ' -- create table summary_recipient_type_from_contrib';
- create table summary_recipient_type_from_contrib as
-
-      select
-         contributor_entity,
-         name,
-         recipient_type,
-         cycle,
-         count,
-         amount,
-         rank() over (partition by recipient_type, cycle order by sum(amount) desc) as rank
-      from
-        summary_recipient_type_from_indiv s
-        inner join
-        matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-        where im.is_contributor = 't' and im.is_lobbyist = 'f'
-        group by contributor_entity,name, recipient_type, cycle, count, amount
-;
-
-  select date_trunc('second', now()) || ' -- create index agg_cands_from_contrib_idx on agg_cands_from_contrib (contributor_entity, cycle)';
-  create index summary_recipient_type_from_contrib_idx on summary_recipient_type_from_contrib (contributor_entity, cycle);
 
 
 -- CONTRIBUTIONS FROM LOBBYISTS BY PARTY
 
-select date_trunc('second', now()) || ' -- drop table if exists summary_party_from_lobbyist';
-drop table if exists summary_party_from_lobbyist;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_party';
+drop table if exists ranked_lobbyists_by_party cascade;
 
-select date_trunc('second', now()) || ' -- create table summary_party_from_lobbyist';
-create table summary_party_from_lobbyist as
+select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_party';
+create table ranked_lobbyists_by_party as
 
         select
-            contributor_entity,
-            name,
-            recipient_party,
+            recipient_party, 
             cycle,
-            count,
-            amount,
-            rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank
+            lobbyist_entity, 
+            lobbyist_name, 
+            sum(count) as count,
+            sum(amount) as amount,
+            rank() over(partition by recipient_party,cycle order by sum(count) desc) as rank_by_count,
+            rank() over(partition by recipient_party,cycle order by sum(amount) desc) as rank_by_amount
         from
-            summary_party_from_indiv s
-            inner join
-            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-            where im.is_contributor = 't' and im.is_lobbyist = 't'
-        group by contributor_entity, name, recipient_party, cycle, count, amount
+        (
+        select
+            case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
+            cycle,
+            individual_entity as lobbiyst_entity,
+            me.name as lobbyist_name,
+            count,
+            amount
+        from
+            matchbox_entity me
+                inner join
+            aggregate_individual_to_parties aitp on me.id = aitp.lobbyist_entity
+                inner join
+            matchbox_lobbyistmetadata mim on mim.entity_id = me.id
+         where mim.is_lobbyist
+            ) three_party
+        group by recipient_party, cycle, lobbyist_entity, lobbyist_name
         ;
 
-select date_trunc('second', now()) || ' -- create index summary_party_from_lobbyist_idx on summary_party_from_lobbyist (contributor_entity, cycle)';
-create index summary_party_from_lobbyist_idx on summary_party_from_lobbyist (contributor_entity, recipient_party, cycle);
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_party_cycle_rank_by_count_idx on ranked_lobbyists_by_party (cycle, rank_by_count)';
+create index ranked_lobbyists_by_party_idx on ranked_lobbyists_by_party (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_party_cycle_rank_by_amount_idx on ranked_lobbyists_by_party (cycle, rank_by_amount)';
+create index ranked_lobbyists_by_party_idx on ranked_lobbyists_by_party (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM LOBBYISTS BY FEDERAL/STATE
+ 
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_state_fed';
+drop table if exists ranked_lobbyists_by_state_fed cascade;
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_namespace_from_lobbyist';
- drop table if exists summary_namespace_from_lobbyist;
+select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_state_fed';
+create table ranked_lobbyists_by_state_fed as
+        select
+            state_fed,
+            cycle,
+            individual_entity as lobbyist_entity,
+            me.name as individual_name as lobbyist_name,
+            count,
+            amount,
+            rank() over(partition by state_fed, cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_fed, cycle order by amount desc) as rank_by_amount
+        from
+            matchbox_entity me
+                inner join
+            aggregate_individual_to_state_fed aisf on me.id = aisf.individual_entity
+                inner join
+            matchbox_individualmetadata mim on mim.entity_id = me.id
+        where mim.is_lobbyist
+  ;
 
- select date_trunc('second', now()) || ' -- create table summary_namespace_from_lobbyist';
- create table summary_namespace_from_lobbyist as
-         select
-             contributor_entity,
-             name,
-             transaction_namespace,
-             cycle,
-             count,
-             amount,
-             rank() over(partition by transaction_namespace,cycle order by amount desc) as rank
-         from
-            summary_namespace_from_indiv s
-            inner join
-            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-            where im.is_contributor = 't' and im.is_lobbyist = 't'
-            group by contributor_entity, name, transaction_namespace, cycle, count, amount
-   ;
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_state_fed_cycle_rank_by_count_idx on ranked_lobbyists_by_state_fed (cycle, rank_by_count)';
+create index ranked_lobbyists_by_state_fed_cycle_rank_by_count_idx on ranked_lobbyists_by_state_fed (cycle, rank_by_count);
 
- select date_trunc('second', now()) || ' -- create index summary_namespace_from_lobbyist_idx on summary_namespace_from_lobbyist_org (contributor_entity, cycle)';
- create index summary_namespace_from_lobbyist_idx on summary_namespace_from_lobbyist (contributor_entity, transaction_namespace, cycle);
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_state_fed_cycle_rank_by_amount_idx on ranked_lobbyists_by_state_fed (cycle, rank_by_amount)';
+create index ranked_lobbyists_by_state_fed_cycle_rank_by_amount_idx on ranked_lobbyists_by_state_fed (cycle, rank_by_amount);
+
+
 
  -- CONTRIBUTIONS FROM LOBBYISTS BY SEAT
+ 
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_seat';
+ drop table if exists ranked_lobbyists_by_seat;
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_office_type_from_lobbyist';
- drop table if exists summary_office_type_from_lobbyist;
- create table summary_office_type_from_lobbyist as
+ select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_seat';
+ create table ranked_lobbyists_by_seat as
          select
-             contributor_entity,
-             name,
              seat,
              cycle,
+             individual_entity as lobbyist_entity,
+             me.name as individual_name as lobbyist_name,
              count,
              amount,
-             rank() over(partition by seat,cycle order by amount desc) as rank
+             rank() over(partition by seat, cycle order by count desc) as rank_by_count,
+             rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
          from
-            summary_office_type_from_indiv s
-            inner join
-            matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-            where im.is_contributor = 't' and im.is_lobbyist = 't'
-            group by contributor_entity, name, seat, cycle, count, amount
+             matchbox_entity me
+                inner join
+             aggregate_individual_to_seat ais on me.id = ais.individual_entity
+                inner join
+             matchbox_individualmetadata mim on mim.entity_id = me.id
+         where mim.is_lobbyist
    ;
 
- select date_trunc('second', now()) || ' -- create index summary_office_type_from_lobbyist_idx on summary_office_type_from_lobbyist (contributor_entity, cycle)';
- create index summary_office_type_from_lobbyist_idx on summary_office_type_from_lobbyist (contributor_entity, seat, cycle);
+ select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_seat_cycle_rank_by_count_idx on ranked_lobbyists_by_seat (cycle, rank_by_count)';
+ create index ranked_lobbyists_by_seat_cycle_rank_by_count_idx on ranked_lobbyists_by_seat (cycle, rank_by_count);
 
- -- CONTRIBUTIONS FROM LOBBYISTS BY GROUP/POLITICIAN
+ select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_seat_cycle_rank_by_amount_idx on ranked_lobbyists_by_seat (cycle, rank_by_amount)';
+ create index ranked_lobbyists_by_seat_cycle_rank_by_amount_idx on ranked_lobbyists_by_seat (cycle, rank_by_amount);
+ 
+-- CONTRIBUTIONS FROM LOBBYISTS BY GROUP/POLITICIAN
 
- select date_trunc('second', now()) || ' -- drop table if exists summary_recipient_type_from_lobbyist';
- drop table if exists summary_recipient_type_from_lobbyist;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_recipient_type';
+drop table if exists ranked_lobbyists_by_recipient_type;
 
- select date_trunc('second', now()) || ' -- create table summary_recipient_type_from_lobbyist';
- create table summary_recipient_type_from_lobbyist as
+select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_recipient_type';
+create table ranked_lobbyists_by_recipient_type as
+        select
+            recipient_type,
+            cycle,
+            individual_entity as lobbyist_entity,
+            me.name as lobbyist_name,
+            count,
+            amount,
+            rank() over(partition by recipient_type, cycle order by count desc) as rank_by_count,
+            rank() over(partition by recipient_type, cycle order by amount desc) as rank_by_amount
+        from
+            matchbox_entity me
+                inner join
+            aggregate_individual_to_recipient_types airt on me.id = airt.individual_entity
+                inner join
+            matchbox_individualmetadata mim on mim.entity_id = me.id
+         where mim.is_lobbyist
+  ;
 
-      select
-         contributor_entity,
-         name,
-         recipient_type,
-         cycle,
-         count,
-         amount,
-         rank() over (partition by recipient_type, cycle order by sum(amount) desc) as rank
-      from
-        summary_recipient_type_from_indiv s
-        inner join
-        matchbox_individualmetadata im on s.contributor_entity = im.entity_id
-        where im.is_contributor = 't' and im.is_lobbyist = 't'
-        group by contributor_entity,name, recipient_type, cycle, count, amount
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_recipient_type_cycle_rank_by_count_idx on ranked_lobbyists_by_recipient_type (cycle, rank_by_count)';
+create index ranked_lobbyists_by_recipient_type_cycle_rank_by_count_idx on ranked_lobbyists_by_recipient_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_recipient_type_cycle_rank_by_amount_idx on ranked_lobbyists_by_recipient_type (cycle, rank_by_amount)';
+create index ranked_lobbyists_by_recipient_type_cycle_rank_by_amount_idx on ranked_lobbyists_by_recipient_type (cycle, rank_by_amount);
+
+
+-- CONTRIBUTIONS FROM LOBBYISTS BY IN-STATE/OUT-OF-STATE
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_in_state_out_of_state';
+drop table if exists ranked_lobbyists_by_in_state_out_of_state;
+
+select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_in_state_out_of_state';
+create table ranked_lobbyists_by_in_state_out_of_state as
+        select
+            in_state_out_of_state,
+            cycle,
+            individual_entity as lobbyist_entity,
+            me.name as individual_name as lobbyist_name,
+            count,
+            amount,
+            rank() over(partition by in_state_out_of_state, cycle order by count desc) as rank_by_count,
+            rank() over(partition by in_state_out_of_state, cycle order by amount desc) as rank_by_amount
+        from
+            matchbox_entity me
+                inner join
+            aggregate_individual_to_in_state_out_of_state ais on me.id = ais.individual_entity
+                inner join
+            matchbox_individualmetadata mim on mim.entity_id = me.id
+         where mim.is_lobbyist
+  ;
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_in_state_out_of_state_cycle_rank_by_count_idx on ranked_lobbyists_by_in_state_out_of_state (cycle, rank_by_count)';
+create index ranked_lobbyists_by_in_state_out_of_state_cycle_rank_by_count_idx on ranked_lobbyists_by_in_state_out_of_state (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_in_state_out_of_state_cycle_rank_by_amount_idx on ranked_lobbyists_by_in_state_out_of_state (cycle, rank_by_amount)';
+create index ranked_lobbyists_by_in_state_out_of_state_cycle_rank_by_amount_idx on ranked_lobbyists_by_in_state_out_of_state (cycle, rank_by_amount);
+
+
+-- CONTRIBUTIONS FROM LOBBYING ORGS BY PARTY
+
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_party';
+drop table if exists ranked_lobbying_orgs_by_party;
+
+select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_party';
+create table ranked_lobbying_orgs_by_party as
+
+        select
+            recipient_party, 
+            cycle,
+            lobbying_firm_entity, 
+            lobbying_firm_name, 
+            sum(count) as count,
+            sum(amount) as amount,
+            rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
+            rank() over(partition by recipient_party, cycle order by sum(amount) desc) as rank_by_amount
+        from
+        (select
+            case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
+            aotp.cycle,
+            aotp.organization_entity as lobbying_firm_entity,
+            me.name as organization_name as lobbying_firm_name,
+            count,
+            amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_parties aotp on me.id = aotp.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aotp.cycle 
+        where
+            om.lobbying_firm
+            ) three_party
+        group by recipient_party, cycle, organization_entity, organization_name;
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_party_cycle_rank_idx ranked_lobbying_orgs_by_party (cycle, rank_by_count)';
+create index ranked_lobbying_orgs_by_party_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_party (cycle, rank_by_count);
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_party_cycle_rank_idx ranked_lobbying_orgs_by_party (cycle, rank_by_amount)';
+create index ranked_lobbying_orgs_by_party_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_party (cycle, rank_by_amount);
+
+
+
+-- CONTRIBUTIONS FROM LOBBYING ORGS BY FEDERAL/STATE
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_state_fed';
+drop table if exists ranked_lobbying_orgs_by_state_fed;
+
+select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_state_fed';
+create table ranked_lobbying_orgs_by_state_fed as
+        select
+            state_or_federal,
+            cycle,
+            organization_entity as lobbying_firm_entity,
+            me.name as lobbying_firm_name,
+            count,
+            amount,
+            rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = asof.cycle 
+        where
+            om.lobbying_firm
 ;
 
-  select date_trunc('second', now()) || ' -- create index agg_cands_from_lobbyist_idx on agg_cands_from_lobbyist (contributor_entity, cycle)';
-  create index summary_recipient_type_from_lobbyist_idx on summary_recipient_type_from_lobbyist (contributor_entity, cycle);
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_state_fed_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_state_fed (cycle, rank_by_count)';
+create index ranked_lobbying_orgs_by_state_fed_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_state_fed (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_state_fed_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_state_fed (cycle, rank_by_amount)';
+create index ranked_lobbying_orgs_by_state_fed_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_state_fed (cycle, rank_by_amount);
+
+
+-- CONTRIBUTIONS FROM LOBBYING ORGS BY SEAT
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_office_type';
+drop table if exists ranked_lobbying_orgs_by_seat;
+
+select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_office_type';
+create table ranked_lobbying_orgs_by_seat as
+        select
+            seat,
+            cycle,
+            organization_entity as lobbying_firm_entity,
+            me.name as lobbying_firm_name,
+            count,
+            amount,
+            rank() over(partition by seat, cycle order by count desc) as rank_by_count,
+            rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_seat aots on me.id = aots.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aots.cycle 
+        where
+            om.lobbying_firm
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_office_type_org (cycle, rank_by_count)';
+create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_office_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_office_type_org (cycle, rank_by_amount)';
+create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_office_type (cycle, rank_by_amount);
+
+-- CONTRIBTUIONS FROM LOBBYING ORGS, BROKEN OUT BY SOURCE (ASSOC'D INDIVS OR PACS)
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_indiv_pac';
+drop table if exists ranked_lobbying_orgs_by_indiv_pac;
+
+select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_indiv_pac';
+create table ranked_lobbying_orgs_by_indiv_pac as
+    select
+        cycle, 
+        me.name as lobbying_firm_name,
+        organization_entity as lobbying_firm_entity, 
+        (pacs_count + indivs_count) as total_count,
+        (pacs_amount + indivs_amount) as total_amount,
+        pacs_count,
+        pacs_amount, 
+        indivs_count, 
+        indivs_amount,
+        rank() over(partition by cycle order by total_count desc)   as total_count,
+        rank() over(partition by cycle order by total_amount desc)  as total_amount,
+        rank() over(partition by cycle order by pacs_count desc)    as rank_by_pacs_count,
+        rank() over(partition by cycle order by pacs_amount desc)   as rank_by_pacs_amount,
+        rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
+        rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
+        from
+            aggregate_organizations_by_indiv_pac aoip
+                inner join
+            matchbox_entity me on me.id = aoip.organization_entity
+                inner join 
+            matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aoip.cycle 
+        where
+            om.lobbying_firm;
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_amount)';
+create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_count)';
+create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_amount)';
+create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_count)';
+create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_amount)';
+create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_count)';
+create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_count);
+
+
+-- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY PARTY
+
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_party';
+drop table if exists ranked_pol_groups_by_party;
+
+select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_party';
+create table ranked_pol_groups_by_party as
+
+        select
+            recipient_party, 
+            cycle,
+            organization_entity, 
+            organization_name, 
+            sum(count) as count,
+            sum(amount) as amount,
+            rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
+            rank() over(partition by recipient_party, cycle order by sum(amount) desc) as rank_by_amount
+        from
+        (select
+            case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
+            aotp.cycle,
+            aotp.organization_entity,
+            me.name as organization_name,
+            count,
+            amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_parties aotp on me.id = aotp.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+        where
+            om.is_pol_group 
+            and 
+            om.parent_entity_id is null
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
+            ) three_party
+        group by recipient_party, cycle, organization_entity, organization_name;
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_party_cycle_rank_idx ranked_pol_groups_by_party (cycle, rank_by_count)';
+create index ranked_pol_groups_by_party_cycle_rank_by_count_idx on ranked_pol_groups_by_party (cycle, rank_by_count);
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_party_cycle_rank_idx ranked_pol_groups_by_party (cycle, rank_by_amount)';
+create index ranked_pol_groups_by_party_cycle_rank_by_amount_idx on ranked_pol_groups_by_party (cycle, rank_by_amount);
+
+
+
+-- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY FEDERAL/STATE
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_state_fed';
+drop table if exists ranked_pol_groups_by_state_fed;
+
+select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_state_fed';
+create table ranked_pol_groups_by_state_fed as
+        select
+            state_or_federal,
+            cycle,
+            organization_entity,
+            me.name as organization_name,
+            count,
+            amount,
+            rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = asof.cycle 
+        where
+            om.is_pol_group 
+            and
+            om.parent_entity_id is null 
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_state_fed_cycle_rank_by_count_idx on ranked_pol_groups_by_state_fed (cycle, rank_by_count)';
+create index ranked_pol_groups_by_state_fed_cycle_rank_by_count_idx on ranked_pol_groups_by_state_fed (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_state_fed_cycle_rank_by_amount_idx on ranked_pol_groups_by_state_fed (cycle, rank_by_amount)';
+create index ranked_pol_groups_by_state_fed_cycle_rank_by_amount_idx on ranked_pol_groups_by_state_fed (cycle, rank_by_amount);
+
+
+-- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY SEAT
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_office_type';
+drop table if exists ranked_pol_groups_by_seat;
+
+select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_office_type';
+create table ranked_pol_groups_by_seat as
+        select
+            seat,
+            cycle,
+            organization_entity,
+            me.name,
+            count,
+            amount,
+            rank() over(partition by seat, cycle order by count desc) as rank_by_count,
+            rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_seat aots on me.id = aots.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+        where
+            om.is_pol_group 
+            and
+            om.parent_id is null 
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_office_type_cycle_rank_by_count_idx on ranked_pol_groups_by_office_type_org (cycle, rank_by_count)';
+create index ranked_pol_groups_by_office_type_cycle_rank_by_count_idx on ranked_pol_groups_by_office_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_office_type_cycle_rank_by_amount_idx on ranked_pol_groups_by_office_type_org (cycle, rank_by_amount)';
+create index ranked_pol_groups_by_office_type_cycle_rank_by_amount_idx on ranked_pol_groups_by_office_type (cycle, rank_by_amount);
+
+-- CONTRIBTUIONS FROM BIGGEST POL GROUPS, BROKEN OUT BY SOURCE (ASSOC'D INDIVS OR PACS)
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_indiv_pac';
+drop table if exists ranked_pol_groups_by_indiv_pac;
+
+select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_indiv_pac';
+create table ranked_pol_groups_by_indiv_pac as
+    select
+        cycle, 
+        me.name as organization_name,
+        organization_entity, 
+        (pacs_count + indivs_count) as total_count,
+        (pacs_amount + indivs_amount) as total_amount,
+        pacs_count,
+        pacs_amount, 
+        indivs_count, 
+        indivs_amount,
+        rank() over(partition by cycle order by total_count desc)   as total_count,
+        rank() over(partition by cycle order by total_amount desc)  as total_amount,
+        rank() over(partition by cycle order by pacs_count desc)    as rank_by_pacs_count,
+        rank() over(partition by cycle order by pacs_amount desc)   as rank_by_pacs_amount,
+        rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
+        rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
+        from
+            aggregate_organizations_by_indiv_pac aoip
+                inner join
+            matchbox_entity me on me.id = aoip.organization_entity
+                inner join 
+            matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aoip.cycle 
+        where
+            om.is_pol_group 
+            and 
+            om.parent_id is null;
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_amount)';
+create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_count)';
+create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_amount)';
+create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_count)';
+create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_amount)';
+create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_amount);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_count)';
+create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_count);
+
