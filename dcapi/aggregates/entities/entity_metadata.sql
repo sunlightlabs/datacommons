@@ -207,22 +207,28 @@ from (
 where
     meta.entity_id = i.entity_id;
 
--- manually categorized as p --> org
+-- manually categorized as p --> pol_group
 update tmp_matchbox_organizationmetadata meta set
     is_pol_group = 't'::boolean
 from (
-     select 
-            entity_id,
-            navigation_bin
-        from 
-            tmp_matchbox_organizationmetadata om
-                inner join
-            entity_to_navigation_bin nb using (entity_id)
-        where 
-            navigation_bin = 'p'
-        ) i
+        select
+            entity_id
+            from
+        ( 
+        select 
+                entity_id,
+                navigation_bin
+            from 
+                tmp_matchbox_organizationmetadata om
+                    inner join
+                entity_to_navigation_bin nb using (entity_id)
+            where 
+                navigation_bin = 'p'
+        ) j
+    ) i
 where
     meta.entity_id = i.entity_id;
+
 
 select date_trunc('second', now()) || ' -- update table tmp_matchbox_organizationmetadata (industry and subindustry ids)';
 update
