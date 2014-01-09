@@ -142,7 +142,7 @@ create table ranked_parentmost_orgs_by_indiv_pac as
         from
                 matchbox_entity me
             inner join
-                aggregate_organization_to_indiv_pac aots on me.id = aots.organization_entity
+                aggregate_organization_by_indiv_pac aots on me.id = aots.organization_entity
             inner join 
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
@@ -368,7 +368,7 @@ create table ranked_lobbyists_by_party as
             matchbox_individualmetadata mim on mim.entity_id = me.id
          where mim.is_lobbyist
             ) three_party
-        group by recipient_party, cycle, lobbyist_entity, lobbyist_name
+        group by recipient_party, cycle, aitp.individual_entity, lobbyist_name
         ;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_party_cycle_rank_by_count_idx on ranked_lobbyists_by_party (cycle, rank_by_count)';
@@ -385,7 +385,7 @@ drop table if exists ranked_lobbyists_by_state_fed cascade;
 select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_state_fed';
 create table ranked_lobbyists_by_state_fed as
         select
-            state_fed,
+            state_or_federal,
             cycle,
             individual_entity as lobbyist_entity,
             me.name as lobbyist_name,
@@ -518,7 +518,7 @@ create table ranked_lobbying_orgs_by_party as
             recipient_party, 
             cycle,
             lobbying_org_entity, 
-            lobbying_firm_name, 
+            lobbying_org_name, 
             sum(count) as count,
             sum(amount) as amount,
             rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
@@ -528,7 +528,7 @@ create table ranked_lobbying_orgs_by_party as
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
             aotp.cycle,
             aotp.organization_entity as lobbying_org_entity,
-            me.name as lobbying_firm_name,
+            me.name as lobbying_org_name,
             count,
             amount
         from
@@ -562,7 +562,7 @@ create table ranked_lobbying_orgs_by_state_fed as
             state_or_federal,
             aosf.cycle,
             aosf.organization_entity as lobbying_org_entity,
-            me.name as lobbying_firm_name,
+            me.name as lobbying_org_name,
             count,
             amount,
             rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
@@ -597,7 +597,7 @@ create table ranked_lobbying_orgs_by_seat as
             aots.seat,
             aots.cycle,
             organization_entity as lobbying_org_entity,
-            me.name as lobbying_firm_name,
+            me.name as lobbying_org_name,
             count,
             amount,
             rank() over(partition by aots.seat, aots.cycle order by count desc) as rank_by_count,
