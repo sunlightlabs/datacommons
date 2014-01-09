@@ -386,13 +386,13 @@ select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_stat
 create table ranked_lobbyists_by_state_fed as
         select
             state_or_federal,
-            cycle,
+            aisf.cycle,
             individual_entity as lobbyist_entity,
             me.name as lobbyist_name,
             count,
             amount,
-            rank() over(partition by state_fed, cycle order by count desc) as rank_by_count,
-            rank() over(partition by state_fed, cycle order by amount desc) as rank_by_amount
+            rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
         from
             matchbox_entity me
                 inner join
@@ -565,8 +565,8 @@ create table ranked_lobbying_orgs_by_state_fed as
             me.name as lobbying_org_name,
             count,
             amount,
-            rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
-            rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
+            rank() over(partition by state_or_federal, aosf.cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, aosf.cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
@@ -720,8 +720,8 @@ create table ranked_pol_groups_by_state_fed as
             me.name as organization_name,
             count,
             amount,
-            rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
-            rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
+            rank() over(partition by state_or_federal, aosf.cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, aosf.cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
@@ -796,7 +796,7 @@ create table ranked_lobbying_orgs_by_indiv_pac as
         from
                 matchbox_entity me
             inner join
-                aggregate_organization_to_indiv_pac aots on me.id = aots.organization_entity
+                aggregate_organization_by_indiv_pac aots on me.id = aots.organization_entity
             inner join 
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
