@@ -372,10 +372,10 @@ create table ranked_lobbyists_by_party as
         ;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_party_cycle_rank_by_count_idx on ranked_lobbyists_by_party (cycle, rank_by_count)';
-create index ranked_lobbyists_by_party_idx on ranked_lobbyists_by_party (cycle, rank_by_count);
+create index ranked_lobbyists_by_party_count_idx on ranked_lobbyists_by_party (cycle, rank_by_count);
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_party_cycle_rank_by_amount_idx on ranked_lobbyists_by_party (cycle, rank_by_amount)';
-create index ranked_lobbyists_by_party_idx on ranked_lobbyists_by_party (cycle, rank_by_amount);
+create index ranked_lobbyists_by_party_amount_idx on ranked_lobbyists_by_party (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM LOBBYISTS BY FEDERAL/STATE
  
@@ -640,7 +640,7 @@ create table ranked_lobbying_orgs_by_indiv_pac as
         from
                 matchbox_entity me
             inner join
-                aggregate_organization_to_indiv_pac aots on me.id = aots.organization_entity
+                aggregate_organization_by_indiv_pac aots on me.id = aots.organization_entity
             inner join 
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
@@ -800,7 +800,7 @@ create table ranked_pol_groups_by_indiv_pac as
             inner join 
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
-            om.is_pol_group
+            om.lobbying_firm
             and
             om.parent_entity_id is null 
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
