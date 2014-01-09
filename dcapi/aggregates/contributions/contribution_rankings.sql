@@ -198,10 +198,10 @@ create table ranked_individuals_by_party as
         ;
 
 select date_trunc('second', now()) || ' -- create index ranked_individuals_by_party_cycle_rank_by_count_idx on ranked_individuals_by_party (cycle, rank_by_count)';
-create index ranked_individuals_by_party_idx on ranked_individuals_by_party (cycle, rank_by_count);
+create index ranked_individuals_by_party_cycle_count_idx on ranked_individuals_by_party (cycle, rank_by_count);
 
 select date_trunc('second', now()) || ' -- create index ranked_individuals_by_party_cycle_rank_by_amount_idx on ranked_individuals_by_party (cycle, rank_by_amount)';
-create index ranked_individuals_by_party_idx on ranked_individuals_by_party (cycle, rank_by_amount);
+create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_by_party (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY FEDERAL/STATE
 
@@ -356,7 +356,7 @@ create table ranked_lobbyists_by_party as
         select
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
             aitp.cycle,
-            individual_entity as lobbiyst_entity,
+            individual_entity as lobbyist_entity,
             me.name as lobbyist_name,
             count,
             amount
@@ -368,7 +368,7 @@ create table ranked_lobbyists_by_party as
             matchbox_individualmetadata mim on mim.entity_id = me.id
          where mim.is_lobbyist
             ) three_party
-        group by recipient_party, cycle, aitp.individual_entity, lobbyist_name
+        group by recipient_party, cycle, lobbyist_entity, lobbyist_name
         ;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_party_cycle_rank_by_count_idx on ranked_lobbyists_by_party (cycle, rank_by_count)';
@@ -542,7 +542,7 @@ create table ranked_lobbying_orgs_by_party as
                 and
             om.parent_entity_id is null
             ) three_party
-        group by recipient_party, cycle, lobbying_org_entity, organization_name;
+        group by recipient_party, cycle, lobbying_org_entity, lobbying_org_name;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_party_cycle_rank_idx ranked_lobbying_orgs_by_party (cycle, rank_by_count)';
 create index ranked_lobbying_orgs_by_party_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_party (cycle, rank_by_count);
