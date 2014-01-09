@@ -66,8 +66,8 @@ create table ranked_parentmost_orgs_by_state_fed as
             me.name as organization_name,
             count,
             amount,
-            rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
-            rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
+            rank() over(partition by state_or_federal, aosf.cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, aosf.cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
@@ -90,10 +90,10 @@ create index ranked_parentmost_orgs_by_state_fed_cycle_rank_by_amount_idx on ran
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY SEAT
 
-select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_office_type';
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_seat';
 drop table if exists ranked_parentmost_orgs_by_seat;
 
-select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_office_type';
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_seat';
 create table ranked_parentmost_orgs_by_seat as
         select
             seat,
@@ -117,63 +117,46 @@ create table ranked_parentmost_orgs_by_seat as
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_office_type_org (cycle, rank_by_count)';
-create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_office_type (cycle, rank_by_count);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_seat_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_seat_org (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_seat_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_seat (cycle, rank_by_count);
 
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_office_type_org (cycle, rank_by_amount)';
-create index ranked_parentmost_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_office_type (cycle, rank_by_amount);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_seat_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_seat_org (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_seat_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_seat (cycle, rank_by_amount);
 
--- CONTRIBTUIONS FROM BIGGEST ORGS, BROKEN OUT BY SOURCE (ASSOC'D INDIVS OR PACS)
+-- CONTRIBUTIONS FROM BIGGEST ORGS BY INDIV/PAC
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_indiv_pac';
 drop table if exists ranked_parentmost_orgs_by_indiv_pac;
 
 select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_indiv_pac';
 create table ranked_parentmost_orgs_by_indiv_pac as
-    select
-        aoip.cycle, 
-        me.name as organization_name,
-        organization_entity, 
-        (pacs_count + indivs_count) as total_count,
-        (pacs_amount + indivs_amount) as total_amount,
-        pacs_count,
-        pacs_amount, 
-        indivs_count, 
-        indivs_amount,
-        rank() over(partition by cycle order by total_count desc)   as total_count,
-        rank() over(partition by cycle order by total_amount desc)  as total_amount,
-        rank() over(partition by cycle order by pacs_count desc)    as rank_by_pacs_count,
-        rank() over(partition by cycle order by pacs_amount desc)   as rank_by_pacs_amount,
-        rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
-        rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
+        select
+            direct_or_indiv,
+            om.cycle,
+            organization_entity,
+            me.name,
+            count,
+            amount,
+            rank() over(partition by direct_or_indiv, om.cycle order by count desc) as rank_by_count,
+            rank() over(partition by direct_or_indiv, om.cycle order by amount desc) as rank_by_amount
         from
-            aggregate_organization_by_indiv_pac aoip
-                inner join
-            matchbox_entity me on me.id = aoip.organization_entity
-                inner join 
-            matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aoip.cycle 
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_indiv_pac aots on me.id = aots.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
             om.is_org 
-            and 
-            om.parent_entity_id is null;
+            and
+            om.parent_entity_id is null 
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
 
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_amount)';
-create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_amount);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_indiv_pac_org (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_count);
 
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_count)';
-create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_count);
-
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_amount)';
-create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_amount);
-
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_count)';
-create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_pacs_count);
-
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_amount)';
-create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_amount);
-
-select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_count)';
-create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_indivs_count);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_indiv_pac_org (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_amount);
 
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY PARTY
@@ -534,7 +517,7 @@ create table ranked_lobbying_orgs_by_party as
         select
             recipient_party, 
             cycle,
-            lobbying_firm_entity, 
+            lobbying_org_entity, 
             lobbying_firm_name, 
             sum(count) as count,
             sum(amount) as amount,
@@ -544,7 +527,7 @@ create table ranked_lobbying_orgs_by_party as
         (select
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
             aotp.cycle,
-            aotp.organization_entity as lobbying_firm_entity,
+            aotp.organization_entity as lobbying_org_entity,
             me.name as lobbying_firm_name,
             count,
             amount
@@ -556,8 +539,10 @@ create table ranked_lobbying_orgs_by_party as
                 matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aotp.cycle 
         where
             om.lobbying_firm
+                and
+            om.parent_entity_id is null
             ) three_party
-        group by recipient_party, cycle, lobbying_firm_entity, organization_name;
+        group by recipient_party, cycle, lobbying_org_entity, organization_name;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_party_cycle_rank_idx ranked_lobbying_orgs_by_party (cycle, rank_by_count)';
 create index ranked_lobbying_orgs_by_party_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_party (cycle, rank_by_count);
@@ -576,7 +561,7 @@ create table ranked_lobbying_orgs_by_state_fed as
         select
             state_or_federal,
             aosf.cycle,
-            aosf.organization_entity as lobbying_firm_entity,
+            aosf.organization_entity as lobbying_org_entity,
             me.name as lobbying_firm_name,
             count,
             amount,
@@ -590,6 +575,8 @@ create table ranked_lobbying_orgs_by_state_fed as
                 matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle 
         where
             om.lobbying_firm
+                and
+            om.parent_entity_id is null
 ;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_state_fed_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_state_fed (cycle, rank_by_count)';
@@ -601,15 +588,15 @@ create index ranked_lobbying_orgs_by_state_fed_cycle_rank_by_amount_idx on ranke
 
 -- CONTRIBUTIONS FROM LOBBYING ORGS BY SEAT
 
-select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_office_type';
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_seat';
 drop table if exists ranked_lobbying_orgs_by_seat;
 
-select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_office_type';
+select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_seat';
 create table ranked_lobbying_orgs_by_seat as
         select
             aots.seat,
             aots.cycle,
-            organization_entity as lobbying_firm_entity,
+            organization_entity as lobbying_org_entity,
             me.name as lobbying_firm_name,
             count,
             amount,
@@ -623,63 +610,53 @@ create table ranked_lobbying_orgs_by_seat as
                 matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aots.cycle 
         where
             om.lobbying_firm
+                and
+            om.parent_entity_id is null
 ;
 
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_office_type_org (cycle, rank_by_count)';
-create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_office_type (cycle, rank_by_count);
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_seat_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_seat_org (cycle, rank_by_count)';
+create index ranked_lobbying_orgs_by_seat_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_seat (cycle, rank_by_count);
 
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_office_type_org (cycle, rank_by_amount)';
-create index ranked_lobbying_orgs_by_office_type_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_office_type (cycle, rank_by_amount);
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_seat_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_seat_org (cycle, rank_by_amount)';
+create index ranked_lobbying_orgs_by_seat_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_seat (cycle, rank_by_amount);
 
--- CONTRIBTUIONS FROM LOBBYING ORGS, BROKEN OUT BY SOURCE (ASSOC'D INDIVS OR PACS)
 
-select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_indiv_pac';
+-- CONTRIBUTIONS FROM LOBBYING ORGS BY INDIV/PAC
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_indiv_pac';
 drop table if exists ranked_lobbying_orgs_by_indiv_pac;
 
-select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_indiv_pac';
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_indiv_pac';
 create table ranked_lobbying_orgs_by_indiv_pac as
-    select
-        aoip.cycle, 
-        me.name as lobbying_firm_name,
-        organization_entity as lobbying_firm_entity, 
-        (pacs_count + indivs_count) as total_count,
-        (pacs_amount + indivs_amount) as total_amount,
-        pacs_count,
-        pacs_amount, 
-        indivs_count, 
-        indivs_amount,
-        rank() over(partition by cycle order by total_count desc)   as total_count,
-        rank() over(partition by cycle order by total_amount desc)  as total_amount,
-        rank() over(partition by cycle order by pacs_count desc)    as rank_by_pacs_count,
-        rank() over(partition by cycle order by pacs_amount desc)   as rank_by_pacs_amount,
-        rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
-        rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
+        select
+            direct_or_indiv,
+            om.cycle,
+            organization_entity as lobbying_org_entity,
+            me.name,
+            count,
+            amount,
+            rank() over(partition by direct_or_indiv, om.cycle order by count desc) as rank_by_count,
+            rank() over(partition by direct_or_indiv, om.cycle order by amount desc) as rank_by_amount
         from
-            aggregate_organization_by_indiv_pac aoip
-                inner join
-            matchbox_entity me on me.id = aoip.organization_entity
-                inner join 
-            matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aoip.cycle 
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_indiv_pac aots on me.id = aots.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
-            om.lobbying_firm;
+            om.lobbying_firm
+            and
+            om.parent_entity_id is null 
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
 
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_amount)';
-create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_amount);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_indiv_pac_org (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_count);
 
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_count)';
-create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_total_count);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_indiv_pac_org (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_amount);
 
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_amount)';
-create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_amount);
 
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_count)';
-create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_pacs_count);
-
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_amount)';
-create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_amount);
-
-select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_count)';
-create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_indivs_count);
 
 
 -- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY PARTY
@@ -694,7 +671,7 @@ create table ranked_pol_groups_by_party as
         select
             recipient_party, 
             cycle,
-            organization_entity, 
+            organization_entity as pol_group_entity, 
             organization_name, 
             sum(count) as count,
             sum(amount) as amount,
@@ -739,7 +716,7 @@ create table ranked_pol_groups_by_state_fed as
         select
             state_or_federal,
             aosf.cycle,
-            aosf.organization_entity,
+            aosf.organization_entity as pol_group_entity,
             me.name as organization_name,
             count,
             amount,
@@ -767,15 +744,15 @@ create index ranked_pol_groups_by_state_fed_cycle_rank_by_amount_idx on ranked_p
 
 -- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY SEAT
 
-select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_office_type';
+select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_seat';
 drop table if exists ranked_pol_groups_by_seat;
 
-select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_office_type';
+select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_seat';
 create table ranked_pol_groups_by_seat as
         select
             aots.seat,
             aots.cycle,
-            aots.organization_entity,
+            aots.organization_entity as pol_group_entity,
             me.name,
             count,
             amount,
@@ -794,61 +771,46 @@ create table ranked_pol_groups_by_seat as
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_office_type_cycle_rank_by_count_idx on ranked_pol_groups_by_office_type_org (cycle, rank_by_count)';
-create index ranked_pol_groups_by_office_type_cycle_rank_by_count_idx on ranked_pol_groups_by_office_type (cycle, rank_by_count);
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_seat_cycle_rank_by_count_idx on ranked_pol_groups_by_seat_org (cycle, rank_by_count)';
+create index ranked_pol_groups_by_seat_cycle_rank_by_count_idx on ranked_pol_groups_by_seat (cycle, rank_by_count);
 
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_office_type_cycle_rank_by_amount_idx on ranked_pol_groups_by_office_type_org (cycle, rank_by_amount)';
-create index ranked_pol_groups_by_office_type_cycle_rank_by_amount_idx on ranked_pol_groups_by_office_type (cycle, rank_by_amount);
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_seat_cycle_rank_by_amount_idx on ranked_pol_groups_by_seat_org (cycle, rank_by_amount)';
+create index ranked_pol_groups_by_seat_cycle_rank_by_amount_idx on ranked_pol_groups_by_seat (cycle, rank_by_amount);
 
--- CONTRIBTUIONS FROM BIGGEST POL GROUPS, BROKEN OUT BY SOURCE (ASSOC'D INDIVS OR PACS)
+-- CONTRIBUTIONS FROM POL GROUPS BY INDIV/PAC
 
-select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_indiv_pac';
-drop table if exists ranked_pol_groups_by_indiv_pac;
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_indiv_pac';
+drop table if exists ranked_lobbying_orgs_by_indiv_pac;
 
-select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_indiv_pac';
-create table ranked_pol_groups_by_indiv_pac as
-    select
-        aoip.cycle, 
-        me.name as organization_name,
-        organization_entity, 
-        (pacs_count + indivs_count) as total_count,
-        (pacs_amount + indivs_amount) as total_amount,
-        pacs_count,
-        pacs_amount, 
-        indivs_count, 
-        indivs_amount,
-        rank() over(partition by cycle order by total_count desc)   as total_count,
-        rank() over(partition by cycle order by total_amount desc)  as total_amount,
-        rank() over(partition by cycle order by pacs_count desc)    as rank_by_pacs_count,
-        rank() over(partition by cycle order by pacs_amount desc)   as rank_by_pacs_amount,
-        rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
-        rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_indiv_pac';
+create table ranked_lobbying_orgs_by_indiv_pac as
+        select
+            direct_or_indiv,
+            om.cycle,
+            organization_entity as pol_group_entity,
+            me.name,
+            count,
+            amount,
+            rank() over(partition by direct_or_indiv, om.cycle order by count desc) as rank_by_count,
+            rank() over(partition by direct_or_indiv, om.cycle order by amount desc) as rank_by_amount
         from
-            aggregate_organization_by_indiv_pac aoip
-                inner join
-            matchbox_entity me on me.id = aoip.organization_entity
-                inner join 
-            matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aoip.cycle 
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_indiv_pac aots on me.id = aots.organization_entity
+            inner join 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
         where
-            om.is_pol_group 
-            and 
-            om.parent_entity_id is null;
+            om.lobbying_firm
+            and
+            om.parent_entity_id is null 
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
 
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_amount)';
-create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_amount);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_indiv_pac_org (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_count);
 
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_count)';
-create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_count);
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_indiv_pac_org (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_amount);
 
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_amount)';
-create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_amount);
 
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_count)';
-create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_pacs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_pacs_count);
-
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_amount)';
-create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_amount);
-
-select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_count)';
-create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_indivs_count_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_indivs_count);
 
