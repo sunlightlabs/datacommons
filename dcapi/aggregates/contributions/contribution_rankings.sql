@@ -1,5 +1,11 @@
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY PARTY
+-- SELECT 66584   
+-- Time: 1819.086 ms
+-- CREATE INDEX   
+-- Time: 161.574 ms
+-- CREATE INDEX   
+-- Time: 131.900 ms
 
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_party';
@@ -67,7 +73,7 @@ create table ranked_parentmost_orgs_by_state_fed as
             inner join
                 aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
             inner join 
-                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = asof.cycle 
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle 
         where
             om.is_org 
             and
@@ -91,13 +97,13 @@ select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_b
 create table ranked_parentmost_orgs_by_seat as
         select
             seat,
-            cycle,
+            om.cycle,
             organization_entity,
             me.name,
             count,
             amount,
-            rank() over(partition by seat, cycle order by count desc) as rank_by_count,
-            rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
+            rank() over(partition by seat, om.cycle order by count desc) as rank_by_count,
+            rank() over(partition by seat, om.cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
@@ -141,7 +147,7 @@ create table ranked_parentmost_orgs_by_indiv_pac as
         rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
         rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
         from
-            aggregate_organizations_by_indiv_pac aoip
+            aggregate_organization_by_indiv_pac aoip
                 inner join
             matchbox_entity me on me.id = aoip.organization_entity
                 inner join 
@@ -205,7 +211,7 @@ create table ranked_individuals_by_party as
              --  matchbox_individualmetadata mim on mim.entity_id = me.id
              -- where not mim.is_lobbyist
             ) three_party
-        group by recipient_part, cycle, individual_entity, individual_name
+        group by recipient_party, cycle, individual_entity, individual_name
         ;
 
 select date_trunc('second', now()) || ' -- create index ranked_individuals_by_party_cycle_rank_by_count_idx on ranked_individuals_by_party (cycle, rank_by_count)';
@@ -222,14 +228,14 @@ create index ranked_individuals_by_party_idx on ranked_individuals_by_party (cyc
  select date_trunc('second', now()) || ' -- create table ranked_individuals_by_state_fed';
  create table ranked_individuals_by_state_fed as
          select
-             state_fed,
+             state_or_federal,
              cycle,
              individual_entity,
              me.name as individual_name,
              count,
              amount,
-             rank() over(partition by state_fed, cycle order by count desc) as rank_by_count,
-             rank() over(partition by state_fed, cycle order by amount desc) as rank_by_amount
+             rank() over(partition by state_or_federal, cycle order by count desc) as rank_by_count,
+             rank() over(partition by state_or_federal, cycle order by amount desc) as rank_by_amount
          from
                  matchbox_entity me
              inner join
@@ -330,7 +336,7 @@ create index ranked_individuals_by_party_idx on ranked_individuals_by_party (cyc
          from
                  matchbox_entity me
              inner join
-                 aggregate_individual_to_in_state_out_of_state ais on me.id = ais.individual_entity
+                 aggregate_individual_by_in_state_out_of_state ais on me.id = ais.individual_entity
              -- maybe filter out lobbyists
              -- inner join
              --  matchbox_individualmetadata mim on mim.entity_id = me.id
@@ -374,7 +380,7 @@ create table ranked_lobbyists_by_party as
         from
             matchbox_entity me
                 inner join
-            aggregate_individual_to_parties aitp on me.id = aitp.lobbyist_entity
+            aggregate_individual_to_parties aitp on me.id = aitp.individual_entity
                 inner join
             matchbox_lobbyistmetadata mim on mim.entity_id = me.id
          where mim.is_lobbyist
@@ -432,7 +438,7 @@ select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists
              seat,
              cycle,
              individual_entity as lobbyist_entity,
-             me.name as individual_name as lobbyist_name,
+             me.name as lobbyist_name,
              count,
              amount,
              rank() over(partition by seat, cycle order by count desc) as rank_by_count,
@@ -495,7 +501,7 @@ create table ranked_lobbyists_by_in_state_out_of_state as
             in_state_out_of_state,
             cycle,
             individual_entity as lobbyist_entity,
-            me.name as individual_name as lobbyist_name,
+            me.name as lobbyist_name,
             count,
             amount,
             rank() over(partition by in_state_out_of_state, cycle order by count desc) as rank_by_count,
@@ -539,7 +545,7 @@ create table ranked_lobbying_orgs_by_party as
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
             aotp.cycle,
             aotp.organization_entity as lobbying_firm_entity,
-            me.name as organization_name as lobbying_firm_name,
+            me.name as lobbying_firm_name,
             count,
             amount
         from
@@ -581,7 +587,7 @@ create table ranked_lobbying_orgs_by_state_fed as
             inner join
                 aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
             inner join 
-                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = asof.cycle 
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle 
         where
             om.lobbying_firm
 ;
@@ -601,14 +607,14 @@ drop table if exists ranked_lobbying_orgs_by_seat;
 select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_office_type';
 create table ranked_lobbying_orgs_by_seat as
         select
-            seat,
-            cycle,
+            aots.seat,
+            aots.cycle,
             organization_entity as lobbying_firm_entity,
             me.name as lobbying_firm_name,
             count,
             amount,
-            rank() over(partition by seat, cycle order by count desc) as rank_by_count,
-            rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
+            rank() over(partition by aots.seat, aots.cycle order by count desc) as rank_by_count,
+            rank() over(partition by aots.seat, aots.cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
@@ -649,7 +655,7 @@ create table ranked_lobbying_orgs_by_indiv_pac as
         rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
         rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
         from
-            aggregate_organizations_by_indiv_pac aoip
+            aggregate_organization_by_indiv_pac aoip
                 inner join
             matchbox_entity me on me.id = aoip.organization_entity
                 inner join 
@@ -707,7 +713,7 @@ create table ranked_pol_groups_by_party as
             inner join
                 aggregate_organization_to_parties aotp on me.id = aotp.organization_entity
             inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aotp.cycle 
         where
             om.is_pol_group 
             and 
@@ -744,7 +750,7 @@ create table ranked_pol_groups_by_state_fed as
             inner join
                 aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
             inner join 
-                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = asof.cycle 
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle 
         where
             om.is_pol_group 
             and
@@ -767,14 +773,14 @@ drop table if exists ranked_pol_groups_by_seat;
 select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_office_type';
 create table ranked_pol_groups_by_seat as
         select
-            seat,
-            cycle,
-            organization_entity,
+            aots.seat,
+            aots.cycle,
+            aots.organization_entity,
             me.name,
             count,
             amount,
-            rank() over(partition by seat, cycle order by count desc) as rank_by_count,
-            rank() over(partition by seat, cycle order by amount desc) as rank_by_amount
+            rank() over(partition by aots.seat, aots.cycle order by count desc) as rank_by_count,
+            rank() over(partition by aots.seat, aots.cycle order by amount desc) as rank_by_amount
         from
                 matchbox_entity me
             inner join
@@ -818,7 +824,7 @@ create table ranked_pol_groups_by_indiv_pac as
         rank() over(partition by cycle order by indivs_count desc)  as rank_by_indivs_count,
         rank() over(partition by cycle order by indivs_amount desc) as rank_by_indivs_amount
         from
-            aggregate_organizations_by_indiv_pac aoip
+            aggregate_organization_by_indiv_pac aoip
                 inner join
             matchbox_entity me on me.id = aoip.organization_entity
                 inner join 
