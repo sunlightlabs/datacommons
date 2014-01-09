@@ -61,8 +61,8 @@ select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_b
 create table ranked_parentmost_orgs_by_state_fed as
         select
             state_or_federal,
-            cycle,
-            organization_entity,
+            aosf.cycle,
+            aosf.organization_entity,
             me.name as organization_name,
             count,
             amount,
@@ -113,7 +113,7 @@ create table ranked_parentmost_orgs_by_seat as
         where
             om.is_org 
             and
-            om.parent_id is null 
+            om.parent_entity_id is null 
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
@@ -131,7 +131,7 @@ drop table if exists ranked_parentmost_orgs_by_indiv_pac;
 select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_indiv_pac';
 create table ranked_parentmost_orgs_by_indiv_pac as
     select
-        cycle, 
+        aoip.cycle, 
         me.name as organization_name,
         organization_entity, 
         (pacs_count + indivs_count) as total_count,
@@ -155,7 +155,7 @@ create table ranked_parentmost_orgs_by_indiv_pac as
         where
             om.is_org 
             and 
-            om.parent_id is null;
+            om.parent_entity_id is null;
 
 select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_amount)';
 create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_parentmost_orgs_by_indiv_pac (cycle, rank_by_total_amount);
@@ -372,7 +372,7 @@ create table ranked_lobbyists_by_party as
         (
         select
             case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
-            cycle,
+            aitp.cycle,
             individual_entity as lobbiyst_entity,
             me.name as lobbyist_name,
             count,
@@ -382,7 +382,7 @@ create table ranked_lobbyists_by_party as
                 inner join
             aggregate_individual_to_parties aitp on me.id = aitp.individual_entity
                 inner join
-            matchbox_lobbyistmetadata mim on mim.entity_id = me.id
+            matchbox_individualmetadata mim on mim.entity_id = me.id
          where mim.is_lobbyist
             ) three_party
         group by recipient_party, cycle, lobbyist_entity, lobbyist_name
@@ -405,7 +405,7 @@ create table ranked_lobbyists_by_state_fed as
             state_fed,
             cycle,
             individual_entity as lobbyist_entity,
-            me.name as individual_name as lobbyist_name,
+            me.name as lobbyist_name,
             count,
             amount,
             rank() over(partition by state_fed, cycle order by count desc) as rank_by_count,
@@ -509,7 +509,7 @@ create table ranked_lobbyists_by_in_state_out_of_state as
         from
             matchbox_entity me
                 inner join
-            aggregate_individual_to_in_state_out_of_state ais on me.id = ais.individual_entity
+            aggregate_individual_by_in_state_out_of_state ais on me.id = ais.individual_entity
                 inner join
             matchbox_individualmetadata mim on mim.entity_id = me.id
          where mim.is_lobbyist
@@ -557,7 +557,7 @@ create table ranked_lobbying_orgs_by_party as
         where
             om.lobbying_firm
             ) three_party
-        group by recipient_party, cycle, organization_entity, organization_name;
+        group by recipient_party, cycle, lobbying_firm_entity, organization_name;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_party_cycle_rank_idx ranked_lobbying_orgs_by_party (cycle, rank_by_count)';
 create index ranked_lobbying_orgs_by_party_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_party (cycle, rank_by_count);
@@ -575,8 +575,8 @@ select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_
 create table ranked_lobbying_orgs_by_state_fed as
         select
             state_or_federal,
-            cycle,
-            organization_entity as lobbying_firm_entity,
+            aosf.cycle,
+            aosf.organization_entity as lobbying_firm_entity,
             me.name as lobbying_firm_name,
             count,
             amount,
@@ -639,7 +639,7 @@ drop table if exists ranked_lobbying_orgs_by_indiv_pac;
 select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_indiv_pac';
 create table ranked_lobbying_orgs_by_indiv_pac as
     select
-        cycle, 
+        aoip.cycle, 
         me.name as lobbying_firm_name,
         organization_entity as lobbying_firm_entity, 
         (pacs_count + indivs_count) as total_count,
@@ -738,8 +738,8 @@ select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_sta
 create table ranked_pol_groups_by_state_fed as
         select
             state_or_federal,
-            cycle,
-            organization_entity,
+            aosf.cycle,
+            aosf.organization_entity,
             me.name as organization_name,
             count,
             amount,
@@ -790,7 +790,7 @@ create table ranked_pol_groups_by_seat as
         where
             om.is_pol_group 
             and
-            om.parent_id is null 
+            om.parent_entity_id is null 
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
@@ -808,7 +808,7 @@ drop table if exists ranked_pol_groups_by_indiv_pac;
 select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_indiv_pac';
 create table ranked_pol_groups_by_indiv_pac as
     select
-        cycle, 
+        aoip.cycle, 
         me.name as organization_name,
         organization_entity, 
         (pacs_count + indivs_count) as total_count,
@@ -832,7 +832,7 @@ create table ranked_pol_groups_by_indiv_pac as
         where
             om.is_pol_group 
             and 
-            om.parent_id is null;
+            om.parent_entity_id is null;
 
 select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_amount)';
 create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_total_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_total_amount);
