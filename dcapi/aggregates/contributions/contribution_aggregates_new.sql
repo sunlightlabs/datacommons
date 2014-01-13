@@ -632,6 +632,13 @@ select date_trunc('second', now()) || ' -- create index aggregate_organization_t
 create index aggregate_organization_to_seat_seat_cycle_idx on aggregate_organization_to_seat (seat, cycle);
 
 -- CONTRIBUTIONS FROM ORGANIZATIONS TO RECIPIENT TYPES
+-- SELECT 363313
+-- Time: 1955652.728 ms
+-- CREATE INDEX
+-- Time: 939.096 ms
+-- CREATE INDEX
+-- Time: 2062.522 ms
+
 select date_trunc('second', now()) || ' -- drop table if exists aggregate_organization_to_recipient_type';
 drop table if exists aggregate_organization_to_recipient_type cascade;
 

@@ -136,7 +136,12 @@ select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_b
 create index ranked_parentmost_orgs_by_seat_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_seat (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY recipient_type
-
+-- SELECT 51049
+-- Time: 1400.675 ms
+-- CREATE INDEX
+-- Time: 114.063 ms
+-- CREATE INDEX
+-- Time: 149.312 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_recipient_type';
 drop table if exists ranked_parentmost_orgs_by_recipient_type;
