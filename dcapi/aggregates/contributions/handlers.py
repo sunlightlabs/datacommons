@@ -616,8 +616,8 @@ class OrgPartyTotalsHandler(SummaryRollupHandler):
     default_key = 'Other'
 
     stmt = """
-        select recipient_party, sum(count) as count, sum(amount) as amount from
-        summary_party_from_biggest_org
+        select recipient_party, total_count as count, total_amount as amount from
+        summary_parentmost_orgs_by_party
         where cycle = %s
         group by recipient_party;
     """
@@ -629,8 +629,8 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'recipient_party', 'amount']
 
     stmt = """
-        select name, organization_entity as id, recipient_party, amount
-          from summary_party_from_biggest_org
+        select organization_name as name, organization_entity as id, recipient_party, amount
+          from summary_parentmost_orgs_by_party
          where cycle = %s and rank <= %s;
     """
 
@@ -646,14 +646,14 @@ class OrgPartySummaryHandler(SummaryHandler):
 
 class OrgStateFedTotalsHandler(SummaryRollupHandler):
 
-    category_map = {'urn:fec:transaction':'Federal',
-                    'urn:nimsp:transaction':'State'}
+    category_map = {'federal':'Federal',
+                    'state':'State'}
 
     stmt = """
-        select transaction_namespace, sum(count) as count, sum(amount) as amount from
-        summary_namespace_from_biggest_org
+        select state_or_federal as transaction_namespace, total_count as count, total_amount as amount from
+        summary_parentmost_orgs_by_state_fed
         where cycle = %s
-        group by transaction_namespace;
+        group by state_or_federal;
     """
 
 class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
@@ -663,8 +663,9 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'transaction_namespace', 'amount']
 
     stmt = """
-        select name, organization_entity as id, transaction_namespace, amount
-          from summary_namespace_from_biggest_org
+        select organization_name as name, organization_entity as id, state_or_federal as transaction_namespace, amount
+          from 
+        summary_parentmost_orgs_by_state_fed
          where cycle = %s and rank <= %s;
     """
 
@@ -683,8 +684,8 @@ class OrgFromPacIndivTotalsHandler(SummaryRollupHandler):
                     'indiv':'Individuals'}
 
     stmt = """
-        select direct_or_indiv as category, sum(count) as count, sum(amount) as amount
-            from summary_biggest_org_by_indiv_pac
+        select direct_or_indiv as category, total_count as count, total_amount as amount
+            from summary_parentmost_orgs_by_indiv_pac
         where cycle = %s
         group by direct_or_indiv;
     """
@@ -696,8 +697,8 @@ class OrgFromPacIndivTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler
     fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
 
     stmt = """
-        select name, organization_entity as id, direct_or_indiv, amount, cycle, rank_by_amount as rank
-            from summary_biggest_org_by_indiv_pac
+        select organization_name as name, organization_entity as id, direct_or_indiv, amount, cycle, rank_by_amount as rank
+            from summary_parentmost_orgs_by_indiv_pac
          where cycle = %s and rank_by_amount <= %s;
     """
 
