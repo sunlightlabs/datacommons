@@ -135,6 +135,42 @@ create index ranked_parentmost_orgs_by_seat_cycle_rank_by_count_idx on ranked_pa
 select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_seat_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_seat_org (cycle, rank_by_amount)';
 create index ranked_parentmost_orgs_by_seat_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_seat (cycle, rank_by_amount);
 
+-- CONTRIBUTIONS FROM BIGGEST ORGS BY recipient_type
+
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_recipient_type';
+drop table if exists ranked_parentmost_orgs_by_recipient_type;
+
+select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_by_recipient_type';
+create table ranked_parentmost_orgs_by_recipient_type as
+        select
+            recipient_type,
+            om.cycle,
+            organization_entity,
+            me.name as organization_name,
+            count,
+            amount,
+            rank() over(partition by recipient_type, om.cycle order by count desc) as rank_by_count,
+            rank() over(partition by recipient_type, om.cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_recipient_type aots on me.id = aots.organization_entity
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
+        where
+            om.is_org
+            and
+            om.parent_entity_id is null
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_recipient_type_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_recipient_type_org (cycle, rank_by_count)';
+create index ranked_parentmost_orgs_by_recipient_type_cycle_rank_by_count_idx on ranked_parentmost_orgs_by_recipient_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_by_recipient_type_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_recipient_type_org (cycle, rank_by_amount)';
+create index ranked_parentmost_orgs_by_recipient_type_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_recipient_type (cycle, rank_by_amount);
+
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY INDIV/PAC
 -- SELECT 57616
 -- Time: 1628.601 ms

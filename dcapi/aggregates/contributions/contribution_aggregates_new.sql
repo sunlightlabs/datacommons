@@ -631,6 +631,101 @@ create index aggregate_organization_to_seat_idx on aggregate_organization_to_sea
 select date_trunc('second', now()) || ' -- create index aggregate_organization_to_seat_seat_cycle_idx on aggregate_organization_to_seat (seat, cycle)';
 create index aggregate_organization_to_seat_seat_cycle_idx on aggregate_organization_to_seat (seat, cycle);
 
+-- CONTRIBUTIONS FROM ORGANIZATIONS TO RECIPIENT TYPES
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_organization_to_recipient_type';
+drop table if exists aggregate_organization_to_recipient_type cascade;
+
+select date_trunc('second', now()) || ' -- create table aggregate_organization_to_recipient_type';
+create table aggregate_organization_to_recipient_type as
+    with org_contributions_by_cycle as
+        (select organization_entity,
+                cycle,
+                recipient_type,
+                sum(count) as count,
+                sum(amount) as amount,
+                rank() over (partition by organization_entity, cycle order by sum(count) desc) as rank_by_count,
+                rank() over (partition by organization_entity, cycle order by sum(amount) desc) as rank_by_amount
+            from
+
+               ( select ca.entity_id as organization_entity,
+                       cycle,
+                       co.recipient_type,
+                       count(*) as count,
+                       sum(co.amount) as amount
+                from
+                    (table contributions_organization
+                     union table contributions_org_to_pac ) co
+                        inner join
+                    (table organization_associations
+                     union table parent_organization_associations ) ca using (transaction_id)
+                        left join
+                    recipient_associations ra using (transaction_id)
+                        left join
+                    matchbox_entity re on re.id = ra.entity_id
+                group by ca.entity_id, cycle, recipient_type
+
+            union all
+
+                select oa.entity_id as organization_entity,
+                       cycle,
+                       ci.recipient_type,
+                       count(*) as count,
+                       sum(ci.amount) as amount
+                from
+                    (table contributions_individual
+                     union table contributions_individual_to_organization) ci
+                        inner join
+                    (table organization_associations
+                     union table parent_organization_associations ) oa using (transaction_id)
+                        left join
+                    recipient_associations ra using (transaction_id)
+                        left join
+                    matchbox_entity re on re.id = ra.entity_id
+                group by oa.entity_id, cycle, recipient_type) x
+
+            group by organization_entity, cycle, recipient_type
+        )
+
+    select  organization_entity,
+            cycle,
+            recipient_type,
+            count,
+            amount,
+            rank_by_count,
+            rank_by_amount
+    from
+        org_contributions_by_cycle
+
+    union all
+
+    select  organization_entity,
+            -1 as cycle,
+            recipient_type,
+            count,
+            amount,
+            rank_by_count,
+            rank_by_amount
+    from
+        (select organization_entity,
+                recipient_type,
+                sum(count) as count,
+                sum(amount) as amount,
+                rank() over(partition by organization_entity order by sum(count) desc) as rank_by_count,
+                rank() over(partition by organization_entity order by sum(amount) desc) as rank_by_amount
+        from
+            org_contributions_by_cycle
+        group by organization_entity, recipient_type
+        ) all_cycle_rollup
+;
+
+select date_trunc('second', now()) || ' -- create index aggregate_organization_to_recipient_type_entity_cycle_idx on aggregate_organization_to_recipient_type (organization_entity, cycle)';
+create index aggregate_organization_to_recipient_type_idx on aggregate_organization_to_recipient_type (organization_entity, cycle);
+
+select date_trunc('second', now()) || ' -- create index aggregate_organization_to_recipient_type_recipient_type_cycle_idx on aggregate_organization_to_recipient_type (recipient_type, cycle)';
+create index aggregate_organization_to_recipient_type_recipient_type_cycle_idx on aggregate_organization_to_recipient_type (recipient_type, cycle);
+
+
+
 ---- INDIVIDUALS
 
 -- Contributions to state and federal races from individuals
