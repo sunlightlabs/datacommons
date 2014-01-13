@@ -96,11 +96,11 @@ create index ranked_parentmost_orgs_by_state_fed_cycle_rank_by_amount_idx on ran
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY SEAT
 -- SELECT 120765
--- Time: 4208.622 ms
+-- Time: 4725.656 ms
 -- CREATE INDEX
--- Time: 260.282 ms
+-- Time: 257.808 ms
 -- CREATE INDEX
--- Time: 243.000 ms
+-- Time: 257.808 msi
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_seat';
 drop table if exists ranked_parentmost_orgs_by_seat;
@@ -111,7 +111,7 @@ create table ranked_parentmost_orgs_by_seat as
             seat,
             om.cycle,
             organization_entity,
-            me.name,
+            me.name as organization_name,
             count,
             amount,
             rank() over(partition by seat, om.cycle order by count desc) as rank_by_count,
