@@ -1,10 +1,10 @@
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY PARTY
--- SELECT 66584   
+-- SELECT 66584
 -- Time: 1819.086 ms
--- CREATE INDEX   
+-- CREATE INDEX
 -- Time: 161.574 ms
--- CREATE INDEX   
+-- CREATE INDEX
 -- Time: 131.900 ms
 
 
@@ -15,10 +15,10 @@ select date_trunc('second', now()) || ' -- create table ranked_parentmost_orgs_b
 create table ranked_parentmost_orgs_by_party as
 
         select
-            recipient_party, 
+            recipient_party,
             cycle,
-            organization_entity, 
-            organization_name, 
+            organization_entity,
+            organization_name,
             sum(count) as count,
             sum(amount) as amount,
             rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
@@ -35,11 +35,11 @@ create table ranked_parentmost_orgs_by_party as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_parties aotp on me.id = aotp.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aotp.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aotp.cycle
         where
-            om.is_org 
-            and 
+            om.is_org
+            and
             om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
             ) three_party
@@ -53,6 +53,12 @@ create index ranked_parentmost_orgs_by_party_cycle_rank_by_amount_idx on ranked_
 
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY FEDERAL/STATE
+-- SELECT 40103
+-- Time: 1316.740 ms
+-- CREATE INDEX
+-- Time: 91.265 ms
+-- CREATE INDEX
+-- Time: 84.947 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_state_fed';
 drop table if exists ranked_parentmost_orgs_by_state_fed;
@@ -72,12 +78,12 @@ create table ranked_parentmost_orgs_by_state_fed as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle
         where
-            om.is_org 
+            om.is_org
             and
-            om.parent_entity_id is null 
+            om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
 ;
 
@@ -89,6 +95,12 @@ create index ranked_parentmost_orgs_by_state_fed_cycle_rank_by_amount_idx on ran
 
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY SEAT
+-- SELECT 120765
+-- Time: 4208.622 ms
+-- CREATE INDEX
+-- Time: 260.282 ms
+-- CREATE INDEX
+-- Time: 243.000 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_seat';
 drop table if exists ranked_parentmost_orgs_by_seat;
@@ -108,12 +120,12 @@ create table ranked_parentmost_orgs_by_seat as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_seat aots on me.id = aots.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
-            om.is_org 
+            om.is_org
             and
-            om.parent_entity_id is null 
+            om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
@@ -124,6 +136,12 @@ select date_trunc('second', now()) || ' -- create index ranked_parentmost_orgs_b
 create index ranked_parentmost_orgs_by_seat_cycle_rank_by_amount_idx on ranked_parentmost_orgs_by_seat (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM BIGGEST ORGS BY INDIV/PAC
+-- SELECT 57616
+-- Time: 1628.601 ms
+-- CREATE INDEX
+-- Time: 123.874 ms
+-- CREATE INDEX
+-- Time: 120.520 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_parentmost_orgs_by_indiv_pac';
 drop table if exists ranked_parentmost_orgs_by_indiv_pac;
@@ -143,12 +161,12 @@ create table ranked_parentmost_orgs_by_indiv_pac as
                 matchbox_entity me
             inner join
                 aggregate_organization_by_indiv_pac aots on me.id = aots.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
-            om.is_org 
+            om.is_org
             and
-            om.parent_entity_id is null 
+            om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
@@ -160,6 +178,12 @@ create index ranked_parentmost_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ran
 
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY PARTY
+-- SELECT 156890
+-- Time: 2854.962 ms
+-- CREATE INDEX
+-- Time: 334.013 ms
+-- CREATE INDEX
+-- Time: 337.589 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_party';
 drop table if exists ranked_individuals_by_party;
@@ -168,10 +192,10 @@ select date_trunc('second', now()) || ' -- create table ranked_individuals_by_pa
 create table ranked_individuals_by_party as
 
         select
-            recipient_party, 
+            recipient_party,
             cycle,
-            individual_entity, 
-            individual_name, 
+            individual_entity,
+            individual_name,
             sum(count) as count,
             sum(amount) as amount,
             rank() over(partition by recipient_party,cycle order by sum(count) desc) as rank_by_count,
@@ -204,6 +228,12 @@ select date_trunc('second', now()) || ' -- create index ranked_individuals_by_pa
 create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_by_party (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY FEDERAL/STATE
+-- SELECT 130140
+-- Time: 4303.812 ms
+-- CREATE INDEX
+-- Time: 272.283 ms
+-- CREATE INDEX
+-- Time: 274.684 ms
 
  select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_state_fed';
  drop table if exists ranked_individuals_by_state_fed;
@@ -235,7 +265,13 @@ create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_
  select date_trunc('second', now()) || ' -- create index ranked_individuals_by_state_fed_cycle_rank_by_amount_idx on ranked_individuals_by_state_fed (cycle, rank_by_amount)';
  create index ranked_individuals_by_state_fed_cycle_rank_by_amount_idx on ranked_individuals_by_state_fed (cycle, rank_by_amount);
 
- -- CONTRIBUTIONS FROM INDIVIDUALS BY SEAT
+-- CONTRIBUTIONS FROM INDIVIDUALS BY SEAT
+-- SELECT 279285
+-- Time: 6952.617 ms
+-- CREATE INDEX
+-- Time: 623.251 ms
+-- CREATE INDEX
+-- Time: 688.030 ms
 
  select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_seat';
  drop table if exists ranked_individuals_by_seat;
@@ -267,7 +303,13 @@ create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_
  select date_trunc('second', now()) || ' -- create index ranked_individuals_by_seat_cycle_rank_by_amount_idx on ranked_individuals_by_seat (cycle, rank_by_amount)';
  create index ranked_individuals_by_seat_cycle_rank_by_amount_idx on ranked_individuals_by_seat (cycle, rank_by_amount);
 
- -- CONTRIBUTIONS FROM INDIVIDUALS BY GROUP/POLITICIAN
+-- CONTRIBUTIONS FROM INDIVIDUALS BY GROUP/POLITICIAN
+-- SELECT 145440
+-- Time: 2223.772 ms
+-- CREATE INDEX
+-- Time: 298.492 ms
+-- CREATE INDEX
+-- Time: 292.258 ms
 
  select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_recipient_type';
  drop table if exists ranked_individuals_by_recipient_type;
@@ -300,7 +342,14 @@ create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_
  create index ranked_individuals_by_recipient_type_cycle_rank_by_amount_idx on ranked_individuals_by_recipient_type (cycle, rank_by_amount);
 
 
- -- CONTRIBUTIONS FROM INDIVIDUALS BY IN-STATE/OUT-OF-STATE
+-- CONTRIBUTIONS FROM INDIVIDUALS BY IN-STATE/OUT-OF-STATE
+-- SELECT 118951
+-- Time: 3298.045 ms
+-- CREATE INDEX
+-- Time: 239.777 ms
+-- CREATE INDEX
+-- Time: 246.164 ms
+
 
  select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_in_state_out_of_state';
  drop table if exists ranked_individuals_by_in_state_out_of_state;
@@ -335,6 +384,12 @@ create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_
 
 
 -- CONTRIBUTIONS FROM LOBBYISTS BY PARTY
+-- SELECT 84066
+-- Time: 1520.428 ms
+-- CREATE INDEX
+-- Time: 184.446 ms
+-- CREATE INDEX
+-- Time: 167.973 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_party';
 drop table if exists ranked_lobbyists_by_party cascade;
@@ -343,10 +398,10 @@ select date_trunc('second', now()) || ' -- create table ranked_lobbyists_by_part
 create table ranked_lobbyists_by_party as
 
         select
-            recipient_party, 
+            recipient_party,
             cycle,
-            lobbyist_entity, 
-            lobbyist_name, 
+            lobbyist_entity,
+            lobbyist_name,
             sum(count) as count,
             sum(amount) as amount,
             rank() over(partition by recipient_party,cycle order by sum(count) desc) as rank_by_count,
@@ -378,7 +433,13 @@ select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_part
 create index ranked_lobbyists_by_party_amount_idx on ranked_lobbyists_by_party (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM LOBBYISTS BY FEDERAL/STATE
- 
+-- SELECT 68998
+-- Time: 1518.865 ms
+-- CREATE INDEX
+-- Time: 136.638 ms
+-- CREATE INDEX
+-- Time: 142.167 ms
+
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_state_fed';
 drop table if exists ranked_lobbyists_by_state_fed cascade;
 
@@ -410,8 +471,14 @@ create index ranked_lobbyists_by_state_fed_cycle_rank_by_amount_idx on ranked_lo
 
 
 
- -- CONTRIBUTIONS FROM LOBBYISTS BY SEAT
- 
+-- CONTRIBUTIONS FROM LOBBYISTS BY SEAT
+-- SELECT 147456
+-- Time: 3658.465 ms
+-- CREATE INDEX
+-- Time: 310.077 ms
+-- CREATE INDEX
+-- Time: 295.290 ms
+
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_seat';
  drop table if exists ranked_lobbyists_by_seat;
 
@@ -440,8 +507,14 @@ select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists
 
  select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_seat_cycle_rank_by_amount_idx on ranked_lobbyists_by_seat (cycle, rank_by_amount)';
  create index ranked_lobbyists_by_seat_cycle_rank_by_amount_idx on ranked_lobbyists_by_seat (cycle, rank_by_amount);
- 
+
 -- CONTRIBUTIONS FROM LOBBYISTS BY GROUP/POLITICIAN
+-- SELECT 77445
+-- Time: 1187.250 ms
+-- CREATE INDEX
+-- Time: 152.960 ms
+-- CREATE INDEX
+-- Time: 159.314 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_recipient_type';
 drop table if exists ranked_lobbyists_by_recipient_type;
@@ -474,6 +547,12 @@ create index ranked_lobbyists_by_recipient_type_cycle_rank_by_amount_idx on rank
 
 
 -- CONTRIBUTIONS FROM LOBBYISTS BY IN-STATE/OUT-OF-STATE
+-- SELECT 61677
+-- Time: 1785.575 ms
+-- CREATE INDEX
+-- Time: 121.845 ms
+-- CREATE INDEX
+-- Time: 118.950 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_in_state_out_of_state';
 drop table if exists ranked_lobbyists_by_in_state_out_of_state;
@@ -506,7 +585,12 @@ create index ranked_lobbyists_by_in_state_out_of_state_cycle_rank_by_amount_idx 
 
 
 -- CONTRIBUTIONS FROM LOBBYING ORGS BY PARTY
-
+-- SELECT 19072
+-- Time: 574.869 ms
+-- CREATE INDEX
+-- Time: 56.587 ms
+-- CREATE INDEX
+-- Time: 58.595 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_party';
 drop table if exists ranked_lobbying_orgs_by_party;
@@ -515,10 +599,10 @@ select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_
 create table ranked_lobbying_orgs_by_party as
 
         select
-            recipient_party, 
+            recipient_party,
             cycle,
-            lobbying_org_entity, 
-            lobbying_org_name, 
+            lobbying_org_entity,
+            lobbying_org_name,
             sum(count) as count,
             sum(amount) as amount,
             rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
@@ -535,8 +619,8 @@ create table ranked_lobbying_orgs_by_party as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_parties aotp on me.id = aotp.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aotp.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aotp.cycle
         where
             om.lobbying_firm
                 and
@@ -552,6 +636,12 @@ create index ranked_lobbying_orgs_by_party_cycle_rank_by_amount_idx on ranked_lo
 
 
 -- CONTRIBUTIONS FROM LOBBYING ORGS BY FEDERAL/STATE
+-- SELECT 13415
+-- Time: 543.707 ms
+-- CREATE INDEX
+-- Time: 30.131 ms
+-- CREATE INDEX
+-- Time: 32.187 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_state_fed';
 drop table if exists ranked_lobbying_orgs_by_state_fed;
@@ -571,8 +661,8 @@ create table ranked_lobbying_orgs_by_state_fed as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle
         where
             om.lobbying_firm
                 and
@@ -587,6 +677,12 @@ create index ranked_lobbying_orgs_by_state_fed_cycle_rank_by_amount_idx on ranke
 
 
 -- CONTRIBUTIONS FROM LOBBYING ORGS BY SEAT
+-- SELECT 35619
+-- Time: 1317.012 ms
+-- CREATE INDEX
+-- Time: 75.123 ms
+-- CREATE INDEX
+-- Time: 71.920 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_seat';
 drop table if exists ranked_lobbying_orgs_by_seat;
@@ -606,8 +702,8 @@ create table ranked_lobbying_orgs_by_seat as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_seat aots on me.id = aots.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aots.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id  and om.cycle = aots.cycle
         where
             om.lobbying_firm
                 and
@@ -622,6 +718,12 @@ create index ranked_lobbying_orgs_by_seat_cycle_rank_by_amount_idx on ranked_lob
 
 
 -- CONTRIBUTIONS FROM LOBBYING ORGS BY INDIV/PAC
+-- SELECT 21584
+-- Time: 681.073 ms
+-- CREATE INDEX
+-- Time: 43.582 ms
+-- CREATE INDEX
+-- Time: 43.313 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_indiv_pac';
 drop table if exists ranked_lobbying_orgs_by_indiv_pac;
@@ -641,12 +743,12 @@ create table ranked_lobbying_orgs_by_indiv_pac as
                 matchbox_entity me
             inner join
                 aggregate_organization_by_indiv_pac aots on me.id = aots.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
             om.lobbying_firm
             and
-            om.parent_entity_id is null 
+            om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
@@ -660,6 +762,12 @@ create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranke
 
 
 -- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY PARTY
+-- SELECT 6962
+-- Time: 345.988 ms
+-- CREATE INDEX
+-- Time: 16.594 ms
+-- CREATE INDEX
+-- Time: 15.612 ms
 
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_party';
@@ -669,10 +777,10 @@ select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_par
 create table ranked_pol_groups_by_party as
 
         select
-            recipient_party, 
+            recipient_party,
             cycle,
-            organization_entity as pol_group_entity, 
-            organization_name, 
+            organization_entity as pol_group_entity,
+            organization_name,
             sum(count) as count,
             sum(amount) as amount,
             rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
@@ -689,11 +797,11 @@ create table ranked_pol_groups_by_party as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_parties aotp on me.id = aotp.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aotp.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aotp.cycle
         where
-            om.is_pol_group 
-            and 
+            om.is_pol_group
+            and
             om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
             ) three_party
@@ -707,6 +815,12 @@ create index ranked_pol_groups_by_party_cycle_rank_by_amount_idx on ranked_pol_g
 
 
 -- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY FEDERAL/STATE
+-- SELECT 5635
+-- Time: 329.071 ms
+-- CREATE INDEX
+-- Time: 13.655 ms
+-- CREATE INDEX
+-- Time: 16.845 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_state_fed';
 drop table if exists ranked_pol_groups_by_state_fed;
@@ -726,12 +840,12 @@ create table ranked_pol_groups_by_state_fed as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_state_fed aosf on me.id = aosf.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = aosf.organization_entity and om.cycle = aosf.cycle
         where
-            om.is_pol_group 
+            om.is_pol_group
             and
-            om.parent_entity_id is null 
+            om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
 ;
 
@@ -743,6 +857,12 @@ create index ranked_pol_groups_by_state_fed_cycle_rank_by_amount_idx on ranked_p
 
 
 -- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY SEAT
+-- SELECT 14151
+-- Time: 666.213 ms
+-- CREATE INDEX
+-- Time: 30.405 ms
+-- CREATE INDEX
+-- Time: 28.920 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_seat';
 drop table if exists ranked_pol_groups_by_seat;
@@ -762,12 +882,12 @@ create table ranked_pol_groups_by_seat as
                 matchbox_entity me
             inner join
                 aggregate_organization_to_seat aots on me.id = aots.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
-            om.is_pol_group 
+            om.is_pol_group
             and
-            om.parent_entity_id is null 
+            om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
@@ -778,6 +898,12 @@ select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_sea
 create index ranked_pol_groups_by_seat_cycle_rank_by_amount_idx on ranked_pol_groups_by_seat (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM POL GROUPS BY INDIV/PAC
+-- SELECT 21584
+-- Time: 676.447 ms
+-- CREATE INDEX
+-- Time: 45.035 ms
+-- CREATE INDEX
+-- Time: 46.796 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_indiv_pac';
 drop table if exists ranked_pol_groups_by_indiv_pac;
@@ -797,12 +923,12 @@ create table ranked_pol_groups_by_indiv_pac as
                 matchbox_entity me
             inner join
                 aggregate_organization_by_indiv_pac aots on me.id = aots.organization_entity
-            inner join 
-                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle 
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
             om.lobbying_firm
             and
-            om.parent_entity_id is null 
+            om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
