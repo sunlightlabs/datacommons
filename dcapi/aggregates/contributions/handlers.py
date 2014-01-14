@@ -619,7 +619,6 @@ class OrgPartyTotalsHandler(SummaryRollupHandler):
         select recipient_party, total_count as count, total_amount as amount from
         summary_parentmost_orgs_by_party
         where cycle = %s
-        group by recipient_party;
     """
 
 class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
@@ -653,7 +652,6 @@ class OrgStateFedTotalsHandler(SummaryRollupHandler):
         select state_or_federal as transaction_namespace, total_count as count, total_amount as amount from
         summary_parentmost_orgs_by_state_fed
         where cycle = %s
-        group by state_or_federal;
     """
 
 class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
@@ -687,7 +685,6 @@ class OrgFromPacIndivTotalsHandler(SummaryRollupHandler):
         select direct_or_indiv as category, total_count as count, total_amount as amount
             from summary_parentmost_orgs_by_indiv_pac
         where cycle = %s
-        group by direct_or_indiv;
     """
 
 class OrgFromPacIndivTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
