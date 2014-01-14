@@ -630,7 +630,7 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     stmt = """
         select organization_name as name, organization_entity as id, recipient_party, amount
           from summary_parentmost_orgs_by_party
-         where cycle = %s and rank <= %s;
+         where cycle = %s and rank_by_amount <= %s;
     """
 
 class OrgPartySummaryHandler(SummaryHandler):
@@ -664,7 +664,7 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
         select organization_name as name, organization_entity as id, state_or_federal as transaction_namespace, amount
           from 
         summary_parentmost_orgs_by_state_fed
-         where cycle = %s and rank <= %s;
+         where cycle = %s and rank_by_amount <= %s;
     """
 
 class OrgStateFedSummaryHandler(SummaryHandler):
@@ -732,7 +732,7 @@ class ContributorPartyTopContributorsByContributionsHandler(SummaryBreakoutHandl
     stmt = """
         select name, contributor_entity as id, recipient_party, amount
           from summary_party_from_contrib
-         where cycle = %s and rank <= %s;
+         where cycle = %s and rank_by_amount <= %s;
     """
 
 class ContributorPartySummaryHandler(SummaryHandler):
