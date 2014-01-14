@@ -608,16 +608,21 @@ class TopIndustriesTimeSeriesHandler(BaseHandler):
 
         return labeled_result
 
-### ORGANIZATIONS
+### PARENTMOST ORGANIZATIONS
 
+## ORGS: PARTY
 class OrgPartyTotalsHandler(SummaryRollupHandler):
 
     category_map = {'R':'Republicans', 'D':'Democrats'}
     default_key = 'Other'
 
     stmt = """
-        select recipient_party, total_count as count, total_amount as amount from
-        summary_parentmost_orgs_by_party
+        select 
+            recipient_party, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_parentmost_orgs_by_party
         where cycle = %s
     """
 
@@ -628,9 +633,14 @@ class OrgPartyTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'recipient_party', 'amount']
 
     stmt = """
-        select organization_name as name, organization_entity as id, recipient_party, amount
-          from summary_parentmost_orgs_by_party
-         where cycle = %s and rank_by_amount <= %s;
+        select 
+            organization_name as name, 
+            organization_entity as id, 
+            recipient_party, 
+            amount
+        from 
+            summary_parentmost_orgs_by_party
+        where cycle = %s and rank_by_amount <= %s;
     """
 
 class OrgPartySummaryHandler(SummaryHandler):
@@ -643,14 +653,19 @@ class OrgPartySummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+## ORGS: STATE/FED
 class OrgStateFedTotalsHandler(SummaryRollupHandler):
 
     category_map = {'federal':'Federal',
                     'state':'State'}
 
     stmt = """
-        select state_or_federal as transaction_namespace, total_count as count, total_amount as amount from
-        summary_parentmost_orgs_by_state_fed
+        select 
+            state_or_federal as transaction_namespace, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_parentmost_orgs_by_state_fed
         where cycle = %s
     """
 
@@ -661,10 +676,14 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'transaction_namespace', 'amount']
 
     stmt = """
-        select organization_name as name, organization_entity as id, state_or_federal as transaction_namespace, amount
-          from 
-        summary_parentmost_orgs_by_state_fed
-         where cycle = %s and rank_by_amount <= %s;
+        select 
+            organization_name as name, 
+            organization_entity as id, 
+            state_or_federal as transaction_namespace, 
+            amount
+        from 
+            summary_parentmost_orgs_by_state_fed
+        where cycle = %s and rank_by_amount <= %s;
     """
 
 class OrgStateFedSummaryHandler(SummaryHandler):
@@ -682,8 +701,12 @@ class OrgFromPacIndivTotalsHandler(SummaryRollupHandler):
                     'indiv':'Individuals'}
 
     stmt = """
-        select direct_or_indiv as category, total_count as count, total_amount as amount
-            from summary_parentmost_orgs_by_indiv_pac
+        select 
+            direct_or_indiv as category, 
+            total_count as count, 
+            total_amount as amount
+        from 
+            summary_parentmost_orgs_by_indiv_pac
         where cycle = %s
     """
 
@@ -694,9 +717,14 @@ class OrgFromPacIndivTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler
     fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
 
     stmt = """
-        select organization_name as name, organization_entity as id, direct_or_indiv, amount, cycle, rank_by_amount as rank
-            from summary_parentmost_orgs_by_indiv_pac
-         where cycle = %s and rank_by_amount <= %s;
+        select 
+            organization_name as name, 
+            organization_entity as id, 
+            direct_or_indiv, 
+            amount, cycle, rank_by_amount as rank
+        from 
+            summary_parentmost_orgs_by_indiv_pac
+        where cycle = %s and rank_by_amount <= %s;
     """
 
 class OrgFromPacIndivSummaryHandler(SummaryHandler):
