@@ -1382,6 +1382,49 @@ class LobbyingOrgSeatSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+## LOBBYING ORGS: PAC/INDIV
+class LobbyingOrgFromPacIndivTotalsHandler(SummaryRollupHandler):
+    category_map = {'direct':'Org PAC',
+                    'indiv':'Individuals'}
+
+    stmt = """
+        select 
+            direct_or_indiv, 
+            total_count as count, 
+            total_amount as amount
+        from 
+            summary_lobbying_orgs_by_indiv_pac
+        where cycle = %s
+    """
+
+class LobbyingOrgFromPacIndivTopBiggestLobbyingOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
+
+    stmt = """
+        select 
+            lobbying_org_name as name, 
+            lobbying_org_entity as id, 
+            direct_or_indiv, 
+            amount, cycle, rank_by_amount as rank
+        from 
+            summary_lobbying_orgs_by_indiv_pac
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class LobbyingOrgFromPacIndivSummaryHandler(SummaryHandler):
+    rollup = LobbyingOrgFromPacIndivTotalsHandler()
+    breakout = LobbyingOrgFromPacIndivTopBiggestLobbyingOrgsByContributionsHandler()
+    def key_function(self,x):
+        direct_or_indiv = x['direct_or_indiv']
+        if direct_or_indiv in self.rollup.category_map:
+            return self.rollup.category_map[direct_or_indiv]
+        else:
+            return self.rollup.default_key
+
+
 ## POL GROUPS
 
 ## POL GROUPS: PARTY
@@ -1518,4 +1561,47 @@ class PolGroupSeatSummaryHandler(SummaryHandler):
             return self.rollup.category_map[seat]
         else:
             return self.rollup.default_key
+
+## POL GROUPS: PAC/INDIV
+class PolGroupFromPacIndivTotalsHandler(SummaryRollupHandler):
+    category_map = {'direct':'Org PAC',
+                    'indiv':'Individuals'}
+
+    stmt = """
+        select 
+            direct_or_indiv, 
+            total_count as count, 
+            total_amount as amount
+        from 
+            summary_pol_groups_by_indiv_pac
+        where cycle = %s
+    """
+
+class PolGroupFromPacIndivTopBiggestPolGroupsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
+
+    stmt = """
+        select 
+            pol_group_name as name, 
+            pol_group_entity as id, 
+            direct_or_indiv, 
+            amount, cycle, rank_by_amount as rank
+        from 
+            summary_pol_groups_by_indiv_pac
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class PolGroupFromPacIndivSummaryHandler(SummaryHandler):
+    rollup = PolGroupFromPacIndivTotalsHandler()
+    breakout = PolGroupFromPacIndivTopBiggestPolGroupsByContributionsHandler()
+    def key_function(self,x):
+        direct_or_indiv = x['direct_or_indiv']
+        if direct_or_indiv in self.rollup.category_map:
+            return self.rollup.category_map[direct_or_indiv]
+        else:
+            return self.rollup.default_key
+
 

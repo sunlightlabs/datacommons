@@ -21,9 +21,9 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     LobbyistRecipientTypeSummaryHandler, LobbyistInStateOutOfStateSummaryHandler, \
     LobbyistSeatSummaryHandler, \
     LobbyingOrgPartySummaryHandler, LobbyingOrgStateFedSummaryHandler, \
-    LobbyingOrgSeatSummaryHandler, \
+    LobbyingOrgSeatSummaryHandler, LobbyingOrgFromPacIndivSummaryHandler, \
     PolGroupPartySummaryHandler, PolGroupStateFedSummaryHandler, \
-    PolGroupSeatSummaryHandler
+    PolGroupSeatSummaryHandler, PolGroupFromPacIndivSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -395,6 +395,10 @@ urlpatterns = patterns('',
     url(r'^summary/lobbying_org/state_fed.(?P<emitter_format>.+)$',
         Resource(LobbyingOrgStateFedSummaryHandler, **ad)),
 
+    # summary of orgs' group vs individual contributions
+    url(r'^summary/lobbying_org/pac_indiv.(?P<emitter_format>.+)$',
+        Resource(LobbyingOrgFromPacIndivSummaryHandler, **ad)),
+
     # summary of lobbying_orgs' contributions to PACs vs Politicians
     #url(r'^summary/lobbying_org/recipient_type.(?P<emitter_format>.+)$',
     #    Resource(LobbyingOrgRecipientTypeSummaryHandler, **ad)),
@@ -411,6 +415,10 @@ urlpatterns = patterns('',
     # summary of pol_groups to state/fed candidates
     url(r'^summary/pol_group/state_fed.(?P<emitter_format>.+)$',
         Resource(PolGroupStateFedSummaryHandler, **ad)),
+
+    # summary of orgs' group vs individual contributions
+    url(r'^summary/pol_group/pac_indiv.(?P<emitter_format>.+)$',
+        Resource(PolGroupFromPacIndivSummaryHandler, **ad)),
 
     # summary of pol_groups' contributions to PACs vs Politicians
     #url(r'^summary/pol_group/recipient_type.(?P<emitter_format>.+)$',
