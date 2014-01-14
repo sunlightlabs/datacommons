@@ -970,12 +970,12 @@ select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_sea
 create index ranked_pol_groups_by_seat_cycle_rank_by_amount_idx on ranked_pol_groups_by_seat (cycle, rank_by_amount);
 
 -- CONTRIBUTIONS FROM POL GROUPS BY INDIV/PAC
--- SELECT 21584
--- Time: 676.447 ms
+-- SELECT 8134
+-- Time: 419.328 ms
 -- CREATE INDEX
--- Time: 45.035 ms
+-- Time: 35.738 ms
 -- CREATE INDEX
--- Time: 46.796 ms
+-- Time: 31.196 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_indiv_pac';
 drop table if exists ranked_pol_groups_by_indiv_pac;
@@ -998,7 +998,7 @@ create table ranked_pol_groups_by_indiv_pac as
             inner join
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
-            om.lobbying_firm
+            om.is_pol_group
             and
             om.parent_entity_id is null
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
