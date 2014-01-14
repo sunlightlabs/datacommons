@@ -13,10 +13,17 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
     OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgFromPacIndivSummaryHandler, \
-    ContributorPartySummaryHandler, ContributorStateFedSummaryHandler, \
-    ContributorRecipientTypeSummaryHandler, ContributorInStateOutOfStateSummaryHandler, \
+    OrgSeatSummaryHandler, \
+    IndividualPartySummaryHandler, IndividualStateFedSummaryHandler, \
+    IndividualRecipientTypeSummaryHandler, IndividualInStateOutOfStateSummaryHandler, \
+    IndividualSeatSummaryHandler, \
     LobbyistPartySummaryHandler, LobbyistStateFedSummaryHandler, \
-    LobbyistRecipientTypeSummaryHandler
+    LobbyistRecipientTypeSummaryHandler, LobbyistInStateOutOfStateSummaryHandler, \
+    LobbyistSeatSummaryHandler, \
+    LobbyingOrgPartySummaryHandler, LobbyingOrgStateFedSummaryHandler, \
+    LobbyingOrgSeatSummaryHandler, \
+    PolGroupPartySummaryHandler, PolGroupStateFedSummaryHandler, \
+    PolGroupSeatSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -344,8 +351,9 @@ urlpatterns = patterns('',
     url(r'^summary/org/pac_indiv.(?P<emitter_format>.+)$',
         Resource(OrgFromPacIndivSummaryHandler, **ad)),
 
-    #url(r'^summary/organization/office_type.(?P<emitter_format>.+)$',
-    #    Resource(OrgOfficeTypeSummaryHandler, **ad)),
+    # summary of orgs' contributions to seats
+    url(r'^summary/org/seat.(?P<emitter_format>.+)$',
+        Resource(OrgSeatSummaryHandler, **ad)),
 
     # ----------- GROUPS >> Organizations: Lobbying -------------
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
@@ -377,23 +385,62 @@ urlpatterns = patterns('',
 
     # ----------- GROUPS >> Organizations: Advisory Committees -----------
     # TODO: design summary stats for advisory committees (FACA)
-
-    # ----------- PEOPLE >> Contributors: Contributions -----------
-    # summary of contributors to party
-    url(r'^summary/contributor/party.(?P<emitter_format>.+)$',
-        Resource(ContributorPartySummaryHandler, **ad)),
-
-    # summary of contributors to state/fed candidates
-    url(r'^summary/contributor/state_fed.(?P<emitter_format>.+)$',
-        Resource(ContributorStateFedSummaryHandler, **ad)),
-
-    # summary of contributors to groups vs politicians
-    url(r'^summary/contributor/recipient_type.(?P<emitter_format>.+)$',
-        Resource(ContributorRecipientTypeSummaryHandler, **ad)),
     
-    # summary of contributors to in-state vs out-of-state politicians
-    url(r'^summary/contributor/in_state_out_of_state.(?P<emitter_format>.+)$',
-        Resource(ContributorInStateOutOfStateSummaryHandler, **ad)),
+    # ---------- GROUPS >> Lobbying Orgs: Contributions -------------
+    # summary of lobbying_orgs to party
+    url(r'^summary/lobbying_org/party.(?P<emitter_format>.+)$',
+        Resource(LobbyingOrgPartySummaryHandler, **ad)),
+
+    # summary of lobbying_orgs to state/fed candidates
+    url(r'^summary/lobbying_org/state_fed.(?P<emitter_format>.+)$',
+        Resource(LobbyingOrgStateFedSummaryHandler, **ad)),
+
+    # summary of lobbying_orgs' contributions to PACs vs Politicians
+    #url(r'^summary/lobbying_org/recipient_type.(?P<emitter_format>.+)$',
+    #    Resource(LobbyingOrgRecipientTypeSummaryHandler, **ad)),
+
+    # summary of lobbying_orgs' contributions to seats
+    url(r'^summary/lobbying_org/seat.(?P<emitter_format>.+)$',
+        Resource(LobbyingOrgSeatSummaryHandler, **ad)),
+    
+    # ---------- GROUPS >> Pol Groups: Contributions -------------
+    # summary of pol_groups to party
+    url(r'^summary/pol_group/party.(?P<emitter_format>.+)$',
+        Resource(PolGroupPartySummaryHandler, **ad)),
+
+    # summary of pol_groups to state/fed candidates
+    url(r'^summary/pol_group/state_fed.(?P<emitter_format>.+)$',
+        Resource(PolGroupStateFedSummaryHandler, **ad)),
+
+    # summary of pol_groups' contributions to PACs vs Politicians
+    #url(r'^summary/pol_group/recipient_type.(?P<emitter_format>.+)$',
+    #    Resource(PolGroupRecipientTypeSummaryHandler, **ad)),
+
+    # summary of pol_groups' contributions to seats
+    url(r'^summary/pol_group/seat.(?P<emitter_format>.+)$',
+        Resource(PolGroupSeatSummaryHandler, **ad)),
+
+
+    # ----------- PEOPLE >> Individuals: Contributions -----------
+    # summary of individuals to party
+    url(r'^summary/individual/party.(?P<emitter_format>.+)$',
+        Resource(IndividualPartySummaryHandler, **ad)),
+
+    # summary of individuals to state/fed candidates
+    url(r'^summary/individual/state_fed.(?P<emitter_format>.+)$',
+        Resource(IndividualStateFedSummaryHandler, **ad)),
+
+    # summary of individuals to state/fed candidates
+    url(r'^summary/individual/seat.(?P<emitter_format>.+)$',
+        Resource(IndividualSeatSummaryHandler, **ad)),
+
+    # summary of individuals to groups vs politicians
+    url(r'^summary/individual/recipient_type.(?P<emitter_format>.+)$',
+        Resource(IndividualRecipientTypeSummaryHandler, **ad)),
+    
+    # summary of individuals to in-state vs out-of-state politicians
+    url(r'^summary/individual/in_state_out_of_state.(?P<emitter_format>.+)$',
+        Resource(IndividualInStateOutOfStateSummaryHandler, **ad)),
 
     # ----------- PEOPLE >> Lobbyists: Contributions -----------
     # summary of lobbyists to party
@@ -404,8 +451,17 @@ urlpatterns = patterns('',
     url(r'^summary/lobbyist/state_fed.(?P<emitter_format>.+)$',
         Resource(LobbyistStateFedSummaryHandler, **ad)),
 
+    # summary of lobbyists to state/fed candidates
+    url(r'^summary/lobbyist/seat.(?P<emitter_format>.+)$',
+        Resource(LobbyistSeatSummaryHandler, **ad)),
+
     # summary of lobbyists to groups vs politicians
     url(r'^summary/lobbyist/recipient_type.(?P<emitter_format>.+)$',
         Resource(LobbyistRecipientTypeSummaryHandler, **ad)),
+    
+    # summary of lobbyists to in-state vs out-of-state politicians
+    url(r'^summary/lobbyist/in_state_out_of_state.(?P<emitter_format>.+)$',
+        Resource(LobbyistInStateOutOfStateSummaryHandler, **ad)),
+
 
 )

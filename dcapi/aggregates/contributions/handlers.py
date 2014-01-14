@@ -661,7 +661,7 @@ class OrgStateFedTotalsHandler(SummaryRollupHandler):
 
     stmt = """
         select 
-            state_or_federal as transaction_namespace, 
+            state_or_federal, 
             total_count as count, 
             total_amount as amount 
         from
@@ -673,13 +673,13 @@ class OrgStateFedTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'transaction_namespace', 'amount']
+    fields = ['name', 'id', 'state_or_federal', 'amount']
 
     stmt = """
         select 
             organization_name as name, 
             organization_entity as id, 
-            state_or_federal as transaction_namespace, 
+            state_or_federal, 
             amount
         from 
             summary_parentmost_orgs_by_state_fed
@@ -690,19 +690,72 @@ class OrgStateFedSummaryHandler(SummaryHandler):
     rollup = OrgStateFedTotalsHandler()
     breakout = OrgStateFedTopBiggestOrgsByContributionsHandler()
     def key_function(self,x):
-        transaction_namespace = x['transaction_namespace']
-        if transaction_namespace in self.rollup.category_map:
-            return self.rollup.category_map[transaction_namespace]
+        state_or_federal = x['state_or_federal']
+        if state_or_federal in self.rollup.category_map:
+            return self.rollup.category_map[state_or_federal]
         else:
             return self.rollup.default_key
 
+## ORGS: SEAT
+class OrgSeatTotalsHandler(SummaryRollupHandler):
+
+    default_key = 'no_seat'
+
+    category_map = {'state:judicial':'State Judicial',
+                    'state:lower':'State Lower House',
+                    'state:governor':'Governor', 
+                    'federal:house':'US House',
+                    'state:upper':'State Upper House',
+                    'federal:president':'US President',
+                    'federal:senate':'US Senate',
+                    'state:office':'State Office'}
+
+
+    stmt = """
+        select 
+            seat, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_parentmost_orgs_by_seat
+        where cycle = %s
+    """
+
+class OrgSeatTopBiggestOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'seat', 'amount']
+
+    stmt = """
+        select 
+            organization_name as name, 
+            organization_entity as id, 
+            seat, 
+            amount
+        from 
+            summary_parentmost_orgs_by_seat
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class OrgSeatSummaryHandler(SummaryHandler):
+    rollup = OrgSeatTotalsHandler()
+    breakout = OrgSeatTopBiggestOrgsByContributionsHandler()
+    def key_function(self,x):
+        seat = x['seat']
+        if seat in self.rollup.category_map:
+            return self.rollup.category_map[seat]
+        else:
+            return self.rollup.default_key
+
+## ORGS: PAC/INDIV
 class OrgFromPacIndivTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Org PAC',
                     'indiv':'Individuals'}
 
     stmt = """
         select 
-            direct_or_indiv as category, 
+            direct_or_indiv, 
             total_count as count, 
             total_amount as amount
         from 
@@ -737,35 +790,45 @@ class OrgFromPacIndivSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
-### CONTRIBUTORS
+### INDIVIDUALS
 
-class ContributorPartyTotalsHandler(SummaryRollupHandler):
+# INDIV PARTY
+class IndividualPartyTotalsHandler(SummaryRollupHandler):
 
     category_map = {'R':'Republicans', 'D':'Democrats'}
     default_key = 'Other'
 
     stmt = """
-        select recipient_party, sum(count) as count, sum(amount) as amount from
-        summary_party_from_contrib
-        where cycle = %s
-        group by recipient_party;
+        select 
+            recipient_party,
+            total_count as count,
+            total_amount as amount
+        from
+            summary_individuals_by_party
+        where 
+            cycle = %s
     """
 
-class ContributorPartyTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+class IndividualPartyTopIndividualsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
     fields = ['name', 'id', 'recipient_party', 'amount']
 
     stmt = """
-        select name, contributor_entity as id, recipient_party, amount
-          from summary_party_from_contrib
-         where cycle = %s and rank_by_amount <= %s;
+        select 
+            individual_name as name, 
+            individual_entity as id, 
+            recipient_party, 
+            amount
+        from 
+            summary_individuals_by_party
+        where cycle = %s and rank_by_amount <= %s;
     """
 
-class ContributorPartySummaryHandler(SummaryHandler):
-    rollup = ContributorPartyTotalsHandler()
-    breakout = ContributorPartyTopContributorsByContributionsHandler()
+class IndividualPartySummaryHandler(SummaryHandler):
+    rollup = IndividualPartyTotalsHandler()
+    breakout = IndividualPartyTopIndividualsByContributionsHandler()
     def key_function(self,x):
         recipient_party = x['recipient_party']
         if recipient_party in self.rollup.category_map:
@@ -773,67 +836,137 @@ class ContributorPartySummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
-class ContributorStateFedTotalsHandler(SummaryRollupHandler):
+# INDIVS STATE/FED
+class IndividualStateFedTotalsHandler(SummaryRollupHandler):
 
-    category_map = {'urn:fec:transaction':'Federal',
-                    'urn:nimsp:transaction':'State'}
+    category_map = {'federal':'Federal',
+                    'state':'State'}
 
     stmt = """
-        select transaction_namespace, sum(count) as count, sum(amount) as amount from
-        summary_namespace_from_contrib
-        where cycle = %s
-        group by transaction_namespace;
+        select 
+            state_or_federal, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_individuals_by_state_fed
+        where 
+            cycle = %s
     """
 
-class ContributorStateFedTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+class IndividualStateFedTopIndividualsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'transaction_namespace', 'amount']
+    fields = ['name', 'id', 'state_or_federal', 'amount']
 
     stmt = """
-        select name, contributor_entity as id, transaction_namespace, amount
-          from summary_namespace_from_contrib
-         where cycle = %s and rank <= %s;
+        select 
+            individual_name as name, 
+            individual_entity as id, 
+            state_or_federal, 
+            amount
+        from 
+            summary_individuals_by_state_fed
+        where cycle = %s and rank_by_amount <= %s;
     """
 
-class ContributorStateFedSummaryHandler(SummaryHandler):
-    rollup = ContributorStateFedTotalsHandler()
-    breakout = ContributorStateFedTopContributorsByContributionsHandler()
+class IndividualStateFedSummaryHandler(SummaryHandler):
+    rollup = IndividualStateFedTotalsHandler()
+    breakout = IndividualStateFedTopIndividualsByContributionsHandler()
     def key_function(self,x):
-        transaction_namespace = x['transaction_namespace']
-        if transaction_namespace in self.rollup.category_map:
-            return self.rollup.category_map[transaction_namespace]
+        state_or_federal = x['state_or_federal']
+        if state_or_federal in self.rollup.category_map:
+            return self.rollup.category_map[state_or_federal]
         else:
             return self.rollup.default_key
 
-class ContributorRecipientTypeTotalsHandler(SummaryRollupHandler):
+# INDIVS SEAT
+class IndividualSeatTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'state:judicial':'State Judicial',
+                    'state:lower':'State Lower House',
+                    'state:governor':'Governor', 
+                    'federal:house':'US House',
+                    'state:upper':'State Upper House',
+                    'federal:president':'US President',
+                    'federal:senate':'US Senate',
+                    'state:office':'State Office'}
+
+    stmt = """
+        select 
+            seat, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_individuals_by_seat
+        where 
+            cycle = %s
+    """
+
+class IndividualSeatTopIndividualsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'seat', 'amount']
+
+    stmt = """
+        select 
+            individual_name as name, 
+            individual_entity as id, 
+            seat, 
+            amount
+        from 
+            summary_individuals_by_seat
+        where 
+            cycle = %s and rank_by_amount <= %s;
+    """
+
+class IndividualSeatSummaryHandler(SummaryHandler):
+    rollup = IndividualSeatTotalsHandler()
+    breakout = IndividualSeatTopIndividualsByContributionsHandler()
+    def key_function(self,x):
+        seat = x['seat']
+        if seat in self.rollup.category_map:
+            return self.rollup.category_map[seat]
+        else:
+            return self.rollup.default_key
+
+# INDIVS RECIPIENT TYPE
+class IndividualRecipientTypeTotalsHandler(SummaryRollupHandler):
 
     category_map = {'P':'Policitian',
                     'C':'Committee'}
 
     stmt = """
-        select recipient_type, sum(count) as count, sum(amount) as amount from
-        summary_recipient_type_from_contrib
+        select 
+            recipient_type, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_individuals_by_recipient_type
         where cycle = %s
-        group by recipient_type;
     """
 
-class ContributorRecipientTypeTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+class IndividualRecipientTypeTopIndividualsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
     fields = ['name', 'id', 'recipient_type', 'amount']
 
     stmt = """
-        select name, contributor_entity as id, recipient_type, amount
-          from summary_recipient_type_from_contrib
-         where cycle = %s and rank <= %s;
+        select 
+            individual_name as name, 
+            individual_entity as id, 
+            recipient_type, 
+            amount
+        from
+            summary_individuals_by_recipient_type
+        where cycle = %s and rank_by_amount <= %s;
     """
 
-class ContributorRecipientTypeSummaryHandler(SummaryHandler):
-    rollup = ContributorRecipientTypeTotalsHandler()
-    breakout = ContributorRecipientTypeTopContributorsByContributionsHandler()
+class IndividualRecipientTypeSummaryHandler(SummaryHandler):
+    rollup = IndividualRecipientTypeTotalsHandler()
+    breakout = IndividualRecipientTypeTopIndividualsByContributionsHandler()
     def key_function(self,x):
         recipient_type = x['recipient_type']
         if recipient_type in self.rollup.category_map:
@@ -841,51 +974,66 @@ class ContributorRecipientTypeSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
-class ContributorInStateOutOfStateTotalsHandler(SummaryRollupHandler):
+# INDIV IN/OUT OF STATE
+class IndividualInStateOutOfStateTotalsHandler(SummaryRollupHandler):
 
     category_map = {'in-state':'In-State',
                     'out-of-state':'Out-Of-State'}
 
     stmt = """
-        select distinct local, count, amount from
-        summary_local_from_indiv
+        select 
+            in_state_out_of_state, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_individuals_by_in_state_out_of_state
         where cycle = %s
     """
 
-class ContributorInStateOutOfStateTopContributorsByContributionsHandler(SummaryBreakoutHandler):
+class IndividualInStateOutOfStateTopIndividualsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'local', 'amount']
+    fields = ['name', 'id', 'in_state_out_of_state', 'amount']
 
     stmt = """
-        select contributor_name as name, contributor_entity as id, local, amount
-          from summary_local_from_indiv
-         where cycle = %s and rank_by_amount <= %s;
+        select 
+            individual_name as name, 
+            individual_entity as id, 
+            in_state_out_of_state, 
+            amount
+        from 
+            summary_individuals_by_in_state_out_of_state
+        where 
+            cycle = %s and rank_by_amount <= %s;
     """
 
-class ContributorInStateOutOfStateSummaryHandler(SummaryHandler):
-    rollup = ContributorInStateOutOfStateTotalsHandler()
-    breakout = ContributorInStateOutOfStateTopContributorsByContributionsHandler()
+class IndividualInStateOutOfStateSummaryHandler(SummaryHandler):
+    rollup = IndividualInStateOutOfStateTotalsHandler()
+    breakout = IndividualInStateOutOfStateTopIndividualsByContributionsHandler()
     def key_function(self,x):
-        local = x['local']
-        if local in self.rollup.category_map:
-            return self.rollup.category_map[local]
+        in_state_out_of_state = x['in_state_out_of_state']
+        if in_state_out_of_state in self.rollup.category_map:
+            return self.rollup.category_map[in_state_out_of_state]
         else:
             return self.rollup.default_key
 
 ### LOBBYIST HANDLERS
-
+# LOBBYIST PARTY
 class LobbyistPartyTotalsHandler(SummaryRollupHandler):
 
     category_map = {'R':'Republicans', 'D':'Democrats'}
     default_key = 'Other'
 
     stmt = """
-        select recipient_party, sum(count) as count, sum(amount) as amount from
-        summary_party_from_lobbyist
-        where cycle = %s
-        group by recipient_party;
+        select 
+            recipient_party,
+            total_count as count,
+            total_amount as amount
+        from
+            summary_lobbyists_by_party
+        where 
+            cycle = %s
     """
 
 class LobbyistPartyTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
@@ -895,9 +1043,14 @@ class LobbyistPartyTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
     fields = ['name', 'id', 'recipient_party', 'amount']
 
     stmt = """
-        select name, contributor_entity as id, recipient_party, amount
-          from summary_party_from_lobbyist
-         where cycle = %s and rank <= %s;
+        select 
+            lobbyist_name as name, 
+            lobbyist_entity as id, 
+            recipient_party, 
+            amount
+        from 
+            summary_lobbyists_by_party
+        where cycle = %s and rank_by_amount <= %s;
     """
 
 class LobbyistPartySummaryHandler(SummaryHandler):
@@ -910,50 +1063,115 @@ class LobbyistPartySummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+# LOBBYISTS STATE/FED
 class LobbyistStateFedTotalsHandler(SummaryRollupHandler):
 
-    category_map = {'urn:fec:transaction':'Federal',
-                    'urn:nimsp:transaction':'State'}
+    category_map = {'federal':'Federal',
+                    'state':'State'}
 
     stmt = """
-        select transaction_namespace, sum(count) as count, sum(amount) as amount from
-        summary_namespace_from_lobbyist
-        where cycle = %s
-        group by transaction_namespace;
+        select 
+            state_or_federal, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_lobbyists_by_state_fed
+        where 
+            cycle = %s
     """
 
 class LobbyistStateFedTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
 
     args = ['cycle', 'limit']
 
-    fields = ['name', 'id', 'transaction_namespace', 'amount']
+    fields = ['name', 'id', 'state_or_federal', 'amount']
 
     stmt = """
-        select name, contributor_entity as id, transaction_namespace, amount
-          from summary_namespace_from_lobbyist
-         where cycle = %s and rank <= %s;
+        select 
+            lobbyist_name as name, 
+            lobbyist_entity as id, 
+            state_or_federal, 
+            amount
+        from 
+            summary_lobbyists_by_state_fed
+        where cycle = %s and rank_by_amount <= %s;
     """
 
 class LobbyistStateFedSummaryHandler(SummaryHandler):
     rollup = LobbyistStateFedTotalsHandler()
     breakout = LobbyistStateFedTopLobbyistsByContributionsHandler()
     def key_function(self,x):
-        transaction_namespace = x['transaction_namespace']
-        if transaction_namespace in self.rollup.category_map:
-            return self.rollup.category_map[transaction_namespace]
+        state_or_federal = x['state_or_federal']
+        if state_or_federal in self.rollup.category_map:
+            return self.rollup.category_map[state_or_federal]
         else:
             return self.rollup.default_key
 
+# LOBBYISTS SEAT
+class LobbyistSeatTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'state:judicial':'State Judicial',
+                    'state:lower':'State Lower House',
+                    'state:governor':'Governor', 
+                    'federal:house':'US House',
+                    'state:upper':'State Upper House',
+                    'federal:president':'US President',
+                    'federal:senate':'US Senate',
+                    'state:office':'State Office'}
+
+    stmt = """
+        select 
+            seat, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_lobbyists_by_seat
+        where 
+            cycle = %s
+    """
+
+class LobbyistSeatTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'seat', 'amount']
+
+    stmt = """
+        select 
+            lobbyist_name as name, 
+            lobbyist_entity as id, 
+            seat, 
+            amount
+        from 
+            summary_lobbyists_by_seat
+        where 
+            cycle = %s and rank_by_amount <= %s;
+    """
+
+class LobbyistSeatSummaryHandler(SummaryHandler):
+    rollup = LobbyistSeatTotalsHandler()
+    breakout = LobbyistSeatTopLobbyistsByContributionsHandler()
+    def key_function(self,x):
+        seat = x['seat']
+        if seat in self.rollup.category_map:
+            return self.rollup.category_map[seat]
+        else:
+            return self.rollup.default_key
+
+# LOBBYISTS RECIPIENT TYPE
 class LobbyistRecipientTypeTotalsHandler(SummaryRollupHandler):
 
     category_map = {'P':'Policitian',
                     'C':'Committee'}
 
     stmt = """
-        select recipient_type, sum(count) as count, sum(amount) as amount from
-        summary_recipient_type_from_lobbyist
+        select 
+            recipient_type, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_lobbyists_by_recipient_type
         where cycle = %s
-        group by recipient_type;
     """
 
 class LobbyistRecipientTypeTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
@@ -963,9 +1181,14 @@ class LobbyistRecipientTypeTopLobbyistsByContributionsHandler(SummaryBreakoutHan
     fields = ['name', 'id', 'recipient_type', 'amount']
 
     stmt = """
-        select name, contributor_entity as id, recipient_type, amount
-          from summary_recipient_type_from_lobbyist
-         where cycle = %s and rank <= %s;
+        select 
+            lobbyist_name as name, 
+            lobbyist_entity as id, 
+            recipient_type, 
+            amount
+        from
+            summary_lobbyists_by_recipient_type
+        where cycle = %s and rank_by_amount <= %s;
     """
 
 class LobbyistRecipientTypeSummaryHandler(SummaryHandler):
@@ -977,3 +1200,322 @@ class LobbyistRecipientTypeSummaryHandler(SummaryHandler):
             return self.rollup.category_map[recipient_type]
         else:
             return self.rollup.default_key
+
+# LOBBYISTS IN/OUT OF STATE
+class LobbyistInStateOutOfStateTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'in-state':'In-State',
+                    'out-of-state':'Out-Of-State'}
+
+    stmt = """
+        select 
+            in_state_out_of_state, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_lobbyists_by_in_state_out_of_state
+        where cycle = %s
+    """
+
+class LobbyistInStateOutOfStateTopLobbyistsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'in_state_out_of_state', 'amount']
+
+    stmt = """
+        select 
+            lobbyist_name as name, 
+            lobbyist_entity as id, 
+            in_state_out_of_state, 
+            amount
+        from 
+            summary_lobbyists_by_in_state_out_of_state
+        where 
+            cycle = %s and rank_by_amount <= %s;
+    """
+
+class LobbyistInStateOutOfStateSummaryHandler(SummaryHandler):
+    rollup = LobbyistInStateOutOfStateTotalsHandler()
+    breakout = LobbyistInStateOutOfStateTopLobbyistsByContributionsHandler()
+    def key_function(self,x):
+        in_state_out_of_state = x['in_state_out_of_state']
+        if in_state_out_of_state in self.rollup.category_map:
+            return self.rollup.category_map[in_state_out_of_state]
+        else:
+            return self.rollup.default_key
+
+## LOBBYING ORGS
+
+## LOBBYING ORGS: PARTY
+class LobbyingOrgPartyTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'R':'Republicans', 'D':'Democrats'}
+    default_key = 'Other'
+
+    stmt = """
+        select 
+            recipient_party, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_lobbying_orgs_by_party
+        where cycle = %s
+    """
+
+class LobbyingOrgPartyTopBiggestLobbyingOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_party', 'amount']
+
+    stmt = """
+        select 
+            lobbying_org_name as name, 
+            lobbying_org_entity as id, 
+            recipient_party, 
+            amount
+        from 
+            summary_lobbying_orgs_by_party
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class LobbyingOrgPartySummaryHandler(SummaryHandler):
+    rollup = LobbyingOrgPartyTotalsHandler()
+    breakout = LobbyingOrgPartyTopBiggestLobbyingOrgsByContributionsHandler()
+    def key_function(self,x):
+        recipient_party = x['recipient_party']
+        if recipient_party in self.rollup.category_map:
+            return self.rollup.category_map[recipient_party]
+        else:
+            return self.rollup.default_key
+
+## LOBBYING ORGS: STATE/FED
+class LobbyingOrgStateFedTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'federal':'Federal',
+                    'state':'State'}
+
+    stmt = """
+        select 
+            state_or_federal, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_lobbying_orgs_by_state_fed
+        where cycle = %s
+    """
+
+class LobbyingOrgStateFedTopBiggestLobbyingOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'state_or_federal', 'amount']
+
+    stmt = """
+        select 
+            lobbying_org_name as name, 
+            lobbying_org_entity as id, 
+            state_or_federal, 
+            amount
+        from 
+            summary_lobbying_orgs_by_state_fed
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class LobbyingOrgStateFedSummaryHandler(SummaryHandler):
+    rollup = LobbyingOrgStateFedTotalsHandler()
+    breakout = LobbyingOrgStateFedTopBiggestLobbyingOrgsByContributionsHandler()
+    def key_function(self,x):
+        state_or_federal = x['state_or_federal']
+        if state_or_federal in self.rollup.category_map:
+            return self.rollup.category_map[state_or_federal]
+        else:
+            return self.rollup.default_key
+
+## LOBBYING ORGS: SEAT
+class LobbyingOrgSeatTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'state:judicial':'State Judicial',
+                    'state:lower':'State Lower House',
+                    'state:governor':'Governor', 
+                    'federal:house':'US House',
+                    'state:upper':'State Upper House',
+                    'federal:president':'US President',
+                    'federal:senate':'US Senate',
+                    'state:office':'State Office'}
+
+    stmt = """
+        select 
+            seat, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_lobbying_orgs_by_seat
+        where cycle = %s
+    """
+
+class LobbyingOrgSeatTopBiggestLobbyingOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'seat', 'amount']
+
+    stmt = """
+        select 
+            lobbying_org_name as name, 
+            lobbying_org_entity as id, 
+            seat, 
+            amount
+        from 
+            summary_lobbying_orgs_by_seat
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class LobbyingOrgSeatSummaryHandler(SummaryHandler):
+    rollup = LobbyingOrgSeatTotalsHandler()
+    breakout = LobbyingOrgSeatTopBiggestLobbyingOrgsByContributionsHandler()
+    def key_function(self,x):
+        seat = x['seat']
+        if seat in self.rollup.category_map:
+            return self.rollup.category_map[seat]
+        else:
+            return self.rollup.default_key
+
+## POL GROUPS
+
+## POL GROUPS: PARTY
+class PolGroupPartyTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'R':'Republicans', 'D':'Democrats'}
+    default_key = 'Other'
+
+    stmt = """
+        select 
+            recipient_party, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_pol_groups_by_party
+        where cycle = %s
+    """
+
+class PolGroupPartyTopBiggestPolGroupsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_party', 'amount']
+
+    stmt = """
+        select 
+            pol_group_name as name, 
+            pol_group_entity as id, 
+            recipient_party, 
+            amount
+        from 
+            summary_pol_groups_by_party
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class PolGroupPartySummaryHandler(SummaryHandler):
+    rollup = PolGroupPartyTotalsHandler()
+    breakout = PolGroupPartyTopBiggestPolGroupsByContributionsHandler()
+    def key_function(self,x):
+        recipient_party = x['recipient_party']
+        if recipient_party in self.rollup.category_map:
+            return self.rollup.category_map[recipient_party]
+        else:
+            return self.rollup.default_key
+
+## POL GROUPS: STATE/FED
+class PolGroupStateFedTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'federal':'Federal',
+                    'state':'State'}
+
+    stmt = """
+        select 
+            state_or_federal, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_pol_groups_by_state_fed
+        where cycle = %s
+    """
+
+class PolGroupStateFedTopBiggestPolGroupsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'state_or_federal', 'amount']
+
+    stmt = """
+        select 
+            pol_group_name as name, 
+            pol_group_entity as id, 
+            state_or_federal, 
+            amount
+        from 
+            summary_pol_groups_by_state_fed
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class PolGroupStateFedSummaryHandler(SummaryHandler):
+    rollup = PolGroupStateFedTotalsHandler()
+    breakout = PolGroupStateFedTopBiggestPolGroupsByContributionsHandler()
+    def key_function(self,x):
+        state_or_federal = x['state_or_federal']
+        if state_or_federal in self.rollup.category_map:
+            return self.rollup.category_map[state_or_federal]
+        else:
+            return self.rollup.default_key
+
+## POL GROUPS: SEAT
+class PolGroupSeatTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'state:judicial':'State Judicial',
+                    'state:lower':'State Lower House',
+                    'state:governor':'Governor', 
+                    'federal:house':'US House',
+                    'state:upper':'State Upper House',
+                    'federal:president':'US President',
+                    'federal:senate':'US Senate',
+                    'state:office':'State Office'}
+
+    stmt = """
+        select 
+            seat, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_pol_groups_by_seat
+        where cycle = %s
+    """
+
+class PolGroupSeatTopBiggestPolGroupsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'seat', 'amount']
+
+    stmt = """
+        select 
+            pol_group_name as name, 
+            pol_group_entity as id, 
+            seat, 
+            amount
+        from 
+            summary_pol_groups_by_seat
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class PolGroupSeatSummaryHandler(SummaryHandler):
+    rollup = PolGroupSeatTotalsHandler()
+    breakout = PolGroupSeatTopBiggestPolGroupsByContributionsHandler()
+    def key_function(self,x):
+        seat = x['seat']
+        if seat in self.rollup.category_map:
+            return self.rollup.category_map[seat]
+        else:
+            return self.rollup.default_key
+
