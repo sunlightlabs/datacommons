@@ -934,7 +934,7 @@ class IndividualSeatSummaryHandler(SummaryHandler):
 # INDIVS RECIPIENT TYPE
 class IndividualRecipientTypeTotalsHandler(SummaryRollupHandler):
 
-    category_map = {'P':'Policitian',
+    category_map = {'P':'Politician',
                     'C':'Committee'}
 
     stmt = """
@@ -1161,7 +1161,7 @@ class LobbyistSeatSummaryHandler(SummaryHandler):
 # LOBBYISTS RECIPIENT TYPE
 class LobbyistRecipientTypeTotalsHandler(SummaryRollupHandler):
 
-    category_map = {'P':'Policitian',
+    category_map = {'P':'Politician',
                     'C':'Committee'}
 
     stmt = """
