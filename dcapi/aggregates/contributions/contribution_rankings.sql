@@ -38,6 +38,8 @@ create table ranked_parentmost_orgs_by_party as
             inner join
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aotp.cycle
         where
+            (recipient_party is not null and recipient_party != '')
+            and
             om.is_org
             and
             om.parent_entity_id is null
@@ -123,6 +125,8 @@ create table ranked_parentmost_orgs_by_seat as
             inner join
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
+            (seat is not null and seat != '')
+            and
             om.is_org
             and
             om.parent_entity_id is null
@@ -164,6 +168,8 @@ create table ranked_parentmost_orgs_by_recipient_type as
             inner join
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
+            (recipient_type is not null and recipient_type != '')
+            and
             om.is_org
             and
             om.parent_entity_id is null
@@ -205,6 +211,8 @@ create table ranked_parentmost_orgs_by_indiv_pac as
             inner join
                 matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
         where
+            (direct_or_indiv is not null and direct_or_indiv != '')
+            and
             om.is_org
             and
             om.parent_entity_id is null
@@ -258,6 +266,8 @@ create table ranked_individuals_by_party as
              -- inner join
              --  matchbox_individualmetadata mim on mim.entity_id = me.id
              -- where not mim.is_lobbyist
+        where    
+            (recipient_party is not null and recipient_party != '')
             ) three_party
         group by recipient_party, cycle, individual_entity, individual_name
         ;
@@ -336,6 +346,8 @@ create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_
              -- inner join
              --  matchbox_individualmetadata mim on mim.entity_id = me.id
              -- where not mim.is_lobbyist
+        where
+            (seat is not null and seat != '')
    ;
 
  select date_trunc('second', now()) || ' -- create index ranked_individuals_by_seat_cycle_rank_by_count_idx on ranked_individuals_by_seat (cycle, rank_by_count)';
@@ -414,6 +426,8 @@ create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_
              -- inner join
              --  matchbox_individualmetadata mim on mim.entity_id = me.id
              -- where not mim.is_lobbyist
+        where    
+            (in_state_out_of_state is not null and in_state_out_of_state != '')
    ;
 
  select date_trunc('second', now()) || ' -- create index ranked_individuals_by_in_state_out_of_state_cycle_rank_by_count_idx on ranked_individuals_by_in_state_out_of_state (cycle, rank_by_count)';
@@ -462,8 +476,11 @@ create table ranked_lobbyists_by_party as
             aggregate_individual_to_parties aitp on me.id = aitp.individual_entity
                 inner join
             matchbox_individualmetadata mim on mim.entity_id = me.id
-         where mim.is_lobbyist
-            ) three_party
+         where 
+            mim.is_lobbyist
+                and
+            (recipient_party is not null and recipient_party != '')
+        ) three_party
         group by recipient_party, cycle, lobbyist_entity, lobbyist_name
         ;
 
@@ -540,7 +557,10 @@ select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists
              aggregate_individual_to_seat ais on me.id = ais.individual_entity
                 inner join
              matchbox_individualmetadata mim on mim.entity_id = me.id
-         where mim.is_lobbyist
+         where 
+            mim.is_lobbyist
+                and    
+            (seat is not null and seat != '')
    ;
 
  select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_seat_cycle_rank_by_count_idx on ranked_lobbyists_by_seat (cycle, rank_by_count)';
@@ -615,7 +635,10 @@ create table ranked_lobbyists_by_in_state_out_of_state as
             aggregate_individual_by_in_state_out_of_state ais on me.id = ais.individual_entity
                 inner join
             matchbox_individualmetadata mim on mim.entity_id = me.id
-         where mim.is_lobbyist
+        where 
+            mim.is_lobbyist
+                and    
+            (in_state_out_of_state is not null and in_state_out_of_state != '')
   ;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbyists_by_in_state_out_of_state_cycle_rank_by_count_idx on ranked_lobbyists_by_in_state_out_of_state (cycle, rank_by_count)';
@@ -666,6 +689,8 @@ create table ranked_lobbying_orgs_by_party as
             om.lobbying_firm
                 and
             om.parent_entity_id is null
+                and    
+            (recipient_party is not null and recipient_party != '')
             ) three_party
         group by recipient_party, cycle, lobbying_org_entity, lobbying_org_name;
 
@@ -749,6 +774,8 @@ create table ranked_lobbying_orgs_by_seat as
             om.lobbying_firm
                 and
             om.parent_entity_id is null
+                and    
+            (seat is not null and seat != '')
 ;
 
 select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_seat_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_seat_org (cycle, rank_by_count)';
@@ -844,6 +871,8 @@ create table ranked_pol_groups_by_party as
             om.is_pol_group
             and
             om.parent_entity_id is null
+                and    
+            (recipient_party is not null and recipient_party != '')
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id)
             ) three_party
         group by recipient_party, cycle, organization_entity, organization_name;
@@ -929,6 +958,8 @@ create table ranked_pol_groups_by_seat as
             om.is_pol_group
             and
             om.parent_entity_id is null
+                and    
+            (seat is not null and seat != '')
             -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
 ;
 
