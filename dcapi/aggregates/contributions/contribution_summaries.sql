@@ -171,6 +171,46 @@ create table summary_parentmost_orgs_by_indiv_pac as
 select date_trunc('second', now()) || ' -- create index summary_parentmost_orgs_by_indiv_pac_cycle_idx summary_parentmost_orgs_by_indiv_pac (cycle)';
 create index summary_parentmost_orgs_by_indiv_pac_cycle_idx on summary_parentmost_orgs_by_indiv_pac (cycle);
 
+-- SUMMARY RECIPIENT TYPE TOTALS AND TOP N PARENTMOST ORGS
+select date_trunc('second', now()) || ' -- drop table summary_parentmost_orgs_by_recipient_type';
+drop table if exists summary_parentmost_orgs_by_recipient_type;
+ select date_trunc('second', now()) || ' -- create table summary_parentmost_orgs_by_recipient_type';
+ create table summary_parentmost_orgs_by_recipient_type as
+    with recipient_type_totals as 
+        ( 
+            select
+                recipient_type,
+                cycle,
+                sum(count) as total_count,
+                sum(amount) as total_amount
+            from
+                ranked_parentmost_orgs_by_recipient_type
+            group by
+                recipient_type,
+                cycle
+            )
+
+    select
+        ris.recipient_type, 
+        ris.cycle,
+        pt.total_count,
+        pt.total_amount,
+        ris.organization_entity, 
+        ris.organization_name, 
+        ris.count,
+        ris.amount,
+        ris.rank_by_count,
+        ris.rank_by_amount
+    from
+        ranked_parentmost_orgs_by_recipient_type ris
+            inner join
+        recipient_type_totals pt using (recipient_type, cycle)
+    where
+        ris.rank_by_amount <= :agg_top_n
+;
+select date_trunc('second', now()) || ' -- create index summary_parentmost_orgs_by_recipient_type_cycle_idx summary_parentmost_orgs_by_recipient_type (cycle)';
+create index summary_parentmost_orgs_by_recipient_type_cycle_idx on summary_parentmost_orgs_by_recipient_type (cycle);
+
 
 -- SUMMARY PARTY TOTALS AND TOP N INDIVIDUALS
 select date_trunc('second', now()) || ' -- drop table summary_individuals_by_party';
@@ -724,6 +764,46 @@ create table summary_lobbying_orgs_by_indiv_pac as
 select date_trunc('second', now()) || ' -- create index summary_lobbying_orgs_by_indiv_pac_cycle_idx summary_lobbying_orgs_by_indiv_pac (cycle)';
 create index summary_lobbying_orgs_by_indiv_pac_cycle_idx on summary_lobbying_orgs_by_indiv_pac (cycle);
 
+select date_trunc('second', now()) || ' -- drop table summary_lobbying_orgs_by_recipient_type';
+drop table if exists summary_lobbying_orgs_by_recipient_type;
+ select date_trunc('second', now()) || ' -- create table summary_lobbying_orgs_by_recipient_type';
+ create table summary_lobbying_orgs_by_recipient_type as
+    with recipient_type_totals as 
+        ( 
+            select
+                recipient_type,
+                cycle,
+                sum(count) as total_count,
+                sum(amount) as total_amount
+            from
+                ranked_lobbying_orgs_by_recipient_type
+            group by
+                recipient_type,
+                cycle
+            )
+
+    select
+        ris.recipient_type, 
+        ris.cycle,
+        pt.total_count,
+        pt.total_amount,
+        ris.lobbying_org_entity, 
+        ris.lobbying_org_name, 
+        ris.count,
+        ris.amount,
+        ris.rank_by_count,
+        ris.rank_by_amount
+    from
+        ranked_lobbying_orgs_by_recipient_type ris
+            inner join
+        recipient_type_totals pt using (recipient_type, cycle)
+    where
+        ris.rank_by_amount <= :agg_top_n
+;
+select date_trunc('second', now()) || ' -- create index summary_lobbying_orgs_by_recipient_type_cycle_idx summary_lobbying_orgs_by_recipient_type (cycle)';
+create index summary_lobbying_orgs_by_recipient_type_cycle_idx on summary_lobbying_orgs_by_recipient_type (cycle);
+
+
 select date_trunc('second', now()) || ' -- drop table summary_pol_groups_by_party';
 drop table if exists summary_pol_groups_by_party;
 select date_trunc('second', now()) || ' -- create table summary_pol_groups_by_party';
@@ -879,4 +959,43 @@ create table summary_pol_groups_by_indiv_pac as
 ;
 select date_trunc('second', now()) || ' -- create index summary_pol_groups_by_indiv_pac_cycle_idx summary_pol_groups_by_indiv_pac (cycle)';
 create index summary_pol_groups_by_indiv_pac_cycle_idx on summary_pol_groups_by_indiv_pac (cycle);
+
+select date_trunc('second', now()) || ' -- drop table summary_pol_groups_by_recipient_type';
+drop table if exists summary_pol_groups_by_recipient_type;
+ select date_trunc('second', now()) || ' -- create table summary_pol_groups_by_recipient_type';
+ create table summary_pol_groups_by_recipient_type as
+    with recipient_type_totals as 
+        ( 
+            select
+                recipient_type,
+                cycle,
+                sum(count) as total_count,
+                sum(amount) as total_amount
+            from
+                ranked_pol_groups_by_recipient_type
+            group by
+                recipient_type,
+                cycle
+            )
+
+    select
+        ris.recipient_type, 
+        ris.cycle,
+        pt.total_count,
+        pt.total_amount,
+        ris.pol_group_entity, 
+        ris.pol_group_name, 
+        ris.count,
+        ris.amount,
+        ris.rank_by_count,
+        ris.rank_by_amount
+    from
+        ranked_pol_groups_by_recipient_type ris
+            inner join
+        recipient_type_totals pt using (recipient_type, cycle)
+    where
+        ris.rank_by_amount <= :agg_top_n
+;
+select date_trunc('second', now()) || ' -- create index summary_pol_groups_by_recipient_type_cycle_idx summary_pol_groups_by_recipient_type (cycle)';
+create index summary_pol_groups_by_recipient_type_cycle_idx on summary_pol_groups_by_recipient_type (cycle);
 

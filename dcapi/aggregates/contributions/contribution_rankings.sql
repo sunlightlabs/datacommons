@@ -827,6 +827,47 @@ select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_
 create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_indiv_pac (cycle, rank_by_amount);
 
 
+-- CONTRIBUTIONS FROM LOBBYING ORGS BY RECIPIENT TYPE
+-- SELECT 17326
+-- Time: 544.635 ms
+-- CREATE INDEX
+-- Time: 49.390 ms
+-- CREATE INDEX
+-- Time: 49.231 ms
+
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbying_orgs_by_recipient_type';
+drop table if exists ranked_lobbying_orgs_by_recipient_type;
+
+select date_trunc('second', now()) || ' -- create table ranked_lobbying_orgs_by_recipient_type';
+create table ranked_lobbying_orgs_by_recipient_type as
+        select
+            recipient_type,
+            om.cycle,
+            organization_entity as lobbying_org_entity,
+            me.name as lobbying_org_name,
+            count,
+            amount,
+            rank() over(partition by recipient_type, om.cycle order by count desc) as rank_by_count,
+            rank() over(partition by recipient_type, om.cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_recipient_type aots on me.id = aots.organization_entity
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
+        where
+            om.lobbying_firm
+            and
+            om.parent_entity_id is null
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_recipient_type_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_recipient_type_org (cycle, rank_by_count)';
+create index ranked_lobbying_orgs_by_recipient_type_cycle_rank_by_count_idx on ranked_lobbying_orgs_by_recipient_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_lobbying_orgs_by_recipient_type_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_recipient_type_org (cycle, rank_by_amount)';
+create index ranked_lobbying_orgs_by_recipient_type_cycle_rank_by_amount_idx on ranked_lobbying_orgs_by_recipient_type (cycle, rank_by_amount);
 
 
 -- CONTRIBUTIONS FROM BIGGEST POL GROUPS BY PARTY
@@ -836,7 +877,6 @@ create index ranked_lobbying_orgs_by_indiv_pac_cycle_rank_by_amount_idx on ranke
 -- Time: 16.594 ms
 -- CREATE INDEX
 -- Time: 15.612 ms
-
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_party';
 drop table if exists ranked_pol_groups_by_party;
@@ -1009,6 +1049,48 @@ create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_count_idx on ranked_po
 
 select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_amount_idx on ranked_pol_groups_by_indiv_pac_org (cycle, rank_by_amount)';
 create index ranked_pol_groups_by_indiv_pac_cycle_rank_by_amount_idx on ranked_pol_groups_by_indiv_pac (cycle, rank_by_amount);
+
+
+-- CONTRIBUTIONS FROM POL GROUPS BY RECIPIENT TYPE
+-- SELECT 6733
+-- Time: 313.830 ms
+-- CREATE INDEX
+-- Time: 28.260 ms
+-- CREATE INDEX
+-- Time: 28.469 ms
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_pol_groups_by_recipient_type';
+drop table if exists ranked_pol_groups_by_recipient_type;
+
+select date_trunc('second', now()) || ' -- create table ranked_pol_groups_by_recipient_type';
+create table ranked_pol_groups_by_recipient_type as
+        select
+            recipient_type,
+            om.cycle,
+            organization_entity as pol_group_entity,
+            me.name as pol_group_name,
+            count,
+            amount,
+            rank() over(partition by recipient_type, om.cycle order by count desc) as rank_by_count,
+            rank() over(partition by recipient_type, om.cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_organization_to_recipient_type aots on me.id = aots.organization_entity
+            inner join
+                matchbox_organizationmetadata om on om.entity_id = me.id and om.cycle = aots.cycle
+        where
+            om.is_pol_group
+            and
+            om.parent_entity_id is null
+            -- exists  (select 1 from biggest_organization_associations boa where apfo.organization_entity = boa.entity_id);
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_recipient_type_cycle_rank_by_count_idx on ranked_pol_groups_by_recipient_type_org (cycle, rank_by_count)';
+create index ranked_pol_groups_by_recipient_type_cycle_rank_by_count_idx on ranked_pol_groups_by_recipient_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_recipient_type_cycle_rank_by_amount_idx on ranked_pol_groups_by_recipient_type_org (cycle, rank_by_amount)';
+create index ranked_pol_groups_by_recipient_type_cycle_rank_by_amount_idx on ranked_pol_groups_by_recipient_type (cycle, rank_by_amount);
 
 
 
