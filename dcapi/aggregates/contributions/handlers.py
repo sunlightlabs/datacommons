@@ -1735,57 +1735,57 @@ class IndustryStateFedSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
-## INDUSTRIES: SEAT
-class IndustrySeatTotalsHandler(SummaryRollupHandler):
-
-    default_key = 'no_seat'
-
-    category_map = {'state:judicial':'State Judicial',
-                    'state:lower':'State Lower House',
-                    'state:governor':'Governor', 
-                    'federal:house':'US House',
-                    'state:upper':'State Upper House',
-                    'federal:president':'US President',
-                    'federal:senate':'US Senate',
-                    'state:office':'State Office'}
-
-
-    stmt = """
-        select 
-            seat, 
-            total_count as count, 
-            total_amount as amount 
-        from
-            summary_industries_by_seat
-        where cycle = %s
-    """
-
-class IndustrySeatTopBiggestIndustriesByContributionsHandler(SummaryBreakoutHandler):
-
-    args = ['cycle', 'limit']
-
-    fields = ['name', 'id', 'seat', 'amount']
-
-    stmt = """
-        select 
-            industry_name as name, 
-            industry_entity as id, 
-            seat, 
-            amount
-        from 
-            summary_industries_by_seat
-        where cycle = %s and rank_by_amount <= %s;
-    """
-
-class IndustrySeatSummaryHandler(SummaryHandler):
-    rollup = IndustrySeatTotalsHandler()
-    breakout = IndustrySeatTopBiggestIndustriesByContributionsHandler()
-    def key_function(self,x):
-        seat = x['seat']
-        if seat in self.rollup.category_map:
-            return self.rollup.category_map[seat]
-        else:
-            return self.rollup.default_key
+### INDUSTRIES: SEAT
+#class IndustrySeatTotalsHandler(SummaryRollupHandler):
+#
+#    default_key = 'no_seat'
+#
+#    category_map = {'state:judicial':'State Judicial',
+#                    'state:lower':'State Lower House',
+#                    'state:governor':'Governor', 
+#                    'federal:house':'US House',
+#                    'state:upper':'State Upper House',
+#                    'federal:president':'US President',
+#                    'federal:senate':'US Senate',
+#                    'state:office':'State Office'}
+#
+#
+#    stmt = """
+#        select 
+#            seat, 
+#            total_count as count, 
+#            total_amount as amount 
+#        from
+#            summary_industries_by_seat
+#        where cycle = %s
+#    """
+#
+#class IndustrySeatTopBiggestIndustriesByContributionsHandler(SummaryBreakoutHandler):
+#
+#    args = ['cycle', 'limit']
+#
+#    fields = ['name', 'id', 'seat', 'amount']
+#
+#    stmt = """
+#        select 
+#            industry_name as name, 
+#            industry_entity as id, 
+#            seat, 
+#            amount
+#        from 
+#            summary_industries_by_seat
+#        where cycle = %s and rank_by_amount <= %s;
+#    """
+#
+#class IndustrySeatSummaryHandler(SummaryHandler):
+#    rollup = IndustrySeatTotalsHandler()
+#    breakout = IndustrySeatTopBiggestIndustriesByContributionsHandler()
+#    def key_function(self,x):
+#        seat = x['seat']
+#        if seat in self.rollup.category_map:
+#            return self.rollup.category_map[seat]
+#        else:
+#            return self.rollup.default_key
 
 ## INDUSTRIES: PAC/INDIV
 class IndustryFromPacIndivTotalsHandler(SummaryRollupHandler):

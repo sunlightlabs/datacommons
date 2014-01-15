@@ -25,7 +25,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolGroupPartySummaryHandler, PolGroupStateFedSummaryHandler, \
     PolGroupSeatSummaryHandler, PolGroupFromPacIndivSummaryHandler, \
     IndustryPartySummaryHandler, IndustryStateFedSummaryHandler, IndustryFromPacIndivSummaryHandler, \
-    IndustrySeatSummaryHandler, IndustryRecipientTypeSummaryHandler
+    IndustryRecipientTypeSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -447,9 +447,9 @@ urlpatterns = patterns('',
     url(r'^summary/industry/pac_indiv.(?P<emitter_format>.+)$',
         Resource(IndustryFromPacIndivSummaryHandler, **ad)),
 
-    # summary of industries' contributions to seats
-    url(r'^summary/industry/seat.(?P<emitter_format>.+)$',
-        Resource(IndustrySeatSummaryHandler, **ad)),
+    ## summary of industries' contributions to seats
+    #url(r'^summary/industry/seat.(?P<emitter_format>.+)$',
+    #    Resource(IndustrySeatSummaryHandler, **ad)),
     
     # summary of industries' contributions to seats
     url(r'^summary/industry/recipient_type.(?P<emitter_format>.+)$',
