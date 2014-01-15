@@ -13,7 +13,7 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
     SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
     OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgFromPacIndivSummaryHandler, \
-    OrgSeatSummaryHandler, \
+    OrgSeatSummaryHandler, OrgRecipientTypeSummaryHandler, \
     IndividualPartySummaryHandler, IndividualStateFedSummaryHandler, \
     IndividualRecipientTypeSummaryHandler, IndividualInStateOutOfStateSummaryHandler, \
     IndividualSeatSummaryHandler, \
@@ -23,7 +23,9 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     LobbyingOrgPartySummaryHandler, LobbyingOrgStateFedSummaryHandler, \
     LobbyingOrgSeatSummaryHandler, LobbyingOrgFromPacIndivSummaryHandler, \
     PolGroupPartySummaryHandler, PolGroupStateFedSummaryHandler, \
-    PolGroupSeatSummaryHandler, PolGroupFromPacIndivSummaryHandler
+    PolGroupSeatSummaryHandler, PolGroupFromPacIndivSummaryHandler, \
+    IndustryPartySummaryHandler, IndustryStateFedSummaryHandler, IndustryFromPacIndivSummaryHandler, \
+    IndustrySeatSummaryHandler, IndustryRecipientTypeSummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -354,6 +356,10 @@ urlpatterns = patterns('',
     # summary of orgs' contributions to seats
     url(r'^summary/org/seat.(?P<emitter_format>.+)$',
         Resource(OrgSeatSummaryHandler, **ad)),
+    
+    # summary of orgs' contributions to seats
+    url(r'^summary/org/recipient_type.(?P<emitter_format>.+)$',
+        Resource(OrgRecipientTypeSummaryHandler, **ad)),
 
     # ----------- GROUPS >> Organizations: Lobbying -------------
     # TODO: top 10 lobbied issues for all orgs, each with top 10 orgs listed
@@ -427,6 +433,27 @@ urlpatterns = patterns('',
     # summary of pol_groups' contributions to seats
     url(r'^summary/pol_group/seat.(?P<emitter_format>.+)$',
         Resource(PolGroupSeatSummaryHandler, **ad)),
+
+    # ---------- GROUPS >> Industries: Contributions -------------
+    # summary of industries to party
+    url(r'^summary/industry/party.(?P<emitter_format>.+)$',
+        Resource(IndustryPartySummaryHandler, **ad)),
+
+    # summary of industries to state/fed candidates
+    url(r'^summary/industry/state_fed.(?P<emitter_format>.+)$',
+        Resource(IndustryStateFedSummaryHandler, **ad)),
+
+    # summary of industries' group vs individual contributions
+    url(r'^summary/industry/pac_indiv.(?P<emitter_format>.+)$',
+        Resource(IndustryFromPacIndivSummaryHandler, **ad)),
+
+    # summary of industries' contributions to seats
+    url(r'^summary/industry/seat.(?P<emitter_format>.+)$',
+        Resource(IndustrySeatSummaryHandler, **ad)),
+    
+    # summary of industries' contributions to seats
+    url(r'^summary/industry/recipient_type.(?P<emitter_format>.+)$',
+        Resource(IndustryRecipientTypeSummaryHandler, **ad)),
 
 
     # ----------- PEOPLE >> Individuals: Contributions -----------

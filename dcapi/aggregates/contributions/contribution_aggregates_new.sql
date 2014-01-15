@@ -1596,6 +1596,101 @@ create index aggregate_industry_to_state_fed_idx on aggregate_industry_to_state_
 select date_trunc('second', now()) || ' -- create index aggregate_industry_to_state_fed_party_cycle_idx on aggregate_industry_to_state_fed (recipient_party, cycle)';
 create index aggregate_industry_to_state_fed_state_fed_cycle_idx on aggregate_industry_to_state_fed (state_or_federal, cycle);
 
+-- Contributions to recipient types from industries
+-- SELECT 14583   
+-- Time: 6132288.223 ms
+-- CREATE INDEX   
+-- Time: 36.544 ms
+-- CREATE INDEX
+-- Time: 65.805 ms
+
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_industry_to_recipient_type';
+drop table if exists aggregate_industry_to_recipient_type cascade;
+
+select date_trunc('second', now()) || ' -- create table aggregate_industry_to_recipient_type';
+create table aggregate_industry_to_recipient_type as
+    with contributions_by_cycle as
+        (select industry_entity,
+                cycle,
+                recipient_type,
+                count(*) as count,
+                sum(amount) as amount,
+                rank() over (partition by industry_entity, cycle order by count(*) desc) as rank_by_count,
+                rank() over (partition by industry_entity, cycle order by sum(amount) desc) as rank_by_amount
+            from
+            (
+                select ia.entity_id as industry_entity,
+                           cycle,
+                           recipient_type,
+                           co.amount
+                    from
+                        (table contributions_organization
+                         union table contributions_org_to_pac ) co
+                            inner join
+                        industry_associations ia using (transaction_id)
+                            left join
+                        recipient_associations ra using (transaction_id)
+                            left join
+                        matchbox_entity re on re.id = ra.entity_id
+
+            union all
+
+                select ia.entity_id as industry_entity,
+                           cycle,
+                           recipient_type,
+                           ci.amount
+                from
+                    (table contributions_individual
+                     union table contributions_individual_to_organization) ci
+                        inner join
+                    industry_associations ia using (transaction_id)
+                        left join
+                    recipient_associations ra using (transaction_id)
+                        left join
+                    matchbox_entity re on re.id = ra.entity_id
+            ) x
+
+            group by industry_entity, cycle, recipient_type
+        )
+
+    select  industry_entity,
+            cycle,
+            recipient_type,
+            count,
+            amount,
+            rank_by_count,
+            rank_by_amount
+    from
+        contributions_by_cycle
+
+    union all
+
+    select  industry_entity,
+            -1 as cycle,
+            recipient_type,
+            count,
+            amount,
+            rank_by_count,
+            rank_by_amount
+    from
+        (select industry_entity,
+                recipient_type,
+                sum(count) as count,
+                sum(amount) as amount,
+                rank() over(partition by recipient_type order by sum(count) desc) as rank_by_count,
+                rank() over(partition by recipient_type order by sum(amount) desc) as rank_by_amount
+        from
+            contributions_by_cycle
+        group by industry_entity, recipient_type
+        ) all_cycle_rollup
+;
+
+select date_trunc('second', now()) || ' -- create index aggregate_industry_to_recipient_type_entity_cycle_idx on aggregate_industry_to_recipient_type (industry_entity, cycle)';
+create index aggregate_industry_to_recipient_type_idx on aggregate_industry_to_recipient_type (industry_entity, cycle);
+
+select date_trunc('second', now()) || ' -- create index aggregate_industry_to_recipient_type_party_cycle_idx on aggregate_industry_to_recipient_type (recipient_party, cycle)';
+create index aggregate_industry_to_recipient_type_recipient_type_cycle_idx on aggregate_industry_to_recipient_type (recipient_type, cycle);
+
 -- Politicians: Reciepts from Organizations
 -- TODO: redo
 -- SELECT 7141870

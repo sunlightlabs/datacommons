@@ -1093,4 +1093,233 @@ select date_trunc('second', now()) || ' -- create index ranked_pol_groups_by_rec
 create index ranked_pol_groups_by_recipient_type_cycle_rank_by_amount_idx on ranked_pol_groups_by_recipient_type (cycle, rank_by_amount);
 
 
+-- CONTRIBUTIONS FROM INDUSTRIES BY PARTY
+-- SELECT 3232
+-- Time: 124.626 ms
+-- CREATE INDEX
+-- Time: 29.953 ms
+-- CREATE INDEX
+-- Time: 23.488 ms
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_industries_by_party';
+drop table if exists ranked_industries_by_party;
+
+select date_trunc('second', now()) || ' -- create table ranked_industries_by_party';
+create table ranked_industries_by_party as
+
+        select
+            recipient_party,
+            cycle,
+            industry_entity,
+            industry_name,
+            sum(count) as count,
+            sum(amount) as amount,
+            rank() over(partition by recipient_party, cycle order by sum(count) desc) as rank_by_count,
+            rank() over(partition by recipient_party, cycle order by sum(amount) desc) as rank_by_amount
+        from
+        (select
+            case when recipient_party in ('D','R') then recipient_party else 'Other' end as recipient_party,
+            aotp.cycle,
+            aotp.industry_entity,
+            me.name as industry_name,
+            count,
+            amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_industry_to_parties aotp on me.id = aotp.industry_entity
+            inner join
+                matchbox_industrymetadata om on om.entity_id = me.id
+        where
+            (recipient_party is not null and recipient_party != '')
+            and
+            om.parent_industry_id is null
+            and
+            me.name != 'UNKNOWN'
+            and
+            om.should_show_entity
+            -- exists  (select 1 from biggest_industry_associations boa where apfo.industry_entity = boa.entity_id)
+            ) three_party
+        group by recipient_party, cycle, industry_entity, industry_name;
+
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_party_cycle_rank_idx ranked_industries_by_party (cycle, rank_by_count)';
+create index ranked_industries_by_party_cycle_rank_by_count_idx on ranked_industries_by_party (cycle, rank_by_count);
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_party_cycle_rank_idx ranked_industries_by_party (cycle, rank_by_amount)';
+create index ranked_industries_by_party_cycle_rank_by_amount_idx on ranked_industries_by_party (cycle, rank_by_amount);
+
+
+
+-- CONTRIBUTIONS FROM INDUSTRIES BY FEDERAL/STATE
+-- SELECT 2084
+-- Time: 79.174 ms
+-- CREATE INDEX
+-- Time: 20.252 ms
+-- CREATE INDEX
+-- Time: 20.579 ms
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_industries_by_state_fed';
+drop table if exists ranked_industries_by_state_fed;
+
+select date_trunc('second', now()) || ' -- create table ranked_industries_by_state_fed';
+create table ranked_industries_by_state_fed as
+        select
+            state_or_federal,
+            aosf.cycle,
+            aosf.industry_entity,
+            me.name as industry_name,
+            count,
+            amount,
+            rank() over(partition by state_or_federal, aosf.cycle order by count desc) as rank_by_count,
+            rank() over(partition by state_or_federal, aosf.cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_industry_to_state_fed aosf on me.id = aosf.industry_entity
+            inner join
+                matchbox_industrymetadata om on om.entity_id = me.id
+        where
+            om.parent_industry_id is null
+            and
+            me.name != 'UNKNOWN'
+            and
+            om.should_show_entity
+            -- exists  (select 1 from biggest_industry_associations boa where apfo.industry_entity = boa.entity_id)
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_state_fed_cycle_rank_by_count_idx on ranked_industries_by_state_fed (cycle, rank_by_count)';
+create index ranked_industries_by_state_fed_cycle_rank_by_count_idx on ranked_industries_by_state_fed (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_state_fed_cycle_rank_by_amount_idx on ranked_industries_by_state_fed (cycle, rank_by_amount)';
+create index ranked_industries_by_state_fed_cycle_rank_by_amount_idx on ranked_industries_by_state_fed (cycle, rank_by_amount);
+
+
+-- -- CONTRIBUTIONS FROM BIGGEST ORGS BY SEAT
+-- 
+-- select date_trunc('second', now()) || ' -- drop table if exists ranked_industries_by_seat';
+-- drop table if exists ranked_industries_by_seat;
+-- 
+-- select date_trunc('second', now()) || ' -- create table ranked_industries_by_seat';
+-- create table ranked_industries_by_seat as
+--         select
+--             seat,
+--             aots.cycle,
+--             industry_entity,
+--             me.name as industry_name,
+--             count,
+--             amount,
+--             rank() over(partition by seat, om.cycle order by count desc) as rank_by_count,
+--             rank() over(partition by seat, om.cycle order by amount desc) as rank_by_amount
+--         from
+--                 matchbox_entity me
+--             inner join
+--                 aggregate_industry_to_seat aots on me.id = aots.industry_entity
+--             inner join
+--                 matchbox_industrymetadata om on om.entity_id = me.id
+--         where
+--             (seat is not null and seat != '')
+--             and
+--             om.parent_industry_id is null
+--             and
+--             me.name != 'UNKNOWN'
+--             and
+--             om.should_show_entity
+--             -- exists  (select 1 from biggest_industry_associations boa where apfo.industry_entity = boa.entity_id);
+-- ;
+-- 
+-- select date_trunc('second', now()) || ' -- create index ranked_industries_by_seat_cycle_rank_by_count_idx on ranked_industries_by_seat_org (cycle, rank_by_count)';
+-- create index ranked_industries_by_seat_cycle_rank_by_count_idx on ranked_industries_by_seat (cycle, rank_by_count);
+-- 
+-- select date_trunc('second', now()) || ' -- create index ranked_industries_by_seat_cycle_rank_by_amount_idx on ranked_industries_by_seat_org (cycle, rank_by_amount)';
+-- create index ranked_industries_by_seat_cycle_rank_by_amount_idx on ranked_industries_by_seat (cycle, rank_by_amount);
+
+-- CONTRIBUTIONS FROM INDUSTRIES BY recipient_type
+-- SELECT 2176
+-- Time: 67.300 ms
+-- CREATE INDEX
+-- Time: 34.783 ms
+-- CREATE INDEX
+-- Time: 20.139 ms
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_industries_by_recipient_type';
+drop table if exists ranked_industries_by_recipient_type;
+
+select date_trunc('second', now()) || ' -- create table ranked_industries_by_recipient_type';
+create table ranked_industries_by_recipient_type as
+        select
+            recipient_type,
+            aots.cycle,
+            industry_entity,
+            me.name as industry_name,
+            count,
+            amount,
+            rank() over(partition by recipient_type, aots.cycle order by count desc) as rank_by_count,
+            rank() over(partition by recipient_type, aots.cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_industry_to_recipient_type aots on me.id = aots.industry_entity
+            inner join
+                matchbox_industrymetadata om on om.entity_id = me.id
+        where
+            (recipient_type is not null and recipient_type != '')
+            and
+            om.parent_industry_id is null
+            and
+            me.name != 'UNKNOWN'
+            and
+            om.should_show_entity
+            -- exists  (select 1 from biggest_industry_associations boa where apfo.industry_entity = boa.entity_id);
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_recipient_type_cycle_rank_by_count_idx on ranked_industries_by_recipient_type_org (cycle, rank_by_count)';
+create index ranked_industries_by_recipient_type_cycle_rank_by_count_idx on ranked_industries_by_recipient_type (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_recipient_type_cycle_rank_by_amount_idx on ranked_industries_by_recipient_type_org (cycle, rank_by_amount)';
+create index ranked_industries_by_recipient_type_cycle_rank_by_amount_idx on ranked_industries_by_recipient_type (cycle, rank_by_amount);
+
+-- CONTRIBUTIONS FROM INDUSTRIES BY INDIV/PAC
+-- SELECT 2184
+-- Time: 84.795 ms
+-- CREATE INDEX
+-- Time: 21.810 ms
+-- CREATE INDEX
+-- Time: 20.946 ms
+
+select date_trunc('second', now()) || ' -- drop table if exists ranked_industries_by_indiv_pac';
+drop table if exists ranked_industries_by_indiv_pac;
+
+select date_trunc('second', now()) || ' -- create table ranked_industries_by_indiv_pac';
+create table ranked_industries_by_indiv_pac as
+        select
+            direct_or_indiv,
+            aots.cycle,
+            industry_entity,
+            me.name as industry_name,
+            count,
+            amount,
+            rank() over(partition by direct_or_indiv, aots.cycle order by count desc) as rank_by_count,
+            rank() over(partition by direct_or_indiv, aots.cycle order by amount desc) as rank_by_amount
+        from
+                matchbox_entity me
+            inner join
+                aggregate_industry_by_indiv_pac aots on me.id = aots.industry_entity
+            inner join
+                matchbox_industrymetadata om on om.entity_id = me.id
+        where
+            (direct_or_indiv is not null and direct_or_indiv != '')
+            and
+            om.parent_industry_id is null
+            and
+            me.name != 'UNKNOWN'
+            and
+            om.should_show_entity
+            -- exists  (select 1 from biggest_industry_associations boa where apfo.industry_entity = boa.entity_id);
+;
+
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_indiv_pac_cycle_rank_by_count_idx on ranked_industries_by_indiv_pac_org (cycle, rank_by_count)';
+create index ranked_industries_by_indiv_pac_cycle_rank_by_count_idx on ranked_industries_by_indiv_pac (cycle, rank_by_count);
+
+select date_trunc('second', now()) || ' -- create index ranked_industries_by_indiv_pac_cycle_rank_by_amount_idx on ranked_industries_by_indiv_pac_org (cycle, rank_by_amount)';
+create index ranked_industries_by_indiv_pac_cycle_rank_by_amount_idx on ranked_industries_by_indiv_pac (cycle, rank_by_amount);
+
 

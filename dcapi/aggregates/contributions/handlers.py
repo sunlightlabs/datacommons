@@ -790,6 +790,51 @@ class OrgFromPacIndivSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+## ORGS: RECIPIENT TYPE
+
+class OrgRecipientTypeTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'P':'Politician',
+                    'C':'Committee'}
+
+    stmt = """
+        select 
+            recipient_type, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_parentmost_orgs_by_recipient_type
+        where cycle = %s
+    """
+
+class OrgRecipientTypeTopOrgsByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_type', 'amount']
+
+    stmt = """
+        select 
+            organization_name as name, 
+            organization_entity as id, 
+            recipient_type, 
+            amount
+        from
+            summary_parentmost_orgs_by_recipient_type
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class OrgRecipientTypeSummaryHandler(SummaryHandler):
+    rollup = OrgRecipientTypeTotalsHandler()
+    breakout = OrgRecipientTypeTopOrgsByContributionsHandler()
+    def key_function(self,x):
+        recipient_type = x['recipient_type']
+        if recipient_type in self.rollup.category_map:
+            return self.rollup.category_map[recipient_type]
+        else:
+            return self.rollup.default_key
+
+
 ### INDIVIDUALS
 
 # INDIV PARTY
@@ -1604,4 +1649,227 @@ class PolGroupFromPacIndivSummaryHandler(SummaryHandler):
         else:
             return self.rollup.default_key
 
+## INDUSTRIES: PARTY
+class IndustryPartyTotalsHandler(SummaryRollupHandler):
 
+    category_map = {'R':'Republicans', 'D':'Democrats'}
+    default_key = 'Other'
+
+    stmt = """
+        select 
+            recipient_party, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_industries_by_party
+        where cycle = %s
+    """
+
+class IndustryPartyTopBiggestIndustriesByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_party', 'amount']
+
+    stmt = """
+        select 
+            industry_name as name, 
+            industry_entity as id, 
+            recipient_party, 
+            amount
+        from 
+            summary_industries_by_party
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class IndustryPartySummaryHandler(SummaryHandler):
+    rollup = IndustryPartyTotalsHandler()
+    breakout = IndustryPartyTopBiggestIndustriesByContributionsHandler()
+    def key_function(self,x):
+        recipient_party = x['recipient_party']
+        if recipient_party in self.rollup.category_map:
+            return self.rollup.category_map[recipient_party]
+        else:
+            return self.rollup.default_key
+
+## INDUSTRIES: STATE/FED
+class IndustryStateFedTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'federal':'Federal',
+                    'state':'State'}
+
+    stmt = """
+        select 
+            state_or_federal, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_industries_by_state_fed
+        where cycle = %s
+    """
+
+class IndustryStateFedTopBiggestIndustriesByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'state_or_federal', 'amount']
+
+    stmt = """
+        select 
+            industry_name as name, 
+            industry_entity as id, 
+            state_or_federal, 
+            amount
+        from 
+            summary_industries_by_state_fed
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class IndustryStateFedSummaryHandler(SummaryHandler):
+    rollup = IndustryStateFedTotalsHandler()
+    breakout = IndustryStateFedTopBiggestIndustriesByContributionsHandler()
+    def key_function(self,x):
+        state_or_federal = x['state_or_federal']
+        if state_or_federal in self.rollup.category_map:
+            return self.rollup.category_map[state_or_federal]
+        else:
+            return self.rollup.default_key
+
+## INDUSTRIES: SEAT
+class IndustrySeatTotalsHandler(SummaryRollupHandler):
+
+    default_key = 'no_seat'
+
+    category_map = {'state:judicial':'State Judicial',
+                    'state:lower':'State Lower House',
+                    'state:governor':'Governor', 
+                    'federal:house':'US House',
+                    'state:upper':'State Upper House',
+                    'federal:president':'US President',
+                    'federal:senate':'US Senate',
+                    'state:office':'State Office'}
+
+
+    stmt = """
+        select 
+            seat, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_industries_by_seat
+        where cycle = %s
+    """
+
+class IndustrySeatTopBiggestIndustriesByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'seat', 'amount']
+
+    stmt = """
+        select 
+            industry_name as name, 
+            industry_entity as id, 
+            seat, 
+            amount
+        from 
+            summary_industries_by_seat
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class IndustrySeatSummaryHandler(SummaryHandler):
+    rollup = IndustrySeatTotalsHandler()
+    breakout = IndustrySeatTopBiggestIndustriesByContributionsHandler()
+    def key_function(self,x):
+        seat = x['seat']
+        if seat in self.rollup.category_map:
+            return self.rollup.category_map[seat]
+        else:
+            return self.rollup.default_key
+
+## INDUSTRIES: PAC/INDIV
+class IndustryFromPacIndivTotalsHandler(SummaryRollupHandler):
+    category_map = {'direct':'Org PAC',
+                    'indiv':'Individuals'}
+
+    stmt = """
+        select 
+            direct_or_indiv, 
+            total_count as count, 
+            total_amount as amount
+        from 
+            summary_industries_by_indiv_pac
+        where cycle = %s
+    """
+
+class IndustryFromPacIndivTopBiggestIndustriesByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'direct_or_indiv', 'amount','cycle', 'rank']
+
+    stmt = """
+        select 
+            industry_name as name, 
+            industry_entity as id, 
+            direct_or_indiv, 
+            amount, cycle, rank_by_amount as rank
+        from 
+            summary_industries_by_indiv_pac
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class IndustryFromPacIndivSummaryHandler(SummaryHandler):
+    rollup = IndustryFromPacIndivTotalsHandler()
+    breakout = IndustryFromPacIndivTopBiggestIndustriesByContributionsHandler()
+    def key_function(self,x):
+        direct_or_indiv = x['direct_or_indiv']
+        if direct_or_indiv in self.rollup.category_map:
+            return self.rollup.category_map[direct_or_indiv]
+        else:
+            return self.rollup.default_key
+
+
+## INDUSTRIES: RECIPIENT TYPE
+
+class IndustryRecipientTypeTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'P':'Politician',
+                    'C':'Committee'}
+
+    stmt = """
+        select 
+            recipient_type, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_industries_by_recipient_type
+        where cycle = %s
+    """
+
+class IndustryRecipientTypeTopIndustriesByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'recipient_type', 'amount']
+
+    stmt = """
+        select 
+            industry_name as name, 
+            industry_entity as id, 
+            recipient_type, 
+            amount
+        from
+            summary_industries_by_recipient_type
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class IndustryRecipientTypeSummaryHandler(SummaryHandler):
+    rollup = IndustryRecipientTypeTotalsHandler()
+    breakout = IndustryRecipientTypeTopIndustriesByContributionsHandler()
+    def key_function(self,x):
+        recipient_type = x['recipient_type']
+        if recipient_type in self.rollup.category_map:
+            return self.rollup.category_map[recipient_type]
+        else:
+            return self.rollup.default_key
