@@ -751,7 +751,7 @@ class OrgSeatSummaryHandler(SummaryHandler):
 ## ORGS: PAC/INDIV
 class OrgFromPacIndivTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Org PAC',
-                    'indiv':'Individuals'}
+                    'indiv':'Org Individuals'}
 
     stmt = """
         select 
@@ -1430,7 +1430,7 @@ class LobbyingOrgSeatSummaryHandler(SummaryHandler):
 ## LOBBYING ORGS: PAC/INDIV
 class LobbyingOrgFromPacIndivTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Org PAC',
-                    'indiv':'Individuals'}
+                    'indiv':'Org Individuals'}
 
     stmt = """
         select 
@@ -1610,7 +1610,7 @@ class PolGroupSeatSummaryHandler(SummaryHandler):
 ## POL GROUPS: PAC/INDIV
 class PolGroupFromPacIndivTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Org PAC',
-                    'indiv':'Individuals'}
+                    'indiv':'Org Individuals'}
 
     stmt = """
         select 
@@ -1790,7 +1790,7 @@ class IndustryStateFedSummaryHandler(SummaryHandler):
 ## INDUSTRIES: PAC/INDIV
 class IndustryFromPacIndivTotalsHandler(SummaryRollupHandler):
     category_map = {'direct':'Org PAC',
-                    'indiv':'Individuals'}
+                    'indiv':'Org Individuals'}
 
     stmt = """
         select 
