@@ -1691,21 +1691,19 @@ create index aggregate_industry_to_recipient_type_idx on aggregate_industry_to_r
 select date_trunc('second', now()) || ' -- create index aggregate_industry_to_recipient_type_party_cycle_idx on aggregate_industry_to_recipient_type (recipient_party, cycle)';
 create index aggregate_industry_to_recipient_type_recipient_type_cycle_idx on aggregate_industry_to_recipient_type (recipient_type, cycle);
 
--- Politicians: Reciepts from Organizations
--- TODO: redo
+-- Politicians: Contributions from Organizations
 -- SELECT 7141870
--- Time: 507926.977 ms
+-- Time: 783032.244 ms
 -- CREATE INDEX
--- Time: 18115.136 ms
+-- Time: 22240.377 ms
 
-select date_trunc('second', now()) || ' -- drop table if exists aggregate_candidate_from_organizations';
-drop table if exists aggregate_candidate_from_organizations cascade;
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_politician_from_organizations';
+drop table if exists aggregate_politician_from_organizations cascade;
 
-select date_trunc('second', now()) || ' -- create table aggregate_candidate_from_organizations';
-create table aggregate_candidate_from_organizations as
-    with org_contributions_by_cycle as
-        (select
-                recipient_entity,
+select date_trunc('second', now()) || ' -- create table aggregate_politician_from_organizations';
+create table aggregate_politician_from_organizations as
+    with contributions_by_cycle as
+        (select recipient_entity as politician_entity,
                 cycle,
                 organization_entity,
                 organization_name,
@@ -1715,119 +1713,124 @@ create table aggregate_candidate_from_organizations as
                 coalesce(direct.amount, 0) + coalesce(indivs.amount, 0) as total_amount,
                 coalesce(direct.amount, 0) as pacs_amount,
                 coalesce(indivs.amount, 0) as indivs_amount,
-                rank() over (partition by recipient_entity, cycle order by (coalesce(direct.amount, 0) + coalesce(indivs.amount, 0)) desc) as rank
+                rank() over (partition by recipient_entity, cycle order by (coalesce(direct.amount, 0) + coalesce(indivs.amount, 0)) desc) as rank_by_amount,
+                rank() over (partition by recipient_entity, cycle order by (coalesce(direct.count, 0) + coalesce(indivs.count, 0)) desc) as rank_by_count 
             from
                 (
-                select
+                select 
                        ra.entity_id as recipient_entity,
-                       ce.name as organization_name,
-                       ca.entity_id as organization_entity,
                        cycle,
-                       count(*) as count,
+                       ca.entity_id as organization_entity,
+                       coalesce(ce.name, c.contributor_name) as organization_name,
+                       count(*),
                        sum(c.amount) as amount
                 from contributions_organization c
-                        inner join
-                    recipient_associations ra using (transaction_id)
                         inner join
                     (table organization_associations
                      union table parent_organization_associations
                                                              ) ca using (transaction_id)
                         inner join
+                    recipient_associations ra using (transaction_id)
+                        left join
                     matchbox_entity ce on ce.id = ca.entity_id
-                group by ra.entity_id, cycle, ca.entity_id, ce.name
+                where coalesce(ce.name, c.contributor_name) != ''
+                group by ra.entity_id, cycle, ca.entity_id, coalesce(ce.name, c.contributor_name)
                 )  direct
-                
-                        full outer join
-                
+            full outer join
                 (
-                select
+                select  
                        ra.entity_id as recipient_entity,
-                       ce.name as organization_name,
-                       ca.entity_id as organization_entity,
                        cycle,
-                       count(*) as count,
+                       oa.entity_id as organization_entity,
+                       coalesce(ce.name, c.contributor_name) as organization_name,
+                       count(*),
                        sum(c.amount) as amount
                 from
                     contributions_individual c
                         inner join
-                    recipient_associations ra using (transaction_id)
-                        inner join
                     (table organization_associations
                      union table parent_organization_associations
-                                                            ) ca using (transaction_id)
+                                                            ) oa using (transaction_id)
                         inner join
-                    matchbox_entity ce on ce.id = ca.entity_id
-                group by ra.entity_id, cycle, ca.entity_id, ce.name
-                ) indivs using (recipient_entity, cycle, organization_entity, organization_name)
-        )
+                    recipient_associations ra using (transaction_id)
+                        left join
+                    matchbox_entity ce on ce.id = oa.entity_id
+                group by ra.entity_id, cycle, oa.entity_id, coalesce(ce.name, c.contributor_name)
+                ) indivs
+        using (recipient_entity, cycle, organization_entity, organization_name)
+    )
 
-    select  recipient_entity,
+    select  
+            politician_entity,
             cycle,
-            organization_name,
             organization_entity,
+            organization_name,
             total_count,
             pacs_count,
             indivs_count,
             total_amount,
             pacs_amount,
             indivs_amount,
-            rank
+            rank_by_count,
+            rank_by_amount
     from
-        org_contributions_by_cycle
+        contributions_by_cycle
 
     union all
 
     select
-            recipient_entity,
+            politician_entity,
             -1 as cycle,
-            organization_name,
             organization_entity,
+            organization_name,
             total_count,
             pacs_count,
             indivs_count,
             total_amount,
             pacs_amount,
             indivs_amount,
-            rank
+            rank_by_count,
+            rank_by_amount
     from
         (select
-                recipient_entity,
-                organization_name,
+                politician_entity,
                 organization_entity,
+                organization_name,
                 sum(total_count) as total_count,
                 sum(pacs_count) as pacs_count,
                 sum(indivs_count) as indivs_count,
                 sum(total_amount) as total_amount,
                 sum(pacs_amount) as pacs_amount,
                 sum(indivs_amount) as indivs_amount,
-                rank() over (partition by recipient_entity order by sum(total_amount) desc) as rank
+                rank() over (partition by organization_entity order by sum(total_amount) desc) as rank_by_amount,
+                rank() over (partition by organization_entity order by sum(total_count) desc) as rank_by_count
         from
-            org_contributions_by_cycle
-        group by recipient_entity, organization_entity, organization_name 
+            contributions_by_cycle
+        group by politician_entity, organization_entity, organization_name
         ) all_cycle_rollup
 
 ;
 
-select date_trunc('second', now()) || ' -- create index aggregate_candidate_from_organizations_idx on aggregate_candidate_from_organizations (recipient_entity, cycle)';
-create index aggregate_candidate_from_organizations_idx on aggregate_candidate_from_organizations (recipient_entity, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_politician_from_organizations_idx on aggregate_politician_from_organizations (organization_entity, cycle)';
+create index aggregate_politician_from_organizations_idx on aggregate_politician_from_organizations (organization_entity, cycle);
 
 -- Politicians: Reciepts from individuals
--- SELECT 913167
--- Time: 70842.525 ms
+-- SELECT 273982
+-- Time: 1374039.623 ms
 -- CREATE INDEX
--- Time: 2068.418 ms
+-- Time: 710.866 ms
 
-select date_trunc('second', now()) || ' -- drop table if exists aggregate_candidate_from_organizations';
-drop table if exists aggregate_candidate_from_individuals cascade;
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_politician_from_organizations';
+drop table if exists aggregate_politician_from_individuals cascade;
 
-select date_trunc('second', now()) || ' -- create table aggregate_candidate_from_individuals';
-create table aggregate_candidate_from_individuals as
+select date_trunc('second', now()) || ' -- create table aggregate_politician_from_individuals';
+create table aggregate_politician_from_individuals as
     with contributions_by_cycle as
-        (select
-                   ra.entity_id as recipient_entity,
+        (       select
+                   ra.entity_id as politician_entity,
                    cycle,
-                   ce.name as individual_name,
                    ca.entity_id as individual_entity,
+                   ce.name as individual_name,
                    count(*) as count,
                    sum(ci.amount) as amount,
                     rank() over (partition by ra.entity_id, cycle order by count(*) desc) as rank_by_count,
@@ -1839,101 +1842,167 @@ create table aggregate_candidate_from_individuals as
                         inner join
                     contributor_associations ca using (transaction_id)
                         inner join
-                    matchbox_entity ce on ce.id = ca.entity_id
-                    group by ra.entity_id, cycle, ca.entity_id, ce.name)
+                    matchbox_entity ce on ce.id = ca.entity_id and ce.type = 'individual'
+                        left join
+                    (table organization_associations
+                     union table parent_organization_associations) oa using (transaction_id) 
+                where oa.entity_id is null
+                group by ra.entity_id, cycle, ca.entity_id, ce.name)
 
     select
-            recipient_entity,
-            cycle,
-            individual_name,
-            individual_entity,
-            count,
-            amount,
-            rank_by_count,
-            rank_by_amount
+        politician_entity,
+        cycle,
+        individual_entity,
+        individual_name,
+        count,
+        amount,
+        rank_by_count,
+        rank_by_amount
     from
         contributions_by_cycle
 
     union all
 
     select
-            recipient_entity,
-            -1 as cycle,
-            individual_name,
-            individual_entity,
-            count,
-            amount,
-            rank_by_count,
-            rank_by_amount
+        politician_entity,
+        -1 as cycle,
+        individual_entity,
+        individual_name,
+        count,
+        amount,
+        rank_by_count,
+        rank_by_amount
     from
         (select 
-                recipient_entity,
-                individual_name,
-                individual_entity,
-                sum(count) as count,
-                sum(amount) as amount,
-                rank() over(partition by recipient_entity order by sum(count) desc) as rank_by_count,
-                rank() over(partition by recipient_entity order by sum(amount) desc) as rank_by_amount
+            politician_entity,
+            individual_entity,
+            individual_name,
+            sum(count) as count,
+            sum(amount) as amount,
+            rank() over(partition by politician_entity order by sum(count) desc) as rank_by_count,
+            rank() over(partition by politician_entity order by sum(amount) desc) as rank_by_amount
         from
             contributions_by_cycle
-        group by recipient_entity, individual_entity, individual_name
+        group by politician_entity, individual_entity, individual_name
         ) all_cycle_rollup
 ;
 
-select date_trunc('second', now()) || ' -- create index aggregate_candidate_from_individuals_entity_cycle_idx on aggregate_candidate_from_individuals (recipient_entity, cycle)';
-create index aggregate_candidate_from_individuals_idx on aggregate_candidate_from_individuals (recipient_entity, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_politician_from_individuals_entity_cycle_idx on aggregate_politician_from_individuals (politician_entity, cycle)';
+create index aggregate_politician_from_individuals_idx on aggregate_politician_from_individuals (politician_entity, cycle);
+
+-- Politicians: RECIEPTS FROM INDIVIDUALS VS ORG-ASSOCIATED INDIVIDUALS VS ORG PACS
+-- SELECT 371151
+-- Time: 116488.162 ms
+-- CREATE INDEX
+-- Time: 1135.104 ms
+
+
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_politician_by_org_pac_indiv';
+drop table if exists aggregate_politician_by_org_pac_indiv;
+
+select date_trunc('second', now()) || ' -- create table aggregate_politician_by_org_pac_indiv';
+create table aggregate_politician_by_org_pac_indiv as
+    select
+        politician_entity,
+        cycle,
+        org_pac_indiv,
+        sum(count) as count,
+        sum(amount) as amount
+    from
+        (
+        select
+            politician_entity,
+            cycle,
+            'org_pac' as org_pac_indiv,
+            pacs_count as count,
+            pacs_amount as amount
+        from
+                aggregate_politician_from_organizations apo
+
+        union all
+        
+        select
+            politician_entity,
+            cycle,
+            'org_indiv' as org_pac_indiv,
+            indivs_count as count,
+            indivs_amount as amount
+        from
+                aggregate_politician_from_organizations apo
+
+        union all
+
+        select
+            politician_entity,
+            cycle,
+            'indiv' as org_pac_indiv,
+            count as count,
+            amount as amount
+        from
+            aggregate_politician_from_individuals api
+        ) cbc
+            inner join
+        matchbox_entity me on me.id = cbc.politician_entity
+    group by
+        politician_entity,
+        cycle,
+        org_pac_indiv
+;
+
+select date_trunc('second', now()) || ' -- create index aggregate_politician_by_org_pac_indiv_cycle_org_entity_idx on aggregate_politician_by_org_pac_indiv (cycle, politician_entity)';
+create index aggregate_politician_by_org_pac_indiv_cycle_org_entity_idx on aggregate_politician_by_org_pac_indiv (cycle, politician_entity);
+
+
 
 -- Politicians: reciepts from individuals by in-state/out-of-state
--- SELECT 917510
--- Time: 86711.016 ms
+-- SELECT 84842
+-- Time: 66398.101 ms
 -- CREATE INDEX
--- Time: 2186.330 ms
+-- Time: 192.887 ms
 -- CREATE INDEX
--- Time: 17492.684 ms
+-- Time: 1282.469 ms
 
-select date_trunc('second', now()) || ' -- drop table if exists aggregate_candidate_from_individuals_by_in_state_out_of_state';
-drop table if exists aggregate_candidate_from_individuals_by_in_state_out_of_state cascade;
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_politician_from_individuals_by_in_state_out_of_state';
+drop table if exists aggregate_politician_from_individuals_by_in_state_out_of_state cascade;
 
-select date_trunc('second', now()) || ' -- create table aggregate_candidate_from_individuals_by_in_state_out_of_state';
-create table aggregate_candidate_from_individuals_by_in_state_out_of_state as
+select date_trunc('second', now()) || ' -- create table aggregate_politician_from_individuals_by_in_state_out_of_state';
+create table aggregate_politician_from_individuals_by_in_state_out_of_state as
     with contributions_by_cycle as
         (select
-                recipient_entity,
+                politician_entity,
                 cycle,
                 in_state_out_of_state,
-                individual_entity,
-                individual_name,
                 count(*) as count,
                 sum(amount) as amount,
-                rank() over (partition by recipient_entity, cycle, in_state_out_of_state order by count(*) desc) as rank_by_count,
-                rank() over (partition by recipient_entity, cycle, in_state_out_of_state order by sum(amount) desc) as rank_by_amount
+                rank() over (partition by politician_entity, cycle, in_state_out_of_state order by count(*) desc) as rank_by_count,
+                rank() over (partition by politician_entity, cycle, in_state_out_of_state order by sum(amount) desc) as rank_by_amount
                 from
                     (select 
-                            ra.entity_id as recipient_entity,
-                            ca.entity_id as individual_entity,
-                            ce.name as individual_name, 
-                                case    when ci.contributor_state = ci.recipient_state then 'in-state'
-                                        when ci.contributor_state = '' then ''
-                                        else 'out-of-state' end as in_state_out_of_state,
-                                   cycle,
-                                   amount
-                            from
-                                contributions_individual ci
-                                    inner join
-                                contributor_associations ca using (transaction_id)
-                                    left join
-                                recipient_associations ra using (transaction_id)
-                                    left join
-                                matchbox_entity ce on ce.id = ca.entity_id
+                        ra.entity_id as politician_entity,
+                            case    when ci.contributor_state = ci.recipient_state then 'in-state'
+                                    when ci.contributor_state = '' then ''
+                                    else 'out-of-state' end as in_state_out_of_state,
+                               ci.cycle,
+                               amount
+                        from
+                            contributions_individual ci
+                                inner join
+                            contributor_associations ca using (transaction_id)
+                                inner join
+                            recipient_associations ra using (transaction_id)
+                                inner join
+                            matchbox_entity ce on ce.id = ca.entity_id
+                                inner join
+                            matchbox_politicianmetadata mpm on mpm.entity_id = ra.entity_id and ci.cycle = mpm.cycle
+                        where
+                            mpm.seat != 'federal:president'
                     ) x
-                group by recipient_entity, cycle, in_state_out_of_state, individual_entity, individual_name)
+                group by politician_entity, cycle, in_state_out_of_state)
 
     select  
-            recipient_entity,
+            politician_entity,
             cycle,
             in_state_out_of_state,
-            individual_entity,
-                individual_name,
             count,
             amount,
             rank_by_count,
@@ -1944,53 +2013,49 @@ create table aggregate_candidate_from_individuals_by_in_state_out_of_state as
     union all
 
     select  
-            recipient_entity,
+            politician_entity,
             -1 as cycle,
             in_state_out_of_state,
-            individual_entity,
-                individual_name,
             count,
             amount,
             rank_by_count,
             rank_by_amount
     from
         (select 
-                recipient_entity,
+                politician_entity,
                 in_state_out_of_state,
-                individual_entity,
-                individual_name,
                 sum(count) as count,
                 sum(amount) as amount,
-                rank() over(partition by recipient_entity, in_state_out_of_state order by sum(count) desc) as rank_by_count,
-                rank() over(partition by recipient_entity, in_state_out_of_state order by sum(amount) desc) as rank_by_amount
+                rank() over(partition by politician_entity, in_state_out_of_state order by sum(count) desc) as rank_by_count,
+                rank() over(partition by politician_entity, in_state_out_of_state order by sum(amount) desc) as rank_by_amount
         from
             contributions_by_cycle
-        group by recipient_entity, in_state_out_of_state, individual_entity, individual_name
+        group by politician_entity, in_state_out_of_state
         ) all_cycle_rollup
 ;
 
-select date_trunc('second', now()) || ' -- create index aggregate_candidate_from_individuals_by_in_out_entity_cycle_idx on aggregate_candidate_from_individuals_by_in_state_out_of_state (recipient_entity, cycle)';
-create index aggregate_candidate_from_individuals_by_in_out_of_state_idx on aggregate_candidate_from_individuals_by_in_state_out_of_state (recipient_entity, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_politician_from_individuals_by_in_out_entity_cycle_idx on aggregate_politician_from_individuals_by_in_state_out_of_state (politician_entity, cycle)';
+create index aggregate_politician_from_individuals_by_in_out_of_state_idx on aggregate_politician_from_individuals_by_in_state_out_of_state (politician_entity, cycle);
 
-select date_trunc('second', now()) || ' -- create index aggregate_candidate_from_individuals_by_in_out_inout_cycle_idx on aggregate_candidate_from_individuals_by_in_state_out_of_state (in_state_out_of_state, cycle)';
-create index aggregate_candidate_from_individuals_by_in_out_inout_cycle_idx on aggregate_candidate_from_individuals_by_in_state_out_of_state (in_state_out_of_state, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_politician_from_individuals_by_in_out_inout_cycle_idx on aggregate_politician_from_individuals_by_in_state_out_of_state (in_state_out_of_state, cycle)';
+create index aggregate_politician_from_individuals_by_in_out_inout_cycle_idx on aggregate_politician_from_individuals_by_in_state_out_of_state (in_state_out_of_state, cycle);
 
 
 
 -- Politicians: reciepts from industries
 -- SELECT 11556994
--- Time: 1583382.536 ms
+-- Time: 1596241.786 ms
 -- CREATE INDEX
--- Time: 30229.866 ms
+-- Time: 31148.489 ms`
 
-select date_trunc('second', now()) || ' -- drop table if exists aggregate_candidate_from_industries';
-drop table if exists aggregate_candidate_from_industries cascade;
+select date_trunc('second', now()) || ' -- drop table if exists aggregate_politician_from_industries';
+drop table if exists aggregate_politician_from_industries cascade;
 
-select date_trunc('second', now()) || ' -- create table aggregate_candidate_from_candidates';
-create table aggregate_candidate_from_industries as
+select date_trunc('second', now()) || ' -- create table aggregate_politician_from_industries';
+create table aggregate_politician_from_industries as
     with contributions_by_cycle as
         (select
-                recipient_entity,
+                politician_entity,
                 cycle,
                 industry_name,
                 industry_entity,
@@ -2000,11 +2065,11 @@ create table aggregate_candidate_from_industries as
                 coalesce(direct.amount, 0) + coalesce(indivs.amount, 0) as total_amount,
                 coalesce(direct.amount, 0) as pacs_amount,
                 coalesce(indivs.amount, 0) as indivs_amount,
-                rank() over (partition by recipient_entity, cycle order by (coalesce(direct.amount, 0) + coalesce(indivs.amount, 0)) desc) as rank
+                rank() over (partition by politician_entity, cycle order by (coalesce(direct.amount, 0) + coalesce(indivs.amount, 0)) desc) as rank
             from
                 (
                 select
-                       ra.entity_id as recipient_entity,
+                       ra.entity_id as politician_entity,
                        cycle,
                        ie.name as industry_name,
                        ia.entity_id as industry_entity,
@@ -2022,7 +2087,7 @@ create table aggregate_candidate_from_industries as
             full outer join
                 (
                 select
-                       ra.entity_id as recipient_entity,
+                       ra.entity_id as politician_entity,
                        ie.name as industry_name,
                        ia.entity_id as industry_entity,
                        cycle,
@@ -2038,10 +2103,10 @@ create table aggregate_candidate_from_industries as
                     matchbox_entity ie on ie.id = ia.entity_id
                 group by ra.entity_id, cycle, ia.entity_id, ie.name
                 ) indivs
-        using (recipient_entity, cycle, industry_entity, industry_name)
+        using (politician_entity, cycle, industry_entity, industry_name)
     )
     select
-            recipient_entity,
+            politician_entity,
             cycle,
             industry_name,
             industry_entity,
@@ -2058,7 +2123,7 @@ create table aggregate_candidate_from_industries as
     union all
 
     select
-            recipient_entity,
+            politician_entity,
             -1 as cycle,
             industry_name,
             industry_entity,
@@ -2071,7 +2136,7 @@ create table aggregate_candidate_from_industries as
             rank
     from
         (select
-                recipient_entity,
+                politician_entity,
                 industry_name,
                 industry_entity,
                 sum(total_count) as total_count,
@@ -2080,13 +2145,13 @@ create table aggregate_candidate_from_industries as
                 sum(total_amount) as total_amount,
                 sum(pacs_amount) as pacs_amount,
                 sum(indivs_amount) as indivs_amount,
-                rank() over (partition by recipient_entity order by sum(total_amount) desc) as rank
+                rank() over (partition by politician_entity order by sum(total_amount) desc) as rank
         from
             contributions_by_cycle
-        group by recipient_entity, industry_entity, industry_name
+        group by politician_entity, industry_entity, industry_name
         ) all_cycle_rollup
 
 ;
 
-select date_trunc('second', now()) || ' -- create index aggregate_candidate_from_industries_idx on aggregate_candidate_from_industries (recipient_entity, cycle)';
-create index aggregate_candidate_from_industries_idx on aggregate_candidate_from_industries (recipient_entity, cycle);
+select date_trunc('second', now()) || ' -- create index aggregate_politician_from_industries_idx on aggregate_politician_from_industries (politician_entity, cycle)';
+create index aggregate_politician_from_industries_idx on aggregate_politician_from_industries (politician_entity, cycle);

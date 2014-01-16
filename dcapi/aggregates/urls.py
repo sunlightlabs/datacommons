@@ -25,7 +25,9 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     PolGroupPartySummaryHandler, PolGroupStateFedSummaryHandler, \
     PolGroupSeatSummaryHandler, PolGroupFromPacIndivSummaryHandler, \
     IndustryPartySummaryHandler, IndustryStateFedSummaryHandler, IndustryFromPacIndivSummaryHandler, \
-    IndustryRecipientTypeSummaryHandler
+    IndustryRecipientTypeSummaryHandler, \
+    PoliticianOrgPacIndivSummaryHandler, PoliticianInStateOutOfStateSummaryHandler, \
+    PoliticianIndustrySummaryHandler
 from dcapi.aggregates.contributions.bundle_handlers import BundleHandler, \
     RecipientExplorerHandler, FirmExplorerHandler, DetailExplorerHandler
 from dcapi.aggregates.lobbying.handlers import OrgRegistrantsHandler, \
@@ -498,5 +500,17 @@ urlpatterns = patterns('',
     url(r'^summary/lobbyist/in_state_out_of_state.(?P<emitter_format>.+)$',
         Resource(LobbyistInStateOutOfStateSummaryHandler, **ad)),
 
+    # ----------- PEOPLE >> Politicians: Contributions -----------
+    # summary of reciepts from org/pac/indiv
+    url(r'^summary/pol/org_pac_indiv.(?P<emitter_format>.+)$',
+        Resource(PoliticianOrgPacIndivSummaryHandler, **ad)),
+
+    # summary of reciepts from in state/out of state indivs
+    url(r'^summary/pol/in_state_out_of_state.(?P<emitter_format>.+)$',
+        Resource(PoliticianInStateOutOfStateSummaryHandler, **ad)),
+
+    # summary of reciepts from industries
+    #url(r'^summary/pol/industry.(?P<emitter_format>.+)$',
+    #    Resource(PoliticianIndustrySummaryHandler, **ad)),
 
 )

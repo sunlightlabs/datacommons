@@ -1873,3 +1873,133 @@ class IndustryRecipientTypeSummaryHandler(SummaryHandler):
             return self.rollup.category_map[recipient_type]
         else:
             return self.rollup.default_key
+
+## POLITICIANS: ORGS, ORG's INDIVS, and INDIVIDUALS
+
+class PoliticianOrgPacIndivTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'org_pac':'Org PAC',
+                    'org_indiv':'Org Individuals',
+                    'indiv':'Individuals'}
+
+    stmt = """
+        select 
+            org_pac_indiv, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_politicians_by_org_pac_indiv
+        where cycle = %s
+    """
+
+class PoliticianOrgPacIndivTopPoliticiansByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'org_pac_indiv', 'amount']
+
+    stmt = """
+        select 
+            politician_name as name, 
+            politician_entity as id, 
+            org_pac_indiv, 
+            amount
+        from
+            summary_politicians_by_org_pac_indiv
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class PoliticianOrgPacIndivSummaryHandler(SummaryHandler):
+    rollup = PoliticianOrgPacIndivTotalsHandler()
+    breakout = PoliticianOrgPacIndivTopPoliticiansByContributionsHandler()
+    def key_function(self,x):
+        org_pac_indiv = x['org_pac_indiv']
+        if org_pac_indiv in self.rollup.category_map:
+            return self.rollup.category_map[org_pac_indiv]
+        else:
+            return self.rollup.default_key
+
+## POLITICIANS: RECEIPTS FROM INDIVIDUALS IN-STATE/OUT-OF-STATE
+
+class PoliticianInStateOutOfStateTotalsHandler(SummaryRollupHandler):
+
+    category_map = {'in-state':'In-State',
+                    'out-of-state':'Out-Of-State'}
+
+    stmt = """
+        select 
+            in_state_out_of_state, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_politicians_from_individuals_by_in_state_out_of_state
+        where cycle = %s
+    """
+
+class PoliticianInStateOutOfStateTopPoliticiansByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'in_state_out_of_state', 'amount']
+
+    stmt = """
+        select 
+            politician_name as name, 
+            politician_entity as id, 
+            in_state_out_of_state, 
+            amount
+        from
+            summary_politicians_from_individuals_by_in_state_out_of_state
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class PoliticianInStateOutOfStateSummaryHandler(SummaryHandler):
+    rollup = PoliticianInStateOutOfStateTotalsHandler()
+    breakout = PoliticianInStateOutOfStateTopPoliticiansByContributionsHandler()
+    def key_function(self,x):
+        in_state_out_of_state = x['in_state_out_of_state']
+        if in_state_out_of_state in self.rollup.category_map:
+            return self.rollup.category_map[in_state_out_of_state]
+        else:
+            return self.rollup.default_key
+
+## POLITICIANS: RECEIPTS FROM INDUSTRIES
+
+class PoliticianIndustryTotalsHandler(SummaryRollupHandler):
+
+    stmt = """
+        select 
+            industry_name, 
+            total_count as count, 
+            total_amount as amount 
+        from
+            summary_politicians_from_industries
+        where cycle = %s
+    """
+
+class PoliticianIndustryTopPoliticiansByContributionsHandler(SummaryBreakoutHandler):
+
+    args = ['cycle', 'limit']
+
+    fields = ['name', 'id', 'industry_name', 'amount']
+
+    stmt = """
+        select 
+            politician_name as name, 
+            politician_entity as id, 
+            industry_name, 
+            amount
+        from
+            summary_politicians_from_industries
+        where cycle = %s and rank_by_amount <= %s;
+    """
+
+class PoliticianIndustrySummaryHandler(SummaryHandler):
+    rollup = PoliticianIndustryTotalsHandler()
+    breakout = PoliticianIndustryTopPoliticiansByContributionsHandler()
+    def key_function(self,x):
+        industry_name = x['industry_name']
+        if industry_name in self.rollup.category_map:
+            return self.rollup.category_map[industry_name]
+        else:
+            return self.rollup.default_key
