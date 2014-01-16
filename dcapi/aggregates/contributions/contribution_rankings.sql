@@ -396,13 +396,12 @@ create index ranked_individuals_by_party_cycle_amount_idx on ranked_individuals_
 
 
 -- CONTRIBUTIONS FROM INDIVIDUALS BY IN-STATE/OUT-OF-STATE
--- SELECT 118951
--- Time: 3298.045 ms
+-- SELECT 110881
+-- Time: 3038.828 ms
 -- CREATE INDEX
--- Time: 239.777 ms
+-- Time: 232.086 ms
 -- CREATE INDEX
--- Time: 246.164 ms
-
+-- Time: 229.820 ms
 
  select date_trunc('second', now()) || ' -- drop table if exists ranked_individuals_by_in_state_out_of_state';
  drop table if exists ranked_individuals_by_in_state_out_of_state;
@@ -608,12 +607,12 @@ create index ranked_lobbyists_by_recipient_type_cycle_rank_by_amount_idx on rank
 
 
 -- CONTRIBUTIONS FROM LOBBYISTS BY IN-STATE/OUT-OF-STATE
--- SELECT 61677
--- Time: 1785.575 ms
+-- SELECT 58131
+-- Time: 2232.826 ms
 -- CREATE INDEX
--- Time: 121.845 ms
+-- Time: 127.796 ms
 -- CREATE INDEX
--- Time: 118.950 ms
+-- Time: 125.282 ms
 
 select date_trunc('second', now()) || ' -- drop table if exists ranked_lobbyists_by_in_state_out_of_state';
 drop table if exists ranked_lobbyists_by_in_state_out_of_state;

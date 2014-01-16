@@ -965,12 +965,12 @@ create index aggregate_individual_to_recipient_types_party_cycle_idx on aggregat
 -- difference: doesn't cut off at top 10, doesn't filter for recip party, contributor type or namespace explicity, includes pacs and cands
 -- test: join with agg_party_from_indiv using (individual_entity, cycle, transaction_namespace), check
 -- debug: none
--- SELECT 118951
--- Time: 38070.258 ms
+-- SELECT 112552
+-- Time: 70458.033 ms
 -- CREATE INDEX
--- Time: 275.209 ms
+-- Time: 253.094 ms
 -- CREATE INDEX
--- Time: 2073.528 ms
+-- Time: 1874.061 msi
 
 select date_trunc('second', now()) || ' -- drop table if exists aggregate_individual_by_in_state_out_of_state';
 drop table if exists aggregate_individual_by_in_state_out_of_state cascade;
@@ -987,7 +987,7 @@ create table aggregate_individual_by_in_state_out_of_state as
                 rank() over (partition by individual_entity, cycle order by sum(amount) desc) as rank_by_amount
                 from
                     (select ca.entity_id as individual_entity,
-                                   cycle,
+                                   ci.cycle,
                                 case    when ci.contributor_state = ci.recipient_state then 'in-state'
                                         when ci.contributor_state = '' then ''
                                         else 'out-of-state' end as in_state_out_of_state,
@@ -996,6 +996,12 @@ create table aggregate_individual_by_in_state_out_of_state as
                                 contributions_individual ci
                                     inner join
                                 contributor_associations ca using (transaction_id)
+                                    inner join
+                                recipient_associations ra using (transaction_id)
+                                    inner join
+                                matchbox_politicianmetadata mpm on mpm.entity_id = ra.entity_id and mpm.cycle = ci.cycle
+                            where
+                                mpm.seat != 'federal:president'
                     ) x
                 group by individual_entity, cycle, in_state_out_of_state)
 
