@@ -38,7 +38,7 @@ def reload_indexp(working_dir, cycle):
         c = connection.cursor()
         c.execute("insert into fec_indexp_out_of_date_cycles (cycle) values ({})".format(cycle))
         c.execute("DELETE FROM %s" % TABLE_NAME)
-        c.copy_expert("COPY %s (candidate_id, candidate_name, spender_id, spender_name, election_type, candidate_state, candidate_district, candidate_office, candidate_party, amount, date, aggregate_amount, support_oppose, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date, prev_file_num) FROM STDIN CSV HEADER" % TABLE_NAME, open(local_file_path, 'r'))
+        c.copy_expert("COPY %s (candidate_id, candidate_name, spender_id, spender_name, election_type, candidate_state, candidate_district, candidate_office, candidate_party, amount, date, aggregate_amount, support_oppose, purpose, payee, filing_number, amendment, transaction_id, image_number, received_date, prev_file_num) FROM STDIN CSV HEADER NULL ' ' " % TABLE_NAME, open(local_file_path, 'r'))
         c.execute("update {} set cycle = {}".format(TABLE_NAME, cycle))
         execute_file(SQL_POSTLOAD_FILE)
         c.execute("delete from fec_indexp_out_of_date_cycles")
