@@ -1,0 +1,2 @@
+create index entity_to_navigation_bin__idx on entity_to_navigation_bin (navigation_bin);
+create index entity_to_navigation_bin_entity__idx on entity_to_navigation_bin (entity_id);

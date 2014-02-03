@@ -148,6 +148,7 @@ class CandidateItemizedDownloadHandler(EntityTopListHandler):
         order by amount desc
     """
 
+
 class CommitteeItemizedDownloadHandler(EntityTopListHandler):
 
     args = ['cycle', 'entity_id']
@@ -165,6 +166,7 @@ class CommitteeItemizedDownloadHandler(EntityTopListHandler):
             a.entity_id = %s
         order by amount desc
     """
+
 
 class CommitteeTopContribsHandler(EntityTopListHandler):
 

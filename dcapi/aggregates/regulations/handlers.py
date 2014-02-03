@@ -1,5 +1,4 @@
-
-from dcapi.aggregates.handlers import EntityTopListHandler
+from dcapi.aggregates.handlers import EntityTopListHandler, TopListHandler
 
 class RegulationsTextHandler(EntityTopListHandler):
     
@@ -67,3 +66,20 @@ class RegulationsDocketSubmitterHandler(EntityTopListHandler):
             and docket_id = %s
         order by date_posted desc
         limit %s"""
+
+
+class TopRegsSubmittersHandler(TopListHandler):
+    args = 'cycle limit'.split()
+    fields = 'entity_id name count cycle'.split()
+
+    stmt = """
+        select entity_id, name, document_count, cycle
+        from agg_regulations_text_totals
+        inner join matchbox_entity on matchbox_entity.id = entity_id
+        where
+            cycle = %s
+            and type = 'organization'
+            and lower(name) not in ('network', 'impact', 'member')
+        order by document_count desc
+        limit %s
+    """

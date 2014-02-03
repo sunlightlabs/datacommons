@@ -1,4 +1,4 @@
-import re
+import re, math
 
 from dcapi.aggregates.handlers import execute_top
 from dcentity.models import Entity, EntityAttribute, BioguideInfo
@@ -217,6 +217,172 @@ class EntitySearchHandler(BaseHandler):
         raw_result = execute_top(stmt, *query_params)
 
         return [dict(zip(self.fields, row)) for row in raw_result]
+
+
+# GIANT HACK - mangle get_totals_stmt, above, to also do something useful for search
+search_totals_stmt = get_totals_stmt
+for subselect in re.findall(r"\(\s*select[^\)]*\)[\s_a-z]*using \(cycle\)", search_totals_stmt, flags=re.DOTALL):
+    if "org_id" in subselect:
+        nsub = subselect.replace("select cycle", "select org_id").replace("using (cycle)", "on entity_id = org_id")
+    elif "recipient_entity" in subselect:
+        nsub = subselect.replace("select cycle", "select recipient_entity").replace("using (cycle)", "on entity_id = recipient_entity")
+    else:
+        nsub = subselect.replace("select cycle", "select entity_id").replace("using (cycle)", "using (entity_id)")
+    search_totals_stmt = search_totals_stmt.replace(subselect, nsub)
+search_totals_stmt = search_totals_stmt.replace("select cycle", "select entity_id").replace("= %s", "in (%s) and cycle = -1")
+
+valid_seats = set(['federal:house', 'federal:president', 'federal:senate', 'state:governor', 'state:judicial', 'state:lower', 'state:office', 'state:upper'])
+valid_states = set(['AK', 'AL', 'AR', 'AS', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA', 'GU', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME', 'MI', 'MN', 'MO',\
+    'MP', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'PR', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VA', 'VI', 'VT', 'WA', 'WI', 'WV', 'WY'])
+valid_parties = set(['D', 'R', 'O'])
+
+class EntityAdvSearchHandler(BaseHandler):
+    allowed_methods = ('GET',)
+
+    fields = ['id', 'name', 'type', 'score']
+
+    stmt = """
+        select
+            e.id, e.name, e.type,
+            case e.type
+                when 'politician' then
+                    2 * coalesce(ae.recipient_amount, 0) / 715550915
+                when 'individual' then
+                    coalesce(ae.contributor_amount, 0) / 73301345.75 +
+                    coalesce(al.count, 0) / 8882
+                when 'organization' then
+                    coalesce(ae.contributor_amount, 0) / 364255258.20 +
+                    coalesce(al.non_firm_spending, 0) / 969305680.0 +
+                    coalesce(al.firm_income, 0) / 560548185.0
+                when 'industry' then
+                    coalesce(ae.contributor_amount, 0) / 3648608028.38 +
+                    coalesce(al.non_firm_spending, 0) / 5757475979.0 +
+                    coalesce(al.firm_income, 0) / 2225030909.0
+                else 0
+            end score
+        from matchbox_entity e
+        inner join (
+            select distinct entity_id
+                from matchbox_entityalias ea
+                where to_tsvector('datacommons', ea.alias) @@ to_tsquery('datacommons', quote_literal(%s))
+        ) ft_match on e.id = ft_match.entity_id
+        left join agg_entities ae on e.id = ae.entity_id and ae.cycle = -1
+        left join agg_lobbying_by_cycle_rolled_up al on e.id = al.entity_id and al.cycle = -1
+        JOINS
+        WHERE
+        order by score desc, e.id asc
+    """
+
+    def read(self, request):
+        query = request.GET.get('search')
+        if not query:
+            error_response = rc.BAD_REQUEST
+            error_response.write("Must include a query in the 'search' parameter.")
+            return error_response
+
+        stmt = self.stmt
+
+        per_page = min(int(request.GET.get('per_page', 10)), 25)
+        page = max(int(request.GET.get('page', 1)), 1)
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        parsed_query = ' & '.join(re.split(r'[ &|!():*]+', unquote_plus(query)))
+        where_filters = []
+        extra_joins = []
+        filters = {}
+
+        subtype_raw = request.GET.get('subtype', None)
+        subtype = subtype_raw if subtype_raw in set(('contributors', 'lobbyists', 'politicians', 'industries', 'lobbying_firms', 'political_groups', 'other_orgs')) else None
+        if subtype:
+            if subtype == 'contributors':
+                where_filters.append("e.type = 'individual' and mbim.is_contributor = 't'")
+                extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
+            elif subtype == 'lobbyists':
+                where_filters.append("e.type = 'individual' and mbim.is_lobbyist = 't'")
+                extra_joins.append("left join matchbox_individualmetadata mbim on e.id = mbim.entity_id")
+            elif subtype == 'politicians':
+                where_filters.append("e.type = 'politician'")
+                
+                # check for seat and state
+                seat = request.GET.get('seat', None)
+                seat = seat if seat in valid_seats else None
+
+                state = request.GET.get('state', None)
+                state = state if state in valid_states else None
+
+                party = request.GET.get('party', None)
+                party = party if party in valid_parties else None
+
+                if state or seat or party:
+                    pol_filters = ["state = '%s'" % state if state else None, "seat = '%s'" % seat if seat else None]
+                    if party:
+                        if party in ('R', 'D'):
+                            pol_filters.append("party = '%s'" % party)
+                        else:
+                            pol_filters.append("party not in ('R', 'D')")
+                    pol_where = " and ".join(filter(lambda x:x, pol_filters))
+                    extra_joins.append("inner join (select distinct on (entity_id) * from matchbox_politicianmetadata where %s order by entity_id, cycle desc) mbpm on e.id = mbpm.entity_id" % pol_where)
+            elif subtype == 'industries':
+                where_filters.append("e.type = 'industry'")
+            elif subtype == 'lobbying_firms':
+                where_filters.append("e.type = 'organization' and mbom.lobbying_firm = 't'")
+                extra_joins.append("left join (select distinct on (entity_id) * from matchbox_organizationmetadata order by entity_id, cycle desc) mbom on e.id = mbom.entity_id")
+            elif subtype == 'political_groups':
+                where_filters.append("e.type = 'organization'")
+                extra_joins.append("inner join (select distinct on (entity_id) * from matchbox_entityattribute where namespace = 'urn:fec:committee') mbea on e.id = mbea.entity_id")
+            elif subtype == 'other_orgs':
+                where_filters.append("e.type = 'organization' and mbom.lobbying_firm = 'f'")
+                where_filters.append("(coalesce(mbea.value, '') = '' or mbom.is_corporation = 't' or mbom.is_cooperative = 't' or mbom.is_corp_w_o_capital_stock = 't')")
+                extra_joins.append("left join (select distinct on (entity_id) * from matchbox_entityattribute where namespace = 'urn:fec:committee') mbea on e.id = mbea.entity_id")
+                extra_joins.append("left join (select distinct on (entity_id) * from matchbox_organizationmetadata order by entity_id, cycle desc) mbom on e.id = mbom.entity_id")
+        else:
+            # subtype implies type, so only use explicit type if there's not a subtype
+            etype_raw = request.GET.get('type', None)
+            if etype_raw:
+                allowed_types = set(('organization', 'industry', 'individual', 'politician'))
+                entity_type = [etype for etype in etype_raw.split(',') if etype in allowed_types]
+                if entity_type:
+                    where_filters.append("e.type in (%s)" % ','.join(["'%s'" % etype for etype in entity_type]))
+                    filters['type'] = entity_type
+
+        where_clause = "where %s" % (" and ".join(where_filters)) if where_filters else ""
+        join_clause = " ".join(extra_joins)
+
+        query_params = (parsed_query,)
+        raw_result = execute_top(stmt.replace("WHERE", where_clause).replace("JOINS", join_clause), *query_params)
+
+        total = len(raw_result)
+        results = [dict(zip(self.fields, row)) for row in raw_result[start:end]]
+
+        print raw_result, results
+
+        if total:
+            ids = ','.join(["'%s'" % row['id'] for row in results])
+
+            totals = dict()
+            for row in execute_top(search_totals_stmt.replace("%s", ids)):
+                totals[row[0]] = dict(zip(EntityHandler.totals_fields, row[1:]))
+
+            # grab the metadata
+            entities = {e.id: e for e in Entity.objects.select_related().filter(id__in=[row['id'] for row in results])}
+
+            for row in results:
+                row['totals'] = totals.get(row['id'], None)
+
+                # match metadata, but strip out year keys
+                meta = entities[row['id']].metadata if row['id'] in entities else None
+                row['metadata'] = {k: v for k, v in meta.items() if not (type(k) == int or k.isdigit())} if meta else None
+                row['external_ids'] = [{'namespace': attr.namespace, 'id': attr.value} for attr in entities[row['id']].attributes.all()] if row['id'] in entities else None
+
+        return {
+            'results': results,
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'pages': math.ceil(float(total) / per_page),
+            'filters': filters
+        }
 
 
 class EntitySimpleHandler(BaseHandler):
