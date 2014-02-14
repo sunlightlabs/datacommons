@@ -5,7 +5,6 @@ from dcapi.aggregates.handlers import EntityTopListHandler, \
 from django.core.cache import cache
 from piston.handler import BaseHandler
 
-
 class OrgPartyBreakdownHandler(PieHandler):
 
     category_map = {'R': 'Republicans', 'D': 'Democrats'}

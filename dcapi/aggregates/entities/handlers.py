@@ -1,6 +1,6 @@
 import re, math
 
-from dcapi.aggregates.handlers import execute_top
+from dcapi.aggregates.handlers import execute_top, execute_all
 from dcentity.models import Entity, EntityAttribute, BioguideInfo
 from piston.handler import BaseHandler
 from piston.utils import rc
@@ -442,3 +442,32 @@ class EntitySimpleHandler(BaseHandler):
 
         raw_result = execute_top(self.stmt % where_clause, *([entity_type] if entity_type else []) + [start, end - start + 1])
         return [dict(zip(self.fields, row)) for row in raw_result]
+
+### METADATA FOR LANDING PAGES
+class EntityTypeSummaryHandler(BaseHandler):
+
+    args = ['entity_type', ]
+    fields = ['cycle', 'contributions_amount', 'contributions_count', 'entity_count']
+
+    stmt = """
+        select
+            cycle,
+            contributions_amount,
+            contributions_count,
+            entity_count
+        from
+            summary_entity_types
+        where entity_type = %s;
+    """
+
+    def read(self, request, **kwargs):
+        totals = dict()
+        for row in execute_all(self.stmt, *[kwargs[param] for param in self.args]):
+            rowdict = dict(zip(self.fields, row))
+            cycle = rowdict.pop('cycle')
+            totals[cycle] = rowdict
+
+        result = {'entity_type': kwargs['entity_type'],
+                  'totals': totals}
+        
+        return result
