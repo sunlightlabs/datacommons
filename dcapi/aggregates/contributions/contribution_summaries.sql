@@ -2,6 +2,97 @@ select date_trunc('second', now()) || ' -- Starting contribution summary computa
 
 \set agg_top_n 10
 
+-- SUMMARY ENTITY TYPES
+select date_trunc('second', now()) || ' -- drop table summary_entity_types';
+drop table if exists summary_entity_types;
+
+select date_trunc('second', now()) || ' -- create table summary_entity_types';
+create table summary_entity_types as
+
+        (select
+            'industry' as entity_type,
+            cycle,
+            sum(count) as contributions_count,
+            sum(amount) as contributions_amount,
+            count(distinct industry_entity) as entity_count
+        from
+            aggregate_industry_to_state_fed
+        group by cycle) 
+
+    union all
+
+        (select
+            'org' as entity_type,
+            cycle,
+            sum(count) as contributions_count,
+            sum(amount) as contributions_amount,
+            count(distinct organization_entity) as entity_count
+        from
+            aggregate_organization_by_indiv_pac
+        group by cycle) 
+
+    union all
+
+        (select
+            'pol_group' as entity_type,
+            cycle,
+            sum(count) as contributions_count,
+            sum(amount) as contributions_amount,
+            count(distinct pol_group_entity) as entity_count
+        from
+            ranked_pol_groups_by_state_fed
+        group by cycle) 
+
+    union all
+        
+        (select
+            'lobbying_org' as entity_type,
+            cycle,
+            sum(count) as contributions_count,
+            sum(amount) as contributions_amount,
+            count(distinct lobbying_org_entity) as entity_count
+        from
+            ranked_lobbying_orgs_by_state_fed
+        group by cycle) 
+
+    union all
+        
+        (select
+            'individual' as entity_type,
+            cycle,
+            sum(count) as contributions_count,
+            sum(amount) as contributions_amount,
+            count(distinct individual_entity) as entity_count
+        from
+            ranked_individuals_by_state_fed
+        group by cycle) 
+
+    union all
+
+        (select
+            'lobbyist' as entity_type,
+            cycle,
+            sum(count) as contributions_count,
+            sum(amount) as contributions_amount,
+            count(distinct lobbyist_entity) as entity_count
+        from
+            ranked_lobbyists_by_state_fed
+        group by cycle)
+
+    union all
+
+        (select
+            'pol' as entity_type,
+            cycle,
+            sum(count) as contributions_count,
+            sum(amount) as contributions_amount,
+            count(distinct politician_entity) as entity_count
+        from
+            ranked_politicians_by_org_pac_indiv
+        group by cycle)
+    ;
+
+    
 -- SUMMARY recipient_party TOTALS AND TOP N ORGANIZATIONS
 select date_trunc('second', now()) || ' -- drop table summary_parentmost_orgs_by_party';
 drop table if exists summary_parentmost_orgs_by_party;
