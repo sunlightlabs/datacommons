@@ -16,7 +16,7 @@ create table summary_entity_types as
             sum(amount) as contributions_amount,
             count(distinct industry_entity) as entity_count
         from
-            aggregate_industry_to_state_fed
+            ranked_industries_by_state_fed
         group by cycle) 
 
     union all
@@ -28,7 +28,7 @@ create table summary_entity_types as
             sum(amount) as contributions_amount,
             count(distinct organization_entity) as entity_count
         from
-            aggregate_organization_by_indiv_pac
+            ranked_parentmost_orgs_by_state_fed
         group by cycle) 
 
     union all
