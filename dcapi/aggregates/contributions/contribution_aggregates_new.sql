@@ -44,7 +44,7 @@ create table aggregate_organization_to_candidates as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where contributor_category not like 'Z90%'
-                group by ca.entity_id, cycle, ra.entity, coalesce(re.name, c.recipient_name)
+                group by ca.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
                 )  direct
             full outer join
                 (
@@ -68,7 +68,7 @@ create table aggregate_organization_to_candidates as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where contributor_category not like 'Z90%'
-                group by oa.entity_id, cycle, ra.entity, coalesce(re.name, c.recipient_name)
+                group by oa.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
                 ) indivs
         using (organization_entity, cycle, recipient_entity, recipient_name)
     )
