@@ -53,9 +53,9 @@ def execute(cursor, stmt, args):
     if settings.DEBUG:
         print cursor.mogrify(stmt, args)
 
-        cursor.execute('explain ' + stmt, args)
-        for x in cursor.fetchall():
-            print x[0]
+        #cursor.execute('explain ' + stmt, args)
+        #for x in cursor.fetchall():
+        #    print x[0]
 
     try:
         # Just gonna leave this here...

@@ -789,8 +789,8 @@ create table aggregate_individual_to_state_fed as
                     recipient_associations ra using (transaction_id)
                         left join
                     matchbox_entity re on re.id = ra.entity_id
+                    where ci.contributor_category not like 'Z90%'
                     ) sf
-                where ci.contributor_category not like 'Z90%'
                 group by entity_id, cycle, state_or_federal)
 
     select  individual_entity,
