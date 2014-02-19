@@ -1419,44 +1419,44 @@ drop table if exists summary_politicians_from_individuals_by_in_state_out_of_sta
 select date_trunc('second', now()) || ' -- create index summary_politicians_from_individuals_by_in_state_out_of_state_cycle_idx summary_politicians_from_individuals_by_in_state_out_of_state (cycle)';
 create index summary_politicians_from_individuals_by_in_state_out_of_state_cycle_idx on summary_politicians_from_individuals_by_in_state_out_of_state (cycle);
 
--- SUMMARY INDUSTRY TOTALS AND TOP N POLITICIANS
-select date_trunc('second', now()) || ' -- drop table summary_politicians_from_industries';
-drop table if exists summary_politicians_from_industries;
- select date_trunc('second', now()) || ' -- create table summary_politicians_from_industries';
- create table summary_politicians_from_industries as
-    with industry_entity_totals as 
-        ( 
-            select
-                industry_entity,
-                cycle,
-                sum(count) as total_count,
-                sum(amount) as total_amount
-            from
-                ranked_politicians_from_industries
-            group by
-                industry_entity,
-                cycle
-            )
-
-    select
-        ris.industry_entity,
-        ris.industry_name, 
-        ris.cycle,
-        pt.total_count,
-        pt.total_amount,
-        ris.politician_entity,
-        ris.politician_name,
-        ris.count,
-        ris.amount,
-        ris.rank_by_count,
-        ris.rank_by_amount
-    from
-        ranked_politicians_from_industries ris
-            inner join
-        industry_entity_totals pt using (industry_entity, cycle)
-    where
-        ris.rank_by_amount <= :agg_top_n
-;
-select date_trunc('second', now()) || ' -- create index summary_politicians_from_industries_cycle_idx summary_politicians_from_industries (cycle)';
-create index summary_politicians_from_industries_cycle_idx on summary_politicians_from_industries (cycle);
-
+-- -- SUMMARY INDUSTRY TOTALS AND TOP N POLITICIANS
+-- select date_trunc('second', now()) || ' -- drop table summary_politicians_from_industries';
+-- drop table if exists summary_politicians_from_industries;
+--  select date_trunc('second', now()) || ' -- create table summary_politicians_from_industries';
+--  create table summary_politicians_from_industries as
+--     with industry_entity_totals as 
+--         ( 
+--             select
+--                 industry_entity,
+--                 cycle,
+--                 sum(count) as total_count,
+--                 sum(amount) as total_amount
+--             from
+--                 ranked_politicians_from_industries
+--             group by
+--                 industry_entity,
+--                 cycle
+--             )
+-- 
+--     select
+--         ris.industry_entity,
+--         ris.industry_name, 
+--         ris.cycle,
+--         pt.total_count,
+--         pt.total_amount,
+--         ris.politician_entity,
+--         ris.politician_name,
+--         ris.count,
+--         ris.amount,
+--         ris.rank_by_count,
+--         ris.rank_by_amount
+--     from
+--         ranked_politicians_from_industries ris
+--             inner join
+--         industry_entity_totals pt using (industry_entity, cycle)
+--     where
+--         ris.rank_by_amount <= :agg_top_n
+-- ;
+-- select date_trunc('second', now()) || ' -- create index summary_politicians_from_industries_cycle_idx summary_politicians_from_industries (cycle)';
+-- create index summary_politicians_from_industries_cycle_idx on summary_politicians_from_industries (cycle);
+-- 
