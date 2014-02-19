@@ -1395,50 +1395,52 @@ create index ranked_politicians_from_individuals_by_in_out_of_state_cycle_amount
 
 
 -- POLITICIANS' RECIEPTS FROM INDUSTRIES
--- SELECT 7560601
--- Time: 155534.002 ms
+-- SELECT 599338103
+-- Time: 14597038.526 ms
 -- CREATE INDEX
--- Time: 20031.357 ms
+-- Time: 4005277.219 ms
 -- CREATE INDEX
--- Time: 17014.292 ms
-
-select date_trunc('second', now()) || ' -- drop table if exists ranked_politicians_from_industries';
-drop table if exists ranked_politicians_from_industries;
-
-select date_trunc('second', now()) || ' -- create table ranked_politicians_from_industries';
-create table ranked_politicians_from_industries as
-        select
-            industry_entity,
-            industry_name,
-            apopi.cycle,
-            politician_entity,
-            me.name as politician_name,
-            total_count as count,
-            total_amount as amount,
-            rank() over(partition by industry_entity, apopi.cycle order by total_count desc) as rank_by_count,
-            rank() over(partition by industry_entity, apopi.cycle order by total_amount desc) as rank_by_amount
-        from
-                matchbox_entity me
-            inner join
-                aggregate_politician_from_industries apopi on me.id = apopi.politician_entity
-            inner join
-                matchbox_politicianmetadata om on om.entity_id = me.id and om.cycle = apopi.cycle
-            inner join 
-                matchbox_entity mi on mi.id = apopi.industry_entity
-            inner join
-                matchbox_industrymetadata mim on mi.id = apopi.industry_entity
-        where
-            mim.parent_industry_id is null
-            and
-            mi.name != 'UNKNOWN'
-            and
-            mim.should_show_entity
-;
-
-select date_trunc('second', now()) || ' -- create index ranked_politicians_from_industries_cycle_count_idx on ranked_politicians_from_industries_org (cycle, rank_by_count)';
-create index ranked_politicians_from_industries_cycle_count_idx on ranked_politicians_from_industries (cycle, rank_by_count);
-
-select date_trunc('second', now()) || ' -- create index ranked_politicians_from_industries_cycle_amount_idx on ranked_politicians_from_industries_org (cycle, rank_by_amount)';
-create index ranked_politicians_from_industries_cycle_amount_idx on ranked_politicians_from_industries (cycle, rank_by_amount);
-
+-- Time: 3491741.574 ms
+-- 
+-- select date_trunc('second', now()) || ' -- drop table if exists ranked_politicians_from_industries';
+-- drop table if exists ranked_politicians_from_industries;
+-- 
+-- select date_trunc('second', now()) || ' -- create table ranked_politicians_from_industries';
+-- create table ranked_politicians_from_industries as
+--         select
+--             industry_entity,
+--             industry_name,
+--             apopi.cycle,
+--             politician_entity,
+--             me.name as politician_name,
+--             total_count as count,
+--             total_amount as amount,
+--             rank() over(partition by industry_entity, apopi.cycle order by total_count desc) as rank_by_count,
+--             rank() over(partition by industry_entity, apopi.cycle order by total_amount desc) as rank_by_amount
+--         from
+--                 matchbox_entity me
+--             inner join
+--                 aggregate_politician_from_industries apopi on me.id = apopi.politician_entity
+--             inner join
+--                 matchbox_politicianmetadata om on om.entity_id = me.id and om.cycle = apopi.cycle
+--             inner join 
+--                 matchbox_entity mi on mi.id = apopi.industry_entity
+--             left join
+--                 matchbox_industrymetadata mim on mi.id = apopi.industry_entity
+--         where
+--             mim.parent_industry_id is null
+--             and
+--             mi.name != 'UNKNOWN'
+--             and
+--             mim.should_show_entity
+--         group by
+--             industry_entity, industry_name, cycle, politician_entity, politician_name
+-- ;
+-- 
+-- select date_trunc('second', now()) || ' -- create index ranked_politicians_from_industries_cycle_count_idx on ranked_politicians_from_industries_org (cycle, rank_by_count)';
+-- create index ranked_politicians_from_industries_cycle_count_idx on ranked_politicians_from_industries (cycle, rank_by_count);
+-- 
+-- select date_trunc('second', now()) || ' -- create index ranked_politicians_from_industries_cycle_amount_idx on ranked_politicians_from_industries_org (cycle, rank_by_amount)';
+-- create index ranked_politicians_from_industries_cycle_amount_idx on ranked_politicians_from_industries (cycle, rank_by_amount);
+-- 
 
