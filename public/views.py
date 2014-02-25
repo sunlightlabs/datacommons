@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponsePermanentRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from dcdata import contracts
+from dcapi.common.handlers import RESERVED_PARAMS
 import json
 
 from locksmith.auth.models import ApiKey
@@ -31,8 +32,8 @@ def search_count(request, search_resource):
     params = request.GET.copy()
     
     callback = params.get('callback', None)
-    if callback:
-        del params['callback']
+    for param in RESERVED_PARAMS:
+        params.pop(param, None)
     
     c = search_resource.handler.queryset(params).order_by().count()
     if callback:
