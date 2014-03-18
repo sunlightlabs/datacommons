@@ -461,45 +461,4 @@ select date_trunc('second', now()) || ' -- create index recipient_associations_t
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
 
--- Flattened contributions with all associations included. Not aggregated. (save for industries)
-select date_trunc('second', now()) || ' -- drop table if exists contributions_flat';
-drop table if exists contributions_flat;
-select date_trunc('second', now()) || ' -- create table contributions_flat';
-create table contributions_flat as
-    select
-        transaction_id,
-        transaction_namespace,
-
-        contributor_name,
-        ca.entity_id as contributor_entity,
-        contributor_type,
-
-        organization_name,
-        oa.entity_id as organization_entity,
-
-        parent_organization_name,
-        poa.entity_id as parent_organization_entity,
-
-        recipient_name,
-        ra.entity_id as recipient_entity,
-        recipient_type,
-        recipient_party as party,
-        seat,
-
-        cycle,
-        amount
-    from contributions_all_relevant
-    left join contributor_associations ca using (transaction_id)
-    left join organization_associations oa using (transaction_id)
-    left join parent_organization_associations poa using (transaction_id)
-    left join recipient_associations ra using (transaction_id)
-;
-
-select date_trunc('second', now()) || ' -- create index contributions_flat__contributor_type_idx';
-create index contributions_flat__contributor_type_idx on contributions_flat (contributor_type);
-select date_trunc('second', now()) || ' -- create index contributions_flat__recipient_type_idx';
-create index contributions_flat__recipient_type_idx on contributions_flat (recipient_type);
-select date_trunc('second', now()) || ' -- create index contributions_flat__cycle_idx';
-create index contributions_flat__cycle_idx on contributions_flat (cycle);
-
 select date_trunc('second', now()) || ' -- finished contribution associations';

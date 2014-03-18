@@ -30,19 +30,6 @@ class OrgLevelBreakdownHandler(PieHandler):
             and cycle = %s
     """
 
-class OrgOfficeTypeBreakdownHandler(PieHandler):
-
-    categories = [ 'state:judicial', 'state:upper', 'state:lower', 'federal:president', 'federal:house', 'state:governor', 'federal:senate', 'state:office' ]
-    category_map = dict(zip(categories, categories))
-
-    stmt = """
-         select seat, count, amount
-         from agg_office_type_from_org
-         where
-            organization_entity = %s
-            and cycle = %s
-    """
-
 class PolLocalBreakdownHandler(PieHandler):
 
     category_map = {'out-of-state': 'Out-of-State', 'in-state': 'In-State'}
@@ -521,91 +508,6 @@ class TopOrgContributorsByAreaContributorTypeHandler(TopListHandler):
     """
 
 
-class SubIndustryTotalsHandler(BaseHandler):
-    args = ['cycle']
-    fields =  ['subindustry_id', 'industry_id', 'sector_id', 'total_contributions']
-
-    stmt = """
-        select
-            subindustry_id,
-            industry_id,
-            sector_id,
-            total_contributions
-        from
-            agg_subindustry_totals st
-        where
-            not exists (select 1 from agg_suppressed_catcodes sc where column1 = subindustry_id)
-             %s
-        order by sector_id,industry_id,subindustry_id
-    """
-
-    def read(self, request):
-        cycle = request.GET.get('cycle', ALL_CYCLES)
-
-        if cycle == ALL_CYCLES:
-            cycle_where = 'and cycle = -1'
-        else:
-            cycle_where = 'and cycle = %d' % int(cycle)
-
-        result = execute_all(self.stmt % cycle_where,[cycle])
-
-        if result:
-            result = [dict(zip(self.fields, row)) for row in result]
-
-        return result
-
-class TopIndustriesTimeSeriesHandler(BaseHandler):
-    args = ['limit', 'cycle']
-    fields = ['industry_id', 'industry', 'cycle', 'contributions_to_democrats',
-              'contributions_to_republicans', 'total_contributions']
-
-    stmt = """
-            select
-                aitp.industry_id,aitp.industry,
-                cycle,
-                sum(contributions_to_democrats) as contributions_to_democrats,
-                sum(contributions_to_republicans) as contributions_to_republicans,
-                sum(total_contributions) as total_contributions
-            from
-                agg_industry_to_party aitp
-            join
-                (   select
-                        industry_id
-                    from
-                        (   select
-                                industry_id,
-                                cycle,
-                                sum(total_contributions),
-                                rank() over (partition by cycle order by sum(total_contributions) desc) as rank
-                            from
-                                agg_industry_to_party
-                            where
-                                subindustry_id not in ('Y0000','Y4000','Y2000','Y1200','Y1000','X1200')
-                            group by
-                                industry_id,cycle) as x
-                    where
-                        rank <= %s
-                        and
-                        cycle = %s ) topn on aitp.industry_id = topn.industry_id
-            where
-                cycle > 0
-            group by
-                aitp.industry_id,aitp.industry,cycle
-            order by
-                aitp.industry, aitp.cycle;
-    """
-
-    def read(self, request, **kwargs):
-        kwargs.update({'cycle': request.GET.get('cycle', ALL_CYCLES)})
-        limit = request.GET.get('limit')
-        print request.GET
-
-        raw_result = execute_all(self.stmt, *[kwargs[param] for param in self.args])
-
-        if raw_result:
-            labeled_result = [dict(zip(self.fields, row)) for row in raw_result]
-
-        return labeled_result
 
 ### PARENTMOST ORGANIZATIONS
 
