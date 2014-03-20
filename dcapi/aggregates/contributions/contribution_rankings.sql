@@ -1393,7 +1393,7 @@ create index ranked_politicians_from_individuals_by_in_out_of_state_cycle_count_
 select date_trunc('second', now()) || ' -- create index ranked_politicians_from_individuals_by_in_state_out_of_state_cycle_rank_by_amount_idx on ranked_politicians_from_individuals_by_in_state_out_of_state_org (cycle, rank_by_amount)';
 create index ranked_politicians_from_individuals_by_in_out_of_state_cycle_amount_idx on ranked_politicians_from_individuals_by_in_state_out_of_state (cycle, rank_by_amount);
 
-
+commit;
 -- POLITICIANS' RECIEPTS FROM INDUSTRIES
 -- SELECT 599338103
 -- Time: 14597038.526 ms
@@ -1443,4 +1443,4 @@ create index ranked_politicians_from_individuals_by_in_out_of_state_cycle_amount
 -- select date_trunc('second', now()) || ' -- create index ranked_politicians_from_industries_cycle_amount_idx on ranked_politicians_from_industries_org (cycle, rank_by_amount)';
 -- create index ranked_politicians_from_industries_cycle_amount_idx on ranked_politicians_from_industries (cycle, rank_by_amount);
 -- 
-
+commit;

@@ -1460,3 +1460,4 @@ create index summary_politicians_from_individuals_by_in_state_out_of_state_cycle
 -- select date_trunc('second', now()) || ' -- create index summary_politicians_from_industries_cycle_idx summary_politicians_from_industries (cycle)';
 -- create index summary_politicians_from_industries_cycle_idx on summary_politicians_from_industries (cycle);
 -- 
+commit;

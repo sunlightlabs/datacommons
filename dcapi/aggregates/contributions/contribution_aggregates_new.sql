@@ -2205,3 +2205,5 @@ create index aggregate_politician_from_industries_politician_entity_idx on aggre
 
 select date_trunc('second', now()) || ' -- create index aggregate_politician_from_industries_industry_entity_idx on aggregate_politician_from_industries (industry_entity, cycle)';
 create index aggregate_politician_from_industries_industry_entity_idx on aggregate_politician_from_industries (industry_entity, cycle);
+
+commit;
