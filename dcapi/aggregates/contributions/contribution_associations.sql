@@ -460,5 +460,6 @@ create index recipient_associations_entity_id on recipient_associations (entity_
 select date_trunc('second', now()) || ' -- create index recipient_associations_transaction_id on recipient_associations (transaction_id)';
 create index recipient_associations_transaction_id on recipient_associations (transaction_id);
 
+commit;
 
 select date_trunc('second', now()) || ' -- finished contribution associations';
