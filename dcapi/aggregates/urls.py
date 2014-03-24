@@ -11,7 +11,6 @@ from dcapi.aggregates.contributions.handlers import OrgRecipientsHandler, \
     TopLobbyistBundlersHandler, TopPoliticiansByReceiptsByOfficeHandler, \
     TopIndustryContributorsToPartyHandler, \
     TopOrgContributorsByAreaContributorTypeHandler, \
-    SubIndustryTotalsHandler, TopIndustriesTimeSeriesHandler, \
     OrgPartySummaryHandler, OrgStateFedSummaryHandler, OrgFromPacIndivSummaryHandler, \
     OrgSeatSummaryHandler, OrgRecipientTypeSummaryHandler, \
     IndividualPartySummaryHandler, IndividualStateFedSummaryHandler, \
@@ -146,10 +145,6 @@ urlpatterns = patterns('',
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients/level_breakdown\.(?P<emitter_format>.+)$',
         Resource(OrgLevelBreakdownHandler, **ad)),
-
-    #url(r'^org/(?P<entity_id>[a-f0-9]{32})/recipients/office_type_breakdown\.(?P<emitter_format>.+)$',
-
-    #    Resource(OrgOfficeTypeBreakdownHandler, **ad)),
 
     url(r'^org/(?P<entity_id>[a-f0-9]{32})/registrants\.(?P<emitter_format>.+)$',
         Resource(OrgRegistrantsHandler, **ad)),
@@ -317,12 +312,6 @@ urlpatterns = patterns('',
     # top lobbying clients by spending
     url(r'^(?P<entity_type>industries|orgs)/lobbying/top_(?P<limit>[0-9]+)\.(?P<emitter_format>.+)$',
         Resource(TopOrgsLobbyingHandler, **ad)),
-
-    url(r'^industries/subindustry_totals\.(?P<emitter_format>.+)$',
-        Resource(SubIndustryTotalsHandler, **ad)),
-
-    url(r'^industries/top_(?P<limit>[0-9]+)_industries_time_series\.(?P<emitter_format>.+)$',
-        Resource(TopIndustriesTimeSeriesHandler, **ad)),
 
     # -------- politicians -------
     # top political fundraisers by office
