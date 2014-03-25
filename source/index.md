@@ -190,6 +190,50 @@ offer (and strongly encourage!) a bulk data set for free. See the
 
 ## Data Changelog
 
+#### March 24, 2014 Update
+
+-   Federal Campaign Finance Data: updated to CRP's 3/3/2013 release.
+
+#### November 22, 2013 Update
+
+-   Federal Campaign Finance Data: updated to CRP's 11/6/2013 release.
+-   State Campaign Finance Data: updated to NIMSP's private 11/18/2013
+    release.
+
+#### October 30, 2013 Update
+
+-   Federal Lobbying Data: updated to CRP's 10/10/2013 release.
+
+#### July 26, 2013 Update
+
+-   Federal and State Campaign Finance Data: Addressed data quality
+    issues in all previous uploads. New versions of each previous
+    release now available
+
+#### July 25, 2013 Update
+
+-   Federal Campaign Finance Data: updated to CRP's 6/1/2013 release.
+-   State Campaign Finance Data: updated to NIMSP's private 7/3/2013
+    release.
+
+#### June 4, 2013 Update
+
+-   Federal Lobbying Data: updated to CRP's 4/29/2013 release.
+
+#### April 3, 2013 Update
+
+-   Federal Campaign Finance Data: updated to CRP's 2/28/2013 release.
+-   State Campaign Finance Data: updated to NIMSP's private 3/11/2013
+    release.
+-   Federal Lobbying Data: updated to CRP's 1/25/2013 release.
+
+#### March 11, 2013 Update
+
+-   Contractor Misconduct Data: updated to POGO's 3/5/2013 release.
+-   Regulations Data: Influence Explorer now uses data from [Docket
+    Wrench](http://docketwrench.sunlightfoundation.com), which is
+    updated on a daily basis.
+
 #### January 9, 2013
 
 - Federal Campaign Finance Data: updated to CRP's 11/29/2012 release.
