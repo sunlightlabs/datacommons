@@ -77,6 +77,7 @@ INSTALLED_APPS = (
     'dcdata.earmarks',
     'dcdata.epa',
     'dcdata.faca',
+    'dcdata.fara',
     'dcentity',
     'dcentity.matching',
     'dcapi',
