@@ -3,7 +3,7 @@ from dcdata.models import Import
 
 
 class ClientRegistrant(models.Model):
-    import_reference = models.ForeignKey(Import)
+    import_reference = models.ForeignKey(Import, related_name="fara_client_registrant")
     client = models.CharField(max_length=200)
     registrant_name = models.CharField(max_length=200)
     terminated = models.CharField(max_length=20)
@@ -28,7 +28,7 @@ class ClientRegistrant(models.Model):
 
 
 class Contact(models.Model):
-    import_reference = models.ForeignKey(Import)
+    import_reference = models.ForeignKey(Import, related_name="fara_contact")
     date = models.CharField(max_length=20)
     contact_title = models.CharField(max_length=300, null=True)
     contact_name = models.CharField(max_length=150, null=True)
@@ -76,7 +76,7 @@ class Contact(models.Model):
 
 
 class Contribution(models.Model):
-    import_reference = models.ForeignKey(Import)
+    import_reference = models.ForeignKey(Import, related_name="fara_contribution")
     date = models.CharField(max_length=15)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     recipient = models.CharField(max_length=150)
@@ -110,7 +110,7 @@ class Contribution(models.Model):
 
 
 class Disbursement(models.Model):
-    import_reference = models.ForeignKey(Import)
+    import_reference = models.ForeignKey(Import, related_name="fara_disbursement")
     date = models.CharField(max_length=15)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     client = models.CharField(max_length=200)
@@ -146,7 +146,7 @@ class Disbursement(models.Model):
 
 
 class Payment(models.Model):
-    import_reference = models.ForeignKey(Import)
+    import_reference = models.ForeignKey(Import, related_name="fara_payment")
     date = models.CharField(max_length=15)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     client = models.CharField(max_length=200)
