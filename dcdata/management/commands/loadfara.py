@@ -34,14 +34,12 @@ class FARACSVDialect(csv.Dialect):
 
 def parse_fara_date(date_str):
     try:
-        parse_date(date_str[0:10])
+        return parse_date(date_str[0:10])
     except ValueError:
-        if (date_str in ('None','None*')) or (not date_str):
+        if date_str in ('None', 'None*'):
             return None
         else:
-            raise
-
-
+            raise ValueError
 
 def parse_fara_asterisk(date_str):
     return date_str[-1] == '*'
