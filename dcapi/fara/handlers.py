@@ -4,6 +4,7 @@ from dcapi.schema import Schema, FunctionField, Field
 from dcdata.fara.models import ClientRegistrant, Contact, Contribution, Disbursement, Payment
 from dcdata.utils.sql import parse_date
 from dcapi.contributions.transaction_types import transaction_type_descriptions
+from decimal import Decimal
 
 
 #
@@ -39,7 +40,7 @@ class ClientRegistrantFilterHandler(FilterHandler):
         return filter_client_registrant(self._unquote(params))
 
     def read(self, request):
-        return self.option(super(ContributionFilterHandler, self).read(request))
+        return super(ClientRegistrantFilterHandler, self).read(request)
 
 #
 # CONTACT 
@@ -81,7 +82,7 @@ class ContactFilterHandler(FilterHandler):
         return filter_contacts(self._unquote(params))
 
     def read(self, request):
-        return self.option(super(ContactFilterHandler, self).read(request))
+        return super(ContactFilterHandler, self).read(request)
 
 
 #
@@ -118,7 +119,7 @@ class ContributionFilterHandler(FilterHandler):
         return filter_contributions(self._unquote(params))
 
     def read(self, request):
-        return self.option(super(ContributionHandler, self).read(request))
+        return super(ContributionFilterHandler, self).read(request)
 
 
 #
@@ -136,11 +137,11 @@ DISBURSEMENT_SCHEMA = Schema(
     InclusionField('record_id'), 
     FulltextField('client_ft', ['client',]),
     FulltextField('registrant_ft', ['registrant',]),
-    FulltextField('purpose_ft', ['purpose',])
+    FulltextField('purpose_ft', ['purpose',]),
     FulltextField('to_subcontractor_ft', ['to_subcontractor',])
 )
 
-def filter_contributions(request):
+def filter_disbursements(request):
     return DISBURSEMENT_SCHEMA.build_filter(Disbursement.objects, request).order_by()
 
 DISBURSEMENT_FIELDS = list(Disbursement.FIELDNAMES)
@@ -155,7 +156,7 @@ class DisbursementFilterHandler(FilterHandler):
         return filter_disbursements(self._unquote(params))
 
     def read(self, request):
-        return self.option(super(DisbursementHandler, self).read(request))
+        return super(DisbursementFilterHandler, self).read(request)
 
 
 #
@@ -173,7 +174,7 @@ PAYMENT_SCHEMA = Schema(
     InclusionField('record_id'), 
     FulltextField('client_ft', ['client',]),
     FulltextField('registrant_ft', ['registrant',]),
-    FulltextField('purpose_ft', ['purpose',])
+    FulltextField('purpose_ft', ['purpose',]),
     FulltextField('from_subcontractor_ft', ['to_subcontractor',])
 )
 
@@ -192,6 +193,6 @@ class PaymentFilterHandler(FilterHandler):
         return filter_disbursements(self._unquote(params))
 
     def read(self, request):
-        return self.option(super(PaymentHandler, self).read(request))
+        return super(PaymentFilterHandler, self).read(request)
 
 
