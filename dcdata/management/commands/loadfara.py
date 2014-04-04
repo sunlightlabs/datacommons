@@ -253,10 +253,6 @@ class LoadFARA(BaseCommand):
 
     requires_model_validation = False
 
-    option_list = BaseCommand.option_list + (
-        make_option('-x', '--skip', default=0, type='int', help='Number of records to skip.')
-    )
-
     @transaction.commit_manually
     #@transaction.commit_on_success
     def handle(self, fara_dir, *args, **options):
