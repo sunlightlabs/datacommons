@@ -29,7 +29,8 @@ class ClientRegistrant(models.Model):
 
 class Contact(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_contact")
-    date = models.CharField(max_length=20)
+    date = models.DateField()
+    date_asterisk = models.BooleanField(default=False)
     contact_title = models.CharField(max_length=300, null=True)
     contact_name = models.CharField(max_length=150, null=True)
     contact_office = models.CharField(max_length=100, null=True)
@@ -77,7 +78,8 @@ class Contact(models.Model):
 
 class Contribution(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_contribution")
-    date = models.CharField(max_length=15)
+    date = models.DateField()
+    date_asterisk = models.BooleanField(default=False)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     recipient = models.CharField(max_length=150)
     registrant = models.CharField(max_length=200)
@@ -111,7 +113,8 @@ class Contribution(models.Model):
 
 class Disbursement(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_disbursement")
-    date = models.CharField(max_length=15)
+    date = models.DateField()
+    date_asterisk = models.BooleanField(default=False)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     client = models.CharField(max_length=200)
     registrant = models.CharField(max_length=200)
@@ -147,7 +150,8 @@ class Disbursement(models.Model):
 
 class Payment(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_payment")
-    date = models.CharField(max_length=15)
+    date = models.DateField()
+    date_asterisk = models.BooleanField(default=False)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     client = models.CharField(max_length=200)
     registrant = models.CharField(max_length=200)

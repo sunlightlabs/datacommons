@@ -1,4 +1,5 @@
 BEGIN;
+DROP TABLE IF EXISTS "fara_client_registrant";
 CREATE TABLE "fara_client_registrant" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
@@ -12,10 +13,13 @@ CREATE TABLE "fara_client_registrant" (
     "location_id" integer NOT NULL
 )
 ;
+
+DROP TABLE IF EXISTS "fara_contact";
 CREATE TABLE "fara_contact" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" varchar(20) NOT NULL,
+    "date" date NOT NULL,
+    "date_asterisk" boolean NOT NULL,
     "contact_title" varchar(300),
     "contact_name" varchar(150),
     "contact_office" varchar(100),
@@ -36,10 +40,13 @@ CREATE TABLE "fara_contact" (
     "record_id" integer NOT NULL
 )
 ;
+
+DROP TABLE IF EXISTS "fara_contribution";
 CREATE TABLE "fara_contribution" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" varchar(15) NOT NULL,
+    "date" date NOT NULL,
+    "date_asterisk" boolean NOT NULL,
     "amount" numeric(8, 2) NOT NULL,
     "recipient" varchar(150) NOT NULL,
     "registrant" varchar(200) NOT NULL,
@@ -53,10 +60,13 @@ CREATE TABLE "fara_contribution" (
     "record_id" integer NOT NULL
 )
 ;
+
+DROP TABLE IF EXISTS "fara_disbursement";
 CREATE TABLE "fara_disbursement" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" varchar(15) NOT NULL,
+    "date" date NOT NULL,
+    "date_asterisk" boolean NOT NULL,
     "amount" numeric(12, 2) NOT NULL,
     "client" varchar(200) NOT NULL,
     "registrant" varchar(200) NOT NULL,
@@ -71,10 +81,13 @@ CREATE TABLE "fara_disbursement" (
     "record_id" integer NOT NULL
 )
 ;
+
+DROP TABLE IF EXISTS "fara_payment";
 CREATE TABLE "fara_payment" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" varchar(15) NOT NULL,
+    "date" date NOT NULL,
+    "date_asterisk" boolean NOT NULL,
     "amount" numeric(12, 2) NOT NULL,
     "client" varchar(200) NOT NULL,
     "registrant" varchar(200) NOT NULL,
