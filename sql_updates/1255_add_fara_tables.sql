@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS "fara_contact";
 CREATE TABLE "fara_contact" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" date NOT NULL,
+    "date" date,
     "date_asterisk" boolean NOT NULL,
     "contact_title" varchar(300),
     "contact_name" varchar(150),
@@ -45,7 +45,7 @@ DROP TABLE IF EXISTS "fara_contribution";
 CREATE TABLE "fara_contribution" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" date NOT NULL,
+    "date" date,
     "date_asterisk" boolean NOT NULL,
     "amount" numeric(8, 2) NOT NULL,
     "recipient" varchar(150) NOT NULL,
@@ -65,7 +65,7 @@ DROP TABLE IF EXISTS "fara_disbursement";
 CREATE TABLE "fara_disbursement" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" date NOT NULL,
+    "date" date,
     "date_asterisk" boolean NOT NULL,
     "amount" numeric(12, 2) NOT NULL,
     "client" varchar(200) NOT NULL,
@@ -86,7 +86,7 @@ DROP TABLE IF EXISTS "fara_payment";
 CREATE TABLE "fara_payment" (
     "id" serial NOT NULL PRIMARY KEY,
     "import_reference_id" integer NOT NULL REFERENCES "dcdata_import" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "date" date NOT NULL,
+    "date" date,
     "date_asterisk" boolean NOT NULL,
     "amount" numeric(12, 2) NOT NULL,
     "client" varchar(200) NOT NULL,
