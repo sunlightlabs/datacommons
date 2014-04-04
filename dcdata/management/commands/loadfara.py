@@ -270,16 +270,16 @@ class LoadFARA(BaseCommand):
             load_client_registrant(os.path.join(FARA_DIR,'client_registrant.csv'), *args, **options)
             transaction.commit()
 
-            load_contact(os.path.join(FARA_DIR,'contact.csv'), *args, **options)
+            load_contact(os.path.join(FARA_DIR,'contacts.csv'), *args, **options)
             transaction.commit()
 
-            load_contribution(os.path.join(FARA_DIR,'contribution.csv'), *args, **options)
+            load_contribution(os.path.join(FARA_DIR,'contributions.csv'), *args, **options)
             transaction.commit()
 
-            load_disbursement(os.path.join(FARA_DIR,'disbursement.csv'), *args, **options)
+            load_disbursement(os.path.join(FARA_DIR,'disbursements.csv'), *args, **options)
             transaction.commit()
 
-            load_payment(os.path.join(FARA_DIR,'payment.csv'), *args, **options)
+            load_payment(os.path.join(FARA_DIR,'payments.csv'), *args, **options)
             transaction.commit()
         except KeyboardInterrupt:
             traceback.print_exception(*sys.exc_info())
