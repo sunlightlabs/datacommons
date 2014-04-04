@@ -4,7 +4,7 @@
 from dcdata.fara.models import ClientRegistrant, Contact, Contribution, \
     Disbursement, Payment
 from dcdata.loading import Loader, LoaderEmitter
-from dcdata.processor import chain_filters, load_data
+from dcdata.processor import chain_filters, load_data, Every, progress_tick
 from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 from dcdata.utils.sql import parse_int, parse_date, parse_decimal
 from django.core.management.base import BaseCommand, CommandError
@@ -13,13 +13,34 @@ from django.db.models.fields import CharField
 from optparse import make_option
 from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier,\
     FieldRenamer, FieldCopier
+from saucebrush.emitters import DebugEmitter
 import os
 import sys
 import traceback
+import csv
+from datetime import datetime
 
+
+REPORT_FREQUENCY = 1000
+
+class FARACSVDialect(csv.Dialect):
+    delimiter = ','
+    quotechar = '"'
+    escapechar = None
+    doublequote = False
+    skipinitialspace = False
+    lineterminator = '\n'
+    quoting = 0
 
 def parse_fara_date(date_str):
-    return parse_date(date_str[0:10])
+    try:
+        parse_date(date_str[0:10])
+    except ValueError:
+        if (date_str in ('None','None*')) or (not date_str):
+            return None
+        else:
+            raise
+
 
 
 def parse_fara_asterisk(date_str):
@@ -67,7 +88,7 @@ class FARALoader(Loader):
         self.copy_fields(record, obj)
 
 
-class FARAClientRegistrantLoader(Loader):
+class FARAClientRegistrantLoader(FARALoader):
 
     model = ClientRegistrant
 
@@ -81,26 +102,27 @@ def load_client_registrant(csvpath, *args, **options):
 
     client_registrant_record_processor = chain_filters(
                         CSVFieldVerifier(),
+                        #DebugEmitter(),
                         FieldRemover('id'),
                         FieldRemover('import_reference'),
                         FieldAdder('import_reference', loader.import_session),
-                        FieldRenamer(ClientRegistrant.FIELD_MAP),
                         FieldModifier(('client_id', 'registrant_id', 'location_id'), parse_int),
                         UnicodeFilter(),
                         StringLengthFilter(ClientRegistrant))
 
     output_func = chain_filters(
         LoaderEmitter(loader),
+        Every(REPORT_FREQUENCY, progress_tick),
     )
 
     input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)),
-                                       fieldnames=ClientRegistrant.FIELD_MAP.keys(),
-                                       skiprows=1 + int(options['skip']))
+                                       fieldnames=ClientRegistrant.FIELDNAMES,
+                                       skiprows=1)
 
     load_data(input_iterator, client_registrant_record_processor, output_func)
 
 
-class FARAContactLoader(Loader):
+class FARAContactLoader(FARALoader):
 
     model = Contact
 
@@ -117,7 +139,6 @@ def load_contact(csvpath, *args, **options):
                         FieldRemover('id'),
                         FieldRemover('import_reference'),
                         FieldAdder('import_reference', loader.import_session),
-                        FieldRenamer(Contact.FIELD_MAP),
                         FieldCopier({'date_asterisk':'date'}),
                         FieldModifier('date', parse_fara_date),
                         FieldModifier('date_asterisk', parse_fara_asterisk),
@@ -127,16 +148,17 @@ def load_contact(csvpath, *args, **options):
 
     output_func = chain_filters(
         LoaderEmitter(loader),
+        Every(REPORT_FREQUENCY, progress_tick),
     )
 
     input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)),
-                                       fieldnames=Contact.FIELD_MAP.keys(),
-                                       skiprows=1 + int(options['skip']))
+                                       fieldnames=Contact.FIELDNAMES,
+                                       skiprows=1)
 
     load_data(input_iterator, contact_record_processor, output_func)
 
 
-class FARAContributionLoader(Loader):
+class FARAContributionLoader(FARALoader):
 
     model = Contribution
 
@@ -153,7 +175,6 @@ def load_contribution(csvpath, *args, **options):
                         FieldRemover('id'),
                         FieldRemover('import_reference'),
                         FieldAdder('import_reference', loader.import_session),
-                        FieldRenamer(Contribution.FIELD_MAP),
                         FieldCopier({'date_asterisk':'date'}),
                         FieldModifier('date', parse_fara_date),
                         FieldModifier('date_asterisk', parse_fara_asterisk),
@@ -164,15 +185,16 @@ def load_contribution(csvpath, *args, **options):
 
     output_func = chain_filters(
         LoaderEmitter(loader),
+        Every(REPORT_FREQUENCY, progress_tick),
     )
 
     input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)),
-                                       fieldnames=Contribution.FIELD_MAP.keys(),
-                                       skiprows=1 + int(options['skip']))
+                                       fieldnames=Contribution.FIELDNAMES,
+                                       skiprows=1, )
 
     load_data(input_iterator, contribution_record_processor, output_func)
 
-class FARADisbursementLoader(Loader):
+class FARADisbursementLoader(FARALoader):
 
     model = Disbursement
 
@@ -189,7 +211,6 @@ def load_disbursement(csvpath, *args, **options):
                         FieldRemover('id'),
                         FieldRemover('import_reference'),
                         FieldAdder('import_reference', loader.import_session),
-                        FieldRenamer(Disbursement.FIELD_MAP),
                         FieldCopier({'date_asterisk':'date'}),
                         FieldModifier('date', parse_fara_date),
                         FieldModifier('date_asterisk', parse_fara_asterisk),
@@ -200,16 +221,17 @@ def load_disbursement(csvpath, *args, **options):
 
     output_func = chain_filters(
         LoaderEmitter(loader),
+        Every(REPORT_FREQUENCY, progress_tick),
     )
 
     input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)),
-                                       fieldnames=Disbursement.FIELD_MAP.keys(),
-                                       skiprows=1 + int(options['skip']))
+                                       fieldnames=Disbursement.FIELDNAMES,
+                                       skiprows=1)
 
     load_data(input_iterator, disbursement_record_processor, output_func)
 
 
-class FARAPaymentLoader(Loader):
+class FARAPaymentLoader(FARALoader):
 
     model = Payment
 
@@ -226,7 +248,6 @@ def load_payment(csvpath, *args, **options):
                         FieldRemover('id'),
                         FieldRemover('import_reference'),
                         FieldAdder('import_reference', loader.import_session),
-                        FieldRenamer(Disbursement.FIELD_MAP),
                         FieldCopier({'date_asterisk':'date'}),
                         FieldModifier('date', parse_fara_date),
                         FieldModifier('date_asterisk', parse_fara_asterisk),
@@ -237,11 +258,12 @@ def load_payment(csvpath, *args, **options):
 
     output_func = chain_filters(
         LoaderEmitter(loader),
+        Every(REPORT_FREQUENCY, progress_tick),
     )
 
     input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)),
-                                       fieldnames=Payment.FIELD_MAP.keys(),
-                                       skiprows=1 + int(options['skip']))
+                                       fieldnames=Payment.FIELDNAMES,
+                                       skiprows=1)
 
     load_data(input_iterator, payment_record_processor, output_func)
 
@@ -263,18 +285,23 @@ class LoadFARA(BaseCommand):
             raise Exception('No directory at {d}'.format(d=fara_dir))
 
         try:
+            sys.stdout.write("%s: processing client_registrant \n" % (datetime.now(),))
             load_client_registrant(os.path.join(FARA_DIR,'client_registrant.csv'), *args, **options)
             transaction.commit()
 
+            sys.stdout.write("%s: processing contacts \n" % (datetime.now(),))
             load_contact(os.path.join(FARA_DIR,'contacts.csv'), *args, **options)
             transaction.commit()
 
+            sys.stdout.write("%s: processing contributions \n" % (datetime.now(),))
             load_contribution(os.path.join(FARA_DIR,'contributions.csv'), *args, **options)
             transaction.commit()
 
+            sys.stdout.write("%s: processing disbursements \n" % (datetime.now(),))
             load_disbursement(os.path.join(FARA_DIR,'disbursements.csv'), *args, **options)
             transaction.commit()
 
+            sys.stdout.write("%s: processing payments \n" % (datetime.now(),))
             load_payment(os.path.join(FARA_DIR,'payments.csv'), *args, **options)
             transaction.commit()
         except KeyboardInterrupt:
@@ -290,4 +317,4 @@ class LoadFARA(BaseCommand):
             sys.stderr.flush()
 
 
-Command = LoadFARA()
+Command = LoadFARA

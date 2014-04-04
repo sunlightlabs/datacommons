@@ -12,15 +12,14 @@ class ClientRegistrant(models.Model):
     registrant_id = models.IntegerField()
     client_id = models.IntegerField()
     location_id = models.IntegerField()
-    FIELD_MAP = {
-        'Client':                                   'client',
-        'Registrant name':                          'registrant_name',
-        'Terminated':                               'terminated',
-        'Location of Client':                       'location_of_client',
-        'Description of service (when available)':  'description_of_service',
-        'Registrant ID':                            'registrant_id',
-        'Client ID':                                'client_id',
-        'Location ID':                              'location_id'}
+    FIELDNAMES = ('client',
+                  'registrant_name',
+                  'terminated',
+                  'location_of_client',
+                  'description_of_service',
+                  'registrant_id',
+                  'client_id',
+                  'location_id')
 
     class Meta:
         db_table = 'fara_client_registrant'
@@ -29,7 +28,7 @@ class ClientRegistrant(models.Model):
 
 class Contact(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_contact")
-    date = models.DateField()
+    date = models.DateField(null=True)
     date_asterisk = models.BooleanField(default=False)
     contact_title = models.CharField(max_length=300, null=True)
     contact_name = models.CharField(max_length=150, null=True)
@@ -49,27 +48,27 @@ class Contact(models.Model):
     location_id = models.IntegerField()
     recipient_id = models.IntegerField()
     record_id = models.IntegerField()
-    FIELD_MAP = {
-        'Date':                          'date',
-        'Contact Title':                 'contact_title',
-        'Contact Name':                  'contact_name',
-        'Contact Office':                'contact_office',
-        'Contact Agency':                'contact_agency',
-        'Client':                        'client',
-        'Client Location':               'client_location',
-        'Registrant':                    'registrant',
-        'Description':                   'description',
-        'Type':                          'contact_type',
-        'Employees Mentioned':           'employees_mentioned',
-        'Affiliated Member Bioguide ID': 'affiliated_memember_bioguide_id',
-        'Source':                        'source',
-        'Document ID':                   'document_id',
-        'Registrant ID':                 'registrant_id',
-        'Client ID':                     'client_id',
-        'Location ID':                   'location_id',
-        'Recipient ID':                  'recipient_id',
-        'Record ID':                     'record_id'
-    }
+    FIELDNAMES = (
+                    'date',
+                    'contact_title',
+                    'contact_name',
+                    'contact_office',
+                    'contact_agency',
+                    'client',
+                    'client_location',
+                    'registrant',
+                    'description',
+                    'contact_type',
+                    'employees_mentioned',
+                    'affiliated_memember_bioguide_id',
+                    'source',
+                    'document_id',
+                    'registrant_id',
+                    'client_id',
+                    'location_id',
+                    'recipient_id',
+                    'record_id'
+        )
 
     class Meta:
         db_table = 'fara_contact'
@@ -78,7 +77,7 @@ class Contact(models.Model):
 
 class Contribution(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_contribution")
-    date = models.DateField()
+    date = models.DateField(null=True)
     date_asterisk = models.BooleanField(default=False)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     recipient = models.CharField(max_length=150)
@@ -91,20 +90,20 @@ class Contribution(models.Model):
     registrant_id = models.IntegerField()
     recipient_id = models.IntegerField()
     record_id = models.IntegerField()
-    FIELD_MAP = {
-        'Date':                             'date',
-        'Amount':                           'amount',
-        'Recipient':                        'recipient',
-        'Registrant':                       'registrant',
-        'Contributing Individual or PAC':   'contributing_individual_or_pac',
-        'CRP ID of Recipient':              'recipient_crp_id',
-        'Bioguide ID':                      'recipient_bioguide_id',
-        'Source':                           'source',
-        'Document ID':                      'document_id',
-        'Registrant ID':                    'registrant_id',
-        'Recipient ID':                     'recipient_id',
-        'Record ID':                        'record_id'
-    }
+    FIELDNAMES = (
+        'date',
+        'amount',
+        'recipient',
+        'registrant',
+        'contributing_individual_or_pac',
+        'recipient_crp_id',
+        'recipient_bioguide_id',
+        'source',
+        'document_id',
+        'registrant_id',
+        'recipient_id',
+        'record_id'
+    )
 
     class Meta:
         db_table = 'fara_contribution'
@@ -113,7 +112,7 @@ class Contribution(models.Model):
 
 class Disbursement(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_disbursement")
-    date = models.DateField()
+    date = models.DateField(null=True)
     date_asterisk = models.BooleanField(default=False)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     client = models.CharField(max_length=200)
@@ -127,21 +126,22 @@ class Disbursement(models.Model):
     location_id = models.IntegerField()
     subcontractor_id = models.IntegerField(null=True)
     record_id = models.IntegerField()
-    FIELD_MAP = {
-        'Date':             'date',
-        'Amount':           'amount',
-        'Client':           'client',
-        'Registrant':       'registrant',
-        'Purpose':          'purpose',
-        'To Subcontractor': 'to_subcontractor',
-        'Source':           'source',
-        'Document ID':      'document_id',
-        'Registrant ID':    'registrant_id',
-        'Client ID':        'client_id',
-        'Location ID':      'location_id',
-        'Subcontractor ID': 'subcontractor_id',
-        'Record ID':        'record_id'
-    }
+    FIELDNAMES = (
+        'date',
+        'amount',
+        'client',
+        'registrant',
+        'purpose',
+        'to_subcontractor',
+        'source',
+        'document_id',
+        'registrant_id',
+        'client_id',
+        'location_id',
+        'subcontractor_id',
+        'record_id'
+    )
+
 
     class Meta:
         db_table = 'fara_disbursement'
@@ -150,7 +150,7 @@ class Disbursement(models.Model):
 
 class Payment(models.Model):
     import_reference = models.ForeignKey(Import, related_name="fara_payment")
-    date = models.DateField()
+    date = models.DateField(null=True)
     date_asterisk = models.BooleanField(default=False)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     client = models.CharField(max_length=200)
@@ -164,21 +164,21 @@ class Payment(models.Model):
     location_id = models.IntegerField()
     subcontractor_id = models.IntegerField(null=True)
     record_id = models.IntegerField()
-    FIELD_MAP = {
-        'Date':                 'date',
-        'Amount':               'amount',
-        'Client':               'client',
-        'Registrant':           'registrant',
-        'Purpose':              'purpose',
-        'From subcontractor':   'from_contractor',
-        'Source':               'source',
-        'Document ID':          'document_id',
-        'Registrant ID':        'registrant_id',
-        'Client ID':            'client_id',
-        'Location ID':          'location_id',
-        'Subcontractor ID':     'subcontractor_id',
-        'Record ID':            'record_id'
-    }
+    FIELDNAMES = (
+        'date',
+        'amount',
+        'client',
+        'registrant',
+        'purpose',
+        'from_contractor',
+        'source',
+        'document_id',
+        'registrant_id',
+        'client_id',
+        'location_id',
+        'subcontractor_id',
+        'record_id'
+    )
 
     class Meta:
         db_table = 'fara_payment'
