@@ -131,7 +131,7 @@ create index fara_payment_date                  on fara_payment (date           
 create index fara_payment_client                on fara_payment using gin(to_tsvector('datacommons', client            ));
 create index fara_payment_registrant            on fara_payment using gin(to_tsvector('datacommons', registrant        ));
 create index fara_payment_purpose               on fara_payment using gin(to_tsvector('datacommons', purpose           ));
-create index fara_payment_from_subcontractor    on fara_payment using gin(to_tsvector('datacommons', from_subcontractor));
+create index fara_payment_from_contractor    on fara_payment using gin(to_tsvector('datacommons', from_contractor));
 create index fara_payment_document_id           on fara_payment (document_id     );
 create index fara_payment_registrant_id         on fara_payment (registrant_id   );
 create index fara_payment_client_id             on fara_payment (client_id       );
