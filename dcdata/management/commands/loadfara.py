@@ -23,7 +23,7 @@ import requests
 from datetime import datetime
 
 
-SQL_PRELOAD_FILE = os.path.join(os.path.dirname(__file__), 'drop_tables_and_recreate.sql')
+SQL_PRELOAD_FILE = os.path.join(settings.PROJECT_ROOT,'dcdata', 'fara', 'drop_tables_and_recreate.sql')
 SQL_POSTLOAD_FILE = os.path.join(settings.PROJECT_ROOT, 'dcdata', 'scripts', 'fara_indexes.sql')
 
 FARA_URL = 'http://fara.sunlightfoundation.com.s3.amazonaws.com/InfluenceExplorer/{filename}'
