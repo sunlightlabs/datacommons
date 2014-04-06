@@ -189,7 +189,7 @@ class PaymentFilterHandler(FilterHandler):
     filename = 'fara_payments'
     
     def queryset(self, params):
-        return filter_disbursements(self._unquote(params))
+        return filter_payments(self._unquote(params))
 
     def read(self, request):
         return super(PaymentFilterHandler, self).read(request)
