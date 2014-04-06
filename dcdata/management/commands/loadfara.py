@@ -318,7 +318,7 @@ class LoadFARA(BaseCommand):
             transaction.rollback()
             raise
         finally:
-            execute_sql_file(cur, SQL_POSTLOAD_FILE)
+            transaction.commit()
             sys.stdout.flush()
             sys.stderr.flush()
 
