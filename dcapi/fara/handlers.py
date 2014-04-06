@@ -3,7 +3,6 @@ from dcapi.common.schema import InclusionField, ComparisonField, FulltextField
 from dcapi.schema import Schema, FunctionField, Field
 from dcdata.fara.models import ClientRegistrant, Contact, Contribution, Disbursement, Payment
 from dcdata.utils.sql import parse_date
-from dcapi.contributions.transaction_types import transaction_type_descriptions
 from decimal import Decimal
 
 
@@ -31,7 +30,7 @@ def filter_client_registrant(request):
 CLIENT_REGISTRANT_FIELDS = list(ClientRegistrant.FIELDNAMES)
 
 class ClientRegistrantFilterHandler(FilterHandler):
-    fields = ClientRegistrant.FIELDNAMES
+    fields = CLIENT_REGISTRANT_FIELDS
     model = ClientRegistrant
     ordering = ['client',]
     filename = 'fara_client_registrant'
@@ -70,10 +69,10 @@ CONTACT_SCHEMA = Schema(
 def filter_contacts(request):
     return CONTACT_SCHEMA.build_filter(Contact.objects, request).order_by()
 
-CONTACT_FIELDS = list(Contact.FIELDNAMES)
+CONTACT_FIELDS = list(Contact.FIELDNAMES) + ['date_asterisk',]
 
 class ContactFilterHandler(FilterHandler):
-    fields = Contact.FIELDNAMES
+    fields = CONTACT_FIELDS
     model = Contact
     ordering = ['-date',]
     filename = 'fara_contacts'
@@ -107,10 +106,10 @@ CONTRIBUTION_SCHEMA = Schema(
 def filter_contributions(request):
     return CONTRIBUTION_SCHEMA.build_filter(Contribution.objects, request).order_by()
 
-CONTRIBUTION_FIELDS = list(Contribution.FIELDNAMES)
+CONTRIBUTION_FIELDS = list(Contribution.FIELDNAMES) + ['date_asterisk',]
 
 class ContributionFilterHandler(FilterHandler):
-    fields = Contribution.FIELDNAMES
+    fields = CONTRIBUTION_FIELDS
     model = Contribution
     ordering = ['-date',]
     filename = 'fara_contributions'
@@ -144,10 +143,10 @@ DISBURSEMENT_SCHEMA = Schema(
 def filter_disbursements(request):
     return DISBURSEMENT_SCHEMA.build_filter(Disbursement.objects, request).order_by()
 
-DISBURSEMENT_FIELDS = list(Disbursement.FIELDNAMES)
+DISBURSEMENT_FIELDS = list(Disbursement.FIELDNAMES) + ['date_asterisk',]
 
 class DisbursementFilterHandler(FilterHandler):
-    fields = Disbursement.FIELDNAMES
+    fields = DISBURSEMENT_FIELDS
     model = Disbursement
     ordering = ['-date',]
     filename = 'fara_disbursements'
@@ -175,16 +174,16 @@ PAYMENT_SCHEMA = Schema(
     FulltextField('client_ft', ['client',]),
     FulltextField('registrant_ft', ['registrant',]),
     FulltextField('purpose_ft', ['purpose',]),
-    FulltextField('from_subcontractor_ft', ['to_subcontractor',])
+    FulltextField('from_contractor_ft', ['from_contractor',])
 )
 
 def filter_contributions(request):
     return PAYMENT_SCHEMA.build_filter(Payment.objects, request).order_by()
 
-PAYMENT_FIELDS = list(Payment.FIELDNAMES)
+PAYMENT_FIELDS = list(Payment.FIELDNAMES) + ['date_asterisk',]
 
 class PaymentFilterHandler(FilterHandler):
-    fields = Payment.FIELDNAMES
+    fields = PAYMENT_FIELDS
     model = Payment
     ordering = ['-date',]
     filename = 'fara_payments'
