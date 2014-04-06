@@ -10,6 +10,7 @@ from dcdata.utils.sql import parse_int, parse_date, parse_decimal
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models.fields import CharField
+from django.conf import settings
 from optparse import make_option
 from saucebrush.filters import FieldRemover, FieldAdder, Filter, FieldModifier,\
     FieldRenamer, FieldCopier
@@ -18,19 +19,29 @@ import os
 import sys
 import traceback
 import csv
+import requests
 from datetime import datetime
 
 
+SQL_PRELOAD_FILE = os.path.join(os.path.dirname(__file__), 'drop_tables_and_recreate.sql')
+SQL_POSTLOAD_FILE = os.path.join(settings.PROJECT_ROOT, 'dcdata', 'scripts', 'fara_indexes.sql')
+
+FARA_URL = 'http://fara.sunlightfoundation.com.s3.amazonaws.com/InfluenceExplorer/{filename}'
+
 REPORT_FREQUENCY = 1000
 
-class FARACSVDialect(csv.Dialect):
-    delimiter = ','
-    quotechar = '"'
-    escapechar = None
-    doublequote = False
-    skipinitialspace = False
-    lineterminator = '\n'
-    quoting = 0
+def download_fara_file(filename, destination_dir):
+    sys.stdout.write("{tstamp}: downloading {filename} \n".format(
+        tstamp=datetime.now(),filename=filename))
+    local_filename = os.path.join(destination_dir, filename)
+    url = FARA_URL.format(filename=filename)
+    r = requests.get(url, stream=True)
+    with open(local_filename, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024): 
+            if chunk: 
+                f.write(chunk)
+                f.flush()
+    return local_filename
 
 def parse_fara_date(date_str):
     try:
@@ -280,7 +291,16 @@ class LoadFARA(BaseCommand):
             FARA_DIR = fara_dir
         else:
             transaction.rollback()
-            raise Exception('No directory at {d}'.format(d=fara_dir))
+            raise Exception('No directory at {d}'.format(d=fara_dir)) 
+
+        fara_filenames = ['client_registrant.csv',
+                          'contacts.csv',
+                          'contributions.csv',
+                          'disbursements.csv',
+                          'payments.csv']
+
+        for filename in fara_filenames:
+            download_fara_file(filename, FARA_DIR)
 
         try:
             sys.stdout.write("%s: processing client_registrant \n" % (datetime.now(),))
