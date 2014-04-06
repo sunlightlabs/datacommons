@@ -299,11 +299,7 @@ class LoadFARA(BaseCommand):
         else:
             transaction.rollback()
             raise Exception('No directory at {d}'.format(d=fara_dir)) 
-
-        cur = connection.cursor()
-
-        execute_sql_file(cur, SQL_PRELOAD_FILE)
-
+        
         fara_filenames = ['client_registrant.csv',
                           'contacts.csv',
                           'contributions.csv',
@@ -312,6 +308,22 @@ class LoadFARA(BaseCommand):
 
         for filename in fara_filenames:
             download_fara_file(filename, FARA_DIR)
+       
+        try:
+            cur = connection.cursor()
+            execute_sql_file(cur, SQL_PRELOAD_FILE)
+        except KeyboardInterrupt:
+            traceback.print_exception(*sys.exc_info())
+            transaction.rollback()
+            raise
+        except:
+            traceback.print_exception(*sys.exc_info())
+            transaction.rollback()
+            raise
+        finally:
+            execute_sql_file(cur, SQL_POSTLOAD_FILE)
+            sys.stdout.flush()
+            sys.stderr.flush()
 
         try:
             sys.stdout.write("%s: processing client_registrant \n" % (datetime.now(),))
@@ -337,7 +349,22 @@ class LoadFARA(BaseCommand):
             transaction.rollback()
             raise
         finally:
+            transaction.commit()
+            sys.stdout.flush()
+            sys.stderr.flush()
+
+        try:
+            cur = connection.cursor()
             execute_sql_file(cur, SQL_POSTLOAD_FILE)
+        except KeyboardInterrupt:
+            traceback.print_exception(*sys.exc_info())
+            transaction.rollback()
+            raise
+        except:
+            traceback.print_exception(*sys.exc_info())
+            transaction.rollback()
+            raise
+        finally:
             transaction.commit()
             sys.stdout.flush()
             sys.stderr.flush()

@@ -102,4 +102,3 @@ CREATE TABLE "fara_payment" (
     "record_id" integer NOT NULL
 )
 ;
--- COMMIT;
