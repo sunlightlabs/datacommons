@@ -1,6 +1,4 @@
 -- client_registrant
-drop index if exists fara_client_registrant_
-
 drop index if exists fara_client_registrant_client;
 drop index if exists fara_client_registrant_registrant_name;
 drop index if exists fara_client_registrant_terminated;
@@ -139,4 +137,3 @@ create index fara_payment_location_id           on fara_payment (location_id    
 create index fara_payment_subcontractor_id      on fara_payment (subcontractor_id);
 create index fara_payment_record_id             on fara_payment (record_id       );
 
--- commit;
