@@ -188,7 +188,7 @@ def load_contribution(csvpath, *args, **options):
 
     input_iterator = VerifiedCSVSource(open(os.path.abspath(csvpath)),
                                        fieldnames=Contribution.FIELDNAMES,
-                                       skiprows=1, )
+                                       skiprows=1)
 
     load_data(input_iterator, contribution_record_processor, output_func)
 

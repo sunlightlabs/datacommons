@@ -92,7 +92,6 @@ class Contribution(models.Model):
     record_id = models.IntegerField()
     FIELDNAMES = (
         'date',
-        'date_asterisk',
         'amount',
         'recipient',
         'registrant',
