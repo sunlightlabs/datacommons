@@ -105,7 +105,7 @@ CONTRIBUTION_SCHEMA = Schema(
 )
 
 def filter_contributions(request):
-    return CONTACT_SCHEMA.build_filter(Contribution.objects, request).order_by()
+    return CONTRIBUTION_SCHEMA.build_filter(Contribution.objects, request).order_by()
 
 CONTRIBUTION_FIELDS = list(Contribution.FIELDNAMES)
 
