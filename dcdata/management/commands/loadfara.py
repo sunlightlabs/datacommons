@@ -300,7 +300,7 @@ class LoadFARA(BaseCommand):
             transaction.rollback()
             raise Exception('No directory at {d}'.format(d=fara_dir)) 
 
-        curs = connection.cursor()
+        cur = connection.cursor()
 
         execute_sql_file(cur, SQL_PRELOAD_FILE)
 
