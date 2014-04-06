@@ -8,7 +8,7 @@ from dcdata.processor import chain_filters, load_data, Every, progress_tick
 from dcdata.utils.dryrub import CSVFieldVerifier, VerifiedCSVSource
 from dcdata.utils.sql import parse_int, parse_date, parse_decimal
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models.fields import CharField
 from django.conf import settings
 from optparse import make_option
@@ -42,6 +42,13 @@ def download_fara_file(filename, destination_dir):
                 f.write(chunk)
                 f.flush()
     return local_filename
+    
+def execute_sql_file(cursor, filename):
+    contents = " ".join([line for line in open(filename, 'r') if line[0:2] != '--'])
+    statements = contents.split(';')[:-1]  # split on semi-colon. Last element will be trailing whitespace
+    for statement in statements:
+        self.log.info("Executing %s" % statement)
+        cursor.execute(statement)
 
 def parse_fara_date(date_str):
     try:
@@ -293,6 +300,10 @@ class LoadFARA(BaseCommand):
             transaction.rollback()
             raise Exception('No directory at {d}'.format(d=fara_dir)) 
 
+        curs = connection.cursor()
+
+        execute_sql_file(cur, SQL_PRELOAD_FILE)
+
         fara_filenames = ['client_registrant.csv',
                           'contacts.csv',
                           'contributions.csv',
@@ -305,23 +316,18 @@ class LoadFARA(BaseCommand):
         try:
             sys.stdout.write("%s: processing client_registrant \n" % (datetime.now(),))
             load_client_registrant(os.path.join(FARA_DIR,'client_registrant.csv'), *args, **options)
-            transaction.commit()
 
             sys.stdout.write("%s: processing contacts \n" % (datetime.now(),))
             load_contact(os.path.join(FARA_DIR,'contacts.csv'), *args, **options)
-            transaction.commit()
 
             sys.stdout.write("%s: processing contributions \n" % (datetime.now(),))
             load_contribution(os.path.join(FARA_DIR,'contributions.csv'), *args, **options)
-            transaction.commit()
 
             sys.stdout.write("%s: processing disbursements \n" % (datetime.now(),))
             load_disbursement(os.path.join(FARA_DIR,'disbursements.csv'), *args, **options)
-            transaction.commit()
 
             sys.stdout.write("%s: processing payments \n" % (datetime.now(),))
             load_payment(os.path.join(FARA_DIR,'payments.csv'), *args, **options)
-            transaction.commit()
         except KeyboardInterrupt:
             traceback.print_exception(*sys.exc_info())
             transaction.rollback()
@@ -331,6 +337,8 @@ class LoadFARA(BaseCommand):
             transaction.rollback()
             raise
         finally:
+            execute_sql_file(cur, SQL_POSTLOAD_FILE)
+            transaction.commit()
             sys.stdout.flush()
             sys.stderr.flush()
 
