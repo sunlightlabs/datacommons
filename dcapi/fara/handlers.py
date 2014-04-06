@@ -177,7 +177,7 @@ PAYMENT_SCHEMA = Schema(
     FulltextField('from_contractor_ft', ['from_contractor',])
 )
 
-def filter_contributions(request):
+def filter_payments(request):
     return PAYMENT_SCHEMA.build_filter(Payment.objects, request).order_by()
 
 PAYMENT_FIELDS = list(Payment.FIELDNAMES) + ['date_asterisk',]
