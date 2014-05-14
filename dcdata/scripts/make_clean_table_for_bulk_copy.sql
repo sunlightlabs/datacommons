@@ -44,3 +44,4 @@ create table tmp_cc_cleaned as
         seat_status,
         seat_result
     from contribution_contribution;
+commit;
