@@ -34,7 +34,7 @@ def set_up_logger(importer_name, log_path, email_subject, email_recipients=setti
             (settings.LOGGING_EMAIL['host'], settings.LOGGING_EMAIL['port']), # host
             settings.LOGGING_EMAIL['username'], # from address
             email_recipients,
-            email_subject,
+            '['+settings.ENVIRONMENT+'] '+email_subject,
             (settings.LOGGING_EMAIL['username'], settings.LOGGING_EMAIL['password']) # credentials tuple
         )
         eh.setLevel(logging.WARN)
