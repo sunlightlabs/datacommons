@@ -160,7 +160,7 @@ class Command(BaseCommand):
 
             self.log.info("Inserting into tmp_matchbox_bioguideinfo...")
 
-            values_string = ",".join(["(%s, %s, %s, %s, %s, %s)" for x in found_ids_and_info])
+            values_string = ",".join(["('{}', '{}', '{}', '{}', '{}', '{}')".format(*x) for x in found_ids_and_info])
             insert_sql = "insert into tmp_matchbox_bioguideinfo (entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service) values %s" % values_string
             self.log.debug(insert_sql)
             cursor.execute(insert_sql, [item for sublist in found_ids_and_info for item in sublist])
@@ -175,6 +175,15 @@ class Command(BaseCommand):
 
 
             self.log.info("Inserting from temp table into real table.")
+            try:
+                self.log.info("Inserting from temp table into real table.")
+                cursor.execute("insert into matchbox_bioguideinfo"
+                               "(entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service)"
+                               "select entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service from tmp_matchbox_bioguideinfo")
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+
             cursor.execute("""insert into matchbox_bioguideinfo (entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service)
                 select entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service from tmp_matchbox_bioguideinfo""")
 
