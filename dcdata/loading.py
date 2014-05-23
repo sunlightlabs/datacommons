@@ -162,7 +162,12 @@ class LoaderEmitter(Emitter):
         self.emit_record(record)
         return record
     def emit_record(self, record):
-        self._loader.load_record(record)
+        try:
+            self._loader.load_record(record)
+        except:
+            import traceback
+            traceback.print_exc()
+
         self._count += 1
         if self._commit_every and self._count % self._commit_every == 0:
             transaction.commit()
