@@ -176,13 +176,11 @@ class Command(BaseCommand):
 
             self.log.info("Inserting from temp table into real table.")
             try:
-                self.log.info("Inserting from temp table into real table.")
                 cursor.execute("insert into matchbox_bioguideinfo"
                                "(entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service)"
                                "select entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service from tmp_matchbox_bioguideinfo")
             except Exception as e:
-                import traceback
-                traceback.print_exc()
+                print str(e)
 
             cursor.execute("""insert into matchbox_bioguideinfo (entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service)
                 select entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service from tmp_matchbox_bioguideinfo""")
