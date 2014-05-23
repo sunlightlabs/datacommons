@@ -182,9 +182,6 @@ class Command(BaseCommand):
             except Exception as e:
                 print str(e)
 
-            cursor.execute("""insert into matchbox_bioguideinfo (entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service)
-                select entity_id, bioguide_id, bio, bio_url, photo_url, years_of_service from tmp_matchbox_bioguideinfo""")
-
             transaction.commit()
             self.log.info('Committed.')
 
