@@ -71,7 +71,7 @@ class Issue(models.Model):
         return u"%s - %s" % (self.general_issue, self.specific_issue)
 
 class Bill(models.Model):
-    bill_id = models.CharField(null=True)
+    bill_id = models.CharField(max_length=20, null=True)
     issue = models.ForeignKey(Issue, related_name='bills')
     congress_no = models.SmallIntegerField(null=True)
     bill_type_raw = models.CharField(max_length=12, blank=False, null=False)
