@@ -936,3 +936,5 @@ select date_trunc('second', now()) || ' -- create index agg_lobbying_biggest_org
 create index agg_lobbying_biggest_orgs_for_bills_idx on agg_lobbying_biggest_orgs_for_bills (cycle, congress_no, bill_type, bill_no);
 
 select date_trunc('second', now()) || ' -- Done computing lobbying aggregates.';
+
+commit;
