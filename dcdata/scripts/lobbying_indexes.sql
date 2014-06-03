@@ -42,3 +42,4 @@ create index lobbying_lobbyist_lobbyist_name_ft on lobbying_lobbyist using gin(t
 
 drop index if exists lobbying_issue_specific_issue_ft;
 create index lobbying_issue_specific_issue_ft on lobbying_issue using gin(to_tsvector('datacommons', specific_issue));
+commit;
