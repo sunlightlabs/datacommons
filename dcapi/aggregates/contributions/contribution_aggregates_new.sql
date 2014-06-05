@@ -43,7 +43,9 @@ create table aggregate_organization_to_candidates as
                     recipient_associations ra using (transaction_id)
                         left join
                     matchbox_entity re on re.id = ra.entity_id
-                where contributor_category not like 'Z90%'
+                where contributor_category not like 'Z90%' 
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ca.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
                 )  direct
             full outer join
@@ -68,6 +70,8 @@ create table aggregate_organization_to_candidates as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by oa.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
                 ) indivs
         using (organization_entity, cycle, recipient_entity, recipient_name)
@@ -173,6 +177,8 @@ create table aggregate_organization_to_pacs as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where c.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ca.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
                 ) direct
             full outer join
@@ -198,6 +204,8 @@ create table aggregate_organization_to_pacs as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where c.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by oa.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
             ) indivs using (organization_entity, cycle, recipient_entity, recipient_name)
         )
@@ -360,6 +368,8 @@ create table aggregate_organization_to_parties as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ca.entity_id, cycle, co.recipient_party
 
             union all
@@ -380,6 +390,8 @@ create table aggregate_organization_to_parties as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by oa.entity_id, cycle, ci.recipient_party) x
 
             group by organization_entity, cycle, recipient_party
@@ -469,6 +481,8 @@ create table aggregate_organization_to_state_fed as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                     where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
 
             union all
 
@@ -490,6 +504,8 @@ create table aggregate_organization_to_state_fed as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                     where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
               ) x
 
             group by organization_entity, cycle, state_or_federal 
@@ -577,6 +593,8 @@ create table aggregate_organization_to_seat as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ca.entity_id, cycle, seat
 
             union all
@@ -597,6 +615,8 @@ create table aggregate_organization_to_seat as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by oa.entity_id, cycle, seat) x
 
             group by organization_entity, cycle, seat
@@ -679,6 +699,8 @@ create table aggregate_organization_to_recipient_type as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ca.entity_id, cycle, recipient_type
 
             union all
@@ -699,6 +721,8 @@ create table aggregate_organization_to_recipient_type as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by oa.entity_id, cycle, recipient_type) x
 
             group by organization_entity, cycle, recipient_type
@@ -790,6 +814,8 @@ create table aggregate_individual_to_state_fed as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                     where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                     ) sf
                 group by entity_id, cycle, state_or_federal)
 
@@ -861,6 +887,8 @@ create table aggregate_individual_to_parties as
                         inner join
                     contributor_associations ca using (transaction_id)
                     where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                     group by ca.entity_id, cycle, ci.recipient_party)
 
     select  individual_entity,
@@ -930,6 +958,8 @@ create table aggregate_individual_to_recipient_types as
                         inner join
                 contributor_associations ca using (transaction_id)
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ca.entity_id, cycle, ci.recipient_type)
 
     select  
@@ -1016,6 +1046,8 @@ create table aggregate_individual_by_in_state_out_of_state as
                                 matchbox_politicianmetadata mpm on mpm.entity_id = ra.entity_id and mpm.cycle = ci.cycle
                             where
                                 ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                                     and
                                 mpm.seat != 'federal:president'
                     ) x
@@ -1087,6 +1119,8 @@ create table aggregate_individual_to_seat as
                         inner join
                     contributor_associations ca using (transaction_id)
                     where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                     group by ca.entity_id, cycle, ci.seat)
 
     select  individual_entity,
@@ -1172,6 +1206,8 @@ create table aggregate_industry_to_candidates as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ia.entity_id, cycle, ra.entity_id, coalesce(re.name, co.recipient_name)
                 )  direct
             full outer join
@@ -1191,6 +1227,8 @@ create table aggregate_industry_to_candidates as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ia.entity_id, cycle, ra.entity_id, coalesce(re.name, ci.recipient_name)
                 ) indivs
         using (industry_entity, cycle, recipient_entity, recipient_name)
@@ -1287,6 +1325,8 @@ create table aggregate_industry_to_pacs as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where c.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ia.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
                 )  direct
             full outer join
@@ -1306,6 +1346,8 @@ create table aggregate_industry_to_pacs as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where c.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ia.entity_id, cycle, ra.entity_id, coalesce(re.name, c.recipient_name)
                 ) indivs
         using (industry_entity, cycle, recipient_entity, recipient_name)
@@ -1463,6 +1505,8 @@ create table aggregate_industry_to_parties as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ia.entity_id, cycle, co.recipient_party
 
             union all
@@ -1482,6 +1526,8 @@ create table aggregate_industry_to_parties as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ia.entity_id, cycle, ci.recipient_party) x
 
             group by industry_entity, cycle, recipient_party
@@ -1565,6 +1611,8 @@ create table aggregate_industry_to_state_fed as
                             left join
                         matchbox_entity re on re.id = ra.entity_id
                     where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
 
             union all
 
@@ -1584,6 +1632,8 @@ create table aggregate_industry_to_state_fed as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
             ) x
 
             group by industry_entity, cycle, state_or_federal
@@ -1664,6 +1714,8 @@ create table aggregate_industry_to_recipient_type as
                             left join
                         matchbox_entity re on re.id = ra.entity_id
                     where co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
 
             union all
 
@@ -1681,6 +1733,8 @@ create table aggregate_industry_to_recipient_type as
                         left join
                     matchbox_entity re on re.id = ra.entity_id
                 where ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
             ) x
 
             group by industry_entity, cycle, recipient_type
@@ -1770,6 +1824,8 @@ create table aggregate_politician_from_organizations as
                     coalesce(ce.name, c.contributor_name) != ''
                         and
                     c.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ra.entity_id, cycle, ca.entity_id, coalesce(ce.name, c.contributor_name)
                 )  direct
             full outer join
@@ -1793,6 +1849,8 @@ create table aggregate_politician_from_organizations as
                     matchbox_entity ce on ce.id = oa.entity_id
                 where
                     c.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ra.entity_id, cycle, oa.entity_id, coalesce(ce.name, c.contributor_name)
                 ) indivs
         using (recipient_entity, cycle, organization_entity, organization_name)
@@ -1887,6 +1945,8 @@ create table aggregate_politician_from_individuals as
                 where oa.entity_id is null
                         and
                     ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ra.entity_id, cycle, ca.entity_id, ce.name)
 
     select
@@ -2038,6 +2098,8 @@ create table aggregate_politician_from_individuals_by_in_state_out_of_state as
                             mpm.seat != 'federal:president'
                                 and
                             ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                     ) x
                 group by politician_entity, cycle, in_state_out_of_state)
 
@@ -2126,6 +2188,8 @@ create table aggregate_politician_from_industries as
                     matchbox_entity ie on ie.id = ia.entity_id
                 where
                     co.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ra.entity_id, cycle, ia.entity_id, ie.name
                 )  direct
             full outer join
@@ -2147,6 +2211,8 @@ create table aggregate_politician_from_industries as
                     matchbox_entity ie on ie.id = ia.entity_id
                 where
                     ci.contributor_category not like 'Z90%'
+                    and 
+                      recipient_category not in ('Z4100', 'Z4200', 'Z4300')
                 group by ra.entity_id, cycle, ia.entity_id, ie.name
                 ) indivs
         using (politician_entity, cycle, industry_entity, industry_name)
