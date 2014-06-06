@@ -190,9 +190,14 @@ offer (and strongly encourage!) a bulk data set for free. See the
 
 ## Data Changelog
 
+#### June 2, 2014 Update
+
+-   Federal Campaign Finance Data: updated to CRP's 5/5/2014 release.
+-   Federal Lobbying Data: updated to CRP's 5/5/2014 release.
+
 #### March 24, 2014 Update
 
--   Federal Campaign Finance Data: updated to CRP's 3/3/2013 release.
+-   Federal Campaign Finance Data: updated to CRP's 3/3/2014 release.
 
 #### November 22, 2013 Update
 
