@@ -98,13 +98,30 @@ class RecipientFilter(Filter):
 
 class SeatFilter(Filter):
     candidacy_status_map = {
-        'CL': True,  # Utah candidate culling process
-        'L':  True,  # General
-        'LR': True,  # Judicial retention election (no opponents)
-        'PL': False, # Primary
-        'W':  True,  # General
-        'WR': True   # Judicial retention
+        'Deceased-General': False,
+        'Disqualified-General': False,
+        'Disqualified-Primary': False,
+        'Lost-Convention': False,
+        'Lost-General': False,
+        'Lost-General Runoff': False,
+        'Lost-Primary': False,
+        'Lost-Primary Runoff': False,
+        'Lost-Retention': False,
+        'Lost-Top Two Primary': False,
+        'Lost-TopTwo Primary Runoff': False,
+        'Pending-General': True,
+        'Pending-General Runoff': True,
+        'Pending-Primary': True,
+        'Pending-Primary Runoff': True,
+        'Tied-General': True,
+        'Withdrew-General': False,
+        'Withdrew-Primary': False,
+        'Won-General': True,
+        'Won-General Runoff': True,
+        'Won-Primary': True,
+        'Won-Retention': True,
     }
+
     office_code_map = {
         'G': 'state:governor',
         'H': 'state:lower',
