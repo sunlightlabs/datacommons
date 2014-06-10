@@ -85,7 +85,7 @@ class RecipientFilter(Filter):
         'I': True,
         'C': False,
         'O': False
-        }
+    }
 
     party_map = {
         'Democratic': 'D',

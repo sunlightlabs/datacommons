@@ -32,6 +32,7 @@ parse_date = null_check(_parse_date)
 parse_datetime = null_check(_parse_datetime)
 parse_char = null_check(lambda x: None if x == 'XXX' else x)
 parse_decimal = null_check(Decimal)
+parse_int_id = null_check(lambda x: None if x == '0' else _parse_int(x))
 
 
 
