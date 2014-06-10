@@ -98,12 +98,12 @@ class RecipientFilter(Filter):
 
     def process_record(self, record):
         if record['committee_party'] and not record['recipient_party']:
-            record['recipient_party'] = party_map.get(record['committee_party'], record['committee_party'])
+            record['recipient_party'] = self.party_map.get(record['committee_party'], record['committee_party'])
         if record['recipient_party']:
             if record['recipient_party'] == 'P':
                 record['recipient_party'] = None
             else:
-                record['recipient_party'] = party_map.get(record['recipient_party'], record['recipient_party'])
+                record['recipient_party'] = self.party_map.get(record['recipient_party'], record['recipient_party'])
         record['is_incumbent'] = self.incumbent_map.get(record['incumbent'])
         return record
 
