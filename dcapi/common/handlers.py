@@ -36,9 +36,12 @@ class FilterHandler(BaseHandler):
     
     def _unquote(self, params):
         return dict([(param, unquote_plus(quoted_value)) for (param, quoted_value) in params.iteritems()])
-    
+
+    def _copy_get(self,request):
+        return request.GET.copy()
+
     def read(self, request):
-        params = request.GET.copy()
+        params = self._copy_get(request)
 
         per_page = min(int(params.get('per_page', DEFAULT_PER_PAGE)), MAX_PER_PAGE)
         page = int(params.get('page', 1)) - 1
@@ -71,3 +74,11 @@ class DenormalizingFilterHandler(FilterHandler):
     def read(self, request):
         for earmark in super(DenormalizingFilterHandler, self).read(request):
             yield self._denormalize(earmark)
+
+
+class UnlimitedResultsFilterHandler(FilterHandler):
+
+    def _copy_get(self, request):
+        params = request.GET.copy()
+        params['per_page'] = 1000000000
+        return params

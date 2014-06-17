@@ -1,4 +1,4 @@
-from dcapi.common.handlers import FilterHandler
+from dcapi.common.handlers import FilterHandler, UnlimitedResultsFilterHandler
 from dcapi.common.schema import InclusionField, ComparisonField, FulltextField
 from dcapi.schema import Schema, FunctionField, Field
 from dcdata.fara.models import ClientRegistrant, Contact, Contribution, Disbursement, Payment
@@ -29,7 +29,7 @@ def filter_client_registrant(request):
 
 CLIENT_REGISTRANT_FIELDS = list(ClientRegistrant.FIELDNAMES)
 
-class ClientRegistrantFilterHandler(FilterHandler):
+class ClientRegistrantFilterHandler(UnlimitedResultsFilterHandler):
     fields = CLIENT_REGISTRANT_FIELDS
     model = ClientRegistrant
     ordering = ['client',]
@@ -71,7 +71,7 @@ def filter_contacts(request):
 
 CONTACT_FIELDS = list(Contact.FIELDNAMES) + ['date_asterisk',]
 
-class ContactFilterHandler(FilterHandler):
+class ContactFilterHandler(UnlimitedResultsFilterHandler):
     fields = CONTACT_FIELDS
     model = Contact
     ordering = ['-date',]
@@ -108,7 +108,7 @@ def filter_contributions(request):
 
 CONTRIBUTION_FIELDS = list(Contribution.FIELDNAMES) + ['date_asterisk',]
 
-class ContributionFilterHandler(FilterHandler):
+class ContributionFilterHandler(UnlimitedResultsFilterHandler):
     fields = CONTRIBUTION_FIELDS
     model = Contribution
     ordering = ['-date',]
@@ -145,7 +145,7 @@ def filter_disbursements(request):
 
 DISBURSEMENT_FIELDS = list(Disbursement.FIELDNAMES) + ['date_asterisk',]
 
-class DisbursementFilterHandler(FilterHandler):
+class DisbursementFilterHandler(UnlimitedResultsFilterHandler):
     fields = DISBURSEMENT_FIELDS
     model = Disbursement
     ordering = ['-date',]
@@ -182,7 +182,7 @@ def filter_payments(request):
 
 PAYMENT_FIELDS = list(Payment.FIELDNAMES) + ['date_asterisk',]
 
-class PaymentFilterHandler(FilterHandler):
+class PaymentFilterHandler(UnlimitedResultsFilterHandler):
     fields = PAYMENT_FIELDS
     model = Payment
     ordering = ['-date',]
