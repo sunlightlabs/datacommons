@@ -15,3 +15,4 @@ CREATE TABLE federal_fortune_x_hundred (
         state_subsidy_link VARCHAR(100)
 );
 
+COMMIT;
