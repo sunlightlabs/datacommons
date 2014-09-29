@@ -75,7 +75,8 @@ State records provided by [FollowTheMoney.org](http://www.followthemoney.org).
 - [2005-2006](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2006.csv.zip) 248 MB
 - [2007-2008](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2008.csv.zip) 203 MB
 - [2009-2010](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2010.csv.zip) 257 MB
-- [2011-2012](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2012.csv.zip) 257 MB
+- [2011-2012](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2012.csv.zip) 303 MB
+- [2013-2014](http://datacommons.s3.amazonaws.com/subsets/td-20130726/contributions.nimsp.2014.csv.zip) 26 KB
 
 ### Federal Lobbying
 
