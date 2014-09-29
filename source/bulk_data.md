@@ -26,7 +26,7 @@ State campaign contribution records must be attributed to
 
 ### Campaign Contributions
 
-[Full state and federal data set](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.all.csv.zip) 2.7 GB
+[Full state and federal data set](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.all.csv.zip) 3.27 GB
 
 #### Federal
 
@@ -34,47 +34,48 @@ Federal records provided by [OpenSecrets.org](http://www.opensecrets.org).
 Please see [OpenSecrets' data README](http://assets.sunlightfoundation.com.s3.amazonaws.com/brisket/1.0/data/CRP_README.txt)
 prior to use.
 
-[All federal campaign contribution records](http://datacommons.s3.amazonaws.com/subsets/td-20120907/contributions.fec.csv.zip) 1.3 GB
+[All federal campaign contribution records](http://datacommons.s3.amazonaws.com/subsets/td-20120907/contributions.fec.csv.zip) 1.57 GB
 |
 [Schema documentation](contribution.html)
 
 ##### By Contribution Year
 
-- [1989-1990](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.1990.csv.zip) 28 MB
-- [1991-1992](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.1992.csv.zip) 42 MB
-- [1993-1994](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.1994.csv.zip) 43 MB
-- [1995-1996](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.1996.csv.zip) 60 MB
-- [1997-1998](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.1998.csv.zip) 50 MB
-- [1999-2000](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.2000.csv.zip) 78 MB
-- [2001-2002](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.2002.csv.zip) 69 MB
-- [2003-2004](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.2004.csv.zip) 138 MB
-- [2005-2006](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.2006.csv.zip) 107 MB
-- [2007-2008](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.2008.csv.zip) 242 MB
-- [2009-2010](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.2010.csv.zip) 149 MB
-- [2011-2012](http://datacommons.s3.amazonaws.com/subsets/td-20120424/contributions.fec.2012.csv.zip) 147 MB
+- [1989-1990](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.1990.csv.zip) 32 MB
+- [1991-1992](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.1992.csv.zip) 45 MB
+- [1993-1994](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.1994.csv.zip) 50 MB
+- [1995-1996](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.1996.csv.zip) 70 MB
+- [1997-1998](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.1998.csv.zip) 58 MB
+- [1999-2000](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.2000.csv.zip) 91 MB
+- [2001-2002](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.2002.csv.zip) 80 MB
+- [2003-2004](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.2004.csv.zip) 157 MB
+- [2005-2006](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.2006.csv.zip) 121 MB
+- [2007-2008](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.2008.csv.zip) 269 MB
+- [2009-2010](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.2010.csv.zip) 165 MB
+- [2011-2012](http://datacommons.s3.amazonaws.com/subsets/td-20140324/contributions.fec.2012.csv.zip) 299 MB
+- [2013-2014](http://datacommons.s3.amazonaws.com/subsets/td-20140927/contributions.fec.2014.csv.zip) 131 MB
 
 #### State
 
 State records provided by [FollowTheMoney.org](http://www.followthemoney.org).
 
-[All state campaign contribution records](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.csv.zip) 1.6 GB
+[All state campaign contribution records](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.csv.zip) 1.7 GB
 |
 [Schema documentation](contribution.html)
 
 ##### By Contribution Year
 
-- [1989-1990](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1990.csv.zip) 5.1 MB
-- [1991-1992](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1992.csv.zip) 6.9 MB
+- [1989-1990](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1990.csv.zip) 5 MB
+- [1991-1992](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1992.csv.zip) 6 MB
 - [1993-1994](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1994.csv.zip) 12 MB
 - [1995-1996](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1996.csv.zip) 42 MB
-- [1997-1998](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1998.csv.zip) 141 MB
-- [1999-2000](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2000.csv.zip) 126 MB
-- [2001-2002](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2002.csv.zip) 196 MB
-- [2003-2004](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2004.csv.zip) 183 MB
-- [2005-2006](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2006.csv.zip) 237 MB
-- [2007-2008](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2008.csv.zip) 195 MB
-- [2009-2010](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2010.csv.zip) 246 MB
-- [2011-2012](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2012.csv.zip) 169 MB
+- [1997-1998](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.1998.csv.zip) 148 MB
+- [1999-2000](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2000.csv.zip) 131 MB
+- [2001-2002](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2002.csv.zip) 205 MB
+- [2003-2004](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2004.csv.zip) 190 MB
+- [2005-2006](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2006.csv.zip) 248 MB
+- [2007-2008](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2008.csv.zip) 203 MB
+- [2009-2010](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2010.csv.zip) 257 MB
+- [2011-2012](http://datacommons.s3.amazonaws.com/subsets/td-20121109/contributions.nimsp.2012.csv.zip) 257 MB
 
 ### Federal Lobbying
 
