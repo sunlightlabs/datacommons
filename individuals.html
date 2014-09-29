@@ -73,65 +73,53 @@
   </div>
   <div id="content">
     
-    <h1>Individual Aggregates</h1>
-<h2 id='common-parameters'>Common Parameters</h2 id='common-parameters'>
+    <h1 id="individual-aggregates">Individual Aggregates</h1>
+<h2 id='common-parameters' id="common-parameters">Common Parameters</h2 id='common-parameters'>
 <p>Unless otherwise specified, all aggregate methods respond to
-<code>entity_id</code>, <code>limit</code>, and <code>cycle</code> parameters.
-
-</p>
-<h2 id='methods'>Methods</h2 id='methods'>
-<h3 id='methods/top-individuals'>Top Individuals</h3 id='methods/top-individuals'>
-<p>By contributions given, in dollars.
-
-</p>
-<pre><code>/aggregates/indivs/top_:limit<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+<code>entity_id</code>, <code>limit</code>, and <code>cycle</code> parameters.</p>
+<h2 id='methods' id="methods">Methods</h2 id='methods'>
+<h3 id='methods/top-individuals' id="top-individuals">Top Individuals</h3 id='methods/top-individuals'>
+<p>By contributions given, in dollars.</p>
+<pre><code>/aggregates/indivs/top_:<span class="filename">limit.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <ul>
 <li><strong><code>cycle</code> and <code>limit</code> only, this method returns multiple entities.</strong></li>
 </ul>
-<h4>Example</h4>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/indivs/top_1<span class="preprocessor">.json</span>?cycle=<span class="number">2006</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/indivs/top</span>_1.json<span class="number">?c</span>ycle=<span class="number">2006</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="string">"37"</span></span>,
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"29175900.00"</span></span>,
         "<span class="attribute">name</span>": <span class="value"><span class="string">"Adelson, Miriam"</span></span>,
         "<span class="attribute">id</span>": <span class="value"><span class="string">"71a6e4f389764529b0c239dc58206e71"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/top-recipient-organizations'>Top Recipient Organizations</h3 id='methods/top-recipient-organizations'>
-<p>Top organizations to which this individual has donated, by dollars given.
-
-</p>
-<pre><code>/aggregates/indiv/:entity_id/recipient_orgs<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get Sheldon Adelson&#39;s top org in 2012:
-
-</p>
-<pre><code><span class="identifier">http</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/indiv/a</span>03<span class="identifier">df5d9b20e467fa0ceaefa94c4491e</span>/<span class="identifier">recipient_orgs</span>.<span class="identifier">json?</span><span class="identifier">cycle</span>=<span class="number">2012</span>&amp;<span class="identifier">limit</span>=<span class="number">1</span>&amp;<span class="identifier">apikey</span>=<span class="constant">YOUR_KEY</span></code></pre>
-<h4>Response</h4>
+<h3 id='methods/top-recipient-organizations' id="top-recipient-organizations">Top Recipient Organizations</h3 id='methods/top-recipient-organizations'>
+<p>Top organizations to which this individual has donated, by dollars given.</p>
+<pre><code>/aggregates/indiv/<span class="symbol">:entity_id/recipient_orgs</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get Sheldon Adelson&#39;s top org in 2012:</p>
+<pre><code>http/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/indiv/a</span>03df5d9b20e467fa0ceaefa94c4491e/recipient_orgs.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="string">"2"</span></span>,
         "<span class="attribute">recipient_entity</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"10000000.00"</span></span>,
         "<span class="attribute">recipient_name</span>": <span class="value"><span class="string">"Restore Our Future"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/top-recipient-politicians'>Top Recipient Politicians</h3 id='methods/top-recipient-politicians'>
-<p>Politicians to whom the individual has given the most money.
-
-</p>
-<pre><code>/aggregates/indiv/:entity_id/recipient_pols<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get Sheldon Adelson&#39;s top 2 politicians for 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/indiv/a03df5d9b20e467fa0ceaefa94c4491e/recipient_pols<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/top-recipient-politicians' id="top-recipient-politicians">Top Recipient Politicians</h3 id='methods/top-recipient-politicians'>
+<p>Politicians to whom the individual has given the most money.</p>
+<pre><code>/aggregates/indiv/<span class="symbol">:entity_id/recipient_pols</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get Sheldon Adelson&#39;s top 2 politicians for 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/indiv/a</span>03df5d9b20e467fa0ceaefa94c4491e/recipient_pols.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="string">"1"</span></span>,
@@ -140,7 +128,7 @@
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"250000.00"</span></span>,
         "<span class="attribute">recipient_entity</span>": <span class="value"><span class="string">"e7ea9c83ea3d42a2b8f546d8c9e9873e"</span></span>,
         "<span class="attribute">party</span>": <span class="value"><span class="string">"R"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">count</span>": <span class="value"><span class="string">"2"</span></span>,
         "<span class="attribute">state</span>": <span class="value"><span class="string">"NJ"</span></span>,
@@ -148,20 +136,16 @@
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"5000.00"</span></span>,
         "<span class="attribute">recipient_entity</span>": <span class="value"><span class="string">"708fa957322544e9a2aa8c1f25b8bb97"</span></span>,
         "<span class="attribute">party</span>": <span class="value"><span class="string">"R"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/party-breakdown'>Party Breakdown</h3 id='methods/party-breakdown'>
-<p>Details on how much an individual gave to each party.
-
-</p>
-<pre><code>/aggregates/indiv/:entity_id/recipients/party_breakdown<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get Warren Buffet&#39;s party breakdown:
-
-</p>
+<h3 id='methods/party-breakdown' id="party-breakdown">Party Breakdown</h3 id='methods/party-breakdown'>
+<p>Details on how much an individual gave to each party.</p>
+<pre><code>/aggregates/indiv/<span class="symbol">:entity_id/recipients/party_breakdown</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get Warren Buffet&#39;s party breakdown:</p>
 <pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/aggregates/indiv/cc768536a9434b9da6fef5846a16ee88/recipients/party_breakdown<span class="variable">.json</span>?cycle=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="response">Response</h4>
 <pre><code>{
     "<span class="attribute">Republicans</span>": <span class="value">[
         <span class="string">"1"</span>,
@@ -171,78 +155,65 @@
         <span class="string">"12"</span>,
         <span class="string">"52500.00"</span>
     ]
-</span>}</code></pre>
-<p>Response values are arrays of [number of contributions, total amount].
-
-</p>
+}</span></code></pre>
+<p>Response values are arrays of [number of contributions, total amount].</p>
 <hr>
-<h3 id='methods/lobbying-registrants'>Lobbying Registrants</h3 id='methods/lobbying-registrants'>
-<p>A list of the lobbying firms which employed an individual.
-
-</p>
-<pre><code>/aggregates/indiv/:entity_id/registrants<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get top lobbying registrant for Bob Dole in 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/indiv/<span class="number">4</span>d052c80ef184ce5a5e41e6d34dc452f/registrants<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/lobbying-registrants' id="lobbying-registrants">Lobbying Registrants</h3 id='methods/lobbying-registrants'>
+<p>A list of the lobbying firms which employed an individual.</p>
+<pre><code>/aggregates/indiv/<span class="symbol">:entity_id/registrants</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get top lobbying registrant for Bob Dole in 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/indiv/</span><span class="number">4</span>d052c80ef184ce5a5e41e6d34dc452f/registrants.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">registrant_name</span>": <span class="value"><span class="string">"Alston &amp; Bird"</span></span>,
         "<span class="attribute">count</span>": <span class="value"><span class="number">59</span></span>,
         "<span class="attribute">registrant_entity</span>": <span class="value"><span class="string">"58acd6c557764eeeb8ac4433eb32975a"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/lobbying-clients'>Lobbying Clients</h3 id='methods/lobbying-clients'>
-<p>Clients an individual (lobbyist) was contracted to work for.
-
-</p>
-<pre><code>/aggregates/indiv/:entity_id/clients<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get top 2 lobbying clients for Bob Dole in 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/indiv/<span class="number">4</span>d052c80ef184ce5a5e41e6d34dc452f/clients<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/lobbying-clients' id="lobbying-clients">Lobbying Clients</h3 id='methods/lobbying-clients'>
+<p>Clients an individual (lobbyist) was contracted to work for.</p>
+<pre><code>/aggregates/indiv/<span class="symbol">:entity_id/clients</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get top 2 lobbying clients for Bob Dole in 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/indiv/</span><span class="number">4</span>d052c80ef184ce5a5e41e6d34dc452f/clients.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">6</span></span>,
         "<span class="attribute">client_name</span>": <span class="value"><span class="string">"Environmental Pasteurization"</span></span>,
         "<span class="attribute">client_entity</span>": <span class="value"><span class="string">"10e927f6afac4f5ebe15b7962fe448e3"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">6</span></span>,
         "<span class="attribute">client_name</span>": <span class="value"><span class="string">"Celgene Corp"</span></span>,
         "<span class="attribute">client_entity</span>": <span class="value"><span class="string">"e72dacce7cc44cebaeed240d2f986407"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/lobbying-issues'>Lobbying Issues</h3 id='methods/lobbying-issues'>
-<p>Issue areas a lobbyist worked on.
-
-</p>
-<pre><code>/aggregates/indiv/:entity_id/issues<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get top 2 issues for Bob Dole in 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/indiv/<span class="number">4</span>d052c80ef184ce5a5e41e6d34dc452f/issues<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/lobbying-issues' id="lobbying-issues">Lobbying Issues</h3 id='methods/lobbying-issues'>
+<p>Issue areas a lobbyist worked on.</p>
+<pre><code>/aggregates/indiv/<span class="symbol">:entity_id/issues</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get top 2 issues for Bob Dole in 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/indiv/</span><span class="number">4</span>d052c80ef184ce5a5e41e6d34dc452f/issues.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">18</span></span>,
         "<span class="attribute">issue</span>": <span class="value"><span class="string">"Health Issues"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">12</span></span>,
         "<span class="attribute">issue</span>": <span class="value"><span class="string">"Environment &amp; Superfund"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 
   </div>
 </div>
+
 <script type="text/javascript">
 
   var _gaq = _gaq || [];

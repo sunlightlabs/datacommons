@@ -53,28 +53,22 @@
   </div>
   <div id="content">
     
-    <h1>Industry Aggregates</h1>
-<h2 id='common-parameters'>Common Parameters</h2 id='common-parameters'>
+    <h1 id="industry-aggregates">Industry Aggregates</h1>
+<h2 id='common-parameters' id="common-parameters">Common Parameters</h2 id='common-parameters'>
 <p>Unless otherwise specified, all aggregate methods respond to
-<code>entity_id</code>, <code>limit</code>, and <code>cycle</code> parameters.
-
-</p>
-<h2 id='methods'>Methods</h2 id='methods'>
-<h3 id='methods/top-industries'>Top Industries</h3 id='methods/top-industries'>
-<p>By contributions given, in dollars.
-
-</p>
-<pre><code>/aggregates/industries/top_:limit<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+<code>entity_id</code>, <code>limit</code>, and <code>cycle</code> parameters.</p>
+<h2 id='methods' id="methods">Methods</h2 id='methods'>
+<h3 id='methods/top-industries' id="top-industries">Top Industries</h3 id='methods/top-industries'>
+<p>By contributions given, in dollars.</p>
+<pre><code>/aggregates/industries/top_:<span class="filename">limit.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <ul>
 <li><strong><code>cycle</code> and <code>limit</code> only, this method returns multiple entities.</strong></li>
 </ul>
-<h4>Example</h4>
-<p>Get the top 2 industries in the 2012 cycle.
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/industries/top_2<span class="preprocessor">.json</span>?cycle=<span class="number">2006</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get the top 2 industries in the 2012 cycle.</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/industries/top</span>_2.json<span class="number">?c</span>ycle=<span class="number">2006</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="string">"2133557"</span></span>,
@@ -82,27 +76,23 @@
         "<span class="attribute">id</span>": <span class="value"><span class="string">"cdb3f500a3f74179bb4a5eb8b2932fa6"</span></span>,
         "<span class="attribute">should_show_entity</span>": <span class="value"><span class="literal">true</span></span>,
         "<span class="attribute">name</span>": <span class="value"><span class="string">"UNKNOWN"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">count</span>": <span class="value"><span class="string">"80122"</span></span>,
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"290070135.52"</span></span>,
         "<span class="attribute">id</span>": <span class="value"><span class="string">"0af3f418f426497e8bbf916bfc074ebc"</span></span>,
         "<span class="attribute">should_show_entity</span>": <span class="value"><span class="literal">true</span></span>,
         "<span class="attribute">name</span>": <span class="value"><span class="string">"SECURITIES &amp; INVESTMENT"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/top-organizations'>Top Organizations</h3 id='methods/top-organizations'>
-<p>Top organizations in an industry by dollars contributed.
-
-</p>
-<pre><code>/aggregates/industry/:entity_id/orgs<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top organization in the Food &amp; Beverage industry:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/industry/<span class="number">165</span>d820dd48441e1befdc47f3fa3d236/orgs<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/top-organizations' id="top-organizations">Top Organizations</h3 id='methods/top-organizations'>
+<p>Top organizations in an industry by dollars contributed.</p>
+<pre><code>/aggregates/industry/<span class="symbol">:entity_id/orgs</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top organization in the Food &amp; Beverage industry:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/industry/</span><span class="number">165</span>d820dd48441e1befdc47f3fa3d236/orgs.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">employee_amount</span>": <span class="value"><span class="string">"521598.00"</span></span>,
@@ -113,11 +103,12 @@
         "<span class="attribute">employee_count</span>": <span class="value"><span class="string">"481"</span></span>,
         "<span class="attribute">id</span>": <span class="value"><span class="string">"721c64757c11435393edc49bb33d4c96"</span></span>,
         "<span class="attribute">direct_amount</span>": <span class="value"><span class="string">"391700.00"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 
   </div>
 </div>
+
 <script type="text/javascript">
 
   var _gaq = _gaq || [];

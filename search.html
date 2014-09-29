@@ -86,30 +86,22 @@
   </div>
   <div id="content">
     
-    <h1>Search Methods</h1>
-<h2 id='common-parameters'>Common Parameters</h2 id='common-parameters'>
+    <h1 id="search-methods">Search Methods</h1>
+<h2 id='common-parameters' id="common-parameters">Common Parameters</h2 id='common-parameters'>
 <p>Unless otherwise specified, all search methods respond to
-<code>page</code> and <code>per_page</code> parameters.
-
-</p>
+<code>page</code> and <code>per_page</code> parameters.</p>
 <p>Additionally, most results are available in JSON, CSV, or XLS formats, 
-via changing the extension of the request file.
-
-</p>
-<h2 id='bulk-data'>Bulk Data</h2 id='bulk-data'>
+via changing the extension of the request file.</p>
+<h2 id='bulk-data' id="bulk-data">Bulk Data</h2 id='bulk-data'>
 <p>The datasets behind each of these search methods&mdash;as well as several
 additional datasets&mdash;are available in bulk. See the <a href="bulk_data.html">Bulk Data page</a>
-for more information.
-
-</p>
-<h2 id='methods'>Methods</h2 id='methods'>
-<h3 id='methods/campaign-contributions'>Campaign Contributions</h3 id='methods/campaign-contributions'>
+for more information.</p>
+<h2 id='methods' id="methods">Methods</h2 id='methods'>
+<h3 id='methods/campaign-contributions' id="campaign-contributions">Campaign Contributions</h3 id='methods/campaign-contributions'>
 <p>Search for itemized campaign contributions at the federal (FEC) or
-state (NIMSP) level.
-
-</p>
-<pre><code>/contributions.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+state (NIMSP) level.</p>
+<pre><code>/contributions.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -228,16 +220,12 @@ state (NIMSP) level.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get all DC contributions over $1000 in the 2012 election cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/contributions<span class="preprocessor">.json</span>?amount=%<span class="number">3</span>E%<span class="number">7</span>C1000&amp;contributor_state=DC&amp;cycle=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get all DC contributions over $1000 in the 2012 election cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/contributions</span>.json<span class="number">?a</span>mount=%<span class="number">3</span>E%<span class="number">7</span>C100<span class="number">0</span>&amp;contributor_state=<span class="constant">DC</span>&amp;cycle=<span class="number">2012</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <p>See the <a href="contribution.html">schema documentation</a> for descriptions of the
-response fields.
-
-</p>
+response fields.</p>
 <pre><code>[
     {
         "<span class="attribute">seat</span>": <span class="value"><span class="string">"federal:president"</span></span>,
@@ -281,16 +269,14 @@ response fields.
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"12750000.00"</span></span>,
         "<span class="attribute">contributor_ext_id</span>": <span class="value"><span class="string">"C00494740"</span></span>,
         "<span class="attribute">committee_party</span>": <span class="value"><span class="string">"D"</span>
-    </span>},
+    }</span>,
     ...snip...
 ]</code></pre>
 <hr>
-<h3 id='methods/bundled-campaign-contributions'>Bundled Campaign Contributions</h3 id='methods/bundled-campaign-contributions'>
-<p>Search for itemized bundlers.
-
-</p>
-<pre><code>/contributions/bundled.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/bundled-campaign-contributions' id="bundled-campaign-contributions">Bundled Campaign Contributions</h3 id='methods/bundled-campaign-contributions'>
+<p>Search for itemized bundlers.</p>
+<pre><code>/contributions/bundled.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -313,12 +299,10 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get campaign contributions bundled by Patton Boggs.
-
-</p>
-<pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/contributions/bundled<span class="variable">.json</span>?page=<span class="number">1</span>&amp;per_page=<span class="number">20</span>&amp;lobbyist_name=Patton%<span class="number">20</span>Boggs&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get campaign contributions bundled by Patton Boggs.</p>
+<pre><code><span class="transposed_variable">transparencydata.</span>com/api/<span class="number">1.0</span>/contributions/<span class="transposed_variable">bundled.</span>json?page=<span class="number">1</span>&amp;per_page=<span class="number">20</span>&amp;lobbyist_name=Patton<span class="comment">%20Boggs&amp;apikey=YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">bundler_occupation</span>": <span class="value"><span class="literal">null</span></span>,
@@ -343,7 +327,7 @@ response fields.
         "<span class="attribute">bundler_fec_id</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">file_num</span>": <span class="value">-<span class="number">248701</span></span>,
         "<span class="attribute">period_amount</span>": <span class="value"><span class="number">19000</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">bundler_occupation</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">bundler_name</span>": <span class="value"><span class="string">"JONAS, JOHN"</span></span>,
@@ -367,7 +351,7 @@ response fields.
         "<span class="attribute">bundler_fec_id</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">file_num</span>": <span class="value"><span class="number">479579</span></span>,
         "<span class="attribute">period_amount</span>": <span class="value"><span class="number">32000</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">bundler_occupation</span>": <span class="value"><span class="string">"LEGISLATIVE COUNCIL"</span></span>,
         "<span class="attribute">bundler_name</span>": <span class="value"><span class="string">"COWAN, MARK D MR"</span></span>,
@@ -391,15 +375,13 @@ response fields.
         "<span class="attribute">bundler_fec_id</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">file_num</span>": <span class="value"><span class="number">797251</span></span>,
         "<span class="attribute">period_amount</span>": <span class="value"><span class="number">0</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/contractor-misconduct'>Contractor Misconduct</h3 id='methods/contractor-misconduct'>
-<p>Search for itemized misconduct incident reports
-
-</p>
-<pre><code>/misconduct.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/contractor-misconduct' id="contractor-misconduct">Contractor Misconduct</h3 id='methods/contractor-misconduct'>
+<p>Search for itemized misconduct incident reports</p>
+<pre><code>/misconduct.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -442,12 +424,10 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get misconduct instances for SAIC in 2012:
-
-</p>
+<h4 id="example">Example</h4>
+<p>Get misconduct instances for SAIC in 2012:</p>
 <pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/misconduct<span class="variable">.json</span>?page=<span class="number">1</span>&amp;per_page=<span class="number">20</span>&amp;contractor=SAIC&amp;date_year=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">disposition</span>": <span class="value"><span class="string">"Deferred Prosecution Agreement"</span></span>,
@@ -463,15 +443,13 @@ response fields.
         "<span class="attribute">date</span>": <span class="value"><span class="string">"2012-03-14"</span></span>,
         "<span class="attribute">misconduct_type</span>": <span class="value"><span class="string">"Government Contract Fraud"</span></span>,
         "<span class="attribute">court_type</span>": <span class="value"><span class="string">"Criminal"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/earmarks'>Earmarks</h3 id='methods/earmarks'>
-<p>Search itemized earmark requests through FY 2010.
-
-</p>
-<pre><code>/earmarks.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/earmarks' id="earmarks">Earmarks</h3 id='methods/earmarks'>
+<p>Search itemized earmark requests through FY 2010.</p>
+<pre><code>/earmarks.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -529,16 +507,12 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get the biggest earmark for Alaska in FY 2010:
-
-</p>
+<h4 id="example">Example</h4>
+<p>Get the biggest earmark for Alaska in FY 2010:</p>
 <pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/earmarks<span class="variable">.json</span>?page=<span class="number">1</span>&amp;per_page=<span class="number">20</span>&amp;member_state=AK&amp;year=<span class="number">2010</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="response">Response</h4>
 <p>See the <a href="earmark.html">schema documentation</a> for descriptions of the
-response fields.
-
-</p>
+response fields.</p>
 <pre><code>[
     {
         "<span class="attribute">description</span>": <span class="value"><span class="string">"Aviation Task Force Complex, Ph 1, Incr 1"</span></span>,
@@ -557,15 +531,13 @@ response fields.
         "<span class="attribute">final_amount</span>": <span class="value"><span class="string">"95000000.00"</span></span>,
         "<span class="attribute">presidential</span>": <span class="value"><span class="string">"m"</span></span>,
         "<span class="attribute">budget_amount</span>": <span class="value"><span class="string">"0.00"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/epa-echo'>EPA ECHO</h3 id='methods/epa-echo'>
-<p>Search itemized EPA enforcement actions.
-
-</p>
-<pre><code>/epa.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/epa-echo' id="epa-echo">EPA ECHO</h3 id='methods/epa-echo'>
+<p>Search itemized EPA enforcement actions.</p>
+<pre><code>/epa.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -613,16 +585,12 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get enforcement actions against Massey Energy since 2005
-
-</p>
+<h4 id="example">Example</h4>
+<p>Get enforcement actions against Massey Energy since 2005</p>
 <pre><code>transparencydata.com/api/<span class="number">1.0</span>/epa.json?page=<span class="number">1</span>&amp;per_page=<span class="number">20</span>&amp;defendants=Massey<span class="variable">%20Energy</span>&amp;first_date=<span class="variable">%3E</span><span class="variable">%7C2005</span>-<span class="number">01</span>-<span class="number">01</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="response">Response</h4>
 <p>See the <a href="epa_echo.html">schema documentation</a> for descriptions of the
-response fields.
-
-</p>
+response fields.</p>
 <pre><code>[
     {
         "<span class="attribute">penalty_enfotpa</span>": <span class="value"><span class="number">13300000</span></span>,
@@ -641,7 +609,7 @@ response fields.
         "<span class="attribute">last_date_significance</span>": <span class="value"><span class="string">"FOE"</span></span>,
         "<span class="attribute">defendants</span>": <span class="value"><span class="string">"ALEX ENERGY, ELK RUN COAL COMPANY, MASSEY ENERGY COMPANY, PEERLESS EAGLE COAL COMPANY, POWER MOUNTAIN COAL COMPANY"</span></span>,
         "<span class="attribute">case_num</span>": <span class="value"><span class="string">"03-2005-0380"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">penalty_enfotpa</span>": <span class="value"><span class="number">6700000</span></span>,
         "<span class="attribute">penalty_enfccaa</span>": <span class="value"><span class="string">"3300000"</span></span>,
@@ -659,15 +627,13 @@ response fields.
         "<span class="attribute">last_date_significance</span>": <span class="value"><span class="string">"SNDDL"</span></span>,
         "<span class="attribute">defendants</span>": <span class="value"><span class="string">"ALEX ENERGY, INC., ARACOMA COAL COMPANY, INC., A.T. MASSEY COAL COMPANY, BANDMILL COAL CORPORATION, BIG BEAR MINING COMPANY, CLEAR FORK COAL COMPANY, DELBARTON MINING COMPANY, DUCHESS COAL COMPANY, ELK RUN COAL COMPANY, INC., GREEN VALLEY COAL COMPANY, INDEPENDENCE COAL COMPANY, INC., JACKS BRANCH COAL COMPANY, LONG FORK COAL COMPANY, MAJESTIC MINING, INC., MARFORK COAL COMPANY, INC., MARTIN COUNTY COAL CORPORATION, MASSEY COAL SERVICES, INC., MASSEY ENERGY COMPANY, NEW RIDGE MINING COMPANY, OMAR MINING COMPANY, PEERLESS EAGLE COAL COMPANY, PERFORMANCE COAL COMPANY, POWER MOUNTAIN COAL COMPANY, RAWL SALES &amp; PROCESSING CO., ROAD FORK DEVELOPMENT COMPANY, INC., SIDNEY COAL COMPANY, INC., STIRRAT COAL COMPANY, TRACE CREEK COAL COMPANY"</span></span>,
         "<span class="attribute">case_num</span>": <span class="value"><span class="string">"04-2006-9037"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/faca-memberships'>FACA Memberships</h3 id='methods/faca-memberships'>
-<p>Search for itemized Federal Advisory Committee memberships.
-
-</p>
-<pre><code>/faca.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/faca-memberships' id="faca-memberships">FACA Memberships</h3 id='methods/faca-memberships'>
+<p>Search for itemized Federal Advisory Committee memberships.</p>
+<pre><code>/faca.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -705,12 +671,10 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get committees Francis Collins sat on in 2012:
-
-</p>
-<pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/faca<span class="variable">.json</span>?page=<span class="number">1</span>&amp;per_page=<span class="number">20</span>&amp;member_name=Francis%<span class="number">20</span>Collins&amp;year=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get committees Francis Collins sat on in 2012:</p>
+<pre><code><span class="transposed_variable">transparencydata.</span>com/api/<span class="number">1.0</span>/<span class="transposed_variable">faca.</span>json?page=<span class="number">1</span>&amp;per_page=<span class="number">20</span>&amp;member_name=Francis<span class="comment">%20Collins&amp;year=2012&amp;apikey=YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">committee_url</span>": <span class="value"><span class="string">"http://www.nih.gov/about/director/acd.htm"</span></span>,
@@ -731,7 +695,7 @@ response fields.
         "<span class="attribute">chair</span>": <span class="value"><span class="literal">true</span></span>,
         "<span class="attribute">org_name</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">start_date</span>": <span class="value"><span class="string">"2009-08-17"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">committee_url</span>": <span class="value"><span class="string">"http://acd.od.nih.gov/"</span></span>,
         "<span class="attribute">member_firstlast</span>": <span class="value"><span class="string">"FRANCIS COLLINS"</span></span>,
@@ -751,7 +715,7 @@ response fields.
         "<span class="attribute">chair</span>": <span class="value"><span class="literal">true</span></span>,
         "<span class="attribute">org_name</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">start_date</span>": <span class="value"><span class="string">"2009-08-16"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">committee_url</span>": <span class="value"><span class="string">"http://www.nih.gov/about/director/acd.htm"</span></span>,
         "<span class="attribute">member_firstlast</span>": <span class="value"><span class="string">"FRANCIS COLLINS"</span></span>,
@@ -771,16 +735,14 @@ response fields.
         "<span class="attribute">chair</span>": <span class="value"><span class="literal">true</span></span>,
         "<span class="attribute">org_name</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">start_date</span>": <span class="value"><span class="string">"2009-08-16"</span>
-    </span>},
+    }</span>,
     ...snip...
 ]</code></pre>
 <hr>
-<h3 id='methods/federal-contracts'>Federal Contracts</h3 id='methods/federal-contracts'>
-<p>Search for itemized federal contract awards.
-
-</p>
-<pre><code>/contracts.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/federal-contracts' id="federal-contracts">Federal Contracts</h3 id='methods/federal-contracts'>
+<p>Search for itemized federal contract awards.</p>
+<pre><code>/contracts.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -896,16 +858,12 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get the largest contract awarded to L-3 Communications in FY 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/contracts<span class="preprocessor">.json</span>?per_page=<span class="number">1</span>&amp;fiscal_year=<span class="number">2012</span>&amp;vendor_duns=<span class="number">618019632</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get the largest contract awarded to L-3 Communications in FY 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/contracts</span>.json<span class="number">?p</span>er_page=<span class="number">1</span>&amp;fiscal_year=<span class="number">2012</span>&amp;vendor_duns=<span class="number">618019632</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <p>See the <a href="contract.html">schema documentation</a> for descriptions of the
-response fields.
-
-</p>
+response fields.</p>
 <pre><code>[
   {
     "<span class="attribute">contractingofficeid</span>": <span class="value"><span class="string">"W911QY"</span></span>,
@@ -951,7 +909,7 @@ response fields.
     "<span class="attribute">typeofsetaside</span>": <span class="value"><span class="string">"NONE"</span></span>,
     "<span class="attribute">fundingrequestingofficeid</span>": <span class="value"><span class="string">"W81XAG"</span></span>,
     "<span class="attribute">competitiveprocedures</span>": <span class="value"><span class="string">""</span></span>,
-"<span class="attribute">streetaddress</span>": <span class="value"><span class="string">"1 FEDERAL ST"</span></span>,
+    "<span class="attribute">streetaddress</span>": <span class="value"><span class="string">"1 FEDERAL ST"</span></span>,
     "<span class="attribute">costaccountingstandardsclause</span>": <span class="value"><span class="string">""</span></span>,
     "<span class="attribute">transaction_status</span>": <span class="value"><span class="string">"active"</span></span>,
     "<span class="attribute">mod_agency</span>": <span class="value"><span class="string">"2100"</span></span>,
@@ -1067,15 +1025,13 @@ response fields.
     "<span class="attribute">renewaldate</span>": <span class="value"><span class="string">"2011-03-08"</span></span>,
     "<span class="attribute">clingercohenact</span>": <span class="value"><span class="literal">false</span></span>,
     "<span class="attribute">requesting_agency_name</span>": <span class="value"><span class="string">""</span>
-  </span>}
+  }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/federal-grants'>Federal Grants</h3 id='methods/federal-grants'>
-<p>Search for itemized federal grants.
-
-</p>
-<pre><code>/grants.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/federal-grants' id="federal-grants">Federal Grants</h3 id='methods/federal-grants'>
+<p>Search for itemized federal grants.</p>
+<pre><code>/grants.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -1185,16 +1141,12 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get the top grant given by USAID in FY 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/grants<span class="preprocessor">.json</span>?agency_ft=Agency%<span class="number">20</span>For%<span class="number">20</span>International%<span class="number">20</span>Development&amp;fiscal_year=<span class="number">2012</span>&amp;per_page=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get the top grant given by USAID in FY 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/grants</span>.json<span class="number">?a</span>gency_ft=<span class="constant">Agency</span>%<span class="number">20</span>For%<span class="number">20</span>International%<span class="number">20</span>Development&amp;fiscal_year=<span class="number">2012</span>&amp;per_page=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <p>See the <a href="grant.html">schema documentation</a> for descriptions of the
-response fields.
-
-</p>
+response fields.</p>
 <pre><code>[
   {
     "<span class="attribute">progsrc_acnt_code</span>": <span class="value"><span class="string">"1031"</span></span>,
@@ -1218,7 +1170,7 @@ response fields.
     "<span class="attribute">agency_code</span>": <span class="value"><span class="string">"7200"</span></span>,
     "<span class="attribute">recipient_county_code</span>": <span class="value"><span class="string">"110"</span></span>,
     "<span class="attribute">assistance_type</span>": <span class="value"><span class="string">"04"</span></span>,
-"<span class="attribute">uri</span>": <span class="value"><span class="string">"AID-GHH-G-00-02-00002-17"</span></span>,
+    "<span class="attribute">uri</span>": <span class="value"><span class="string">"AID-GHH-G-00-02-00002-17"</span></span>,
     "<span class="attribute">recipient_country_code</span>": <span class="value"><span class="string">"USA"</span></span>,
     "<span class="attribute">maj_agency_cat</span>": <span class="value"><span class="string">"72"</span></span>,
     "<span class="attribute">id</span>": <span class="value"><span class="number">6752773</span></span>,
@@ -1253,15 +1205,13 @@ response fields.
     "<span class="attribute">action_type</span>": <span class="value"><span class="string">"B"</span></span>,
     "<span class="attribute">correction_late_ind</span>": <span class="value"><span class="string">""</span></span>,
     "<span class="attribute">asst_cat_type</span>": <span class="value"><span class="string">"g"</span>
-  </span>}
+  }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/federal-lobbying'>Federal Lobbying</h3 id='methods/federal-lobbying'>
-<p>Search itemized federal lobbying reports.
-
-</p>
-<pre><code>/lobbying.:<span class="keyword">format</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/federal-lobbying' id="federal-lobbying">Federal Lobbying</h3 id='methods/federal-lobbying'>
+<p>Search itemized federal lobbying reports.</p>
+<pre><code>/lobbying.<span class="symbol">:format</span></code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -1376,16 +1326,12 @@ response fields.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<p>Get the top registration, dollarwise, in 2012 by Patton Boggs:
-
-</p>
-<pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/lobbying<span class="variable">.json</span>?per_page=<span class="number">1</span>&amp;registrant_ft=Patton%<span class="number">20</span>Boggs&amp;year=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get the top registration, dollarwise, in 2012 by Patton Boggs:</p>
+<pre><code><span class="transposed_variable">transparencydata.</span>com/api/<span class="number">1.0</span>/<span class="transposed_variable">lobbying.</span>json?per_page=<span class="number">1</span>&amp;registrant_ft=Patton<span class="comment">%20Boggs&amp;year=2012&amp;apikey=YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <p>See the <a href="lobbying.html">schema documentation</a> for descriptions of the
-response fields.
-
-</p>
+response fields.</p>
 <pre><code>[
   {
     "<span class="attribute">registrant_name</span>": <span class="value"><span class="string">"Patton Boggs LLP"</span></span>,
@@ -1396,31 +1342,31 @@ response fields.
       {
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"Dept of State"</span></span>,
         "<span class="attribute">agency_ext_id</span>": <span class="value"><span class="string">"039 "</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"Dept of Treasury"</span></span>,
         "<span class="attribute">agency_ext_id</span>": <span class="value"><span class="string">"041 "</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"Export-Import Bank of the US"</span></span>,
         "<span class="attribute">agency_ext_id</span>": <span class="value"><span class="string">"051 "</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"Federal Reserve System"</span></span>,
         "<span class="attribute">agency_ext_id</span>": <span class="value"><span class="string">"062 "</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"US House of Representatives"</span></span>,
         "<span class="attribute">agency_ext_id</span>": <span class="value"><span class="string">"002 "</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"US Senate"</span></span>,
         "<span class="attribute">agency_ext_id</span>": <span class="value"><span class="string">"001 "</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"White House"</span></span>,
         "<span class="attribute">agency_ext_id</span>": <span class="value"><span class="string">"012 "</span>
-      </span>}
+      }</span>
     ]</span>,
     "<span class="attribute">transaction_type</span>": <span class="value"><span class="string">"q1a"</span></span>,
     "<span class="attribute">client_parent_name</span>": <span class="value"><span class="string">"Ivanishvili, Bidzina"</span></span>,
@@ -1433,28 +1379,28 @@ response fields.
         "<span class="attribute">government_position</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">lobbyist_name</span>": <span class="value"><span class="string">"Harris, Laurence"</span></span>,
         "<span class="attribute">lobbyist_ext_id</span>": <span class="value"><span class="string">"Y0000040336L"</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">member_of_congress</span>": <span class="value"><span class="literal">false</span></span>,
         "<span class="attribute">candidate_ext_id</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">government_position</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">lobbyist_name</span>": <span class="value"><span class="string">"Norman, W Caffrey"</span></span>,
         "<span class="attribute">lobbyist_ext_id</span>": <span class="value"><span class="string">"Y0000003857L"</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">member_of_congress</span>": <span class="value"><span class="literal">false</span></span>,
         "<span class="attribute">candidate_ext_id</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">government_position</span>": <span class="value"><span class="string">"Sen.E.Kennedy,Intern,99;SenateJuducCom,LawClrck,05"</span></span>,
         "<span class="attribute">lobbyist_name</span>": <span class="value"><span class="string">"Oresman, Matthew Scott"</span></span>,
         "<span class="attribute">lobbyist_ext_id</span>": <span class="value"><span class="string">"Y0000002649L"</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">member_of_congress</span>": <span class="value"><span class="literal">false</span></span>,
         "<span class="attribute">candidate_ext_id</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">government_position</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">lobbyist_name</span>": <span class="value"><span class="string">"Wisner, Graham"</span></span>,
         "<span class="attribute">lobbyist_ext_id</span>": <span class="value"><span class="string">"Y0000034763L"</span>
-      </span>}
+      }</span>
     ]</span>,
     "<span class="attribute">year</span>": <span class="value"><span class="number">2012</span></span>,
     "<span class="attribute">transaction_type_desc</span>": <span class="value"><span class="string">"FIRST QUARTER AMENDMENT"</span></span>,
@@ -1464,18 +1410,19 @@ response fields.
         "<span class="attribute">specific_issue</span>": <span class="value"><span class="string">"Issues related to free and fair elections in Georgia"</span></span>,
         "<span class="attribute">general_issue</span>": <span class="value"><span class="string">"Foreign Relations"</span></span>,
         "<span class="attribute">general_issue_code</span>": <span class="value"><span class="string">"FOR"</span>
-      </span>},
+      }</span>,
       {
         "<span class="attribute">specific_issue</span>": <span class="value"><span class="string">"Issues related to international banking."</span></span>,
         "<span class="attribute">general_issue</span>": <span class="value"><span class="string">"Banking"</span></span>,
         "<span class="attribute">general_issue_code</span>": <span class="value"><span class="string">"BAN"</span>
-      </span>}
+      }</span>
     ]
-  </span>}
+  }</span>
 ]</code></pre>
 
   </div>
 </div>
+
 <script type="text/javascript">
 
   var _gaq = _gaq || [];

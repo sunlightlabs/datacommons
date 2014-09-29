@@ -52,15 +52,13 @@
   </div>
   <div id="content">
     
-    <h1>Entity Lookups</h1>
-<h2 id='methods'>Methods</h2 id='methods'>
-<h3 id='methods/search-by-name'>Search by Name</h3 id='methods/search-by-name'>
+    <h1 id="entity-lookups">Entity Lookups</h1>
+<h2 id='methods' id="methods">Methods</h2 id='methods'>
+<h3 id='methods/search-by-name' id="search-by-name">Search by Name</h3 id='methods/search-by-name'>
 <p>Search for politicians, individuals, organizations or industries with a
-given name.
-
-</p>
-<pre><code>/entities<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+given name.</p>
+<pre><code>/<span class="filename">entities.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -92,9 +90,9 @@ given name.
     </tbody>
 </table>
 
-<h4>Example</h4>
-<pre><code><span class="title">http</span>://transparencydata.org/api/<span class="number">1.0</span>/entities.json?apikey=<span class="type">YOUR_KEY</span>&amp;search=<span class="type">Barack</span>+<span class="type">Obama</span>&amp;<span class="typedef"><span class="keyword">type</span>=politician</span></code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.org/api</span><span class="regexp">/1.0/entities</span>.json<span class="number">?a</span>pikey=<span class="constant">YOUR_KEY</span>&amp;search=<span class="constant">Barack</span>+<span class="constant">Obama</span>&amp;type=politician</code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         <span class="method">name:</span> <span class="comment">"Barack Obama (D)"</span>,
@@ -133,17 +131,13 @@ given name.
 ]</code></pre>
 <p>This call can result in multiple response objects. In this case, we get
 a hit for President Obama in the context of Illinois Senate races and
-in presidential elections.
-
-</p>
+in presidential elections.</p>
 <hr>
-<h3 id='methods/id-lookup'>ID Lookup</h3 id='methods/id-lookup'>
+<h3 id='methods/id-lookup' id="id-lookup">ID Lookup</h3 id='methods/id-lookup'>
 <p>Crosswalk between several input ID forms and the transparencydata IDs
-native to this service.
-
-</p>
-<pre><code>/entities/id_lookup<span class="variable">.json</span></code></pre>
-<h4>Paramteters</h4>
+native to this service.</p>
+<pre><code>/entities/<span class="filename">id_lookup.json</code></pre>
+<h4 id="paramteters">Paramteters</h4>
 <table>
     <thead>
         <tr>
@@ -202,21 +196,19 @@ lobbyist_registration_tracker_url</code></dt>
     </tbody>
 </table>
 
-<h4>Example</h4>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.org</span>/api/<span class="number">1.0</span>/entities/id_lookup<span class="preprocessor">.json</span>?apikey=YOUR_KEY&amp;bioguide_id=L000551</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.org/api</span><span class="regexp">/1.0/entities</span><span class="regexp">/id_lookup.json?apikey=YOUR_KEY&amp;bioguide_id=L000551</code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">id</span>": <span class="value"><span class="string">"6d1ec9c94ae748c6b86cc250761c6b13"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/entity-overview'>Entity Overview</h3 id='methods/entity-overview'>
-<p>General information about the given entity.
-
-</p>
-<pre><code>/entities/:entity_id<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/entity-overview' id="entity-overview">Entity Overview</h3 id='methods/entity-overview'>
+<p>General information about the given entity.</p>
+<pre><code>/entities/<span class="symbol">:entity_id</span>.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <table>
     <thead>
         <tr>
@@ -241,89 +233,90 @@ lobbyist_registration_tracker_url</code></dt>
     </tbody>
 </table>
 
-<h4>Example</h4>
+<h4 id="example">Example</h4>
 <pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/entities/<span class="number">97737</span>bb56b6a4211bcc57a837368b1a4<span class="variable">.json</span>?apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
-<pre><code>{
-    "name": "OBAMA, BARACK",
-    "totals": {
-        "2004": {
-            "faca_committee_count": 0,
-            "faca_member_count": 0,
-            "regs_submitted_docket_count": 0,
-            "earmark_count": 0,
-            "regs_docket_count": 0,
-            "recipient_amount": 29350.11,
-            "fec_summary_count": 0,
-            "independent_expenditure_amount": 0,
-            "non_firm_spending": 0,
-            "grant_count": 0,
-            "contract_amount": 0,
-            "earmark_amount": 0,
-            "loan_count": 0,
-            "contract_count": 0,
-            "contributor_count": 0,
-            "regs_document_count": 0,
-            "recipient_count": 44,
-            "firm_income": 0,
-            "regs_submitted_document_count": 0,
-            "loan_amount": 0,
-            "epa_actions_count": 0,
-            "contractor_misconduct_count": 0,
-            "fec_total_raised": 0,
-            "lobbying_count": 0,
-            "contributor_amount": 0,
-            "grant_amount": 0
-        }
-        ...snip...
-    },
-    "external_ids": [
-        {
-            "namespace": "urn:nimsp:recipient",
-            "id": "17677"
-        }
-    ],
-    "type": "politician",
-    "id": "97737bb56b6a4211bcc57a837368b1a4",
-    "metadata": {
-        "2004": {
-            "district": "IL-13",
-            "state": "IL",
-            "seat_result": "",
-            "district_held": "",
-            "seat": "state:upper",
-            "seat_held": "",
-            "state_held": "",
-            "seat_status": "",
-            "party": "D"
-        },
-        ...snip...
-        "bio": "<span class="tag">&lt;<span class="title">p</span>></span>Barack Hussein Obama II (i /bəˈrɑːk huːˈseɪn oʊˈbɑːmə/; born August 4, 1961) is the 44th and current President of the United States. He is the first African American to hold the office. Obama previously served as a United States Senator from Illinois, from January 2005 until he resigned after his election to the presidency in November 2008.<span class="tag">&lt;/<span class="title">p</span>></span><span class="tag">&lt;<span class="title">p</span>></span>A native of Honolulu, Hawaii, Obama is a graduate of Columbia University and Harvard Law School, where he was the president of the Harvard Law Review. He was a community organizer in Chicago before earning his law degree. He worked as a civil rights attorney in Chicago and taught constitutional law at the University of Chicago Law School from 1992 to 2004.<span class="tag">&lt;/<span class="title">p</span>></span>",
-        "seat_held": "",
-        "source_name": "wikipedia_info",
-        "district": "IL-13",
-        "federal_politician_entities": [
-            {
-                "name": "Barack Obama (D)",
-                "type": "politician",
-                "id": "4148b26f6f1c437cb50ea9ca4699417a"
-            }
-        ],
-        "seat_result": "",
-        "district_held": "",
-        "seat": "state:upper",
-        "state": "IL",
-        "bio_url": "http://en.wikipedia.org/wiki/Barack_Obama",
-        "state_held": "",
-        "seat_status": "",
-        "party": "D",
-        "entity": "97737bb56b6a4211bcc57a837368b1a4",
-        "photo_url": "http://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Official_portrait_of_Barack_Obama.jpg/245px-Official_portrait_of_Barack_Obama.jpg"
-    }
-}</code></pre>
+<h4 id="response">Response</h4>
+<pre><code><span class="comment">{</span>
+    <span class="comment">"name":</span> <span class="comment">"OBAMA</span>, <span class="comment">BARACK"</span>,
+    <span class="comment">"totals":</span> <span class="comment">{</span>
+        <span class="comment">"2004":</span> <span class="comment">{</span>
+            <span class="comment">"faca_committee_count":</span> <span class="comment">0</span>,
+            <span class="comment">"faca_member_count":</span> <span class="comment">0</span>,
+            <span class="comment">"regs_submitted_docket_count":</span> <span class="comment">0</span>,
+            <span class="comment">"earmark_count":</span> <span class="comment">0</span>,
+            <span class="comment">"regs_docket_count":</span> <span class="comment">0</span>,
+            <span class="comment">"recipient_amount":</span> <span class="comment">29350</span>.<span class="comment">11</span>,
+            <span class="comment">"fec_summary_count":</span> <span class="comment">0</span>,
+            <span class="comment">"independent_expenditure_amount":</span> <span class="comment">0</span>,
+            <span class="comment">"non_firm_spending":</span> <span class="comment">0</span>,
+            <span class="comment">"grant_count":</span> <span class="comment">0</span>,
+            <span class="comment">"contract_amount":</span> <span class="comment">0</span>,
+            <span class="comment">"earmark_amount":</span> <span class="comment">0</span>,
+            <span class="comment">"loan_count":</span> <span class="comment">0</span>,
+            <span class="comment">"contract_count":</span> <span class="comment">0</span>,
+            <span class="comment">"contributor_count":</span> <span class="comment">0</span>,
+            <span class="comment">"regs_document_count":</span> <span class="comment">0</span>,
+            <span class="comment">"recipient_count":</span> <span class="comment">44</span>,
+            <span class="comment">"firm_income":</span> <span class="comment">0</span>,
+            <span class="comment">"regs_submitted_document_count":</span> <span class="comment">0</span>,
+            <span class="comment">"loan_amount":</span> <span class="comment">0</span>,
+            <span class="comment">"epa_actions_count":</span> <span class="comment">0</span>,
+            <span class="comment">"contractor_misconduct_count":</span> <span class="comment">0</span>,
+            <span class="comment">"fec_total_raised":</span> <span class="comment">0</span>,
+            <span class="comment">"lobbying_count":</span> <span class="comment">0</span>,
+            <span class="comment">"contributor_amount":</span> <span class="comment">0</span>,
+            <span class="comment">"grant_amount":</span> <span class="comment">0</span>
+        <span class="comment">}</span>
+        <span class="string">.</span><span class="string">.</span><span class="string">.</span><span class="comment">snip</span>.<span class="string">.</span><span class="string">.</span>
+    <span class="comment">}</span>,
+    <span class="comment">"external_ids":</span> <span class="title">[</span>
+        <span class="comment">{</span>
+            <span class="comment">"namespace":</span> <span class="comment">"urn:nimsp:recipient"</span>,
+            <span class="comment">"id":</span> <span class="comment">"17677"</span>
+        <span class="comment">}</span>
+    <span class="title">]</span><span class="string">,</span>
+    <span class="comment">"type":</span> <span class="comment">"politician"</span>,
+    <span class="comment">"id":</span> <span class="comment">"97737bb56b6a4211bcc57a837368b1a4"</span>,
+    <span class="comment">"metadata":</span> <span class="comment">{</span>
+        <span class="comment">"2004":</span> <span class="comment">{</span>
+            <span class="comment">"district":</span> <span class="comment">"IL</span>-<span class="comment">13"</span>,
+            <span class="comment">"state":</span> <span class="comment">"IL"</span>,
+            <span class="comment">"seat_result":</span> <span class="comment">""</span>,
+            <span class="comment">"district_held":</span> <span class="comment">""</span>,
+            <span class="comment">"seat":</span> <span class="comment">"state:upper"</span>,
+            <span class="comment">"seat_held":</span> <span class="comment">""</span>,
+            <span class="comment">"state_held":</span> <span class="comment">""</span>,
+            <span class="comment">"seat_status":</span> <span class="comment">""</span>,
+            <span class="comment">"party":</span> <span class="comment">"D"</span>
+        <span class="comment">}</span>,
+        <span class="string">.</span><span class="string">.</span><span class="string">.</span><span class="comment">snip</span>.<span class="string">.</span><span class="string">.</span>
+        <span class="comment">"bio":</span> <span class="comment">"</span>&lt;<span class="comment">p</span>&gt;<span class="comment">Barack</span> <span class="comment">Hussein</span> <span class="comment">Obama</span> <span class="comment">II</span> <span class="comment">(i</span> <span class="comment">/bəˈrɑːk</span> <span class="comment">huːˈseɪn</span> <span class="comment">oʊˈbɑːmə/;</span> <span class="comment">born</span> <span class="comment">August</span> <span class="comment">4</span>, <span class="comment">1961)</span> <span class="comment">is</span> <span class="comment">the</span> <span class="comment">44th</span> <span class="comment">and</span> <span class="comment">current</span> <span class="comment">President</span> <span class="comment">of</span> <span class="comment">the</span> <span class="comment">United</span> <span class="comment">States</span>. <span class="comment">He</span> <span class="comment">is</span> <span class="comment">the</span> <span class="comment">first</span> <span class="comment">African</span> <span class="comment">American</span> <span class="comment">to</span> <span class="comment">hold</span> <span class="comment">the</span> <span class="comment">office</span>. <span class="comment">Obama</span> <span class="comment">previously</span> <span class="comment">served</span> <span class="comment">as</span> <span class="comment">a</span> <span class="comment">United</span> <span class="comment">States</span> <span class="comment">Senator</span> <span class="comment">from</span> <span class="comment">Illinois</span>, <span class="comment">from</span> <span class="comment">January</span> <span class="comment">2005</span> <span class="comment">until</span> <span class="comment">he</span> <span class="comment">resigned</span> <span class="comment">after</span> <span class="comment">his</span> <span class="comment">election</span> <span class="comment">to</span> <span class="comment">the</span> <span class="comment">presidency</span> <span class="comment">in</span> <span class="comment">November</span> <span class="comment">2008</span>.&lt;<span class="comment">/p</span>&gt;&lt;<span class="comment">p</span>&gt;<span class="comment">A</span> <span class="comment">native</span> <span class="comment">of</span> <span class="comment">Honolulu</span>, <span class="comment">Hawaii</span>, <span class="comment">Obama</span> <span class="comment">is</span> <span class="comment">a</span> <span class="comment">graduate</span> <span class="comment">of</span> <span class="comment">Columbia</span> <span class="comment">University</span> <span class="comment">and</span> <span class="comment">Harvard</span> <span class="comment">Law</span> <span class="comment">School</span>, <span class="comment">where</span> <span class="comment">he</span> <span class="comment">was</span> <span class="comment">the</span> <span class="comment">president</span> <span class="comment">of</span> <span class="comment">the</span> <span class="comment">Harvard</span> <span class="comment">Law</span> <span class="comment">Review</span>. <span class="comment">He</span> <span class="comment">was</span> <span class="comment">a</span> <span class="comment">community</span> <span class="comment">organizer</span> <span class="comment">in</span> <span class="comment">Chicago</span> <span class="comment">before</span> <span class="comment">earning</span> <span class="comment">his</span> <span class="comment">law</span> <span class="comment">degree</span>. <span class="comment">He</span> <span class="comment">worked</span> <span class="comment">as</span> <span class="comment">a</span> <span class="comment">civil</span> <span class="comment">rights</span> <span class="comment">attorney</span> <span class="comment">in</span> <span class="comment">Chicago</span> <span class="comment">and</span> <span class="comment">taught</span> <span class="comment">constitutional</span> <span class="comment">law</span> <span class="comment">at</span> <span class="comment">the</span> <span class="comment">University</span> <span class="comment">of</span> <span class="comment">Chicago</span> <span class="comment">Law</span> <span class="comment">School</span> <span class="comment">from</span> <span class="comment">1992</span> <span class="comment">to</span> <span class="comment">2004</span>.&lt;<span class="comment">/p</span>&gt;<span class="comment">"</span>,
+        <span class="comment">"seat_held":</span> <span class="comment">""</span>,
+        <span class="comment">"source_name":</span> <span class="comment">"wikipedia_info"</span>,
+        <span class="comment">"district":</span> <span class="comment">"IL</span>-<span class="comment">13"</span>,
+        <span class="comment">"federal_politician_entities":</span> <span class="title">[</span>
+            <span class="comment">{</span>
+                <span class="comment">"name":</span> <span class="comment">"Barack</span> <span class="comment">Obama</span> <span class="comment">(D)"</span>,
+                <span class="comment">"type":</span> <span class="comment">"politician"</span>,
+                <span class="comment">"id":</span> <span class="comment">"4148b26f6f1c437cb50ea9ca4699417a"</span>
+            <span class="comment">}</span>
+        <span class="title">]</span><span class="string">,</span>
+        <span class="comment">"seat_result":</span> <span class="comment">""</span>,
+        <span class="comment">"district_held":</span> <span class="comment">""</span>,
+        <span class="comment">"seat":</span> <span class="comment">"state:upper"</span>,
+        <span class="comment">"state":</span> <span class="comment">"IL"</span>,
+        <span class="comment">"bio_url":</span> <span class="comment">"http://en</span>.<span class="comment">wikipedia</span>.<span class="comment">org/wiki/Barack_Obama"</span>,
+        <span class="comment">"state_held":</span> <span class="comment">""</span>,
+        <span class="comment">"seat_status":</span> <span class="comment">""</span>,
+        <span class="comment">"party":</span> <span class="comment">"D"</span>,
+        <span class="comment">"entity":</span> <span class="comment">"97737bb56b6a4211bcc57a837368b1a4"</span>,
+        <span class="comment">"photo_url":</span> <span class="comment">"http://upload</span>.<span class="comment">wikimedia</span>.<span class="comment">org/wikipedia/commons/thumb/e/e9/Official_portrait_of_Barack_Obama</span>.<span class="comment">jpg/245px</span>-<span class="comment">Official_portrait_of_Barack_Obama</span>.<span class="comment">jpg"</span>
+    <span class="comment">}</span>
+<span class="comment">}</code></pre>
 
   </div>
 </div>
+
 <script type="text/javascript">
 
   var _gaq = _gaq || [];

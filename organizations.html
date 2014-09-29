@@ -113,45 +113,37 @@
   </div>
   <div id="content">
     
-    <h1>Organization Aggregates</h1>
-<h2 id='common-parameters'>Common Parameters</h2 id='common-parameters'>
+    <h1 id="organization-aggregates">Organization Aggregates</h1>
+<h2 id='common-parameters' id="common-parameters">Common Parameters</h2 id='common-parameters'>
 <p>Unless otherwise specified, all aggregate methods respond to
-<code>entity_id</code>, <code>limit</code>, and <code>cycle</code> parameters.
-
-</p>
-<h2 id='methods'>Methods</h2 id='methods'>
-<h3 id='methods/top-organizations'>Top Organizations</h3 id='methods/top-organizations'>
-<p>By contributions given, in dollars.
-
-</p>
-<pre><code>/aggregates/orgs/top_:limit<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+<code>entity_id</code>, <code>limit</code>, and <code>cycle</code> parameters.</p>
+<h2 id='methods' id="methods">Methods</h2 id='methods'>
+<h3 id='methods/top-organizations' id="top-organizations">Top Organizations</h3 id='methods/top-organizations'>
+<p>By contributions given, in dollars.</p>
+<pre><code>/aggregates/orgs/top_:<span class="filename">limit.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <ul>
 <li><strong><code>cycle</code> and <code>limit</code> only, this method returns multiple entities.</strong></li>
 </ul>
-<h4>Example</h4>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/orgs/top_1<span class="preprocessor">.json</span>?cycle=<span class="number">2006</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/orgs/top</span>_1.json<span class="number">?c</span>ycle=<span class="number">2006</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="string">"10282"</span></span>,
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"106113365.64"</span></span>,
         "<span class="attribute">name</span>": <span class="value"><span class="string">"National Education Assn"</span></span>,
         "<span class="attribute">id</span>": <span class="value"><span class="string">"1b8fea7e453d4e75841eac48ff9df550"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/top-recipients'>Top Recipients</h3 id='methods/top-recipients'>
-<p>Top recipients of money from this organization, by dollars received.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/recipients<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top recipient from the National Education Assn. in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">1</span>b8fea7e453d4e75841eac48ff9df550/recipients<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/top-recipients' id="top-recipients">Top Recipients</h3 id='methods/top-recipients'>
+<p>Top recipients of money from this organization, by dollars received.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/recipients</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top recipient from the National Education Assn. in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">1</span>b8fea7e453d4e75841eac48ff9df55<span class="number">0</span>/recipients.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">total_amount</span>": <span class="value"><span class="string">"250000.00"</span></span>,
@@ -164,20 +156,16 @@
         "<span class="attribute">employee_count</span>": <span class="value"><span class="string">"0"</span></span>,
         "<span class="attribute">id</span>": <span class="value"><span class="string">"e7ed6fb386c74515837469f6c6f971f0"</span></span>,
         "<span class="attribute">direct_amount</span>": <span class="value"><span class="string">"250000.00"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/pac-recipients'>PAC Recipients</h3 id='methods/pac-recipients'>
-<p>Top PACs receiving money from a given organization.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/recipient_pacs<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top recipient PAC from the National Education Assn. in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">1</span>b8fea7e453d4e75841eac48ff9df550/recipient_pacs<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/pac-recipients' id="pac-recipients">PAC Recipients</h3 id='methods/pac-recipients'>
+<p>Top PACs receiving money from a given organization.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/recipient_pacs</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top recipient PAC from the National Education Assn. in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">1</span>b8fea7e453d4e75841eac48ff9df55<span class="number">0</span>/recipient_pacs.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">employee_amount</span>": <span class="value"><span class="string">"0"</span></span>,
@@ -188,24 +176,20 @@
         "<span class="attribute">employee_count</span>": <span class="value"><span class="string">"0"</span></span>,
         "<span class="attribute">id</span>": <span class="value"><span class="literal">null</span></span>,
         "<span class="attribute">direct_amount</span>": <span class="value"><span class="string">"10751430.77"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/party-breakdown'>Party Breakdown</h3 id='methods/party-breakdown'>
-<p>Portion of giving from an organization that went to each party.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/recipients/party_breakdown<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/party-breakdown' id="party-breakdown">Party Breakdown</h3 id='methods/party-breakdown'>
+<p>Portion of giving from an organization that went to each party.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/recipients/party_breakdown</span>.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <ul>
 <li><strong><code>entity_id</code> and <code>cycle</code> only, returns a single breakdown result.</strong></li>
 </ul>
-<h4>Example</h4>
-<p>Get the NEA&#39;s Party Breakdown for 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">1</span>b8fea7e453d4e75841eac48ff9df550/recipients/party_breakdown<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get the NEA&#39;s Party Breakdown for 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">1</span>b8fea7e453d4e75841eac48ff9df55<span class="number">0</span>/recipients/party_breakdown.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>{
     "<span class="attribute">Republicans</span>": <span class="value">[
         <span class="string">"642"</span>,
@@ -219,24 +203,20 @@
         <span class="string">"4367"</span>,
         <span class="string">"10816686.44"</span>
     ]
-</span>}</code></pre>
+}</span></code></pre>
 <hr>
-<h3 id='methods/state-federal-level-breakdown'>State/Federal (Level) Breakdown</h3 id='methods/state-federal-level-breakdown'>
+<h3 id='methods/state-federal-level-breakdown' id="state-federal-level-breakdown">State/Federal (Level) Breakdown</h3 id='methods/state-federal-level-breakdown'>
 <p>Portion of giving from an organization that went state candidates versus
-federal candidates.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/recipients/level_breakdown<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+federal candidates.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/recipients/level_breakdown</span>.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <ul>
 <li><strong><code>entity_id</code> and <code>cycle</code> only, returns a single breakdown result.</strong></li>
 </ul>
-<h4>Example</h4>
-<p>Get the NEA&#39;s State/Federal Breakdown for 2012:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">1</span>b8fea7e453d4e75841eac48ff9df550/recipients/level_breakdown<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get the NEA&#39;s State/Federal Breakdown for 2012:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">1</span>b8fea7e453d4e75841eac48ff9df55<span class="number">0</span>/recipients/level_breakdown.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>{
     "<span class="attribute">Federal</span>": <span class="value">[
         <span class="string">"973"</span>,
@@ -246,160 +226,132 @@ federal candidates.
         <span class="string">"4396"</span>,
         <span class="string">"24352801.82"</span>
     ]
-</span>}</code></pre>
+}</span></code></pre>
 <hr>
-<h3 id='methods/lobbing-registrants'>Lobbing Registrants</h3 id='methods/lobbing-registrants'>
-<p>Lobbying firms hired by an organization.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/registrants<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top lobbying firm hired by Procter &amp; Gamble in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">9070</span>ecd132f44963a369479e91950283/registrants<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/lobbing-registrants' id="lobbing-registrants">Lobbing Registrants</h3 id='methods/lobbing-registrants'>
+<p>Lobbying firms hired by an organization.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/registrants</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top lobbying firm hired by Procter &amp; Gamble in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">9070</span>ecd132f44963a369479e91950283/registrants.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">registrant_name</span>": <span class="value"><span class="string">"Mehlman Vogel Castagnetti Inc"</span></span>,
         "<span class="attribute">count</span>": <span class="value"><span class="number">12</span></span>,
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"520000.00"</span></span>,
         "<span class="attribute">registrant_entity</span>": <span class="value"><span class="string">"8595a50e311d4b2fbca37ca0b1367676"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/lobbying-issues'>Lobbying Issues</h3 id='methods/lobbying-issues'>
-<p>Issue areas an organization has hired lobbyists for.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/issues<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top 2 issue areas for Procter &amp; Gamble in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">9070</span>ecd132f44963a369479e91950283/issues<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/lobbying-issues' id="lobbying-issues">Lobbying Issues</h3 id='methods/lobbying-issues'>
+<p>Issue areas an organization has hired lobbyists for.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/issues</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top 2 issue areas for Procter &amp; Gamble in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">9070</span>ecd132f44963a369479e91950283/issues.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">24</span></span>,
         "<span class="attribute">issue</span>": <span class="value"><span class="string">"Health Issues"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">20</span></span>,
         "<span class="attribute">issue</span>": <span class="value"><span class="string">"Taxes"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/bills'>Bills</h3 id='methods/bills'>
-<p>Bills an organization has lobbied on.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/bills<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top 2 bills for Procter &amp; Gamble in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">9070</span>ecd132f44963a369479e91950283/bills<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY
+<h3 id='methods/bills' id="bills">Bills</h3 id='methods/bills'>
+<p>Bills an organization has lobbied on.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/bills</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top 2 bills for Procter &amp; Gamble in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">9070</span>ecd132f44963a369479e91950283/bills.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span>
 
 [
     {
-        <span class="string">"bill_no"</span>: <span class="number">2735</span>,
-        <span class="string">"count"</span>: <span class="number">9</span>,
-        <span class="string">"title"</span>: <span class="string">"To amend the Internal Revenue Code of 1986 to make permanent the look-through treatment of payments between related controlled foreign corporations."</span>,
-        <span class="string">"bill_type"</span>: <span class="string">"h"</span>,
-        <span class="string">"bill_name"</span>: <span class="string">"H.R.2735"</span>,
-        <span class="string">"congress_no"</span>: <span class="number">112</span>,
-        <span class="string">"cycle"</span>: <span class="number">2012</span>
+        <span class="string">"bill_no"</span><span class="symbol">:</span> <span class="number">2735</span>,
+        <span class="string">"count"</span><span class="symbol">:</span> <span class="number">9</span>,
+        <span class="string">"title"</span><span class="symbol">:</span> <span class="string">"To amend the Internal Revenue Code of 1986 to make permanent the look-through treatment of payments between related controlled foreign corporations."</span>,
+        <span class="string">"bill_type"</span><span class="symbol">:</span> <span class="string">"h"</span>,
+        <span class="string">"bill_name"</span><span class="symbol">:</span> <span class="string">"H.R.2735"</span>,
+        <span class="string">"congress_no"</span><span class="symbol">:</span> <span class="number">112</span>,
+        <span class="string">"cycle"</span><span class="symbol">:</span> <span class="number">2012</span>
     },
     {
-        <span class="string">"bill_no"</span>: <span class="number">639</span>,
-        <span class="string">"count"</span>: <span class="number">8</span>,
-        <span class="string">"title"</span>: <span class="string">"Currency Reform for Fair Trade Act"</span>,
-        <span class="string">"bill_type"</span>: <span class="string">"h"</span>,
-        <span class="string">"bill_name"</span>: <span class="string">"H.R.639"</span>,
-        <span class="string">"congress_no"</span>: <span class="number">112</span>,
-        <span class="string">"cycle"</span>: <span class="number">2012</span>
+        <span class="string">"bill_no"</span><span class="symbol">:</span> <span class="number">639</span>,
+        <span class="string">"count"</span><span class="symbol">:</span> <span class="number">8</span>,
+        <span class="string">"title"</span><span class="symbol">:</span> <span class="string">"Currency Reform for Fair Trade Act"</span>,
+        <span class="string">"bill_type"</span><span class="symbol">:</span> <span class="string">"h"</span>,
+        <span class="string">"bill_name"</span><span class="symbol">:</span> <span class="string">"H.R.639"</span>,
+        <span class="string">"congress_no"</span><span class="symbol">:</span> <span class="number">112</span>,
+        <span class="string">"cycle"</span><span class="symbol">:</span> <span class="number">2012</span>
     }
 ]</code></pre>
 <hr>
-<h3 id='methods/lobbyists'>Lobbyists</h3 id='methods/lobbyists'>
-<p>Lobbyists hired by an organization.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/lobbyists<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top lobbyist for Procter &amp; Gamble in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">9070</span>ecd132f44963a369479e91950283/lobbyists<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/lobbyists' id="lobbyists">Lobbyists</h3 id='methods/lobbyists'>
+<p>Lobbyists hired by an organization.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/lobbyists</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top lobbyist for Procter &amp; Gamble in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">9070</span>ecd132f44963a369479e91950283/lobbyists.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">12</span></span>,
         "<span class="attribute">lobbyist_name</span>": <span class="value"><span class="string">"BINGEL, KELLY"</span></span>,
         "<span class="attribute">lobbyist_entity</span>": <span class="value"><span class="string">"8a0fa1c2d331499ba992d17b53336a49"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/registrant-clients'>Registrant Clients</h3 id='methods/registrant-clients'>
-<p>Top clients that hired an organization (lobbying firm).
-
-</p>
-<pre><code>/aggregates/org/:entity_id/registrant/clients<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top 2 clients for Patton Boggs in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/clients<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/registrant-clients' id="registrant-clients">Registrant Clients</h3 id='methods/registrant-clients'>
+<p>Top clients that hired an organization (lobbying firm).</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/registrant/clients</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top 2 clients for Patton Boggs in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/clients.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">6</span></span>,
         "<span class="attribute">client_name</span>": <span class="value"><span class="string">"Depository Trust &amp; Clearing Corp"</span></span>,
         "<span class="attribute">client_entity</span>": <span class="value"><span class="string">"bb5ac6cef3414fc3baba9cedf62d426a"</span></span>,
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"1680000.00"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">6</span></span>,
         "<span class="attribute">client_name</span>": <span class="value"><span class="string">"Wholesale Markets Brokers Assn Americas"</span></span>,
         "<span class="attribute">client_entity</span>": <span class="value"><span class="string">"96eb8866f1574daea5fdef509348d87d"</span></span>,
         "<span class="attribute">amount</span>": <span class="value"><span class="string">"1450000.00"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/registrant-issues'>Registrant Issues</h3 id='methods/registrant-issues'>
-<p>Top issue areas an organization (lobbying firm) has lobbied on.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/registrant/issues<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top 2 issue areas for Patton Boggs in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/issues<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/registrant-issues' id="registrant-issues">Registrant Issues</h3 id='methods/registrant-issues'>
+<p>Top issue areas an organization (lobbying firm) has lobbied on.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/registrant/issues</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top 2 issue areas for Patton Boggs in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/issues.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">369</span></span>,
         "<span class="attribute">issue</span>": <span class="value"><span class="string">"Fed Budget &amp; Appropriations"</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">241</span></span>,
         "<span class="attribute">issue</span>": <span class="value"><span class="string">"Transportation"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/registrant-bills'>Registrant Bills</h3 id='methods/registrant-bills'>
-<p>Top bills an organization (lobbying firm) has lobbied on.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/registrant/bills<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top 2 bills for Patton Boggs in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/bills<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/registrant-bills' id="registrant-bills">Registrant Bills</h3 id='methods/registrant-bills'>
+<p>Top bills an organization (lobbying firm) has lobbied on.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/registrant/bills</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top 2 bills for Patton Boggs in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/bills.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">2</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">bill_no</span>": <span class="value"><span class="number">658</span></span>,
@@ -409,7 +361,7 @@ federal candidates.
         "<span class="attribute">bill_name</span>": <span class="value"><span class="string">"H.R.658"</span></span>,
         "<span class="attribute">congress_no</span>": <span class="value"><span class="number">112</span></span>,
         "<span class="attribute">cycle</span>": <span class="value"><span class="number">2012</span>
-    </span>},
+    }</span>,
     {
         "<span class="attribute">bill_no</span>": <span class="value"><span class="number">223</span></span>,
         "<span class="attribute">count</span>": <span class="value"><span class="number">106</span></span>,
@@ -418,39 +370,31 @@ federal candidates.
         "<span class="attribute">bill_name</span>": <span class="value"><span class="string">"S.223"</span></span>,
         "<span class="attribute">congress_no</span>": <span class="value"><span class="number">112</span></span>,
         "<span class="attribute">cycle</span>": <span class="value"><span class="number">2012</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/registrant-lobbyists'>Registrant Lobbyists</h3 id='methods/registrant-lobbyists'>
-<p>Top lobbyists an organization (lobbying firm) employs, by registrations.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/registrant/lobbyists<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the top lobbyist for Patton Boggs in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/lobbyists<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/registrant-lobbyists' id="registrant-lobbyists">Registrant Lobbyists</h3 id='methods/registrant-lobbyists'>
+<p>Top lobbyists an organization (lobbying firm) employs, by registrations.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/registrant/lobbyists</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the top lobbyist for Patton Boggs in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">52</span>a1620b2ff543ebb74718fbff742529/registrant/lobbyists.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">196</span></span>,
         "<span class="attribute">lobbyist_name</span>": <span class="value"><span class="string">"BREAUX, JOHN"</span></span>,
         "<span class="attribute">lobbyist_entity</span>": <span class="value"><span class="string">"5d18bbc40f7e49938f21d0e2068741fc"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/mentions-in-regulations'>Mentions in Regulations</h3 id='methods/mentions-in-regulations'>
-<p>Regulatory dockets that most frequently mention an organization
-
-</p>
-<pre><code>/aggregates/org/:entity_id/regulations_text<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get the regulatory docket that mentions McDonald&#39;s the most in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">721</span>c64757c11435393edc49bb33d4c96/regulations_text<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/mentions-in-regulations' id="mentions-in-regulations">Mentions in Regulations</h3 id='methods/mentions-in-regulations'>
+<p>Regulatory dockets that most frequently mention an organization</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/regulations_text</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get the regulatory docket that mentions McDonald&#39;s the most in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">721</span>c64757c11435393edc49bb33d4c96/regulations_text.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">11</span></span>,
@@ -458,19 +402,15 @@ federal candidates.
         "<span class="attribute">agency</span>": <span class="value"><span class="string">"DOS"</span></span>,
         "<span class="attribute">docket</span>": <span class="value"><span class="string">"DOS-2011-0055"</span></span>,
         "<span class="attribute">title</span>": <span class="value"><span class="string">"60–Day Notice of Proposed Information Collection: DS–5513, Biographical Questionnaire for U.S. \r\nPassport, 1405–XXXX"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/regulatory-comment-submissions'>Regulatory Comment Submissions</h3 id='methods/regulatory-comment-submissions'>
-<p>Regulatory dockets with the most comment submissions from an organization.
-
-</p>
-<h4>Example</h4>
-<p>Get the top docket for Procter &amp; Gamble in the 2012 cycle:
-
-</p>
+<h3 id='methods/regulatory-comment-submissions' id="regulatory-comment-submissions">Regulatory Comment Submissions</h3 id='methods/regulatory-comment-submissions'>
+<p>Regulatory dockets with the most comment submissions from an organization.</p>
+<h4 id="example">Example</h4>
+<p>Get the top docket for Procter &amp; Gamble in the 2012 cycle:</p>
 <pre><code>transparencydata<span class="variable">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">9070</span>ecd132f44963a369479e91950283/regulations_submitter<span class="variable">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">1</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">count</span>": <span class="value"><span class="number">2</span></span>,
@@ -478,44 +418,36 @@ federal candidates.
         "<span class="attribute">agency</span>": <span class="value"><span class="string">"FAA"</span></span>,
         "<span class="attribute">docket</span>": <span class="value"><span class="string">"FAA-2011-0183"</span></span>,
         "<span class="attribute">title</span>": <span class="value"><span class="string">"Notice of Proposed Modification to the June 1, 2006 MOA FAA/Subscriber Memorandum of Agreement for ASDI/NASSI Industry Access and Request for Comments"</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/faca-memberships'>FACA Memberships</h3 id='methods/faca-memberships'>
-<p>Lists employees of an organization ith memberships on federal advisory committees.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/faca<span class="variable">.json</span></code></pre>
-<h4>Example</h4>
-<p>Get FACA memberships for Patton Boggs in the 2012 cycle:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">52</span>a1620b2ff543ebb74718fbff742529/faca<span class="preprocessor">.json</span>?cycle=<span class="number">2012</span>&amp;limit=<span class="number">10</span>&amp;apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h3 id='methods/faca-memberships' id="faca-memberships">FACA Memberships</h3 id='methods/faca-memberships'>
+<p>Lists employees of an organization ith memberships on federal advisory committees.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/faca</span>.json</code></pre>
+<h4 id="example">Example</h4>
+<p>Get FACA memberships for Patton Boggs in the 2012 cycle:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">52</span>a1620b2ff543ebb74718fbff742529/faca.json<span class="number">?c</span>ycle=<span class="number">2012</span>&amp;limit=<span class="number">10</span>&amp;apikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>[
     {
         "<span class="attribute">committee_count</span>": <span class="value"><span class="number">1</span></span>,
         "<span class="attribute">agency_abbr</span>": <span class="value"><span class="string">"DOC"</span></span>,
         "<span class="attribute">agency_name</span>": <span class="value"><span class="string">"Department of Commerce"</span></span>,
         "<span class="attribute">member_count</span>": <span class="value"><span class="number">1</span>
-    </span>}
+    }</span>
 ]</code></pre>
 <hr>
-<h3 id='methods/fec-summary'>FEC Summary</h3 id='methods/fec-summary'>
-<p>Latest figures for an organization from the FEC&#39;s summary report, current election cycle only.
-
-</p>
-<pre><code>/aggregates/org/:entity_id/fec_summary<span class="variable">.json</span></code></pre>
-<h4>Parameters</h4>
+<h3 id='methods/fec-summary' id="fec-summary">FEC Summary</h3 id='methods/fec-summary'>
+<p>Latest figures for an organization from the FEC&#39;s summary report, current election cycle only.</p>
+<pre><code>/aggregates/org/<span class="symbol">:entity_id/fec_summary</span>.json</code></pre>
+<h4 id="parameters">Parameters</h4>
 <ul>
 <li><strong>Only supports <code>entity_id</code>, returns a single summary report from the latest figures</strong></li>
 </ul>
-<h4>Example</h4>
-<p>Get latest figures for Patton Boggs:
-
-</p>
-<pre><code><span class="label">http:</span>//transparencydata<span class="preprocessor">.com</span>/api/<span class="number">1.0</span>/aggregates/org/<span class="number">52</span>a1620b2ff543ebb74718fbff742529/fec_summary<span class="preprocessor">.json</span>?apikey=YOUR_KEY</code></pre>
-<h4>Response</h4>
+<h4 id="example">Example</h4>
+<p>Get latest figures for Patton Boggs:</p>
+<pre><code><span class="symbol">http:</span>/<span class="regexp">/transparencydata.com/api</span><span class="regexp">/1.0/aggregates</span><span class="regexp">/org/</span><span class="number">52</span>a1620b2ff543ebb74718fbff742529/fec_summary.json<span class="number">?a</span>pikey=<span class="constant">YOUR_KEY</span></code></pre>
+<h4 id="response">Response</h4>
 <pre><code>{
     "<span class="attribute">independent_expenditures_made</span>": <span class="value"><span class="string">"0.00"</span></span>,
     "<span class="attribute">loans_received</span>": <span class="value"><span class="string">"0.00"</span></span>,
@@ -533,10 +465,11 @@ federal candidates.
     "<span class="attribute">contributions_to_committees</span>": <span class="value"><span class="string">"474000.00"</span></span>,
     "<span class="attribute">party_coordinated_expenditures_made</span>": <span class="value"><span class="string">"0.00"</span></span>,
     "<span class="attribute">contributions_from_pacs</span>": <span class="value"><span class="string">"10000.00"</span>
-</span>}</code></pre>
+}</span></code></pre>
 
   </div>
 </div>
+
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
