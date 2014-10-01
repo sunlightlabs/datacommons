@@ -715,5 +715,6 @@ create table agg_top_orgs_by_industry as
 select date_trunc('second', now()) || ' -- create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (recipient_entity, cycle)';
 create index agg_top_orgs_by_industry_idx on agg_top_orgs_by_industry (industry_entity, cycle);
 
+commit;
 
 select date_trunc('second', now()) || ' -- Finished computing contribution aggregates.';
