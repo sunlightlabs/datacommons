@@ -8,3 +8,4 @@ where
     and o.entity_id = '9070ecd132f44963a369479e91950283'
     and p.entity_id = '204b089d9d614fa6b77db666d76d9f3c'
 ;
+commit;
